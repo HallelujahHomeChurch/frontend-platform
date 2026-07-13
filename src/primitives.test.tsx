@@ -1,5 +1,6 @@
 import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import {useState} from 'react';
 import {describe, expect, it, vi} from 'vitest';
 import {
   AccountMenu,
@@ -10,6 +11,7 @@ import {
   EmptyState,
   Field,
   Menu,
+  Modal,
   Pagination,
   Select,
   Skeleton
@@ -72,6 +74,57 @@ describe('HHC UI primitives', () => {
     await user.click(screen.getByRole('button', {name: /Language/}));
     await user.click(screen.getByRole('option', {name: 'English'}));
     expect(onChange).toHaveBeenCalledWith('en');
+  });
+
+  it('dismisses selects with Escape and outside interaction', async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <Select label="Language" items={[{id: 'en', label: 'English'}]} />
+        <button>Outside</button>
+      </>
+    );
+
+    const trigger = screen.getByRole('button', {name: /Language/});
+    await user.click(trigger);
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+
+    await user.click(trigger);
+    await user.click(document.body);
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it('dismisses controlled modals and restores focus to the opener', async () => {
+    const user = userEvent.setup();
+
+    function Example() {
+      const [isOpen, setOpen] = useState(false);
+      return (
+        <>
+          <button onClick={() => setOpen(true)}>Edit profile</button>
+          <Modal isOpen={isOpen} onOpenChange={setOpen}>
+            <Modal.Backdrop>
+              <Modal.Container>
+                <Modal.Dialog>
+                  <Modal.Header><Modal.Heading>Profile name</Modal.Heading></Modal.Header>
+                  <Modal.Body>Fields</Modal.Body>
+                </Modal.Dialog>
+              </Modal.Container>
+            </Modal.Backdrop>
+          </Modal>
+        </>
+      );
+    }
+
+    render(<Example />);
+    const opener = screen.getByRole('button', {name: 'Edit profile'});
+    await user.click(opener);
+    expect(screen.getByRole('dialog', {name: 'Profile name'})).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', {name: 'Profile name'})).not.toBeInTheDocument();
+    expect(opener).toHaveFocus();
   });
 
   it('renders pagination, loading, empty, and account states', async () => {

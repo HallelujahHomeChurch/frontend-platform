@@ -20,20 +20,23 @@ import {
   type TextFieldProps
 } from 'react-aria-components';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline' | 'tertiary';
 
 export interface ButtonProps extends AriaButtonProps {
   variant?: ButtonVariant;
+  size?: 'sm' | 'md';
 }
 
-export function Button({variant = 'primary', className, ...props}: ButtonProps) {
+export function Button({variant = 'primary', size = 'md', className, ...props}: ButtonProps) {
+  const normalizedVariant = variant === 'outline' ? 'secondary' : variant === 'tertiary' ? 'ghost' : variant;
   return (
     <AriaButton
       {...props}
       className={({isDisabled, isFocusVisible}) =>
         [
           'hhc-button',
-          `hhc-button--${variant}`,
+          `hhc-button--${normalizedVariant}`,
+          `hhc-button--${size}`,
           isDisabled && 'is-disabled',
           isFocusVisible && 'is-focus-visible',
           typeof className === 'string' ? className : ''
@@ -108,17 +111,20 @@ export interface SelectProps {
   defaultSelectedKey?: string;
   onSelectionChange?: (key: string) => void;
   isDisabled?: boolean;
+  className?: string;
+  triggerClassName?: string;
+  hideLabel?: boolean;
 }
 
-export function Select({label, items, onSelectionChange, ...props}: SelectProps) {
+export function Select({label, items, onSelectionChange, className, triggerClassName, hideLabel, ...props}: SelectProps) {
   return (
     <AriaSelect
       {...props}
-      className="hhc-select"
+      className={['hhc-select', className].filter(Boolean).join(' ')}
       onSelectionChange={(key) => onSelectionChange?.(String(key))}
     >
-      <Label>{label}</Label>
-      <AriaButton className="hhc-select__trigger">
+      <Label className={hideLabel ? 'hhc-sr-only' : undefined}>{label}</Label>
+      <AriaButton className={['hhc-select__trigger', triggerClassName].filter(Boolean).join(' ')}>
         <SelectValue />
         <span aria-hidden="true">⌄</span>
       </AriaButton>
@@ -168,7 +174,7 @@ export function OTP({label, maxLength = 6, ...props}: OTPProps) {
         render={({slots}) => (
           <div className="hhc-otp__slots">
             {slots.map((slot, index) => (
-              <span className={`hhc-otp__slot ${slot.isActive ? 'is-active' : ''}`} key={index}>
+              <span className={`hhc-otp__slot ${slot.isActive ? 'is-active' : ''}`} data-slot="input-otp-slot" key={index}>
                 {slot.char}
                 {slot.hasFakeCaret ? <span className="hhc-otp__caret" /> : null}
               </span>
