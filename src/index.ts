@@ -69,6 +69,8 @@ export function createAccountSessionClient({
   };
 }
 
+export type AccountSessionClient = ReturnType<typeof createAccountSessionClient>;
+
 async function readJson(response: Response): Promise<unknown> {
   const contentType = response.headers.get('content-type') ?? '';
   if (!contentType.includes('application/json')) return undefined;
