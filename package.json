@@ -1,0 +1,25 @@
+{
+  "name": "@hhc/hhc-web-client",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "generate": "openapi-typescript openapi/hhc-web-api.yaml -o src/generated.ts",
+    "check:generated": "pnpm generate && git diff --exit-code -- src/generated.ts",
+    "lint": "oxlint src",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.15.0"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.10.1",
+    "oxlint": "^1.71.0",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
