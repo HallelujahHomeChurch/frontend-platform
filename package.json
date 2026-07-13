@@ -19,7 +19,7 @@
   "devDependencies": {
     "openapi-typescript": "^7.10.1",
     "oxlint": "^1.71.0",
-    "typescript": "catalog:",
+    "typescript": "catalog:codegen",
     "vitest": "catalog:"
   }
 }
