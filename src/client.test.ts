@@ -31,4 +31,19 @@ describe('hhc web client', () => {
       expect.objectContaining<HhcWebApiError>({ status: 412, code: 'precondition_failed' }),
     )
   })
+
+  it('uses typed content paths and optimistic concurrency', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
+      data: { id: 'video-1', module: 'videos', status: 'draft', version: 3, youtubeVideoId: 'K3ckFWeSQ-k', translations: [], createdBy: 'admin', updatedBy: 'admin', createdAt: '2026-07-13T00:00:00Z', updatedAt: '2026-07-13T00:00:00Z' },
+      meta: {}, error: null,
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
+
+    await client.updateContent('videos', 'video-1', 2, { youtubeVideoId: 'K3ckFWeSQ-k', homeEligible: true, translations: [{ locale: 'en', title: 'Song' }] })
+
+    const request = fetcher.mock.calls[0]?.[0] as Request
+    expect(request.url).toBe('http://localhost/api/admin/content/videos/video-1')
+    expect(request.headers.get('If-Match')).toBe('"2"')
+    expect(request.method).toBe('PUT')
+  })
 })
