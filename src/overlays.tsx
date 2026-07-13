@@ -16,6 +16,7 @@ import {Avatar, Button, type ButtonVariant} from './controls';
 export interface MenuItem {
   id: string;
   label: string;
+  href?: string;
   isDisabled?: boolean;
   variant?: 'default' | 'danger';
 }
@@ -39,6 +40,7 @@ export function Menu({label, items, onAction, trigger, header}: MenuProps) {
             <AriaMenuItem
               id={item.id}
               key={item.id}
+              href={item.href}
               isDisabled={item.isDisabled}
               className={`hhc-menu__item ${item.variant === 'danger' ? 'hhc-menu__item--danger' : ''}`}
             >
@@ -56,11 +58,12 @@ interface DialogBaseProps {
   title: string;
   children: ReactNode | ((close: () => void) => ReactNode);
   isDismissable?: boolean;
-  variant?: 'dialog' | 'drawer';
+  variant?: 'dialog' | 'drawer-left' | 'drawer-right';
   role?: 'dialog' | 'alertdialog';
+  closeLabel?: string;
 }
 
-function DialogBase({trigger, title, children, isDismissable = true, variant = 'dialog', role = 'dialog'}: DialogBaseProps) {
+function DialogBase({trigger, title, children, isDismissable = true, variant = 'dialog', role = 'dialog', closeLabel = 'Close'}: DialogBaseProps) {
   return (
     <DialogTrigger>
       {trigger}
@@ -71,7 +74,7 @@ function DialogBase({trigger, title, children, isDismissable = true, variant = '
               <>
                 <header className="hhc-dialog__header">
                   <Heading slot="title">{title}</Heading>
-                  <AriaButton className="hhc-dialog__close" onPress={close} aria-label="Close">×</AriaButton>
+                  <AriaButton className="hhc-dialog__close" onPress={close} aria-label={closeLabel}>×</AriaButton>
                 </header>
                 <div className="hhc-dialog__body">{typeof children === 'function' ? children(close) : children}</div>
               </>
@@ -109,22 +112,24 @@ export function AlertDialog({description, confirmLabel, cancelLabel, confirmVari
   );
 }
 
-export type DrawerProps = Omit<DialogBaseProps, 'variant' | 'role'>;
+export interface DrawerProps extends Omit<DialogBaseProps, 'variant' | 'role'> {
+  placement?: 'left' | 'right';
+}
 
-export function Drawer(props: DrawerProps) {
-  return <DialogBase {...props} variant="drawer" />;
+export function Drawer({placement = 'right', ...props}: DrawerProps) {
+  return <DialogBase {...props} variant={`drawer-${placement}`} />;
 }
 
 export interface AccountMenuProps {
   user: {name: string; email: string; avatarUrl?: string | null};
   labels: {menu: string; greeting: string; manageAccount?: string; signOut: string};
-  onManageAccount?: () => void;
+  manageAccountHref?: string;
   onSignOut: () => void;
 }
 
-export function AccountMenu({user, labels, onManageAccount, onSignOut}: AccountMenuProps) {
+export function AccountMenu({user, labels, manageAccountHref, onSignOut}: AccountMenuProps) {
   const actions: MenuItem[] = [
-    ...(labels.manageAccount && onManageAccount ? [{id: 'manage', label: labels.manageAccount}] : []),
+    ...(labels.manageAccount && manageAccountHref ? [{id: 'manage', label: labels.manageAccount, href: manageAccountHref}] : []),
     {id: 'sign-out', label: labels.signOut, variant: 'danger' as const}
   ];
   return (
@@ -133,7 +138,7 @@ export function AccountMenu({user, labels, onManageAccount, onSignOut}: AccountM
         label={labels.menu}
         items={actions}
         header={labels.greeting}
-        onAction={(id) => id === 'manage' ? onManageAccount?.() : onSignOut()}
+        onAction={(id) => { if (id === 'sign-out') onSignOut(); }}
         trigger={
           <AriaButton className="hhc-account-menu__trigger" aria-label={labels.menu}>
             <Avatar name={user.name || user.email} src={user.avatarUrl} />

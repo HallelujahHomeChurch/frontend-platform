@@ -5,10 +5,7 @@
   "type": "module",
   "sideEffects": ["**/*.css"],
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    },
+    ".": "./src/index.ts",
     "./styles.css": "./src/styles.css"
   },
   "scripts": {

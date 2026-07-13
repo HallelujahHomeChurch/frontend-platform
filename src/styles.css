@@ -109,7 +109,9 @@
   .hhc-dialog__close[data-hovered] { background: var(--hhc-primary-soft); }
   .hhc-dialog__body { padding: 20px; }
   .hhc-dialog__actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
-  .hhc-modal--drawer { position: fixed; inset: 0 0 0 auto; width: min(360px, 88vw); height: 100dvh; max-height: none; border-radius: 0; }
+  .hhc-modal--drawer-left, .hhc-modal--drawer-right { position: fixed; width: min(360px, 88vw); height: 100dvh; max-height: none; border-radius: 0; }
+  .hhc-modal--drawer-left { inset: 0 auto 0 0; }
+  .hhc-modal--drawer-right { inset: 0 0 0 auto; }
 
   .hhc-tabs__list { display: flex; gap: 4px; border-bottom: 1px solid var(--hhc-border); }
   .hhc-tabs__tab { padding: 10px 12px; color: var(--hhc-text-muted); cursor: pointer; }

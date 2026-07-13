@@ -57,6 +57,7 @@ export interface AvatarProps {
   name: string;
   src?: string | null;
   size?: 'sm' | 'md' | 'lg';
+  className?: string;
 }
 
 function initials(name: string) {
@@ -68,9 +69,9 @@ function initials(name: string) {
     .join('') || '?';
 }
 
-export function Avatar({name, src, size = 'md'}: AvatarProps) {
+export function Avatar({name, src, size = 'md', className}: AvatarProps) {
   return (
-    <span className={`hhc-avatar hhc-avatar--${size}`} aria-label={name}>
+    <span className={['hhc-avatar', `hhc-avatar--${size}`, className].filter(Boolean).join(' ')} aria-label={name}>
       {src ? <img src={src} alt="" /> : <span aria-hidden="true">{initials(name)}</span>}
     </span>
   );

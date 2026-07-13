@@ -97,4 +97,22 @@ describe('HHC UI primitives', () => {
     await user.click(screen.getByRole('button', {name: 'Account menu'}));
     expect(screen.getByText('Hi Ada')).toBeInTheDocument();
   });
+
+  it('uses link semantics for the manage-account destination', async () => {
+    const user = userEvent.setup();
+    render(
+      <AccountMenu
+        user={{name: 'Ada', email: 'ada@example.com'}}
+        labels={{menu: 'Account menu', greeting: 'Hi Ada', manageAccount: 'Manage account', signOut: 'Sign out'}}
+        manageAccountHref="https://account.alive.org.tw/profile"
+        onSignOut={() => undefined}
+      />
+    );
+
+    await user.click(screen.getByRole('button', {name: 'Account menu'}));
+    expect(screen.getByRole('menuitem', {name: 'Manage account'})).toHaveAttribute(
+      'href',
+      'https://account.alive.org.tw/profile'
+    );
+  });
 });

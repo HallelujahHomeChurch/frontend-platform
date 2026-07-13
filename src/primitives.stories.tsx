@@ -35,7 +35,7 @@ export const FormControls: Story = {
 export const AccountAndEmpty: Story = {
   render: () => (
     <div style={{display: 'flex', alignItems: 'center', gap: 48}}>
-      <AccountMenu user={{name: 'Ada', email: 'ada@example.com'}} labels={{menu: 'Account menu', greeting: 'Hi Ada', manageAccount: 'Manage account', signOut: 'Sign out'}} onManageAccount={() => undefined} onSignOut={() => undefined} />
+      <AccountMenu user={{name: 'Ada', email: 'ada@example.com'}} labels={{menu: 'Account menu', greeting: 'Hi Ada', manageAccount: 'Manage account', signOut: 'Sign out'}} manageAccountHref="https://account.alive.org.tw/profile" onSignOut={() => undefined} />
       <EmptyState title="No content" description="Create the first item to get started." />
     </div>
   )
