@@ -16,6 +16,9 @@ export type ContentItem = components['schemas']['ContentItem']
 export type ContentWriteInput = components['schemas']['ContentWriteInput']
 export type ContentRevision = components['schemas']['ContentRevision']
 export type PublicContentItem = components['schemas']['PublicContentItem']
+export type AssetStatus = components['schemas']['AssetStatus']
+export type CreateImageUploadInput = components['schemas']['CreateImageUploadInput']
+export type CompleteImageUploadInput = components['schemas']['CompleteImageUploadInput']
 
 export class HhcWebApiError extends Error {
   readonly status: number
@@ -144,6 +147,19 @@ export function createHhcWebClient(options: {
       return (await unwrap(client.POST('/admin/content/{module}/{contentId}/revisions/{revision}/restore', {
         params: { path: { module, contentId, revision }, header: { 'If-Match': `"${version}"` } },
       }))).data
+    },
+    async createNewsCoverUpload(contentId: string, input: CreateImageUploadInput, idempotencyKey: string) {
+      return (await unwrap(client.POST('/admin/content/news/{contentId}/upload-sessions', {
+        params: { path: { contentId }, header: { 'Idempotency-Key': idempotencyKey } }, body: input,
+      }))).data
+    },
+    async completeNewsCoverUpload(contentId: string, assetId: string, version: number, input: CompleteImageUploadInput) {
+      return (await unwrap(client.POST('/admin/content/news/{contentId}/assets/{assetId}/complete', {
+        params: { path: { contentId, assetId }, header: { 'If-Match': `"${version}"` } }, body: input,
+      }))).data
+    },
+    async getNewsCoverStatus(contentId: string, assetId: string, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/content/news/{contentId}/assets/{assetId}', { params: { path: { contentId, assetId } }, signal }))).data
     },
     async listPublicContent(module: ContentModule, locale: BulletinLocale, signal?: AbortSignal) {
       const path = module === 'news' ? '/news' : module === 'history' ? '/history' : '/videos'

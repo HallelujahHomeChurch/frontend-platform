@@ -324,6 +324,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/content/news/{contentId}/upload-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["createNewsCoverUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/content/news/{contentId}/assets/{assetId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getNewsCoverStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/content/news/{contentId}/assets/{assetId}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["completeNewsCoverUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -453,6 +501,35 @@ export interface components {
             /** Format: int64 */
             sizeBytes: number;
             checksumSha256: string;
+        };
+        CreateImageUploadInput: {
+            fileName: string;
+            /** @enum {string} */
+            mimeType: "image/jpeg" | "image/png" | "image/webp";
+            /** Format: int64 */
+            sizeBytes: number;
+        };
+        CompleteImageUploadInput: {
+            fileName: string;
+            /** @enum {string} */
+            mimeType: "image/jpeg" | "image/png" | "image/webp";
+            /** Format: int64 */
+            sizeBytes: number;
+            checksumSha256: string;
+        };
+        AssetStatus: {
+            id: string;
+            namespace: string;
+            ownerService: string;
+            ownerType: string;
+            ownerId: string;
+            /** @enum {string} */
+            uploadStatus: "created" | "completed" | "failed";
+            /** @enum {string} */
+            scanStatus: "pending" | "clean" | "infected" | "failed";
+            /** @enum {string} */
+            processingStatus: "pending" | "ready" | "not_required" | "failed";
+            visibility: string;
         };
         PublicationInput: {
             locale: components["schemas"]["Locale"];
@@ -593,6 +670,13 @@ export interface components {
                 news: components["schemas"]["PublicContentItem"][];
                 videos: components["schemas"]["PublicContentItem"][];
             };
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
+        };
+        AssetStatusEnvelope: {
+            data: components["schemas"]["AssetStatus"];
             meta: {
                 [key: string]: unknown;
             };
@@ -1116,6 +1200,78 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: components["responses"]["ContentItem"];
+        };
+    };
+    createNewsCoverUpload: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                contentId: components["parameters"]["ContentID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateImageUploadInput"];
+            };
+        };
+        responses: {
+            /** @description News cover upload target */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedUploadEnvelope"];
+                };
+            };
+        };
+    };
+    getNewsCoverStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contentId: components["parameters"]["ContentID"];
+                assetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description News cover scan and processing status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetStatusEnvelope"];
+                };
+            };
+        };
+    };
+    completeNewsCoverUpload: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                contentId: components["parameters"]["ContentID"];
+                assetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteImageUploadInput"];
+            };
+        };
         responses: {
             200: components["responses"]["ContentItem"];
         };
