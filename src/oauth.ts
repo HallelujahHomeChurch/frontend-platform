@@ -96,7 +96,7 @@ export function clearOAuthTransaction({storage, storageKey}: {storage: Storage; 
   storage.removeItem(storageKey);
 }
 
-export function validateOAuthState(transaction: OAuthTransaction | null, state: string): boolean {
+export function validateOAuthState(transaction: OAuthTransaction | null, state: string): transaction is OAuthTransaction {
   return transaction !== null && transaction.state.length > 0 && transaction.state === state;
 }
 
