@@ -22,19 +22,19 @@ describe('account session client', () => {
     }));
   });
 
-  it('gets a CSRF token before browser-session logout', async () => {
+  it('gets a CSRF token before current-device global logout', async () => {
     const fetcher = vi.fn<typeof fetch>()
       .mockResolvedValueOnce(jsonResponse({csrf_token: 'csrf-123'}))
       .mockResolvedValueOnce(jsonResponse({message: 'Logged out'}));
     const client = createAccountSessionClient({fetcher});
 
-    await client.logout();
+    await client.logoutAll();
 
     expect(fetcher).toHaveBeenNthCalledWith(1, '/api/account/v1/csrf-token', expect.objectContaining({
       credentials: 'include',
       method: 'GET'
     }));
-    expect(fetcher).toHaveBeenNthCalledWith(2, '/api/account/v1/session/logout', expect.objectContaining({
+    expect(fetcher).toHaveBeenNthCalledWith(2, '/api/account/v1/session/logout-all', expect.objectContaining({
       credentials: 'include',
       method: 'POST',
       headers: {'accept': 'application/json', 'x-csrf-token': 'csrf-123'}

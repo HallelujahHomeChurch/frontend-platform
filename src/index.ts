@@ -5,6 +5,8 @@ export interface AccountSessionUser {
   avatar_url: string | null;
 }
 
+export * from './oauth';
+
 export type AccountSession =
   | {authenticated: false}
   | {authenticated: true; user: AccountSessionUser};
@@ -62,6 +64,16 @@ export function createAccountSessionClient({
       const token = isRecord(csrf) && typeof csrf.csrf_token === 'string' ? csrf.csrf_token : '';
       if (!token) throw new AccountSessionError(200, 'CSRF_TOKEN_REQUIRED');
       await request('/session/logout', {
+        method: 'POST',
+        headers: {'x-csrf-token': token}
+      });
+    },
+
+    async logoutAll(): Promise<void> {
+      const csrf = await request('/csrf-token', {method: 'GET', cache: 'no-store'});
+      const token = isRecord(csrf) && typeof csrf.csrf_token === 'string' ? csrf.csrf_token : '';
+      if (!token) throw new AccountSessionError(200, 'CSRF_TOKEN_REQUIRED');
+      await request('/session/logout-all', {
         method: 'POST',
         headers: {'x-csrf-token': token}
       });
