@@ -382,9 +382,9 @@ export interface components {
          */
         Locale: "zh-Hant" | "zh-Hans" | "en";
         /** @enum {string} */
-        BulletinStatus: "draft" | "publishing" | "published" | "unpublished" | "archived";
+        BulletinStatus: "draft" | "publishing" | "published" | "unpublishing" | "unpublish_failed" | "unpublished" | "archived";
         /** @enum {string} */
-        BulletinVersionStatus: "draft" | "publishing" | "published" | "unpublished";
+        BulletinVersionStatus: "draft" | "publishing" | "published" | "unpublishing" | "unpublish_failed" | "unpublished";
         /** @enum {string} */
         ContentModule: "news" | "history" | "videos";
         /** @enum {string} */
@@ -410,6 +410,8 @@ export interface components {
             pdfFileName: string;
             publicGrantId?: string;
             status: components["schemas"]["BulletinVersionStatus"];
+            workflowStatus?: string;
+            workflowError?: string;
             /** Format: int64 */
             version: number;
             /** Format: date-time */
