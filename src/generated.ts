@@ -450,6 +450,11 @@ export interface components {
             /** Format: int64 */
             version: number;
         };
+        PublicBulletinIssue: {
+            /** Format: date */
+            issueDate: string;
+            versions: components["schemas"]["PublicBulletin"][];
+        };
         Workflow: {
             /** Format: uuid */
             id: string;
@@ -616,7 +621,7 @@ export interface components {
             error?: null;
         };
         PublicBulletinListEnvelope: {
-            data: components["schemas"]["PublicBulletin"][];
+            data: components["schemas"]["PublicBulletinIssue"][];
             meta: components["schemas"]["PageMeta"];
             error?: null;
         };
@@ -765,7 +770,6 @@ export interface operations {
     listPublicBulletins: {
         parameters: {
             query?: {
-                locale?: components["parameters"]["Locale"];
                 page?: components["parameters"]["Page"];
                 pageSize?: components["parameters"]["PageSize"];
             };
