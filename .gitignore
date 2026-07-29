@@ -1,0 +1,4 @@
+node_modules/
+artifacts/
+packages/*/dist/
+packages/ui/storybook-static/

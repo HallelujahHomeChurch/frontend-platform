@@ -1,12 +1,25 @@
 {
-  "name": "@hhc/hhc-web-client",
-  "private": true,
+  "name": "@hallelujahhomechurch/hhc-web-client",
   "version": "0.1.0",
   "type": "module",
+  "files": ["dist"],
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HallelujahHomeChurch/frontend-platform.git",
+    "directory": "packages/hhc-web-client"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "generate": "openapi-typescript openapi/hhc-web-api.yaml -o src/generated.ts",
     "check:generated": "pnpm generate && git diff --exit-code -- src/generated.ts",
     "lint": "oxlint src",

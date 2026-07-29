@@ -1,11 +1,25 @@
 {
-  "name": "@hhc/account-client",
+  "name": "@hallelujahhomechurch/account-client",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
-  "exports": {".": "./src/index.ts"},
+  "files": ["dist"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HallelujahHomeChurch/frontend-platform.git",
+    "directory": "packages/account-client"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  },
   "scripts": {
-    "build": "tsc -p tsconfig.json --noEmit",
+    "build": "tsc -p tsconfig.build.json",
     "lint": "tsc -p tsconfig.json --noEmit",
     "test": "vitest",
     "test:run": "vitest run"

@@ -1,16 +1,26 @@
 {
-  "name": "@hhc/preferences",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@hallelujahhomechurch/preferences",
+  "version": "0.1.0",
   "type": "module",
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HallelujahHomeChurch/frontend-platform.git",
+    "directory": "packages/preferences"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "lint": "tsc -p tsconfig.json --noEmit",
     "test": "vitest",
     "test:run": "vitest run",
     "typecheck": "tsc -p tsconfig.json"
