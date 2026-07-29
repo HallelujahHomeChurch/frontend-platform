@@ -5,7 +5,7 @@ export interface AccountSessionUser {
   avatar_url: string | null;
 }
 
-export * from './oauth';
+export * from './oauth.js';
 
 export type AccountSession =
   | {authenticated: false}

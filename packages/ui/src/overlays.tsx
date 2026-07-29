@@ -11,7 +11,7 @@ import {
   ModalOverlay,
   Popover
 } from 'react-aria-components';
-import {Avatar, Button, type ButtonVariant} from './controls';
+import {Avatar, Button, type ButtonVariant} from './controls.js';
 
 export interface MenuItem {
   id: string;

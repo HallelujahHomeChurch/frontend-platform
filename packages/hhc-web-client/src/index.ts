@@ -1,2 +1,2 @@
-export * from './client'
-export type { components, operations, paths } from './generated'
+export * from './client.js'
+export type { components, operations, paths } from './generated.js'

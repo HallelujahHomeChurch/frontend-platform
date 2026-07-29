@@ -1,4 +1,4 @@
-import {mkdtempSync, readdirSync, rmSync, writeFileSync, mkdirSync} from 'node:fs';
+import {mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync, mkdirSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {basename, resolve} from 'node:path';
 import {spawnSync} from 'node:child_process';
@@ -6,10 +6,11 @@ import {spawnSync} from 'node:child_process';
 const root = resolve(import.meta.dirname, '..');
 const artifacts = resolve(root, 'artifacts');
 const temp = mkdtempSync(resolve(tmpdir(), 'hhc-package-smoke-'));
+const {version} = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
 const tarballs = Object.fromEntries(
   readdirSync(artifacts)
     .filter((file) => file.endsWith('.tgz'))
-    .map((file) => [file.match(/hallelujahhomechurch-(.+)-0\.1\.0\.tgz$/)?.[1], resolve(artifacts, file)])
+    .map((file) => [file.match(new RegExp(`hallelujahhomechurch-(.+)-${version.replaceAll('.', '\\.')}.tgz$`))?.[1], resolve(artifacts, file)])
 );
 
 for (const name of ['preferences', 'account-client', 'hhc-web-client', 'ui']) {
@@ -68,6 +69,12 @@ void getInitialTheme;
 createRoot(document.getElementById('root')!).render(<Button>Smoke</Button>);
 `);
   run(vite, 'install', '--ignore-workspace');
+  run(vite, 'exec', 'node', '--input-type=module', '--eval', `
+    await import('@hallelujahhomechurch/account-client');
+    await import('@hallelujahhomechurch/hhc-web-client');
+    await import('@hallelujahhomechurch/preferences');
+    await import('@hallelujahhomechurch/ui');
+  `);
   run(vite, 'build');
 
   const next = resolve(temp, 'next');

@@ -1,6 +1,6 @@
 import createClient from 'openapi-fetch'
 
-import type { components, paths } from './generated'
+import type { components, paths } from './generated.js'
 
 export type BulletinLocale = components['schemas']['Locale']
 export type BulletinStatus = components['schemas']['BulletinStatus']

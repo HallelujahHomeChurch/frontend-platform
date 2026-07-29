@@ -7,7 +7,7 @@ import {
   TableBody,
   TableHeader
 } from 'react-aria-components';
-import {Button} from './controls';
+import {Button} from './controls.js';
 
 export interface PaginationProps {
   page: number;
