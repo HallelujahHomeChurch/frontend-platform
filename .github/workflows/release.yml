@@ -29,7 +29,7 @@ jobs:
       - name: Publish packages
         run: |
           for package in packages/*; do
-            corepack pnpm --dir "$package" publish --no-git-checks
+            (cd "$package" && corepack pnpm publish)
           done
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
