@@ -148,22 +148,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/admin/bulletins/{issueId}/versions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["putBulletinVersion"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/admin/bulletins/{issueId}/upload-sessions": {
         parameters: {
             query?: never;
@@ -388,7 +372,7 @@ export interface components {
         /** @enum {string} */
         ContentModule: "news" | "history" | "videos";
         /** @enum {string} */
-        ContentStatus: "draft" | "published" | "unpublished" | "archived";
+        ContentStatus: "draft" | "publishing" | "published" | "publish_failed" | "unpublishing" | "unpublish_failed" | "unpublished" | "archived";
         PageMeta: {
             page: number;
             pageSize: number;
@@ -493,12 +477,6 @@ export interface components {
             /** Format: int64 */
             sizeBytes: number;
         };
-        PutBulletinVersionInput: {
-            locale: components["schemas"]["Locale"];
-            title: string;
-            pdfAssetId: string;
-            pdfFileName: string;
-        };
         CompleteBulletinUploadInput: {
             locale: components["schemas"]["Locale"];
             title: string;
@@ -568,6 +546,9 @@ export interface components {
             /** Format: int64 */
             version: number;
             coverUrl?: string;
+            isPublished: boolean;
+            /** Format: int64 */
+            publishedVersion?: number;
             createdBy: string;
             updatedBy: string;
             /** Format: date-time */
@@ -942,27 +923,6 @@ export interface operations {
         responses: {
             200: components["responses"]["BulletinIssue"];
             404: components["responses"]["Error"];
-        };
-    };
-    putBulletinVersion: {
-        parameters: {
-            query?: never;
-            header: {
-                "If-Match": components["parameters"]["IfMatch"];
-            };
-            path: {
-                issueId: components["parameters"]["IssueID"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PutBulletinVersionInput"];
-            };
-        };
-        responses: {
-            200: components["responses"]["BulletinIssue"];
-            412: components["responses"]["Error"];
         };
     };
     createBulletinUploadSession: {
