@@ -10,6 +10,8 @@
 
 ## Global Constraints
 
+- Execute CMS and account-management flows only after Account API, HHC Web API,
+  Asset API, Notification API, and Gateway hardening gates pass.
 - Repository: `/Users/rayselfs/Projects/hhc/account/admin-fe`.
 - Pin all `@hallelujahhomechurch/*` packages to exact `0.2.0`.
 - Admin title is `HHC 管理中心`, `HHC 管理中心`, or `HHC Admin`; every route is `noindex,nofollow`.

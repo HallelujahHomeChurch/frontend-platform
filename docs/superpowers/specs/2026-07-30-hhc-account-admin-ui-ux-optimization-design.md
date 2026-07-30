@@ -5,11 +5,17 @@
 ## Purpose
 
 Unify the visual language and interaction quality of `account-fe`, `admin-fe`,
-and `hhc-web` without merging their repositories or deployments.
+and `hhc-web` without merging their repositories or deployments, while making
+the API services that support those flows safe and predictable under production
+load.
 
 The work must make Account understandable as a low-density settings product,
 Admin effective as a high-density management product, and the public website
 visually consistent without forcing all three products into the same layout.
+The corresponding APIs must have bounded queries, intentional indexes,
+transactional mutations, explicit retention, safe retries, and deployable
+observability. A passing unit suite or completed roadmap checkbox is not enough
+to claim production readiness.
 
 ## Repository Ownership
 
@@ -19,8 +25,16 @@ visually consistent without forcing all three products into the same layout.
   preference experiences.
 - `admin-fe` owns account administration, RBAC, OAuth clients, and website
   content management.
+- `account-api` owns users, authentication, authorization, refresh sessions,
+  MFA, linked identities, devices, and Account-to-Asset orchestration.
 - `hhc-web-api` owns CMS content lifecycle contracts, including archive and
   restore transitions.
+- `asset-api` owns upload sessions, Blob storage, scanning, derivatives,
+  grants, stable downloads, and asset retention.
+- `notification-api` owns queued delivery, payload encryption, idempotency,
+  provider dispatch, delivery retention, and notification observability.
+- `api-gateway` owns public routing, JWT verification, request limits, security
+  headers, and boundary-safe access logging. It does not own application data.
 - `hhc-web` owns the public website, localized legal pages, public account
   control, metadata, and public content presentation.
 
@@ -31,13 +45,19 @@ source from another repository.
 
 Use a platform-first incremental redesign.
 
-1. Add the missing CMS archive/restore and public News detail contracts to
+1. Remove confirmed gateway, upload, secret-access, and notification security
+   blockers.
+2. Correct confirmed Account, CMS, Asset, and Notification query, index,
+   concurrency, retention, and retry defects.
+3. Prove production query plans and dependency health with integration tests
+   and live-sized data before deployment.
+4. Add the missing CMS archive/restore and public News detail contracts to
    `hhc-web-api`.
-2. Correct shared tokens and primitive contracts in `frontend-platform`.
-3. Publish `@hallelujahhomechurch/*` version `0.2.0`.
-4. Upgrade and optimize Account.
-5. Upgrade and optimize Admin.
-6. Upgrade and align the public website source.
+5. Correct shared tokens and primitive contracts in `frontend-platform`.
+6. Publish `@hallelujahhomechurch/*` version `0.2.0`.
+7. Upgrade and optimize Account.
+8. Upgrade and optimize Admin.
+9. Upgrade and align the public website source.
 
 This avoids three separate Card, Dialog, Menu, and dark-mode implementations.
 It also preserves the existing React Aria foundation instead of replacing a
@@ -448,6 +468,108 @@ page.
 The public website is not deployed as part of the Account and Admin rollout.
 Its source changes remain independently releasable.
 
+## API Production Readiness
+
+### Shared Database Rules
+
+- Every list endpoint is bounded and paginated at the database query.
+- Indexes are derived from real equality predicates, join direction, ordering,
+  retention claims, and partial-state queues. Columns are not indexed merely
+  because they can be filtered.
+- PostgreSQL foreign keys that participate in parent deletion or reverse lookup
+  have a supporting leading-column index.
+- Composite index order matches the query prefix. A composite index beginning
+  with `user_id` does not satisfy a retention query filtering only by time.
+- Queue and worker claims use transactions plus `FOR UPDATE SKIP LOCKED` or an
+  equivalent atomic claim.
+- Search using `%query%` receives a trigram index only after
+  `EXPLAIN (ANALYZE, BUFFERS)` on representative data proves it necessary.
+- Candidate index removal requires `pg_stat_user_indexes` evidence. Existing
+  redundant indexes are not removed from static inspection alone.
+- Every service sets an explicit connection-pool budget compatible with its ACA
+  maximum replica count and the PostgreSQL server connection budget.
+- Migration integration tests run production migrations, not ORM AutoMigrate.
+
+### Account API
+
+- Add reverse indexes for `user_roles(role_id,user_id)` and
+  `role_permissions(permission_id,role_id)`.
+- Add a standalone retention index for `user_devices(last_active_at)` and a
+  partial avatar-work index for pending or retiring assets.
+- Make concurrent registration map the unique-email race to the same stable
+  product outcome as a sequential duplicate.
+- Replace per-token Redis reads with pipelined reads, remove stale set members,
+  and keep revocation bounded by device/session indexes.
+- Bound RBAC assignment arrays and validate requested IDs with set queries
+  rather than request-controlled N+1 lookups.
+- Keep existing database pool settings, login rate limits, CSRF, token replay,
+  and final-active-admin protections covered by regression tests.
+
+### HHC Web API
+
+- Replace content and bulletin list N+1 queries with bounded batched reads.
+  Repository code must not run nested queries while the outer `Rows` still owns
+  a connection.
+- Apply public projection limits in SQL rather than loading and sorting every
+  published item in Go.
+- Add pagination to revision history and define retention for revisions,
+  completed workflows, and delivered outbox events.
+- Validate content-search and workflow/outbox indexes with representative query
+  plans before adding migrations.
+- Preserve optimistic version checks, transactional revisions, idempotency, and
+  publication workflow evidence.
+
+### Asset API
+
+- Inspect Blob properties before streaming content for completion or scanning;
+  oversized uploads are deleted without downloading the full object. Direct
+  Azure SAS cannot be treated as a byte-limit enforcement mechanism.
+- Add Account production/test origins to Storage CORS for avatar upload.
+- Retry transient derivative failures with bounded attempts and backoff; clean
+  partial derivative blobs before retry or terminal failure.
+- Purged assets cannot re-enter scan or processing queues. Define metadata
+  retention or anonymization for purged assets, grants, and scan events.
+- Configure explicit database pool limits.
+- Public downloads support `GET`, `HEAD`, `ETag`, and conditional requests
+  without unnecessary Blob streaming.
+
+### Notification API
+
+- Persist an encryption key ID with encrypted payloads and support a bounded
+  decrypt keyring during rotation. Define the hash-key rotation boundary for
+  idempotency and rate-limit identities.
+- Replace shared-vault `get,list` access with least-privilege secret delivery;
+  runtime identities receive only the exact secrets they consume.
+- Add retention and cascade indexes for messages, deliveries, and outbox rows.
+- Configure explicit database pool limits.
+- Readiness and alerts cover DB, queue dispatch/consumption, worker availability,
+  provider failures, outbox age, and Service Bus dead-letter growth.
+
+### API Gateway
+
+- Access logs use the normalized path and never record OAuth codes, reset
+  tokens, verification tokens, or arbitrary query strings.
+- Unknown JWT `kid` refresh is single-flight with a cooldown and a negative
+  cache so invalid-token traffic cannot amplify metadata and JWKS requests.
+- Public Asset routes allow `GET` and `HEAD`; protected and admin Asset routes
+  remain unreachable from the public website host.
+- Routing, JWT, rate-limit, CORS, CSRF boundary, request-size, timeout, and
+  security-header assertions remain automated.
+
+### Deployment Gate
+
+An API service is deploy-ready only when:
+
+1. Focused unit, concurrency, migration, and PostgreSQL integration tests pass.
+2. Confirmed hot queries have recorded `EXPLAIN (ANALYZE, BUFFERS)` evidence on
+   representative data without unexpected sequential scans.
+3. Connection budgets are documented as
+   `max replicas × max open connections` and fit the database budget.
+4. Health, readiness, metrics, structured logs, and alerts cover the service's
+   external dependencies and background workers.
+5. Pipeline build, migration dry run, container smoke, rollback instructions,
+   and live endpoint smoke pass.
+
 ## Error Handling
 
 - Errors use localized, actionable text and `role="alert"` when immediate.
@@ -501,16 +623,38 @@ Its source changes remain independently releasable.
 Each repository must pass its existing unit tests, lint, and production build.
 `frontend-platform` also passes package packing and consumer smoke tests.
 
+### API Verification
+
+- `account-api`: migration up/down, concurrent registration, refresh-session
+  cleanup/revocation, RBAC assignment bounds, device retention, and avatar work
+  claims.
+- `hhc-web-api`: query-count regression tests, PostgreSQL list/projection
+  integration tests, revision pagination/retention, outbox lease recovery, and
+  lifecycle compatibility.
+- `asset-api`: oversize Blob rejection before download, derivative retry and
+  cleanup, purged-state invariants, conditional `HEAD`/`GET`, and retention.
+- `notification-api`: key rotation with queued messages, retention cascade
+  plans, outbox lease recovery, queue/provider readiness, and alert definitions.
+- `api-gateway`: query-safe logs, unknown-`kid` cooldown, public Asset `HEAD`,
+  host isolation, JWT, rate-limit, and routing scripts.
+
 ## Release And Commit Boundaries
 
-1. `hhc-web-api`: version-checked content archive/restore and public News
-   detail contracts.
-2. `frontend-platform`: shared tokens and primitive contracts; publish
+1. `api-gateway`: sensitive-log and JWKS amplification hardening.
+2. `asset-api`: upload bounds, CORS, derivative retry, lifecycle, HTTP cache,
+   DB pool, and retention.
+3. `notification-api`: key rotation, least privilege, indexes, DB pool,
+   readiness, and alerts.
+4. `account-api`: query indexes, registration concurrency, Redis session
+   registry, and bounded RBAC assignments.
+5. `hhc-web-api`: bounded list/projection queries, revision/worker retention,
+   then version-checked archive/restore and public News detail contracts.
+6. `frontend-platform`: shared tokens and primitive contracts; publish
    immutable `0.2.0`.
-3. `account-fe`: package upgrade, Account UX, and Account auth lifecycle.
-4. `admin-fe`: package upgrade, Admin auth, shell, i18n, management pages, and
+7. `account-fe`: package upgrade, Account UX, and Account auth lifecycle.
+8. `admin-fe`: package upgrade, Admin auth, shell, i18n, management pages, and
    CMS workspaces.
-5. `hhc-web`: package upgrade, dark-theme alignment, metadata, and public
+9. `hhc-web`: package upgrade, dark-theme alignment, metadata, and public
    content navigation.
 
 Each independently reviewable task receives its own commit. A repository does
@@ -526,4 +670,6 @@ rollback instructions pass.
 - Managing social provider secrets in Admin
 - Changing seed admin lifecycle
 - New analytics or fabricated dashboard metrics
+- Adding speculative indexes without query-plan evidence
+- Introducing a shared backend framework or merging API repositories
 - Deploying `hhc-web` during the Account and Admin rollout

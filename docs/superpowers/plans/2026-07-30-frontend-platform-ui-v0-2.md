@@ -10,6 +10,8 @@
 
 ## Global Constraints
 
+- Generate API clients only from contracts published after the API hardening
+  and HHC Web API content-contract gates pass.
 - Repository: `/Users/rayselfs/Projects/hhc/frontend-platform`.
 - Publish exact package version `0.2.0`; consumers pin the exact version.
 - Do not add a component framework, monorepo app, business table, editor, router, or fetch logic.

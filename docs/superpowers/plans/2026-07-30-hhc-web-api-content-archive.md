@@ -11,6 +11,8 @@
 ## Global Constraints
 
 - Repository: `/Users/rayselfs/Projects/hhc/hhc-web-api`.
+- Execute only after `2026-07-31-hhc-web-api-production-hardening.md` passes;
+  reuse its paginated revision contract and migration state.
 - Reuse the existing `archived` status; do not add a migration or hard delete.
 - Routes require `cms:write` and `If-Match`.
 - Archive rejects `IsPublished`, `publishing`, and `unpublishing` content.

@@ -10,6 +10,8 @@
 
 ## Global Constraints
 
+- Execute only after the Account API and Gateway production-hardening plans
+  pass their integration and live-smoke gates.
 - Repository: `/Users/rayselfs/Projects/hhc/account/account-fe`.
 - Pin `@hallelujahhomechurch/account-client`, `preferences`, and `ui` to exact `0.2.0`.
 - Keep the existing avatar crop/upload contract and three social providers.

@@ -10,6 +10,8 @@
 
 ## Global Constraints
 
+- Consume public content and Asset contracts only after HHC Web API, Asset API,
+  and Gateway hardening gates pass.
 - Repository: `/Users/rayselfs/Projects/hhc/hhc-web`.
 - Pin all shared packages to exact `0.2.0`.
 - Keep editorial typography, images, and public content rhythm.
