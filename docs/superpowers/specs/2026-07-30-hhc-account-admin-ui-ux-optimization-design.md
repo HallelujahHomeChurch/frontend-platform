@@ -31,7 +31,7 @@ source from another repository.
 
 Use a platform-first incremental redesign.
 
-1. Add the missing CMS archive and restore lifecycle contract to
+1. Add the missing CMS archive/restore and public News detail contracts to
    `hhc-web-api`.
 2. Correct shared tokens and primitive contracts in `frontend-platform`.
 3. Publish `@hallelujahhomechurch/*` version `0.2.0`.
@@ -297,7 +297,7 @@ All list pages use:
 
 - Localized page title
 - One primary Create action when creation is supported
-- URL-backed search, filters, sort, page, and page size
+- URL-backed server-supported query state
 - Semantic table with horizontal overflow on narrow viewports
 - Stable loading rows while retaining previous successful data
 - Empty state with a relevant next action
@@ -310,6 +310,11 @@ dedicated detail view rather than compressing an inspector beside a table.
 
 Mutation results use Toast. Field validation appears at the related field.
 Double submission is prevented through pending controls.
+
+Users and typed content lists support URL-backed search, filters, sort, page,
+and page size. Weekly Bulletins use status, page, page size, and their natural
+issue-date order; they do not add a text search that has no useful domain
+target.
 
 ### Users
 
@@ -357,6 +362,16 @@ Latest News, History, and Kingdom Joy use:
 
 Complex editors do not open inside a narrow inspector or general-purpose
 Dialog.
+
+Their list contract is:
+
+```http
+GET /api/admin/content/{module}?q={query}&status={status}&sort={field}&direction={asc|desc}&page={page}&pageSize={size}
+```
+
+Search matches localized titles through parameterized SQL. Sort fields are a
+module-aware allowlist: `updatedAt` for all modules, `displayDate` for News,
+and `sortOrder` for History. Unsupported combinations return `400`.
 
 Weekly Bulletins retain a list and inspector because one issue manages three
 bounded PDF variants.
@@ -421,6 +436,15 @@ Source changes include:
 - Real Latest News list and detail destinations
 - Exactly three eligible homepage videos
 
+The Latest News detail route consumes a dedicated published projection:
+
+- `GET /api/news/{slug}?locale={locale}`
+
+`hhc-web-api` returns only published content, responds `404` for unknown or
+unpublished slugs, and applies the same public cache policy as the news list.
+The public website does not fetch a bounded list and search it for a detail
+page.
+
 The public website is not deployed as part of the Account and Admin rollout.
 Its source changes remain independently releasable.
 
@@ -479,7 +503,8 @@ Each repository must pass its existing unit tests, lint, and production build.
 
 ## Release And Commit Boundaries
 
-1. `hhc-web-api`: version-checked content archive and restore contracts.
+1. `hhc-web-api`: version-checked content archive/restore and public News
+   detail contracts.
 2. `frontend-platform`: shared tokens and primitive contracts; publish
    immutable `0.2.0`.
 3. `account-fe`: package upgrade, Account UX, and Account auth lifecycle.
