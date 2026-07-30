@@ -19,6 +19,8 @@ visually consistent without forcing all three products into the same layout.
   preference experiences.
 - `admin-fe` owns account administration, RBAC, OAuth clients, and website
   content management.
+- `hhc-web-api` owns CMS content lifecycle contracts, including archive and
+  restore transitions.
 - `hhc-web` owns the public website, localized legal pages, public account
   control, metadata, and public content presentation.
 
@@ -29,11 +31,13 @@ source from another repository.
 
 Use a platform-first incremental redesign.
 
-1. Correct shared tokens and primitive contracts in `frontend-platform`.
-2. Publish `@hallelujahhomechurch/*` version `0.2.0`.
-3. Upgrade and optimize Account.
-4. Upgrade and optimize Admin.
-5. Upgrade and align the public website source.
+1. Add the missing CMS archive and restore lifecycle contract to
+   `hhc-web-api`.
+2. Correct shared tokens and primitive contracts in `frontend-platform`.
+3. Publish `@hallelujahhomechurch/*` version `0.2.0`.
+4. Upgrade and optimize Account.
+5. Upgrade and optimize Admin.
+6. Upgrade and align the public website source.
 
 This avoids three separate Card, Dialog, Menu, and dark-mode implementations.
 It also preserves the existing React Aria foundation instead of replacing a
@@ -141,6 +145,10 @@ Their data model, permissions, and actions remain application-owned.
 - Legal links remain at the bottom.
 - The avatar menu contains Sign out only.
 - Protected Account chrome never renders before session bootstrap resolves.
+- The document title is localized as `HHC 帳戶`, `HHC 帐户`, or
+  `HHC Account`.
+- Every Account route emits `robots` metadata equivalent to
+  `noindex,nofollow`.
 
 ### Personal Info
 
@@ -263,7 +271,9 @@ All navigation, page, table, status, dialog, error, and action strings support
 role names, client IDs, and provider names remain unchanged.
 
 `<html lang>` and the document title follow the shared locale cookie and active
-route. The base title is localized as HHC Admin.
+route. The base title is localized as `HHC 管理中心`, `HHC 管理中心`, or
+`HHC Admin`. Every Admin route emits `robots` metadata equivalent to
+`noindex,nofollow`.
 
 ## Admin Overview
 
@@ -387,8 +397,15 @@ Weekly Bulletins:
 - Publish and Unpublish state remains visible while asynchronous workflows run.
 - Public URLs never expose Azure Blob or SAS details.
 
-Hard delete is not part of the UI. Archive and restore require explicit
-`hhc-web-api` contracts before controls are shown.
+Hard delete is not part of the UI. `hhc-web-api` adds version-checked archive
+and restore transitions:
+
+- `POST /api/admin/content/{module}/{contentId}/archive`
+- `POST /api/admin/content/{module}/{contentId}/restore`
+
+Both require `cms:write` and `If-Match`. Archive rejects currently published or
+publishing content; restore moves archived content to Draft. Both transitions
+create the same revision and actor evidence as existing lifecycle operations.
 
 ## Public Website Alignment
 
@@ -462,12 +479,13 @@ Each repository must pass its existing unit tests, lint, and production build.
 
 ## Release And Commit Boundaries
 
-1. `frontend-platform`: shared tokens and primitive contracts; publish
+1. `hhc-web-api`: version-checked content archive and restore contracts.
+2. `frontend-platform`: shared tokens and primitive contracts; publish
    immutable `0.2.0`.
-2. `account-fe`: package upgrade, Account UX, and Account auth lifecycle.
-3. `admin-fe`: package upgrade, Admin auth, shell, i18n, management pages, and
+3. `account-fe`: package upgrade, Account UX, and Account auth lifecycle.
+4. `admin-fe`: package upgrade, Admin auth, shell, i18n, management pages, and
    CMS workspaces.
-4. `hhc-web`: package upgrade, dark-theme alignment, metadata, and public
+5. `hhc-web`: package upgrade, dark-theme alignment, metadata, and public
    content navigation.
 
 Each independently reviewable task receives its own commit. A repository does
