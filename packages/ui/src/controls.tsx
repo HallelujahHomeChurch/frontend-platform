@@ -107,6 +107,7 @@ export interface SelectItem {
 export interface SelectProps {
   label: string;
   items: SelectItem[];
+  variant?: 'default' | 'ghost';
   selectedKey?: string;
   defaultSelectedKey?: string;
   onSelectionChange?: (key: string) => void;
@@ -116,15 +117,15 @@ export interface SelectProps {
   hideLabel?: boolean;
 }
 
-export function Select({label, items, onSelectionChange, className, triggerClassName, hideLabel, ...props}: SelectProps) {
+export function Select({label, items, variant = 'default', onSelectionChange, className, triggerClassName, hideLabel, ...props}: SelectProps) {
   return (
     <AriaSelect
       {...props}
-      className={['hhc-select', className].filter(Boolean).join(' ')}
+      className={['hhc-select', `hhc-select--${variant}`, className].filter(Boolean).join(' ')}
       onSelectionChange={(key) => onSelectionChange?.(String(key))}
     >
       <Label className={hideLabel ? 'hhc-sr-only' : undefined}>{label}</Label>
-      <AriaButton className={['hhc-select__trigger', triggerClassName].filter(Boolean).join(' ')}>
+      <AriaButton className={['hhc-select__trigger', `hhc-select__trigger--${variant}`, triggerClassName].filter(Boolean).join(' ')}>
         <SelectValue />
         <span aria-hidden="true">⌄</span>
       </AriaButton>

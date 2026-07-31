@@ -1,4 +1,4 @@
-import type {ReactElement, ReactNode} from 'react';
+import {useState, type ReactElement, type ReactNode} from 'react';
 import {
   Button as AriaButton,
   Dialog as AriaDialog,
@@ -97,17 +97,39 @@ export interface AlertDialogProps extends Omit<DialogBaseProps, 'variant' | 'rol
   confirmLabel: string;
   cancelLabel: string;
   confirmVariant?: Extract<ButtonVariant, 'primary' | 'danger'>;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
 }
 
 export function AlertDialog({description, confirmLabel, cancelLabel, confirmVariant = 'danger', onConfirm, ...props}: AlertDialogProps) {
+  const [isPending, setPending] = useState(false);
+
   return (
     <DialogBase {...props} role="alertdialog" isDismissable={false}>
-      <p>{description}</p>
-      <div className="hhc-dialog__actions">
-        <Button slot="close" variant="secondary">{cancelLabel}</Button>
-        <Button slot="close" variant={confirmVariant} onPress={onConfirm}>{confirmLabel}</Button>
-      </div>
+      {(close) => (
+        <>
+          <p>{description}</p>
+          <div className="hhc-dialog__actions">
+            <Button variant="secondary" isDisabled={isPending} onPress={close}>{cancelLabel}</Button>
+            <Button
+              variant={confirmVariant}
+              isDisabled={isPending}
+              onPress={async () => {
+                setPending(true);
+                try {
+                  await onConfirm();
+                  close();
+                } catch {
+                  // The caller owns error presentation; a failed action keeps the dialog open.
+                } finally {
+                  setPending(false);
+                }
+              }}
+            >
+              {confirmLabel}
+            </Button>
+          </div>
+        </>
+      )}
     </DialogBase>
   );
 }
