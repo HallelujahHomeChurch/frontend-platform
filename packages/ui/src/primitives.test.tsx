@@ -96,11 +96,12 @@ describe('HHC UI primitives', () => {
     render(
       <>
         <Field label="Email" name="email" />
-        <Select label="Language" items={[{id: 'en', label: 'English'}]} onSelectionChange={onChange} />
+        <Select label="Language" placeholder="Choose a language" items={[{id: 'en', label: 'English'}]} onSelectionChange={onChange} />
       </>
     );
 
     expect(screen.getByRole('textbox', {name: 'Email'})).toBeInTheDocument();
+    expect(screen.getByText('Choose a language')).toBeInTheDocument();
     await user.click(screen.getByRole('button', {name: /Language/}));
     await user.click(screen.getByRole('option', {name: 'English'}));
     expect(onChange).toHaveBeenCalledWith('en');
