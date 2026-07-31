@@ -13,6 +13,13 @@ export interface OAuthClientConfig {
   scope: string;
 }
 
+export interface OAuthTokenResponse {
+  access_token: string;
+  token_type?: string;
+  expires_in?: number;
+  scope?: string;
+}
+
 export interface OAuthTransactionOptions {
   randomBytes?: (size: number) => Uint8Array;
   now?: () => number;
@@ -55,6 +62,34 @@ export function buildAuthorizeUrl(
   url.searchParams.set('code_challenge_method', 'S256');
   if (options.prompt) url.searchParams.set('prompt', options.prompt);
   return url;
+}
+
+export async function exchangeAuthorizationCode(
+  config: OAuthClientConfig,
+  transaction: OAuthTransaction,
+  code: string,
+  fetcher: typeof fetch = fetch
+): Promise<OAuthTokenResponse> {
+  const response = await fetcher(`${config.authorizeBaseUrl.replace(/\/$/, '')}/oauth/token`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {'content-type': 'application/x-www-form-urlencoded'},
+    body: new URLSearchParams({
+      grant_type: 'authorization_code',
+      code,
+      client_id: config.clientId,
+      redirect_uri: config.redirectUri,
+      code_verifier: transaction.codeVerifier
+    }).toString()
+  });
+
+  if (!response.ok) throw new Error(`OAuth token exchange failed (${response.status})`);
+
+  const body: unknown = await response.json();
+  if (!isRecord(body) || typeof body.access_token !== 'string' || body.access_token.length === 0) {
+    throw new Error('OAuth token exchange returned an invalid response');
+  }
+  return body as unknown as OAuthTokenResponse;
 }
 
 export function saveOAuthTransaction(
