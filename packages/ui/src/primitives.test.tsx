@@ -220,6 +220,7 @@ describe('HHC UI primitives', () => {
     expect(screen.getByText('No results')).toBeInTheDocument();
     await user.click(screen.getByRole('button', {name: 'Account menu'}));
     expect(screen.getByText('Hi Ada')).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', {name: 'Sign out'})).not.toHaveAttribute('href');
   });
 
   it('localizes pagination and forwards skeleton sizing classes', () => {

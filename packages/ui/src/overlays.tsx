@@ -40,7 +40,7 @@ export function Menu({label, items, onAction, trigger, header}: MenuProps) {
             <AriaMenuItem
               id={item.id}
               key={item.id}
-              href={item.href}
+              {...(item.href ? {href: item.href} : {})}
               isDisabled={item.isDisabled}
               className={`hhc-menu__item ${item.variant === 'danger' ? 'hhc-menu__item--danger' : ''}`}
             >
