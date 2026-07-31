@@ -24,8 +24,9 @@ Card.Title = function CardTitle({className, ...props}: ComponentProps<'h2'>) {
 Card.Description = function CardDescription({className, ...props}: ComponentProps<'p'>) {
   return <p {...props} className={join('hhc-card__description', className)} />;
 };
-Card.Content = function CardContent({className, ...props}: ComponentProps<'div'>) {
-  return <div {...props} className={join('hhc-card__content', className)} />;
+type CardContentProps = ComponentProps<'div'> & {isFlush?: boolean};
+Card.Content = function CardContent({className, isFlush, ...props}: CardContentProps) {
+  return <div {...props} className={join('hhc-card__content', isFlush ? 'hhc-card__content--flush' : undefined, className)} />;
 };
 
 type ModalState = {
@@ -88,7 +89,7 @@ export const Modal = Object.assign(ModalRoot, {
   Header: (props: ComponentProps<'header'>) => <header {...props} className={join('hhc-dialog__header', props.className)} />,
   Heading: (props: ComponentProps<typeof Heading>) => <Heading {...props} slot="title" />,
   Body: (props: ComponentProps<'div'>) => <ModalSection {...props} className={join('hhc-dialog__body', props.className)} />,
-  Footer: (props: ComponentProps<'footer'>) => <footer {...props} className={join('hhc-dialog__actions', props.className)} />
+  Footer: (props: ComponentProps<'footer'>) => <footer {...props} className={join('hhc-dialog__footer', props.className)} />
 });
 
 function ProgressBarRoot({className, size: _size, ...props}: ComponentProps<typeof AriaProgressBar> & {size?: 'sm' | 'md'}) {

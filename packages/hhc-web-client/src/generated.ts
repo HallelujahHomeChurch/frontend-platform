@@ -68,6 +68,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/news/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getPublicNews"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/history": {
         parameters: {
             query?: never;
@@ -212,6 +228,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/bulletins/{issueId}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["archiveBulletin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["restoreBulletin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/content/{module}": {
         parameters: {
             query?: never;
@@ -270,6 +318,38 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["unpublishContent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/content/{module}/{contentId}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["archiveContent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/content/{module}/{contentId}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["restoreArchivedContent"];
         delete?: never;
         options?: never;
         head?: never;
@@ -653,6 +733,13 @@ export interface components {
             };
             error?: null;
         };
+        PublicContentItemEnvelope: {
+            data: components["schemas"]["PublicContentItem"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
+        };
         HomeEnvelope: {
             data: {
                 news: components["schemas"]["PublicContentItem"][];
@@ -717,6 +804,16 @@ export interface components {
             };
             content: {
                 "application/json": components["schemas"]["PublicContentListEnvelope"];
+            };
+        };
+        /** @description Published localized content item */
+        PublicContentItem: {
+            headers: {
+                ETag?: string;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["PublicContentItemEnvelope"];
             };
         };
     };
@@ -815,6 +912,32 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["PublicContentList"];
+        };
+    };
+    getPublicNews: {
+        parameters: {
+            query?: {
+                locale?: components["parameters"]["Locale"];
+            };
+            header?: {
+                "If-None-Match"?: string;
+            };
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["PublicContentItem"];
+            /** @description Content has not changed */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["Error"];
         };
     };
     listPublicHistory: {
@@ -1017,12 +1140,51 @@ export interface operations {
             412: components["responses"]["Error"];
         };
     };
+    archiveBulletin: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                issueId: components["parameters"]["IssueID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["BulletinIssue"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+        };
+    };
+    restoreBulletin: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                issueId: components["parameters"]["IssueID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["BulletinIssue"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+        };
+    };
     listAdminContent: {
         parameters: {
             query?: {
                 page?: components["parameters"]["Page"];
                 pageSize?: components["parameters"]["PageSize"];
+                q?: string;
                 status?: components["schemas"]["ContentStatus"];
+                sort?: "updatedAt" | "displayDate" | "sortOrder";
+                direction?: "asc" | "desc";
             };
             header?: never;
             path: {
@@ -1041,6 +1203,7 @@ export interface operations {
                     "application/json": components["schemas"]["ContentListEnvelope"];
                 };
             };
+            400: components["responses"]["Error"];
         };
     };
     createContent: {
@@ -1127,6 +1290,44 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["ContentItem"];
+        };
+    };
+    archiveContent: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                module: components["parameters"]["ContentModule"];
+                contentId: components["parameters"]["ContentID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ContentItem"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+        };
+    };
+    restoreArchivedContent: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                module: components["parameters"]["ContentModule"];
+                contentId: components["parameters"]["ContentID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ContentItem"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
         };
     };
     listContentRevisions: {

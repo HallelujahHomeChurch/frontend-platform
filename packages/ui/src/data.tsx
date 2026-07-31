@@ -13,13 +13,13 @@ export interface PaginationProps {
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
-  labels: {previous: string; next: string};
+  labels: {navigation?: string; previous: string; next: string};
 }
 
 export function Pagination({page, totalPages, onPageChange, labels}: PaginationProps) {
   if (totalPages <= 1) return null;
   return (
-    <nav className="hhc-pagination" aria-label="Pagination">
+    <nav className="hhc-pagination" aria-label={labels.navigation ?? 'Pagination'}>
       <Button variant="ghost" isDisabled={page <= 1} onPress={() => onPageChange(page - 1)}>{labels.previous}</Button>
       <span aria-live="polite">{page} / {totalPages}</span>
       <Button variant="ghost" isDisabled={page >= totalPages} onPress={() => onPageChange(page + 1)}>{labels.next}</Button>
@@ -27,8 +27,8 @@ export function Pagination({page, totalPages, onPageChange, labels}: PaginationP
   );
 }
 
-export function Skeleton({label}: {label: string}) {
-  return <div className="hhc-skeleton" aria-label={label} role="status" />;
+export function Skeleton({label, className}: {label: string; className?: string}) {
+  return <div className={['hhc-skeleton', className].filter(Boolean).join(' ')} aria-label={label} role="status" />;
 }
 
 export function EmptyState({title, description, action}: {title: string; description?: string; action?: ReactNode}) {

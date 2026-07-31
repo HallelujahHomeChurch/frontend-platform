@@ -1,11 +1,13 @@
-import {render, screen} from '@testing-library/react';
+import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {useState} from 'react';
 import {describe, expect, it, vi} from 'vitest';
 import {
   AccountMenu,
+  AlertDialog,
   Avatar,
   Button,
+  Card,
   Dialog,
   Drawer,
   EmptyState,
@@ -18,6 +20,18 @@ import {
 } from './index';
 
 describe('HHC UI primitives', () => {
+  it('keeps regular card content padded and flush content opt-in', () => {
+    render(
+      <>
+        <Card><Card.Content>Regular</Card.Content></Card>
+        <Card><Card.Content isFlush>Table</Card.Content></Card>
+      </>
+    );
+
+    expect(screen.getByText('Regular')).not.toHaveClass('hhc-card__content--flush');
+    expect(screen.getByText('Table')).toHaveClass('hhc-card__content--flush');
+  });
+
   it('closes menus on outside click and Escape', async () => {
     const user = userEvent.setup();
     render(
@@ -76,6 +90,11 @@ describe('HHC UI primitives', () => {
     expect(onChange).toHaveBeenCalledWith('en');
   });
 
+  it('supports a ghost select trigger', () => {
+    render(<Select variant="ghost" label="Language" items={[{id: 'en', label: 'English'}]} />);
+    expect(screen.getByRole('button', {name: /Language/})).toHaveClass('hhc-select__trigger--ghost');
+  });
+
   it('dismisses selects with Escape and outside interaction', async () => {
     const user = userEvent.setup();
     render(
@@ -127,6 +146,58 @@ describe('HHC UI primitives', () => {
     expect(opener).toHaveFocus();
   });
 
+  it('keeps an alert dialog open until async confirmation succeeds', async () => {
+    const user = userEvent.setup();
+    let resolveConfirm!: () => void;
+    const onConfirm = vi.fn(() => new Promise<void>((resolve) => {
+      resolveConfirm = resolve;
+    }));
+
+    render(
+      <AlertDialog
+        trigger={<Button>Delete account</Button>}
+        title="Delete account"
+        description="This cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={onConfirm}
+      />
+    );
+
+    const opener = screen.getByRole('button', {name: 'Delete account'});
+    await user.click(opener);
+    await user.click(screen.getByRole('button', {name: 'Delete'}));
+
+    expect(screen.getByRole('alertdialog', {name: 'Delete account'})).toBeInTheDocument();
+    expect(screen.getByRole('button', {name: 'Delete'})).toBeDisabled();
+    expect(screen.getByRole('button', {name: 'Cancel'})).toBeDisabled();
+
+    resolveConfirm();
+    await waitFor(() => {
+      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+      expect(opener).toHaveFocus();
+    });
+  });
+
+  it('keeps an alert dialog open when async confirmation fails', async () => {
+    const user = userEvent.setup();
+    render(
+      <AlertDialog
+        trigger={<Button>Remove role</Button>}
+        title="Remove role"
+        description="The user will lose access."
+        confirmLabel="Remove"
+        cancelLabel="Cancel"
+        onConfirm={() => Promise.reject(new Error('request failed'))}
+      />
+    );
+
+    await user.click(screen.getByRole('button', {name: 'Remove role'}));
+    await user.click(screen.getByRole('button', {name: 'Remove'}));
+    expect(await screen.findByRole('alertdialog', {name: 'Remove role'})).toBeInTheDocument();
+    expect(screen.getByRole('button', {name: 'Remove'})).toBeEnabled();
+  });
+
   it('renders pagination, loading, empty, and account states', async () => {
     const user = userEvent.setup();
     const onPageChange = vi.fn();
@@ -149,6 +220,24 @@ describe('HHC UI primitives', () => {
     expect(screen.getByText('No results')).toBeInTheDocument();
     await user.click(screen.getByRole('button', {name: 'Account menu'}));
     expect(screen.getByText('Hi Ada')).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', {name: 'Sign out'})).not.toHaveAttribute('href');
+  });
+
+  it('localizes pagination and forwards skeleton sizing classes', () => {
+    render(
+      <>
+        <Pagination
+          page={2}
+          totalPages={4}
+          onPageChange={() => undefined}
+          labels={{navigation: '分頁', previous: '上一頁', next: '下一頁'}}
+        />
+        <Skeleton className="table-row-skeleton" label="正在載入" />
+      </>
+    );
+
+    expect(screen.getByRole('navigation', {name: '分頁'})).toBeInTheDocument();
+    expect(screen.getByLabelText('正在載入')).toHaveClass('table-row-skeleton');
   });
 
   it('uses link semantics for the manage-account destination', async () => {
