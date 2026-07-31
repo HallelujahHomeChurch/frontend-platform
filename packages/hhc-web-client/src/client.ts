@@ -110,9 +110,27 @@ export function createHhcWebClient(options: {
       })
       if (!response.ok) throw new HhcWebApiError(response.status, 'upload_failed', 'The file could not be uploaded.')
     },
-    async listContent(module: ContentModule, params: { page?: number; pageSize?: number; status?: ContentStatus; signal?: AbortSignal } = {}) {
+    async listContent(module: ContentModule, params: {
+      page?: number
+      pageSize?: number
+      query?: string
+      status?: ContentStatus
+      sort?: 'updatedAt' | 'displayDate' | 'sortOrder'
+      direction?: 'asc' | 'desc'
+      signal?: AbortSignal
+    } = {}) {
       const envelope = await unwrap(client.GET('/admin/content/{module}', {
-        params: { path: { module }, query: { page: params.page, pageSize: params.pageSize, status: params.status } },
+        params: {
+          path: { module },
+          query: {
+            page: params.page,
+            pageSize: params.pageSize,
+            q: params.query,
+            status: params.status,
+            sort: params.sort,
+            direction: params.direction,
+          },
+        },
         signal: params.signal,
       }))
       return { data: envelope.data, meta: envelope.meta }
@@ -137,6 +155,16 @@ export function createHhcWebClient(options: {
     },
     async unpublishContent(module: ContentModule, contentId: string, version: number) {
       return (await unwrap(client.POST('/admin/content/{module}/{contentId}/unpublish', {
+        params: { path: { module, contentId }, header: { 'If-Match': `"${version}"` } },
+      }))).data
+    },
+    async archiveContent(module: ContentModule, contentId: string, version: number) {
+      return (await unwrap(client.POST('/admin/content/{module}/{contentId}/archive', {
+        params: { path: { module, contentId }, header: { 'If-Match': `"${version}"` } },
+      }))).data
+    },
+    async restoreArchivedContent(module: ContentModule, contentId: string, version: number) {
+      return (await unwrap(client.POST('/admin/content/{module}/{contentId}/restore', {
         params: { path: { module, contentId }, header: { 'If-Match': `"${version}"` } },
       }))).data
     },
@@ -169,6 +197,15 @@ export function createHhcWebClient(options: {
           ? client.GET('/history', { params: { query: { locale } }, signal })
           : client.GET('/videos', { params: { query: { locale } }, signal })
       return (await unwrap(result)).data
+    },
+    async getHome(locale: BulletinLocale, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/home', { params: { query: { locale } }, signal }))).data
+    },
+    async getNewsBySlug(locale: BulletinLocale, slug: string, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/news/{slug}', {
+        params: { path: { slug }, query: { locale } },
+        signal,
+      }))).data
     },
   }
 }

@@ -46,4 +46,52 @@ describe('hhc web client', () => {
     expect(request.headers.get('If-Match')).toBe('"2"')
     expect(request.method).toBe('PUT')
   })
+
+  it('forwards content filters and archive concurrency', async () => {
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: [],
+        meta: { page: 1, pageSize: 20, total: 0 },
+        error: null,
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: { id: 'news-1', module: 'news', status: 'archived', version: 3, translations: [], createdBy: 'admin', updatedBy: 'admin', createdAt: '2026-07-31T00:00:00Z', updatedAt: '2026-07-31T00:00:00Z' },
+        meta: {},
+        error: null,
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
+
+    await client.listContent('news', { query: 'alpha', sort: 'displayDate', direction: 'asc' })
+    await client.archiveContent('news', 'news-1', 2)
+
+    const listRequest = fetcher.mock.calls[0]?.[0] as Request
+    expect(listRequest.url).toBe('http://localhost/api/admin/content/news?q=alpha&sort=displayDate&direction=asc')
+    const archiveRequest = fetcher.mock.calls[1]?.[0] as Request
+    expect(archiveRequest.url).toBe('http://localhost/api/admin/content/news/news-1/archive')
+    expect(archiveRequest.headers.get('If-Match')).toBe('"2"')
+  })
+
+  it('reads home and news detail projections directly', async () => {
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: { news: [], videos: [] },
+        meta: {},
+        error: null,
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: { id: 'news-1', title: 'News' },
+        meta: {},
+        error: null,
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => null, fetcher })
+
+    await client.getHome('en')
+    await client.getNewsBySlug('en', 'announcement')
+
+    expect(fetcher).toHaveBeenCalledTimes(2)
+    const homeRequest = fetcher.mock.calls[0]![0] as Request
+    const newsRequest = fetcher.mock.calls[1]![0] as Request
+    expect(homeRequest.url).toBe('http://localhost/api/home?locale=en')
+    expect(newsRequest.url).toBe('http://localhost/api/news/announcement?locale=en')
+  })
 })
