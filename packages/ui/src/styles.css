@@ -11,6 +11,9 @@
     --hhc-primary: #cf685f;
     --hhc-primary-hover: #b64e45;
     --hhc-primary-foreground: #2a1715;
+    --hhc-primary-solid: #ad493f;
+    --hhc-primary-solid-hover: #9d3d35;
+    --hhc-on-primary: #fff8f4;
     --hhc-primary-soft: rgb(207 104 95 / 14%);
     --hhc-secondary: #3a7e7a;
     --hhc-success: #24725f;
@@ -33,6 +36,9 @@
     --hhc-primary: #e07b71;
     --hhc-primary-hover: #ed8c82;
     --hhc-primary-foreground: #2a1715;
+    --hhc-primary-solid: #b64e45;
+    --hhc-primary-solid-hover: #a9433b;
+    --hhc-on-primary: #fff8f4;
     --hhc-primary-soft: rgb(224 123 113 / 16%);
     --hhc-secondary: #67aaa4;
     --hhc-success: #78ad81;
@@ -72,8 +78,10 @@
     cursor: pointer;
   }
 
-  .hhc-button--primary { color: var(--hhc-primary-foreground); background: var(--hhc-primary); }
-  .hhc-button--primary[data-hovered] { background: var(--hhc-primary-hover); }
+  .hhc-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; }
+  .hhc-button > svg { flex: none; }
+  .hhc-button--primary { color: var(--hhc-on-primary); background: var(--hhc-primary-solid); }
+  .hhc-button--primary[data-hovered] { background: var(--hhc-primary-solid-hover); }
   .hhc-button--secondary { border-color: var(--hhc-border); background: var(--hhc-surface); }
   .hhc-button--ghost[data-hovered], .hhc-menu__trigger[data-hovered] { background: var(--hhc-primary-soft); }
   .hhc-button--danger { color: var(--hhc-danger-foreground); background: var(--hhc-danger); }
@@ -82,7 +90,7 @@
   .hhc-button[data-disabled] { opacity: .48; cursor: not-allowed; }
   .hhc-icon-button { width: 40px; padding: 0; display: inline-grid; place-items: center; }
 
-  .hhc-avatar { display: inline-grid; place-items: center; flex: none; overflow: hidden; border-radius: 50%; background: var(--hhc-primary); color: var(--hhc-primary-foreground); font-weight: 700; }
+  .hhc-avatar { display: inline-grid; place-items: center; flex: none; overflow: hidden; border-radius: 50%; background: var(--hhc-primary-solid); color: var(--hhc-on-primary); font-weight: 700; }
   .hhc-avatar img { width: 100%; height: 100%; object-fit: cover; }
   .hhc-avatar--sm { width: 32px; height: 32px; }
   .hhc-avatar--md { width: 40px; height: 40px; }

@@ -75,7 +75,7 @@ Rejected approaches:
 ## Design Principles
 
 - Account uses low-density settings rows and dialog-based actions.
-- Admin uses tables, filters, inspectors, and dedicated editor routes.
+- Admin uses full-width tables, row actions, and dedicated detail or editor routes.
 - Public Web remains editorial and image-led.
 - Header, sidebar, and main use one canvas. Layout is communicated through
   grid, sticky positioning, and whitespace rather than divider lines or
@@ -109,9 +109,22 @@ The approved dark direction is Warm Charcoal:
 | Success | `#78ad81` |
 | Warning | `#d6a45f` |
 
-The primary foreground is a semantic token, not fixed white. Primary control
-background and foreground combinations must meet WCAG AA for their rendered
-font size in both light and dark themes.
+The bright primary accent remains available for focus rings, selected text,
+progress, and soft interaction states. Filled controls use a separate semantic
+pair so dark-mode accent visibility does not force dark text onto controls:
+
+| Token | Light | Dark |
+| --- | --- | --- |
+| Primary accent | `#cf685f` | `#e07b71` |
+| Primary solid | `#ad493f` | `#b64e45` |
+| Primary solid hover | `#9d3d35` | `#a9433b` |
+| On primary | `#fff8f4` | `#fff8f4` |
+
+`Primary solid` and `On primary` produce contrast ratios of `5.26:1` in light
+mode and `4.80:1` in dark mode. The pair applies to primary Button content,
+Avatar fallback initials, the profile-avatar camera badge, and other filled
+primary controls containing text or icons. Progress has no foreground content
+and continues to use the brighter primary accent.
 
 Shadows are reserved for overlays, menus, and raised transient surfaces.
 Dark mode does not use decorative gradients, background blur, glow, or
@@ -251,6 +264,24 @@ An OAuth state mismatch is never accepted. Admin clears the invalid
 transaction and may transparently restart authorization once. A second failure
 renders one localized recovery action and cannot loop.
 
+### First-Party Product Bootstrap
+
+Every protected first-party browser product uses the same lifecycle:
+
+1. Check its same-origin session summary.
+2. Refresh only when its own host-only product session exists.
+3. Otherwise start one Account Authorization Code with PKCE transaction.
+4. Let a valid central Account session return a code without rendering login.
+5. Exchange the code through the product's same-origin route so that product
+   receives its own host-only refresh cookie.
+6. Preserve pathname, query, and hash through the transaction.
+7. Stop after one recoverable callback failure instead of looping.
+
+Public products remain renderable while signed out. They may use
+`hhc_sso_hint` plus `prompt=none` for one passive attempt, but the hint is never
+authentication evidence. Refresh tokens remain host-only and are never shared
+through `.alive.org.tw`.
+
 ### Return Location
 
 The exact Admin pathname, query, and hash are preserved through authorization.
@@ -325,8 +356,11 @@ All list pages use:
 - Row action menu
 - Server metadata for pagination
 
-Desktop may use a detail inspector for quick management. Mobile uses a
-dedicated detail view rather than compressing an inspector beside a table.
+Management pages do not place a persistent inspector beside a table. A row
+opens a dedicated detail or editor route; short create, confirmation, upload,
+and secret-rotation operations use Dialog or AlertDialog. Mobile and desktop
+therefore share the same navigation model instead of stacking an inspector
+below the list.
 
 Mutation results use Toast. Field validation appears at the related field.
 Double submission is prevented through pending controls.
@@ -343,7 +377,7 @@ target.
 - Support enable and disable, not hard delete.
 - Assign and remove roles like other role operations.
 - Prevent removal or disablement of the final active administrator.
-- Show detail-loading state independently of table loading.
+- Load user detail only after navigating to `/users/:userId`.
 
 No user invitation workflow is added.
 
@@ -351,7 +385,7 @@ No user invitation workflow is added.
 
 - List roles and permissions.
 - Create roles and permissions through dialogs.
-- Select a role to inspect its effective permissions.
+- Open `/access/roles/:roleId` to inspect and manage effective permissions.
 - Assign and remove permissions through explicit actions.
 - Preserve immutable role or permission behavior when enforced by the API.
 
@@ -393,8 +427,10 @@ Search matches localized titles through parameterized SQL. Sort fields are a
 module-aware allowlist: `updatedAt` for all modules, `displayDate` for News,
 and `sortOrder` for History. Unsupported combinations return `400`.
 
-Weekly Bulletins retain a list and inspector because one issue manages three
-bounded PDF variants.
+Weekly Bulletins use a full-width list and `/content/bulletins/:issueId` detail
+route. Creating an issue remains a short issue-date Dialog; upload, scan,
+processing, publish, unpublish, archive, and restore controls live on the detail
+route.
 
 ### Module Editors
 

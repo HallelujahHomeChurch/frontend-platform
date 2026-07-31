@@ -54,36 +54,37 @@ export function Menu({label, items, onAction, trigger, header}: MenuProps) {
 }
 
 interface DialogBaseProps {
-  trigger: ReactElement;
+  trigger?: ReactElement;
   title: string;
   children: ReactNode | ((close: () => void) => ReactNode);
   isDismissable?: boolean;
+  isOpen?: boolean;
+  onOpenChange?: (isOpen: boolean) => void;
   variant?: 'dialog' | 'drawer-left' | 'drawer-right';
   role?: 'dialog' | 'alertdialog';
   closeLabel?: string;
 }
 
-function DialogBase({trigger, title, children, isDismissable = true, variant = 'dialog', role = 'dialog', closeLabel = 'Close'}: DialogBaseProps) {
-  return (
-    <DialogTrigger>
-      {trigger}
-      <ModalOverlay className="hhc-modal-overlay" isDismissable={isDismissable}>
-        <Modal className={`hhc-modal hhc-modal--${variant}`}>
-          <AriaDialog role={role} className="hhc-dialog">
-            {({close}) => (
-              <>
-                <header className="hhc-dialog__header">
-                  <Heading slot="title">{title}</Heading>
-                  <AriaButton className="hhc-dialog__close" onPress={close} aria-label={closeLabel}>×</AriaButton>
-                </header>
-                <div className="hhc-dialog__body">{typeof children === 'function' ? children(close) : children}</div>
-              </>
-            )}
-          </AriaDialog>
-        </Modal>
-      </ModalOverlay>
-    </DialogTrigger>
+function DialogBase({trigger, title, children, isDismissable = true, isOpen, onOpenChange, variant = 'dialog', role = 'dialog', closeLabel = 'Close'}: DialogBaseProps) {
+  const overlay = (
+    <ModalOverlay className="hhc-modal-overlay" isDismissable={isDismissable} isOpen={isOpen} onOpenChange={onOpenChange}>
+      <Modal className={`hhc-modal hhc-modal--${variant}`}>
+        <AriaDialog role={role} className="hhc-dialog">
+          {({close}) => (
+            <>
+              <header className="hhc-dialog__header">
+                <Heading slot="title">{title}</Heading>
+                <AriaButton className="hhc-dialog__close" onPress={close} aria-label={closeLabel}>×</AriaButton>
+              </header>
+              <div className="hhc-dialog__body">{typeof children === 'function' ? children(close) : children}</div>
+            </>
+          )}
+        </AriaDialog>
+      </Modal>
+    </ModalOverlay>
   );
+
+  return trigger ? <DialogTrigger isOpen={isOpen} onOpenChange={onOpenChange}>{trigger}{overlay}</DialogTrigger> : overlay;
 }
 
 export type DialogProps = Omit<DialogBaseProps, 'variant' | 'role'>;

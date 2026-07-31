@@ -4,6 +4,7 @@ import {
   createCodeChallenge,
   createOAuthTransaction,
   currentReturnTo,
+  exchangeAuthorizationCode,
   readOAuthTransaction,
   safeReturnTo,
   validateOAuthState
@@ -62,5 +63,81 @@ describe('browser OAuth helpers', () => {
 
     expect(url.searchParams.get('prompt')).toBe('none');
     expect(url.searchParams.get('code_challenge_method')).toBe('S256');
+  });
+
+  it('exchanges an authorization code with the PKCE transaction', async () => {
+    const transaction = await createOAuthTransaction('/users', {
+      randomBytes: () => new Uint8Array(32).fill(4)
+    });
+    const requests: Array<{input: RequestInfo | URL; init?: RequestInit}> = [];
+    const fetcher: typeof fetch = async (input, init) => {
+      requests.push({input, init});
+      return new Response(JSON.stringify({
+        access_token: 'access-token',
+        token_type: 'Bearer',
+        expires_in: 900
+      }), {headers: {'content-type': 'application/json'}});
+    };
+
+    const response = await exchangeAuthorizationCode({
+      authorizeBaseUrl: 'https://account.alive.org.tw/api/account/v1',
+      clientId: 'admin-web',
+      redirectUri: 'https://admin.alive.org.tw/oauth/callback',
+      scope: 'openid profile email'
+    }, transaction, 'authorization-code', fetcher);
+
+    expect(response).toEqual({
+      access_token: 'access-token',
+      token_type: 'Bearer',
+      expires_in: 900
+    });
+    expect(requests).toHaveLength(1);
+    expect(requests[0]?.input).toBe('https://account.alive.org.tw/api/account/v1/oauth/token');
+    expect(requests[0]?.init).toMatchObject({
+      method: 'POST',
+      credentials: 'include',
+      headers: {'content-type': 'application/x-www-form-urlencoded'}
+    });
+    expect(new URLSearchParams(requests[0]?.init?.body as string)).toEqual(new URLSearchParams({
+      grant_type: 'authorization_code',
+      code: 'authorization-code',
+      client_id: 'admin-web',
+      redirect_uri: 'https://admin.alive.org.tw/oauth/callback',
+      code_verifier: transaction.codeVerifier
+    }));
+  });
+
+  it('throws when authorization-code exchange is rejected', async () => {
+    const transaction = await createOAuthTransaction('/', {
+      randomBytes: () => new Uint8Array(32).fill(5)
+    });
+    const fetcher: typeof fetch = async () => new Response(
+      JSON.stringify({error: 'invalid_grant'}),
+      {status: 400, headers: {'content-type': 'application/json'}}
+    );
+
+    await expect(exchangeAuthorizationCode({
+      authorizeBaseUrl: '/api/account/v1',
+      clientId: 'account-console',
+      redirectUri: 'https://account.alive.org.tw/oauth/callback',
+      scope: 'openid profile email'
+    }, transaction, 'expired-code', fetcher)).rejects.toThrow('OAuth token exchange failed (400)');
+  });
+
+  it('rejects a malformed successful token response', async () => {
+    const transaction = await createOAuthTransaction('/', {
+      randomBytes: () => new Uint8Array(32).fill(6)
+    });
+    const fetcher: typeof fetch = async () => new Response(
+      JSON.stringify({token_type: 'Bearer'}),
+      {headers: {'content-type': 'application/json'}}
+    );
+
+    await expect(exchangeAuthorizationCode({
+      authorizeBaseUrl: '/api/account/v1',
+      clientId: 'account-console',
+      redirectUri: 'https://account.alive.org.tw/oauth/callback',
+      scope: 'openid profile email'
+    }, transaction, 'authorization-code', fetcher)).rejects.toThrow('OAuth token exchange returned an invalid response');
   });
 });

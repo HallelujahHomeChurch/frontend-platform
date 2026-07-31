@@ -1,5 +1,6 @@
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import {readFileSync} from 'node:fs';
 import {useState} from 'react';
 import {describe, expect, it, vi} from 'vitest';
 import {
@@ -20,6 +21,21 @@ import {
 } from './index';
 
 describe('HHC UI primitives', () => {
+  it('keeps filled primary content readable and button content on one line', () => {
+    const styles = readFileSync('src/styles.css', 'utf8');
+
+    expect(styles).toContain('--hhc-primary-solid: #ad493f');
+    expect(styles).toContain('--hhc-primary-solid-hover: #9d3d35');
+    expect(styles).toContain('--hhc-primary-solid: #b64e45');
+    expect(styles).toContain('--hhc-primary-solid-hover: #a9433b');
+    expect(styles).toContain('--hhc-on-primary: #fff8f4');
+    expect(styles).toMatch(/\.hhc-button[^}]*display:\s*inline-flex[^}]*align-items:\s*center[^}]*gap:\s*8px[^}]*white-space:\s*nowrap/s);
+    expect(styles).toMatch(/\.hhc-button\s*>\s*svg[^}]*flex:\s*none/s);
+    expect(styles).toMatch(/\.hhc-button--primary[^}]*color:\s*var\(--hhc-on-primary\)[^}]*background:\s*var\(--hhc-primary-solid\)/s);
+    expect(styles).toMatch(/\.hhc-avatar[^}]*background:\s*var\(--hhc-primary-solid\)[^}]*color:\s*var\(--hhc-on-primary\)/s);
+    expect(styles).toMatch(/\.hhc-progress__fill[^}]*background:\s*var\(--hhc-primary\)/s);
+  });
+
   it('keeps regular card content padded and flush content opt-in', () => {
     render(
       <>
@@ -196,6 +212,27 @@ describe('HHC UI primitives', () => {
     await user.click(screen.getByRole('button', {name: 'Remove'}));
     expect(await screen.findByRole('alertdialog', {name: 'Remove role'})).toBeInTheDocument();
     expect(screen.getByRole('button', {name: 'Remove'})).toBeEnabled();
+  });
+
+  it('supports a controlled alert dialog without a trigger', async () => {
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+
+    render(
+      <AlertDialog
+        isOpen
+        onOpenChange={onOpenChange}
+        title="Discard changes"
+        description="Unsaved changes will be lost."
+        confirmLabel="Discard"
+        cancelLabel="Keep editing"
+        onConfirm={() => undefined}
+      />
+    );
+
+    expect(screen.getByRole('alertdialog', {name: 'Discard changes'})).toBeInTheDocument();
+    await user.click(screen.getByRole('button', {name: 'Keep editing'}));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
   it('renders pagination, loading, empty, and account states', async () => {
