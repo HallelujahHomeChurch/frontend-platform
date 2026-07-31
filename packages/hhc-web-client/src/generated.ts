@@ -887,7 +887,9 @@ export interface operations {
             query?: {
                 locale?: components["parameters"]["Locale"];
             };
-            header?: never;
+            header?: {
+                "If-None-Match"?: string;
+            };
             path: {
                 slug: string;
             };
