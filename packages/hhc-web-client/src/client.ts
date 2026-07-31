@@ -99,6 +99,16 @@ export function createHhcWebClient(options: {
         body: { locale },
       }))).data
     },
+    async archiveBulletin(issueId: string, version: number) {
+      return (await unwrap(client.POST('/admin/bulletins/{issueId}/archive', {
+        params: { path: { issueId }, header: { 'If-Match': `"${version}"` } },
+      }))).data
+    },
+    async restoreBulletin(issueId: string, version: number) {
+      return (await unwrap(client.POST('/admin/bulletins/{issueId}/restore', {
+        params: { path: { issueId }, header: { 'If-Match': `"${version}"` } },
+      }))).data
+    },
     async uploadFile(target: UploadTarget, file: File, signal?: AbortSignal) {
       const headers = new Headers(target.headers)
       if (!headers.has('Content-Type')) headers.set('Content-Type', file.type || 'application/octet-stream')

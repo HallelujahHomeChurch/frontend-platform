@@ -228,6 +228,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/bulletins/{issueId}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["archiveBulletin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["restoreBulletin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/content/{module}": {
         parameters: {
             query?: never;
@@ -1105,6 +1137,42 @@ export interface operations {
         requestBody: components["requestBodies"]["PublicationInput"];
         responses: {
             200: components["responses"]["BulletinIssue"];
+            412: components["responses"]["Error"];
+        };
+    };
+    archiveBulletin: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                issueId: components["parameters"]["IssueID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["BulletinIssue"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+        };
+    };
+    restoreBulletin: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                issueId: components["parameters"]["IssueID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["BulletinIssue"];
+            409: components["responses"]["Error"];
             412: components["responses"]["Error"];
         };
     };

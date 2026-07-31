@@ -71,6 +71,25 @@ describe('hhc web client', () => {
     expect(archiveRequest.headers.get('If-Match')).toBe('"2"')
   })
 
+  it('uses optimistic concurrency for bulletin archive and restore', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({
+      data: { id: 'issue-1', issueDate: '2026-07-31', status: 'archived', version: 3, versions: [], createdBy: 'admin', updatedBy: 'admin', createdAt: '2026-07-31T00:00:00Z', updatedAt: '2026-07-31T00:00:00Z' },
+      meta: {},
+      error: null,
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
+
+    await client.archiveBulletin('issue-1', 2)
+    await client.restoreBulletin('issue-1', 3)
+
+    const archive = fetcher.mock.calls[0]![0] as Request
+    const restore = fetcher.mock.calls[1]![0] as Request
+    expect(archive.url).toBe('http://localhost/api/admin/bulletins/issue-1/archive')
+    expect(archive.headers.get('If-Match')).toBe('"2"')
+    expect(restore.url).toBe('http://localhost/api/admin/bulletins/issue-1/restore')
+    expect(restore.headers.get('If-Match')).toBe('"3"')
+  })
+
   it('reads home and news detail projections directly', async () => {
     const fetcher = vi.fn<typeof fetch>()
       .mockResolvedValueOnce(new Response(JSON.stringify({
