@@ -106,6 +106,7 @@ export interface SelectItem {
 
 export interface SelectProps {
   label: string;
+  placeholder?: string;
   items: SelectItem[];
   variant?: 'default' | 'ghost';
   selectedKey?: string;
