@@ -214,6 +214,27 @@ describe('HHC UI primitives', () => {
     expect(screen.getByRole('button', {name: 'Remove'})).toBeEnabled();
   });
 
+  it('supports a controlled alert dialog without a trigger', async () => {
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+
+    render(
+      <AlertDialog
+        isOpen
+        onOpenChange={onOpenChange}
+        title="Discard changes"
+        description="Unsaved changes will be lost."
+        confirmLabel="Discard"
+        cancelLabel="Keep editing"
+        onConfirm={() => undefined}
+      />
+    );
+
+    expect(screen.getByRole('alertdialog', {name: 'Discard changes'})).toBeInTheDocument();
+    await user.click(screen.getByRole('button', {name: 'Keep editing'}));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
   it('renders pagination, loading, empty, and account states', async () => {
     const user = userEvent.setup();
     const onPageChange = vi.fn();
