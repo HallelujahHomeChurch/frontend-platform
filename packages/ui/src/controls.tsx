@@ -1,14 +1,28 @@
-import type {ReactNode} from 'react';
+import {useEffect, useRef, useState, type ReactNode} from 'react';
+import {parseDate} from '@internationalized/date';
 import {OTPInput, type OTPInputProps} from 'input-otp';
 import {
   Button as AriaButton,
   type ButtonProps as AriaButtonProps,
+  Calendar,
+  CalendarCell,
+  CalendarGrid,
+  CalendarGridBody,
+  CalendarGridHeader,
+  CalendarHeaderCell,
+  DateInput,
+  DatePicker as AriaDatePicker,
+  DateSegment,
+  Dialog as AriaDialog,
   FieldError,
+  Group,
+  Heading,
   Input,
   Label,
   ListBox,
   ListBoxItem,
   Popover,
+  SearchField,
   Select as AriaSelect,
   SelectValue,
   Tab,
@@ -140,6 +154,162 @@ export function Select({label, items, variant = 'default', onSelectionChange, cl
         </ListBox>
       </Popover>
     </AriaSelect>
+  );
+}
+
+export interface ExpandableSearchFieldProps {
+  label: string;
+  submitLabel: string;
+  clearLabel: string;
+  placeholder?: string;
+  value?: string;
+  defaultValue?: string;
+  onChange?: (value: string) => void;
+  onSubmit?: (value: string) => void;
+  onClear?: () => void;
+  isDisabled?: boolean;
+}
+
+export function ExpandableSearchField({label, submitLabel, clearLabel, placeholder, value, defaultValue = '', onChange, onSubmit, onClear, isDisabled}: ExpandableSearchFieldProps) {
+  const [isExpanded, setExpanded] = useState(false);
+  const [query, setQuery] = useState(value ?? defaultValue);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (value !== undefined) setQuery(value);
+  }, [value]);
+
+  useEffect(() => {
+    if (isExpanded) inputRef.current?.focus();
+  }, [isExpanded]);
+
+  function collapse({restoreFocus = false, clear = true} = {}) {
+    setExpanded(false);
+    if (clear) {
+      setQuery('');
+      onChange?.('');
+      onClear?.();
+    }
+    if (restoreFocus) triggerRef.current?.focus();
+  }
+
+  function submit() {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      collapse();
+      return;
+    }
+    onSubmit?.(trimmed);
+    setExpanded(false);
+    setQuery('');
+    onChange?.('');
+  }
+
+  useEffect(() => {
+    if (!isExpanded) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) collapse();
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  });
+
+  return (
+    <div ref={rootRef} className="hhc-expandable-search" data-expanded={isExpanded}>
+      <SearchField
+        aria-label={label}
+        className="hhc-expandable-search__field"
+        value={query}
+        onChange={(nextValue) => {
+          setQuery(nextValue);
+          onChange?.(nextValue);
+        }}
+        onSubmit={submit}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            collapse({restoreFocus: true});
+          }
+        }}
+      >
+        <Input ref={inputRef} placeholder={placeholder} />
+        {query ? (
+          <AriaButton
+            className="hhc-expandable-search__clear"
+            aria-label={clearLabel}
+            onPress={() => {
+              setQuery('');
+              onChange?.('');
+              onClear?.();
+              inputRef.current?.focus();
+            }}
+          >×</AriaButton>
+        ) : null}
+      </SearchField>
+      <AriaButton
+        ref={triggerRef}
+        className="hhc-expandable-search__trigger"
+        aria-label={isExpanded ? submitLabel : label}
+        isDisabled={isDisabled}
+        onPress={() => {
+          if (isExpanded) submit();
+          else setExpanded(true);
+        }}
+      >
+        <span aria-hidden="true">⌕</span>
+      </AriaButton>
+    </div>
+  );
+}
+
+export interface DatePickerProps {
+  label: string;
+  value?: string | null;
+  onChange: (value: string | null) => void;
+  labels: {calendar: string; previous: string; next: string};
+  isDisabled?: boolean;
+  isRequired?: boolean;
+}
+
+export function DatePicker({label, value, onChange, labels, ...props}: DatePickerProps) {
+  return (
+    <AriaDatePicker
+      {...props}
+      className="hhc-date-picker"
+      value={value ? parseDate(value) : null}
+      onChange={(date) => onChange(date?.toString() ?? null)}
+    >
+      <Label>{label}</Label>
+      <Group className="hhc-date-picker__group">
+        <DateInput className="hhc-date-picker__input">
+          {(segment) => <DateSegment segment={segment} className="hhc-date-picker__segment" />}
+        </DateInput>
+        <AriaButton className="hhc-date-picker__trigger" aria-label={labels.calendar}>
+          <span aria-hidden="true">▦</span>
+        </AriaButton>
+      </Group>
+      <Popover className="hhc-popover hhc-date-picker__popover">
+        <AriaDialog className="hhc-date-picker__dialog">
+          <Calendar className="hhc-calendar">
+            <header className="hhc-calendar__header">
+              <AriaButton slot="previous" className="hhc-calendar__nav" aria-label={labels.previous}>‹</AriaButton>
+              <Heading />
+              <AriaButton slot="next" className="hhc-calendar__nav" aria-label={labels.next}>›</AriaButton>
+            </header>
+            <CalendarGrid className="hhc-calendar__grid">
+              <CalendarGridHeader>
+                {(day) => <CalendarHeaderCell className="hhc-calendar__weekday">{day}</CalendarHeaderCell>}
+              </CalendarGridHeader>
+              <CalendarGridBody>
+                {(date) => <CalendarCell date={date} className="hhc-calendar__cell" />}
+              </CalendarGridBody>
+            </CalendarGrid>
+          </Calendar>
+        </AriaDialog>
+      </Popover>
+    </AriaDatePicker>
   );
 }
 

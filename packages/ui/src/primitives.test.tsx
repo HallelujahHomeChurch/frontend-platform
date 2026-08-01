@@ -1,4 +1,4 @@
-import {render, screen, waitFor} from '@testing-library/react';
+import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {readFileSync} from 'node:fs';
 import {useState} from 'react';
@@ -9,15 +9,21 @@ import {
   Avatar,
   Button,
   Card,
+  DatePicker,
   Dialog,
   Drawer,
   EmptyState,
+  ExpandableSearchField,
   Field,
   Menu,
   Modal,
   Pagination,
+  PaginationBar,
   Select,
-  Skeleton
+  Skeleton,
+  StatusBadge,
+  ToastProvider,
+  useToast
 } from './index';
 
 describe('HHC UI primitives', () => {
@@ -34,6 +40,8 @@ describe('HHC UI primitives', () => {
     expect(styles).toMatch(/\.hhc-button--primary[^}]*color:\s*var\(--hhc-on-primary\)[^}]*background:\s*var\(--hhc-primary-solid\)/s);
     expect(styles).toMatch(/\.hhc-avatar[^}]*background:\s*var\(--hhc-primary-solid\)[^}]*color:\s*var\(--hhc-on-primary\)/s);
     expect(styles).toMatch(/\.hhc-progress__fill[^}]*background:\s*var\(--hhc-primary\)/s);
+    expect(styles).toMatch(/\.hhc-expandable-search[^}]*width:\s*40px[^}]*transition:\s*width/s);
+    expect(styles).toMatch(/prefers-reduced-motion:[^}]*reduce[\s\S]*\.hhc-expandable-search[^}]*transition:\s*none/s);
   });
 
   it('keeps regular card content padded and flush content opt-in', () => {
@@ -294,5 +302,103 @@ describe('HHC UI primitives', () => {
       'href',
       'https://account.alive.org.tw/profile'
     );
+  });
+
+  it('expands search without moving its trigger and restores focus when dismissed', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <div>
+        <ExpandableSearchField label="Search" submitLabel="Submit search" clearLabel="Clear search" placeholder="Search this page" onChange={onChange} />
+        <button>Outside</button>
+      </div>
+    );
+
+    const trigger = screen.getByRole('button', {name: 'Search'});
+    const shell = trigger.closest('.hhc-expandable-search');
+    expect(shell).toHaveAttribute('data-expanded', 'false');
+    await user.click(trigger);
+    expect(shell).toHaveAttribute('data-expanded', 'true');
+    await waitFor(() => expect(screen.getByRole('searchbox', {name: 'Search'})).toHaveFocus());
+
+    await user.keyboard('{Escape}');
+    expect(shell).toHaveAttribute('data-expanded', 'false');
+    expect(trigger).toHaveFocus();
+
+    await user.click(trigger);
+    await user.click(screen.getByRole('button', {name: 'Outside'}));
+    expect(shell).toHaveAttribute('data-expanded', 'false');
+    expect(onChange).toHaveBeenLastCalledWith('');
+  });
+
+  it('submits a trimmed query from the expanded search trigger', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+    render(<ExpandableSearchField label="Search" submitLabel="Submit search" clearLabel="Clear search" onSubmit={onSubmit} />);
+
+    await user.click(screen.getByRole('button', {name: 'Search'}));
+    await user.type(screen.getByRole('searchbox', {name: 'Search'}), '  weekly  ');
+    await user.click(screen.getByRole('button', {name: 'Submit search'}));
+
+    expect(onSubmit).toHaveBeenCalledWith('weekly');
+    expect(screen.getByRole('button', {name: 'Search'}).closest('.hhc-expandable-search')).toHaveAttribute('data-expanded', 'false');
+  });
+
+  it('queues and dismisses accessible toast notifications', async () => {
+    vi.useFakeTimers();
+
+    function Example() {
+      const toast = useToast();
+      return <button onClick={() => toast.add({message: 'Draft saved', tone: 'success'})}>Save</button>;
+    }
+
+    render(<ToastProvider dismissLabel="Dismiss"><Example /></ToastProvider>);
+    fireEvent.click(screen.getByRole('button', {name: 'Save'}));
+    expect(screen.getByRole('status')).toHaveTextContent('Draft saved');
+
+    act(() => vi.advanceTimersByTime(4000));
+    expect(screen.queryByText('Draft saved')).not.toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
+  it('renders compact status and table pagination metadata', async () => {
+    const user = userEvent.setup();
+    const onPageChange = vi.fn();
+    render(
+      <PaginationBar
+        countLabel="4 items"
+        page={1}
+        totalPages={3}
+        onPageChange={onPageChange}
+        labels={{navigation: 'Pagination', previous: 'Previous', next: 'Next'}}
+      >
+        <StatusBadge tone="success">Published</StatusBadge>
+      </PaginationBar>
+    );
+
+    expect(screen.getByText('4 items')).toBeInTheDocument();
+    expect(screen.getByText('1 / 3')).toBeInTheDocument();
+    expect(screen.getByText('Published')).toHaveClass('hhc-status-badge--success');
+    await user.click(screen.getByRole('button', {name: 'Next'}));
+    expect(onPageChange).toHaveBeenCalledWith(2);
+  });
+
+  it('uses an accessible custom date picker instead of a native date input', async () => {
+    const user = userEvent.setup();
+    const {container} = render(
+      <DatePicker
+        label="Display date"
+        value="2026-07-13"
+        onChange={() => undefined}
+        labels={{calendar: 'Choose date', previous: 'Previous month', next: 'Next month'}}
+      />
+    );
+
+    expect(container.querySelector('input[type="date"]')).toHaveAttribute('tabindex', '-1');
+    expect(screen.getAllByRole('spinbutton').length).toBeGreaterThan(0);
+    await user.click(screen.getByRole('button', {name: /Choose date/}));
+    expect(screen.getByRole('grid')).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('grid')).not.toBeInTheDocument();
   });
 });

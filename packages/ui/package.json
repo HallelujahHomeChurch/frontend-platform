@@ -29,6 +29,7 @@
     "lint": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@internationalized/date": "^3.12.2",
     "input-otp": "^1.4.2",
     "react-aria-components": "^1.14.1"
   },

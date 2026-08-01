@@ -1,4 +1,4 @@
-import type {ReactNode} from 'react';
+import {createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode} from 'react';
 import {
   Cell,
   Column,
@@ -43,6 +43,91 @@ export function EmptyState({title, description, action}: {title: string; descrip
 
 export function Toast({children, tone = 'neutral'}: {children: ReactNode; tone?: 'neutral' | 'success' | 'warning' | 'danger'}) {
   return <div className={`hhc-toast hhc-toast--${tone}`} role={tone === 'danger' ? 'alert' : 'status'}>{children}</div>;
+}
+
+export type ToastTone = 'neutral' | 'success' | 'warning' | 'danger';
+
+interface ToastNotice {
+  id: number;
+  message: ReactNode;
+  tone: ToastTone;
+  durationMs: number;
+}
+
+interface ToastContextValue {
+  add: (notice: {message: ReactNode; tone?: ToastTone; durationMs?: number}) => number;
+  dismiss: (id: number) => void;
+}
+
+const ToastContext = createContext<ToastContextValue | null>(null);
+let nextToastId = 0;
+
+export function useToast() {
+  const value = useContext(ToastContext);
+  if (!value) throw new Error('useToast must be used within ToastProvider');
+  return value;
+}
+
+function QueuedToast({notice, dismiss, dismissLabel}: {notice: ToastNotice; dismiss: (id: number) => void; dismissLabel: string}) {
+  useEffect(() => {
+    const timer = window.setTimeout(() => dismiss(notice.id), notice.durationMs);
+    return () => window.clearTimeout(timer);
+  }, [dismiss, notice]);
+
+  return (
+    <div className={`hhc-toast hhc-toast--${notice.tone}`} role={notice.tone === 'danger' ? 'alert' : 'status'}>
+      <span>{notice.message}</span>
+      <button type="button" className="hhc-toast__dismiss" aria-label={dismissLabel} onClick={() => dismiss(notice.id)}>×</button>
+    </div>
+  );
+}
+
+export function ToastProvider({children, dismissLabel, regionLabel = 'Notifications'}: {children: ReactNode; dismissLabel: string; regionLabel?: string}) {
+  const [notices, setNotices] = useState<ToastNotice[]>([]);
+  const dismiss = useCallback((id: number) => setNotices((current) => current.filter((notice) => notice.id !== id)), []);
+  const value = useMemo<ToastContextValue>(() => ({
+    add(notice) {
+      const id = ++nextToastId;
+      setNotices((current) => [...current, {id, tone: 'neutral', durationMs: 4000, ...notice}]);
+      return id;
+    },
+    dismiss
+  }), [dismiss]);
+
+  return (
+    <ToastContext.Provider value={value}>
+      {children}
+      <section className="hhc-toast-region" aria-label={regionLabel}>
+        {notices.map((notice) => <QueuedToast key={notice.id} notice={notice} dismiss={dismiss} dismissLabel={dismissLabel} />)}
+      </section>
+    </ToastContext.Provider>
+  );
+}
+
+export function StatusBadge({children, tone = 'neutral'}: {children: ReactNode; tone?: ToastTone}) {
+  return <span className={`hhc-status-badge hhc-status-badge--${tone}`}>{children}</span>;
+}
+
+export function DataTableFrame({children, footer, className}: {children: ReactNode; footer?: ReactNode; className?: string}) {
+  return <section className={['hhc-data-table-frame', className].filter(Boolean).join(' ')}><div className="hhc-data-table-frame__body">{children}</div>{footer}</section>;
+}
+
+export interface PaginationBarProps extends PaginationProps {
+  countLabel: ReactNode;
+  children?: ReactNode;
+}
+
+export function PaginationBar({countLabel, children, page, totalPages, onPageChange, labels}: PaginationBarProps) {
+  return (
+    <footer className="hhc-pagination-bar">
+      <div className="hhc-pagination-bar__count">{countLabel}{children}</div>
+      <nav className="hhc-pagination-bar__navigation" aria-label={labels.navigation ?? 'Pagination'}>
+        <span aria-live="polite">{page} / {Math.max(totalPages, 1)}</span>
+        <Button className="hhc-pagination-bar__button" variant="ghost" isDisabled={page <= 1} aria-label={labels.previous} onPress={() => onPageChange(page - 1)}>‹</Button>
+        <Button className="hhc-pagination-bar__button" variant="ghost" isDisabled={page >= totalPages} aria-label={labels.next} onPress={() => onPageChange(page + 1)}>›</Button>
+      </nav>
+    </footer>
+  );
 }
 
 export interface TableColumn<T> {

@@ -1,5 +1,24 @@
 import type {Meta, StoryObj} from '@storybook/react-vite';
-import {AccountMenu, AlertDialog, Button, Card, EmptyState, Field, OTP, Pagination, Select, Skeleton} from './index';
+import {useEffect} from 'react';
+import {
+  AccountMenu,
+  AlertDialog,
+  Button,
+  Card,
+  DataTableFrame,
+  DatePicker,
+  EmptyState,
+  ExpandableSearchField,
+  Field,
+  OTP,
+  Pagination,
+  PaginationBar,
+  Select,
+  Skeleton,
+  StatusBadge,
+  ToastProvider,
+  useToast
+} from './index';
 import './styles.css';
 
 const meta = {
@@ -75,3 +94,39 @@ export const OverlaysAndAsyncStates: Story = {
     </div>
   )
 };
+
+function ToastExample() {
+  const toast = useToast();
+  return <Button onPress={() => toast.add({message: '草稿已儲存', tone: 'success'})}>顯示通知</Button>;
+}
+
+function AdminControlsExample({theme = 'light'}: {theme?: 'light' | 'dark'}) {
+  useEffect(() => {
+    const previous = document.documentElement.dataset.theme;
+    document.documentElement.dataset.theme = theme;
+    return () => {
+      if (previous) document.documentElement.dataset.theme = previous;
+      else delete document.documentElement.dataset.theme;
+    };
+  }, [theme]);
+
+  return (
+    <ToastProvider dismissLabel="關閉">
+      <div style={{display: 'grid', gap: 20, width: 680, color: 'var(--hhc-text)', background: 'var(--hhc-canvas)', padding: 24}}>
+        <div style={{display: 'flex', justifyContent: 'flex-end'}}><ExpandableSearchField label="搜尋" submitLabel="送出搜尋" clearLabel="清除搜尋" placeholder="搜尋目前頁面" /></div>
+        <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12}}>
+          <Select label="狀態" defaultSelectedKey="all" items={[{id: 'all', label: '所有狀態'}, {id: 'draft', label: '草稿'}]} />
+          <DatePicker label="顯示日期" value="2026-07-13" onChange={() => undefined} labels={{calendar: '選擇日期', previous: '上個月', next: '下個月'}} />
+          <div style={{display: 'flex', alignItems: 'end'}}><ToastExample /></div>
+        </div>
+        <DataTableFrame footer={<PaginationBar countLabel="4 筆內容" page={1} totalPages={2} onPageChange={() => undefined} labels={{navigation: '分頁', previous: '上一頁', next: '下一頁'}} />}>
+          <div style={{display: 'flex', justifyContent: 'space-between', padding: 16}}><span>夏季聯會 2026</span><StatusBadge tone="success">已發佈</StatusBadge></div>
+        </DataTableFrame>
+        <div style={{display: 'flex', gap: 12}}><span>繁中</span><span>简中</span><span>English</span></div>
+      </div>
+    </ToastProvider>
+  );
+}
+
+export const AdminControlsLight: Story = {render: () => <AdminControlsExample />};
+export const AdminControlsDark: Story = {render: () => <AdminControlsExample theme="dark" />};
