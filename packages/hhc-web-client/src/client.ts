@@ -6,6 +6,7 @@ export type BulletinLocale = components['schemas']['Locale']
 export type BulletinStatus = components['schemas']['BulletinStatus']
 export type BulletinIssue = components['schemas']['BulletinIssue']
 export type BulletinVersion = components['schemas']['BulletinVersion']
+export type BulletinRevision = components['schemas']['BulletinRevision']
 export type PageMeta = components['schemas']['PageMeta']
 export type UploadTarget = components['schemas']['UploadTarget']
 export type CreatedBulletinUpload = components['schemas']['CreatedUpload']
@@ -105,14 +106,18 @@ export function createHhcWebClient(options: {
         body: { locale },
       }))).data
     },
-    async archiveBulletin(issueId: string, version: number) {
-      return (await unwrap(client.POST('/admin/bulletins/{issueId}/archive', {
+    async deleteBulletin(issueId: string, version: number) {
+      const result = await client.DELETE('/admin/bulletins/{issueId}', {
         params: { path: { issueId }, header: { 'If-Match': `"${version}"` } },
-      }))).data
+      })
+      if (result.error !== undefined || !result.response.ok) throw apiError(result.response, result.error)
     },
-    async restoreBulletin(issueId: string, version: number) {
-      return (await unwrap(client.POST('/admin/bulletins/{issueId}/restore', {
-        params: { path: { issueId }, header: { 'If-Match': `"${version}"` } },
+    async listBulletinRevisions(issueId: string) {
+      return (await unwrap(client.GET('/admin/bulletins/{issueId}/revisions', { params: { path: { issueId } } }))).data
+    },
+    async restoreBulletinRevision(issueId: string, revision: number, version: number) {
+      return (await unwrap(client.POST('/admin/bulletins/{issueId}/revisions/{revision}/restore', {
+        params: { path: { issueId, revision }, header: { 'If-Match': `"${version}"` } },
       }))).data
     },
     async uploadFile(target: UploadTarget, file: File, signal?: AbortSignal) {
@@ -131,7 +136,7 @@ export function createHhcWebClient(options: {
       pageSize?: number
       query?: string
       status?: ContentStatus
-      sort?: 'updatedAt' | 'displayDate' | 'sortOrder'
+      sort?: 'updatedAt' | 'displayDate' | 'eventDate'
       direction?: 'asc' | 'desc'
       signal?: AbortSignal
     } = {}) {
@@ -174,15 +179,11 @@ export function createHhcWebClient(options: {
         params: { path: { module, contentId }, header: { 'If-Match': `"${version}"` } },
       }))).data
     },
-    async archiveContent(module: ContentModule, contentId: string, version: number) {
-      return (await unwrap(client.POST('/admin/content/{module}/{contentId}/archive', {
+    async deleteContent(module: ContentModule, contentId: string, version: number) {
+      const result = await client.DELETE('/admin/content/{module}/{contentId}', {
         params: { path: { module, contentId }, header: { 'If-Match': `"${version}"` } },
-      }))).data
-    },
-    async restoreArchivedContent(module: ContentModule, contentId: string, version: number) {
-      return (await unwrap(client.POST('/admin/content/{module}/{contentId}/restore', {
-        params: { path: { module, contentId }, header: { 'If-Match': `"${version}"` } },
-      }))).data
+      })
+      if (result.error !== undefined || !result.response.ok) throw apiError(result.response, result.error)
     },
     async listContentRevisions(module: ContentModule, contentId: string) {
       return (await unwrap(client.GET('/admin/content/{module}/{contentId}/revisions', { params: { path: { module, contentId } } }))).data

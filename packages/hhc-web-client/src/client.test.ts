@@ -47,46 +47,46 @@ describe('hhc web client', () => {
     expect(request.method).toBe('PUT')
   })
 
-  it('forwards content filters and archive concurrency', async () => {
+  it('forwards content filters and delete concurrency', async () => {
     const fetcher = vi.fn<typeof fetch>()
       .mockResolvedValueOnce(new Response(JSON.stringify({
         data: [],
         meta: { page: 1, pageSize: 20, total: 0 },
         error: null,
       }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
+
+    await client.listContent('news', { query: 'alpha', sort: 'displayDate', direction: 'asc' })
+    await client.deleteContent('news', 'news-1', 2)
+
+    const listRequest = fetcher.mock.calls[0]?.[0] as Request
+    expect(listRequest.url).toBe('http://localhost/api/admin/content/news?q=alpha&sort=displayDate&direction=asc')
+    const deleteRequest = fetcher.mock.calls[1]?.[0] as Request
+    expect(deleteRequest.url).toBe('http://localhost/api/admin/content/news/news-1')
+    expect(deleteRequest.method).toBe('DELETE')
+    expect(deleteRequest.headers.get('If-Match')).toBe('"2"')
+  })
+
+  it('uses optimistic concurrency for bulletin deletion and revision restore', async () => {
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({
-        data: { id: 'news-1', module: 'news', status: 'archived', version: 3, translations: [], createdBy: 'admin', updatedBy: 'admin', createdAt: '2026-07-31T00:00:00Z', updatedAt: '2026-07-31T00:00:00Z' },
+        data: { id: 'issue-1', issueDate: '2026-07-31', status: 'draft', version: 4, versions: [], createdBy: 'admin', updatedBy: 'admin', createdAt: '2026-07-31T00:00:00Z', updatedAt: '2026-07-31T00:00:00Z' },
         meta: {},
         error: null,
       }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
     const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
 
-    await client.listContent('news', { query: 'alpha', sort: 'displayDate', direction: 'asc' })
-    await client.archiveContent('news', 'news-1', 2)
+    await client.deleteBulletin('issue-1', 2)
+    await client.restoreBulletinRevision('issue-1', 1, 3)
 
-    const listRequest = fetcher.mock.calls[0]?.[0] as Request
-    expect(listRequest.url).toBe('http://localhost/api/admin/content/news?q=alpha&sort=displayDate&direction=asc')
-    const archiveRequest = fetcher.mock.calls[1]?.[0] as Request
-    expect(archiveRequest.url).toBe('http://localhost/api/admin/content/news/news-1/archive')
-    expect(archiveRequest.headers.get('If-Match')).toBe('"2"')
-  })
-
-  it('uses optimistic concurrency for bulletin archive and restore', async () => {
-    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({
-      data: { id: 'issue-1', issueDate: '2026-07-31', status: 'archived', version: 3, versions: [], createdBy: 'admin', updatedBy: 'admin', createdAt: '2026-07-31T00:00:00Z', updatedAt: '2026-07-31T00:00:00Z' },
-      meta: {},
-      error: null,
-    }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
-    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
-
-    await client.archiveBulletin('issue-1', 2)
-    await client.restoreBulletin('issue-1', 3)
-
-    const archive = fetcher.mock.calls[0]![0] as Request
+    const deletion = fetcher.mock.calls[0]![0] as Request
     const restore = fetcher.mock.calls[1]![0] as Request
-    expect(archive.url).toBe('http://localhost/api/admin/bulletins/issue-1/archive')
-    expect(archive.headers.get('If-Match')).toBe('"2"')
-    expect(restore.url).toBe('http://localhost/api/admin/bulletins/issue-1/restore')
+    expect(deletion.url).toBe('http://localhost/api/admin/bulletins/issue-1')
+    expect(deletion.method).toBe('DELETE')
+    expect(deletion.headers.get('If-Match')).toBe('"2"')
+    expect(restore.url).toBe('http://localhost/api/admin/bulletins/issue-1/revisions/1/restore')
     expect(restore.headers.get('If-Match')).toBe('"3"')
   })
 
