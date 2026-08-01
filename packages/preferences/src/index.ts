@@ -62,8 +62,8 @@ export function getInitialLocale(cookie: string, languages: readonly string[]): 
   return getStoredLocale(cookie) ?? detectLocale(languages);
 }
 
-export function getInitialTheme(cookie: string, prefersDark: boolean): Theme {
-  return getStoredTheme(cookie) ?? (prefersDark ? 'dark' : 'light');
+export function getInitialTheme(cookie: string, _prefersDark: boolean): Theme {
+  return getStoredTheme(cookie) ?? 'light';
 }
 
 export function getLocaleCookie(locale: Locale, context?: CookieContext): string {
@@ -92,7 +92,7 @@ export function replaceLocale(pathname: string, locale: Locale): string {
 }
 
 export function getThemeBootstrapScript(): string {
-  return `(()=>{const m=document.cookie.match(/(?:^|;\\s*)${themeCookieName}=(light|dark)(?:;|$)/);const t=m?.[1]??(typeof matchMedia==='function'&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');const r=document.documentElement;r.dataset.theme=t;r.classList.toggle('dark',t==='dark');r.style.colorScheme=t})()`;
+  return `(()=>{const m=document.cookie.match(/(?:^|;\\s*)${themeCookieName}=(light|dark)(?:;|$)/);const t=m?.[1]??'light';const r=document.documentElement;r.dataset.theme=t;r.classList.toggle('dark',t==='dark');r.style.colorScheme=t})()`;
 }
 
 function getCookieValue(cookie: string, name: string): string | undefined {
