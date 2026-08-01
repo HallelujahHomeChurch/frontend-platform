@@ -98,6 +98,27 @@ describe('HHC UI primitives', () => {
     expect(screen.getByRole('dialog', {name: 'Navigation'})).toBeInTheDocument();
   });
 
+  it('supports a branded drawer header without exposing a duplicate visible title', async () => {
+    const user = userEvent.setup();
+    render(
+      <Drawer
+        trigger={<Button>Open branded navigation</Button>}
+        title="Admin navigation"
+        header={<span>HHC Admin</span>}
+        closeLabel="Close navigation"
+      >
+        Links
+      </Drawer>
+    );
+
+    await user.click(screen.getByRole('button', {name: 'Open branded navigation'}));
+    expect(screen.getByRole('dialog', {name: 'Admin navigation'})).toBeInTheDocument();
+    expect(screen.getByText('HHC Admin')).toBeVisible();
+    expect(screen.getByRole('heading', {name: 'Admin navigation'})).toHaveClass('hhc-sr-only');
+    await user.click(screen.getByRole('button', {name: 'Close navigation'}));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
   it('keeps form and collection controls typed and labeled', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
@@ -118,6 +139,20 @@ describe('HHC UI primitives', () => {
   it('supports a ghost select trigger', () => {
     render(<Select variant="ghost" label="Language" items={[{id: 'en', label: 'English'}]} />);
     expect(screen.getByRole('button', {name: /Language/})).toHaveClass('hhc-select__trigger--ghost');
+    expect(screen.getByRole('button', {name: /Language/}).querySelector('svg')).toHaveClass('hhc-select__chevron');
+  });
+
+  it('rotates the select chevron only while the menu is open', async () => {
+    const user = userEvent.setup();
+    render(<Select label="Language" items={[{id: 'en', label: 'English'}]} />);
+
+    const select = screen.getByRole('button', {name: /Language/}).closest('.hhc-select');
+    expect(select).not.toHaveAttribute('data-open');
+    await user.click(screen.getByRole('button', {name: /Language/}));
+    expect(select).toHaveAttribute('data-open');
+
+    const styles = readFileSync('src/styles.css', 'utf8');
+    expect(styles).toMatch(/\.hhc-select\[data-open\][^{]*\.hhc-select__chevron[^}]*transform:\s*rotate\(180deg\)/s);
   });
 
   it('dismisses selects with Escape and outside interaction', async () => {
@@ -304,7 +339,7 @@ describe('HHC UI primitives', () => {
     );
   });
 
-  it('expands search without moving its trigger and restores focus when dismissed', async () => {
+  it('preserves search value when dismissed and restores focus on Escape', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(
@@ -326,9 +361,13 @@ describe('HHC UI primitives', () => {
     expect(trigger).toHaveFocus();
 
     await user.click(trigger);
+    await user.type(screen.getByRole('searchbox', {name: 'Search'}), 'weekly');
     await user.click(screen.getByRole('button', {name: 'Outside'}));
     expect(shell).toHaveAttribute('data-expanded', 'false');
-    expect(onChange).toHaveBeenLastCalledWith('');
+    expect(onChange).not.toHaveBeenCalledWith('');
+
+    await user.click(trigger);
+    expect(screen.getByRole('searchbox', {name: 'Search'})).toHaveValue('weekly');
   });
 
   it('submits a trimmed query from the expanded search trigger', async () => {
@@ -342,6 +381,38 @@ describe('HHC UI primitives', () => {
 
     expect(onSubmit).toHaveBeenCalledWith('weekly');
     expect(screen.getByRole('button', {name: 'Search'}).closest('.hhc-expandable-search')).toHaveAttribute('data-expanded', 'false');
+    await user.click(screen.getByRole('button', {name: 'Search'}));
+    expect(screen.getByRole('searchbox', {name: 'Search'})).toHaveValue('  weekly  ');
+  });
+
+  it('clears search only through the explicit clear action', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const onClear = vi.fn();
+    render(
+      <ExpandableSearchField
+        label="Search"
+        submitLabel="Submit search"
+        clearLabel="Clear search"
+        defaultValue="weekly"
+        onChange={onChange}
+        onClear={onClear}
+      />
+    );
+
+    await user.click(screen.getByRole('button', {name: 'Search'}));
+    await user.click(screen.getByRole('button', {name: 'Clear search'}));
+    expect(screen.getByRole('searchbox', {name: 'Search'})).toHaveValue('');
+    expect(onChange).toHaveBeenLastCalledWith('');
+    expect(onClear).toHaveBeenCalledOnce();
+  });
+
+  it('styles expandable search as one outline pill without an expanded trigger hover surface', () => {
+    const styles = readFileSync('src/styles.css', 'utf8');
+
+    expect(styles).toMatch(/\.hhc-expandable-search[^}]*height:\s*40px/s);
+    expect(styles).toMatch(/\.hhc-expandable-search__icon[^}]*width:\s*18px[^}]*height:\s*18px/s);
+    expect(styles).toMatch(/\.hhc-expandable-search\[data-expanded='true'\][^{]*\.hhc-expandable-search__trigger\[data-hovered\][^}]*background:\s*transparent/s);
   });
 
   it('queues and dismisses accessible toast notifications', async () => {
