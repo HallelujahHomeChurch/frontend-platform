@@ -1,7 +1,9 @@
 import {describe, expect, it} from 'vitest';
 import {
   buildAuthorizeUrl,
+  claimOAuthRecovery,
   createCodeChallenge,
+  createOAuthTransactionOnce,
   createOAuthTransaction,
   currentReturnTo,
   exchangeAuthorizationCode,
@@ -139,5 +141,33 @@ describe('browser OAuth helpers', () => {
       redirectUri: 'https://account.alive.org.tw/oauth/callback',
       scope: 'openid profile email'
     }, transaction, 'authorization-code', fetcher)).rejects.toThrow('OAuth token exchange returned an invalid response');
+  });
+
+  it('creates and saves only one transaction for duplicate authorization starts', async () => {
+    const storage = storageWith();
+    const options = {
+      storage,
+      storageKey: 'oauth',
+      transactionOptions: {
+        randomBytes: () => new Uint8Array(32).fill(9),
+        now: () => 1_000
+      }
+    };
+
+    const first = createOAuthTransactionOnce('/users', options);
+    const second = createOAuthTransactionOnce('/users', options);
+
+    expect(first).toBe(second);
+    await expect(first).resolves.toEqual(await second);
+    expect(readOAuthTransaction({storage, storageKey: 'oauth', now: () => 1_000}))
+      .toEqual(await first);
+  });
+
+  it('allows one OAuth recovery attempt until the transaction succeeds or restarts', () => {
+    const storage = storageWith();
+    const options = {storage, storageKey: 'oauth'};
+
+    expect(claimOAuthRecovery(options)).toBe(true);
+    expect(claimOAuthRecovery(options)).toBe(false);
   });
 });

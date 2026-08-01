@@ -25,7 +25,14 @@ export interface OAuthTransactionOptions {
   now?: () => number;
 }
 
+export interface OAuthTransactionStorageOptions {
+  storage: Storage;
+  storageKey: string;
+  transactionOptions?: OAuthTransactionOptions;
+}
+
 const defaultTransactionMaxAge = 10 * 60 * 1_000;
+const transactionStarts = new WeakMap<Storage, Map<string, Promise<OAuthTransaction>>>();
 
 export async function createOAuthTransaction(
   returnTo: string,
@@ -40,6 +47,37 @@ export async function createOAuthTransaction(
     returnTo: safeReturnTo(returnTo),
     createdAt: options.now?.() ?? Date.now()
   };
+}
+
+export function createOAuthTransactionOnce(
+  returnTo: string,
+  {storage, storageKey, transactionOptions}: OAuthTransactionStorageOptions
+): Promise<OAuthTransaction> {
+  let starts = transactionStarts.get(storage);
+  if (!starts) {
+    starts = new Map();
+    transactionStarts.set(storage, starts);
+  }
+
+  const pending = starts.get(storageKey);
+  if (pending) return pending;
+
+  const existing = readOAuthTransaction({
+    storage,
+    storageKey,
+    now: transactionOptions?.now
+  });
+  if (existing && existing.returnTo === safeReturnTo(returnTo)) return Promise.resolve(existing);
+
+  const next = createOAuthTransaction(returnTo, transactionOptions)
+    .then((transaction) => {
+      storage.removeItem(recoveryStorageKey(storageKey));
+      saveOAuthTransaction(transaction, {storage, storageKey});
+      return transaction;
+    })
+    .finally(() => starts?.delete(storageKey));
+  starts.set(storageKey, next);
+  return next;
 }
 
 export async function createCodeChallenge(codeVerifier: string): Promise<string> {
@@ -129,6 +167,14 @@ export function readOAuthTransaction({
 
 export function clearOAuthTransaction({storage, storageKey}: {storage: Storage; storageKey: string}): void {
   storage.removeItem(storageKey);
+  storage.removeItem(recoveryStorageKey(storageKey));
+}
+
+export function claimOAuthRecovery({storage, storageKey}: {storage: Storage; storageKey: string}): boolean {
+  const key = recoveryStorageKey(storageKey);
+  if (storage.getItem(key)) return false;
+  storage.setItem(key, '1');
+  return true;
 }
 
 export function validateOAuthState(transaction: OAuthTransaction | null, state: string): transaction is OAuthTransaction {
@@ -166,4 +212,8 @@ function isOAuthTransaction(value: unknown): value is OAuthTransaction {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
+}
+
+function recoveryStorageKey(storageKey: string): string {
+  return `${storageKey}:recovery`;
 }

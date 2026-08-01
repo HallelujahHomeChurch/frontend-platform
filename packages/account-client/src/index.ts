@@ -11,6 +11,15 @@ export type AccountSession =
   | {authenticated: false}
   | {authenticated: true; user: AccountSessionUser};
 
+export type AccountAuthResult =
+  | {status: 'authenticated'; user: AccountSessionUser}
+  | {status: 'anonymous'}
+  | {status: 'unavailable'; error: unknown};
+
+export interface AccountSessionReader {
+  getSession(): Promise<AccountSession>;
+}
+
 export interface AccountSessionClientOptions {
   baseUrl?: string;
   fetcher?: typeof fetch;
@@ -83,6 +92,50 @@ export function createAccountSessionClient({
 
 export type AccountSessionClient = ReturnType<typeof createAccountSessionClient>;
 
+export async function resolveAccountAuth(client: AccountSessionReader): Promise<AccountAuthResult> {
+  try {
+    const session = await client.getSession();
+    return session.authenticated
+      ? {status: 'authenticated', user: session.user}
+      : {status: 'anonymous'};
+  } catch (error) {
+    if (error instanceof AccountSessionError && (error.status === 400 || error.status === 401)) {
+      return {status: 'anonymous'};
+    }
+    return {status: 'unavailable', error};
+  }
+}
+
+export interface RefreshLockManager {
+  request<T>(name: string, callback: () => Promise<T>): Promise<T>;
+}
+
+export function createRefreshCoordinator({locks = browserLockManager()}: {locks?: RefreshLockManager} = {}) {
+  const requests = new Map<string, Promise<unknown>>();
+
+  return {
+    run<T>(key: string, request: () => Promise<T>): Promise<T> {
+      const pending = requests.get(key);
+      if (pending) return pending as Promise<T>;
+
+      const next = Promise.resolve()
+        .then(() => locks ? locks.request(`hhc:refresh:${key}`, request) : request())
+        .finally(() => requests.delete(key));
+      requests.set(key, next);
+      return next;
+    }
+  };
+}
+
+export async function retrySupersededRefresh<T>(request: () => Promise<T>): Promise<T> {
+  try {
+    return await request();
+  } catch (error) {
+    if (!isRefreshSuperseded(error)) throw error;
+    return request();
+  }
+}
+
 async function readJson(response: Response): Promise<unknown> {
   const contentType = response.headers.get('content-type') ?? '';
   if (!contentType.includes('application/json')) return undefined;
@@ -102,4 +155,15 @@ function isAccountSession(value: unknown): value is AccountSession {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
+}
+
+function isRefreshSuperseded(error: unknown): boolean {
+  return isRecord(error)
+    && error.status === 409
+    && error.code === 'ACC_AUTH_REFRESH_SUPERSEDED';
+}
+
+function browserLockManager(): RefreshLockManager | undefined {
+  if (typeof navigator === 'undefined' || !navigator.locks) return undefined;
+  return navigator.locks as unknown as RefreshLockManager;
 }
