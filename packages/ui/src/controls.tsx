@@ -1,6 +1,7 @@
 import {useEffect, useRef, useState, type ReactNode} from 'react';
 import {parseDate} from '@internationalized/date';
 import {OTPInput, type OTPInputProps} from 'input-otp';
+import {ChevronDown, Search} from 'lucide-react';
 import {
   Button as AriaButton,
   type ButtonProps as AriaButtonProps,
@@ -142,7 +143,7 @@ export function Select({label, items, variant = 'default', onSelectionChange, cl
       <Label className={hideLabel ? 'hhc-sr-only' : undefined}>{label}</Label>
       <AriaButton className={['hhc-select__trigger', `hhc-select__trigger--${variant}`, triggerClassName].filter(Boolean).join(' ')}>
         <SelectValue />
-        <span aria-hidden="true">⌄</span>
+        <ChevronDown aria-hidden="true" className="hhc-select__chevron" />
       </AriaButton>
       <Popover className="hhc-popover">
         <ListBox className="hhc-listbox">
@@ -185,13 +186,8 @@ export function ExpandableSearchField({label, submitLabel, clearLabel, placehold
     if (isExpanded) inputRef.current?.focus();
   }, [isExpanded]);
 
-  function collapse({restoreFocus = false, clear = true} = {}) {
+  function collapse({restoreFocus = false} = {}) {
     setExpanded(false);
-    if (clear) {
-      setQuery('');
-      onChange?.('');
-      onClear?.();
-    }
     if (restoreFocus) triggerRef.current?.focus();
   }
 
@@ -203,8 +199,6 @@ export function ExpandableSearchField({label, submitLabel, clearLabel, placehold
     }
     onSubmit?.(trimmed);
     setExpanded(false);
-    setQuery('');
-    onChange?.('');
   }
 
   useEffect(() => {
@@ -258,7 +252,7 @@ export function ExpandableSearchField({label, submitLabel, clearLabel, placehold
           else setExpanded(true);
         }}
       >
-        <span aria-hidden="true">⌕</span>
+        <Search aria-hidden="true" className="hhc-expandable-search__icon" />
       </AriaButton>
     </div>
   );

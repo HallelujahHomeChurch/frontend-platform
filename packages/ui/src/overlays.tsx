@@ -56,6 +56,7 @@ export function Menu({label, items, onAction, trigger, header}: MenuProps) {
 interface DialogBaseProps {
   trigger?: ReactElement;
   title: string;
+  header?: ReactNode;
   children: ReactNode | ((close: () => void) => ReactNode);
   isDismissable?: boolean;
   isOpen?: boolean;
@@ -65,7 +66,7 @@ interface DialogBaseProps {
   closeLabel?: string;
 }
 
-function DialogBase({trigger, title, children, isDismissable = true, isOpen, onOpenChange, variant = 'dialog', role = 'dialog', closeLabel = 'Close'}: DialogBaseProps) {
+function DialogBase({trigger, title, header, children, isDismissable = true, isOpen, onOpenChange, variant = 'dialog', role = 'dialog', closeLabel = 'Close'}: DialogBaseProps) {
   const overlay = (
     <ModalOverlay className="hhc-modal-overlay" isDismissable={isDismissable} isOpen={isOpen} onOpenChange={onOpenChange}>
       <Modal className={`hhc-modal hhc-modal--${variant}`}>
@@ -73,7 +74,8 @@ function DialogBase({trigger, title, children, isDismissable = true, isOpen, onO
           {({close}) => (
             <>
               <header className="hhc-dialog__header">
-                <Heading slot="title">{title}</Heading>
+                <Heading slot="title" className={header ? 'hhc-sr-only' : undefined}>{title}</Heading>
+                {header ? <div className="hhc-dialog__header-content">{header}</div> : null}
                 <AriaButton className="hhc-dialog__close" onPress={close} aria-label={closeLabel}>×</AriaButton>
               </header>
               <div className="hhc-dialog__body">{typeof children === 'function' ? children(close) : children}</div>
@@ -87,13 +89,13 @@ function DialogBase({trigger, title, children, isDismissable = true, isOpen, onO
   return trigger ? <DialogTrigger isOpen={isOpen} onOpenChange={onOpenChange}>{trigger}{overlay}</DialogTrigger> : overlay;
 }
 
-export type DialogProps = Omit<DialogBaseProps, 'variant' | 'role'>;
+export type DialogProps = Omit<DialogBaseProps, 'variant' | 'role' | 'header'>;
 
 export function Dialog(props: DialogProps) {
   return <DialogBase {...props} />;
 }
 
-export interface AlertDialogProps extends Omit<DialogBaseProps, 'variant' | 'role' | 'children'> {
+export interface AlertDialogProps extends Omit<DialogBaseProps, 'variant' | 'role' | 'children' | 'header'> {
   description: ReactNode;
   confirmLabel: string;
   cancelLabel: string;
