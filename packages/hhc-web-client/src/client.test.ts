@@ -108,6 +108,25 @@ describe('hhc web client', () => {
     expect(retryRequest.method).toBe('POST')
   })
 
+  it('updates and removes one bulletin locale version with issue concurrency', async () => {
+    const body = JSON.stringify({
+      data: { id: 'issue-1', issueDate: '2026-07-31', status: 'draft', version: 3, versions: [], createdBy: 'admin', updatedBy: 'admin', createdAt: '2026-07-31T00:00:00Z', updatedAt: '2026-07-31T00:00:00Z' },
+      meta: {}, error: null,
+    })
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(body, { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
+
+    await client.updateBulletinVersion('issue-1', 'en', 2, 'Weekly')
+    await client.deleteBulletinVersion('issue-1', 'en', 3)
+
+    const update = fetcher.mock.calls[0]![0] as Request
+    const deletion = fetcher.mock.calls[1]![0] as Request
+    expect(update.method).toBe('PUT')
+    expect(update.headers.get('If-Match')).toBe('"2"')
+    expect(deletion.method).toBe('DELETE')
+    expect(deletion.headers.get('If-Match')).toBe('"3"')
+  })
+
   it('reads home and news detail projections directly', async () => {
     const fetcher = vi.fn<typeof fetch>()
       .mockResolvedValueOnce(new Response(JSON.stringify({

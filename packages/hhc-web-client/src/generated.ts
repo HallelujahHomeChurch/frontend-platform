@@ -180,6 +180,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/bulletins/{issueId}/versions/{locale}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["updateBulletinVersion"];
+        post?: never;
+        delete: operations["deleteBulletinVersion"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/bulletins/{issueId}/assets/{assetId}": {
         parameters: {
             query?: never;
@@ -580,6 +596,9 @@ export interface components {
             mimeType: "application/pdf";
             /** Format: int64 */
             sizeBytes: number;
+        };
+        UpdateBulletinVersionInput: {
+            title: string;
         };
         CompleteBulletinUploadInput: {
             locale: components["schemas"]["Locale"];
@@ -1125,6 +1144,49 @@ export interface operations {
                     "application/json": components["schemas"]["CreatedUploadEnvelope"];
                 };
             };
+        };
+    };
+    updateBulletinVersion: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                locale: components["schemas"]["Locale"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateBulletinVersionInput"];
+            };
+        };
+        responses: {
+            200: components["responses"]["BulletinIssue"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+        };
+    };
+    deleteBulletinVersion: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                locale: components["schemas"]["Locale"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["BulletinIssue"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
         };
     };
     getBulletinAssetStatus: {

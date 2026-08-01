@@ -88,6 +88,17 @@ export function createHhcWebClient(options: {
         body: input,
       }))).data
     },
+    async updateBulletinVersion(issueId: string, locale: BulletinLocale, version: number, title: string) {
+      return (await unwrap(client.PUT('/admin/bulletins/{issueId}/versions/{locale}', {
+        params: { path: { issueId, locale }, header: { 'If-Match': `"${version}"` } },
+        body: { title },
+      }))).data
+    },
+    async deleteBulletinVersion(issueId: string, locale: BulletinLocale, version: number) {
+      return (await unwrap(client.DELETE('/admin/bulletins/{issueId}/versions/{locale}', {
+        params: { path: { issueId, locale }, header: { 'If-Match': `"${version}"` } },
+      }))).data
+    },
     async completeBulletinUpload(issueId: string, assetId: string, version: number, input: CompleteBulletinUploadInput) {
       return (await unwrap(client.POST('/admin/bulletins/{issueId}/assets/{assetId}/complete', {
         params: { path: { issueId, assetId }, header: { 'If-Match': `"${version}"` } },
