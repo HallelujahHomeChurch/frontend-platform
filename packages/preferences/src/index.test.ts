@@ -54,8 +54,8 @@ describe('theme preference', () => {
     expect(getStoredTheme('hhc_theme=system')).toBeUndefined();
   });
 
-  it('falls back to prefers-color-scheme', () => {
-    expect(getInitialTheme('', true)).toBe('dark');
+  it('defaults to light until a supported theme is stored', () => {
+    expect(getInitialTheme('', true)).toBe('light');
     expect(getInitialTheme('', false)).toBe('light');
     expect(getInitialTheme('hhc_theme=light', true)).toBe('light');
   });
@@ -128,12 +128,12 @@ describe('before-paint bootstrap', () => {
     expect(root.documentElement.style.colorScheme).toBe('dark');
   });
 
-  it('falls back to prefers-color-scheme without a valid cookie', () => {
+  it('defaults to light without a valid cookie', () => {
     const root = createBootstrapRoot('hhc_theme=system');
 
     runBootstrap(getThemeBootstrapScript(), root, true);
 
-    expect(root.documentElement.dataset.theme).toBe('dark');
+    expect(root.documentElement.dataset.theme).toBe('light');
   });
 });
 
