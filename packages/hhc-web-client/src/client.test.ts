@@ -90,6 +90,24 @@ describe('hhc web client', () => {
     expect(restore.headers.get('If-Match')).toBe('"3"')
   })
 
+  it('reads bulletin asset status through the protected CMS route', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({
+      data: { id: 'asset-1', uploadStatus: 'completed', scanStatus: 'pending', processingStatus: 'not_required', retryable: false },
+      meta: {}, error: null,
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
+
+    await client.getBulletinAssetStatus('issue-1', 'asset-1')
+    await client.retryBulletinAssetScan('issue-1', 'asset-1')
+
+    const request = fetcher.mock.calls[0]![0] as Request
+    expect(request.url).toBe('http://localhost/api/admin/bulletins/issue-1/assets/asset-1')
+    expect(request.headers.get('Authorization')).toBe('Bearer token')
+    const retryRequest = fetcher.mock.calls[1]![0] as Request
+    expect(retryRequest.url).toBe('http://localhost/api/admin/bulletins/issue-1/assets/asset-1/scan/retry')
+    expect(retryRequest.method).toBe('POST')
+  })
+
   it('reads home and news detail projections directly', async () => {
     const fetcher = vi.fn<typeof fetch>()
       .mockResolvedValueOnce(new Response(JSON.stringify({

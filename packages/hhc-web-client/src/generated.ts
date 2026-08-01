@@ -180,6 +180,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/bulletins/{issueId}/assets/{assetId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getBulletinAssetStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/assets/{assetId}/scan/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["retryBulletinAssetScan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/bulletins/{issueId}/assets/{assetId}/complete": {
         parameters: {
             query?: never;
@@ -420,6 +452,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/content/news/{contentId}/assets/{assetId}/scan/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["retryNewsCoverScan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/content/news/{contentId}/assets/{assetId}/complete": {
         parameters: {
             query?: never;
@@ -584,17 +632,13 @@ export interface components {
         };
         AssetStatus: {
             id: string;
-            namespace: string;
-            ownerService: string;
-            ownerType: string;
-            ownerId: string;
             /** @enum {string} */
             uploadStatus: "created" | "completed" | "failed";
             /** @enum {string} */
             scanStatus: "pending" | "clean" | "infected" | "failed";
             /** @enum {string} */
             processingStatus: "pending" | "ready" | "not_required" | "failed";
-            visibility: string;
+            retryable: boolean;
         };
         PublicationInput: {
             locale: components["schemas"]["Locale"];
@@ -1076,6 +1120,54 @@ export interface operations {
             };
         };
     };
+    getBulletinAssetStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                assetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bulletin PDF scan status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetStatusEnvelope"];
+                };
+            };
+            404: components["responses"]["Error"];
+        };
+    };
+    retryBulletinAssetScan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                assetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bulletin PDF scan requeued */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetStatusEnvelope"];
+                };
+            };
+            409: components["responses"]["Error"];
+        };
+    };
     completeBulletinUpload: {
         parameters: {
             query?: never;
@@ -1420,6 +1512,30 @@ export interface operations {
                     "application/json": components["schemas"]["AssetStatusEnvelope"];
                 };
             };
+        };
+    };
+    retryNewsCoverScan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contentId: string;
+                assetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description News cover scan requeued */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetStatusEnvelope"];
+                };
+            };
+            409: components["responses"]["Error"];
         };
     };
     completeNewsCoverUpload: {

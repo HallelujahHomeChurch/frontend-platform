@@ -69,6 +69,12 @@ export function createHhcWebClient(options: {
     async getAdminBulletin(issueId: string, signal?: AbortSignal) {
       return (await unwrap(client.GET('/admin/bulletins/{issueId}', { params: { path: { issueId } }, signal }))).data
     },
+    async getBulletinAssetStatus(issueId: string, assetId: string, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/bulletins/{issueId}/assets/{assetId}', { params: { path: { issueId, assetId } }, signal }))).data
+    },
+    async retryBulletinAssetScan(issueId: string, assetId: string) {
+      return (await unwrap(client.POST('/admin/bulletins/{issueId}/assets/{assetId}/scan/retry', { params: { path: { issueId, assetId } } }))).data
+    },
     async createBulletin(issueDate: string, idempotencyKey: string) {
       return (await unwrap(client.POST('/admin/bulletins', {
         params: { header: { 'Idempotency-Key': idempotencyKey } },
@@ -198,6 +204,9 @@ export function createHhcWebClient(options: {
     },
     async getNewsCoverStatus(contentId: string, assetId: string, signal?: AbortSignal) {
       return (await unwrap(client.GET('/admin/content/news/{contentId}/assets/{assetId}', { params: { path: { contentId, assetId } }, signal }))).data
+    },
+    async retryNewsCoverScan(contentId: string, assetId: string) {
+      return (await unwrap(client.POST('/admin/content/news/{contentId}/assets/{assetId}/scan/retry', { params: { path: { contentId, assetId } } }))).data
     },
     async listPublicContent(module: ContentModule, locale: BulletinLocale, signal?: AbortSignal) {
       const path = module === 'news' ? '/news' : module === 'history' ? '/history' : '/videos'
