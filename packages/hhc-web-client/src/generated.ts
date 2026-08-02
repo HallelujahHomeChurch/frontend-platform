@@ -788,9 +788,7 @@ export interface components {
         };
         PublicContentListEnvelope: {
             data: components["schemas"]["PublicContentItem"][];
-            meta: {
-                [key: string]: unknown;
-            };
+            meta: components["schemas"]["PageMeta"];
             error?: null;
         };
         PublicContentItemEnvelope: {
@@ -964,6 +962,8 @@ export interface operations {
         parameters: {
             query?: {
                 locale?: components["parameters"]["Locale"];
+                page?: components["parameters"]["Page"];
+                pageSize?: components["parameters"]["PageSize"];
             };
             header?: never;
             path?: never;
@@ -1004,6 +1004,8 @@ export interface operations {
         parameters: {
             query?: {
                 locale?: components["parameters"]["Locale"];
+                page?: components["parameters"]["Page"];
+                pageSize?: components["parameters"]["PageSize"];
             };
             header?: never;
             path?: never;
@@ -1018,6 +1020,8 @@ export interface operations {
         parameters: {
             query?: {
                 locale?: components["parameters"]["Locale"];
+                page?: components["parameters"]["Page"];
+                pageSize?: components["parameters"]["PageSize"];
             };
             header?: never;
             path?: never;
