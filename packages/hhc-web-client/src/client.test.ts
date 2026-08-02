@@ -151,4 +151,19 @@ describe('hhc web client', () => {
     expect(homeRequest.url).toBe('http://localhost/api/home?locale=en')
     expect(newsRequest.url).toBe('http://localhost/api/news/announcement?locale=en')
   })
+
+  it('returns public pagination metadata', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
+      data: [{ id: 'news-1', title: 'News' }],
+      meta: { page: 2, pageSize: 12, total: 25 },
+      error: null,
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => null, fetcher })
+
+    await expect(client.listPublicContentPage('news', 'en', { page: 2, pageSize: 12 })).resolves.toEqual({
+      data: [{ id: 'news-1', title: 'News' }],
+      meta: { page: 2, pageSize: 12, total: 25 },
+    })
+    expect((fetcher.mock.calls[0]![0] as Request).url).toBe('http://localhost/api/news?locale=en&page=2&pageSize=12')
+  })
 })
