@@ -47,6 +47,23 @@ describe('account session client', () => {
     }));
   });
 
+  it('issues a non-rotating access token with CSRF protection', async () => {
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({csrf_token: 'csrf-123'}))
+      .mockResolvedValueOnce(jsonResponse({access_token: 'access-123', expires_in: 900}));
+    const client = createAccountSessionClient({fetcher});
+
+    await expect(client.issueAccessToken()).resolves.toEqual({
+      accessToken: 'access-123',
+      expiresIn: 900
+    });
+    expect(fetcher).toHaveBeenNthCalledWith(2, '/api/account/v1/session/access-token', expect.objectContaining({
+      credentials: 'include',
+      method: 'POST',
+      headers: {'accept': 'application/json', 'x-csrf-token': 'csrf-123'}
+    }));
+  });
+
   it('throws a typed error for invalid responses', async () => {
     const client = createAccountSessionClient({
       fetcher: vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({error_code: 'ACC_INTERNAL'}, 500))

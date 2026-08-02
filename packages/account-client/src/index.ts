@@ -25,6 +25,11 @@ export interface AccountSessionClientOptions {
   fetcher?: typeof fetch;
 }
 
+export interface AccountAccessToken {
+  accessToken: string;
+  expiresIn: number;
+}
+
 export class AccountSessionError extends Error {
   readonly status: number;
   readonly code?: string;
@@ -61,6 +66,13 @@ export function createAccountSessionClient({
     return body;
   }
 
+  async function csrfToken() {
+    const body = await request('/csrf-token', {method: 'GET', cache: 'no-store'});
+    const token = isRecord(body) && typeof body.csrf_token === 'string' ? body.csrf_token : '';
+    if (!token) throw new AccountSessionError(200, 'CSRF_TOKEN_REQUIRED');
+    return token;
+  }
+
   return {
     async getSession(): Promise<AccountSession> {
       const body = await request('/session', {method: 'GET', cache: 'no-store'});
@@ -68,10 +80,20 @@ export function createAccountSessionClient({
       return body;
     },
 
+    async issueAccessToken(): Promise<AccountAccessToken> {
+      const token = await csrfToken();
+      const body = await request('/session/access-token', {
+        method: 'POST',
+        headers: {'x-csrf-token': token}
+      });
+      if (!isRecord(body) || typeof body.access_token !== 'string' || typeof body.expires_in !== 'number') {
+        throw new AccountSessionError(200, 'INVALID_RESPONSE');
+      }
+      return {accessToken: body.access_token, expiresIn: body.expires_in};
+    },
+
     async logout(): Promise<void> {
-      const csrf = await request('/csrf-token', {method: 'GET', cache: 'no-store'});
-      const token = isRecord(csrf) && typeof csrf.csrf_token === 'string' ? csrf.csrf_token : '';
-      if (!token) throw new AccountSessionError(200, 'CSRF_TOKEN_REQUIRED');
+      const token = await csrfToken();
       await request('/session/logout', {
         method: 'POST',
         headers: {'x-csrf-token': token}
@@ -79,9 +101,7 @@ export function createAccountSessionClient({
     },
 
     async logoutAll(): Promise<void> {
-      const csrf = await request('/csrf-token', {method: 'GET', cache: 'no-store'});
-      const token = isRecord(csrf) && typeof csrf.csrf_token === 'string' ? csrf.csrf_token : '';
-      if (!token) throw new AccountSessionError(200, 'CSRF_TOKEN_REQUIRED');
+      const token = await csrfToken();
       await request('/session/logout-all', {
         method: 'POST',
         headers: {'x-csrf-token': token}
