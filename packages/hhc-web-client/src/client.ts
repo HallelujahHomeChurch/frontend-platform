@@ -60,9 +60,9 @@ export function createHhcWebClient(options: {
   }
 
   return {
-    async listAdminBulletins(params: { page?: number; pageSize?: number; status?: BulletinStatus; signal?: AbortSignal } = {}) {
+    async listAdminBulletins(params: { page?: number; pageSize?: number; status?: BulletinStatus; query?: string; signal?: AbortSignal } = {}) {
       const envelope = await unwrap(client.GET('/admin/bulletins', {
-        params: { query: { page: params.page, pageSize: params.pageSize, status: params.status } },
+        params: { query: { page: params.page, pageSize: params.pageSize, status: params.status, q: params.query } },
         signal: params.signal,
       }))
       return { data: envelope.data, meta: envelope.meta }
@@ -70,16 +70,22 @@ export function createHhcWebClient(options: {
     async getAdminBulletin(issueId: string, signal?: AbortSignal) {
       return (await unwrap(client.GET('/admin/bulletins/{issueId}', { params: { path: { issueId } }, signal }))).data
     },
+    async updateBulletin(issueId: string, version: number, issueNumber: number, issueDate: string) {
+      return (await unwrap(client.PUT('/admin/bulletins/{issueId}', {
+        params: { path: { issueId }, header: { 'If-Match': `"${version}"` } },
+        body: { issueNumber, issueDate },
+      }))).data
+    },
     async getBulletinAssetStatus(issueId: string, assetId: string, signal?: AbortSignal) {
       return (await unwrap(client.GET('/admin/bulletins/{issueId}/assets/{assetId}', { params: { path: { issueId, assetId } }, signal }))).data
     },
     async retryBulletinAssetScan(issueId: string, assetId: string) {
       return (await unwrap(client.POST('/admin/bulletins/{issueId}/assets/{assetId}/scan/retry', { params: { path: { issueId, assetId } } }))).data
     },
-    async createBulletin(issueDate: string, idempotencyKey: string) {
+    async createBulletin(issueNumber: number, issueDate: string, idempotencyKey: string) {
       return (await unwrap(client.POST('/admin/bulletins', {
         params: { header: { 'Idempotency-Key': idempotencyKey } },
-        body: { issueDate },
+        body: { issueNumber, issueDate },
       }))).data
     },
     async createBulletinUpload(issueId: string, input: components['schemas']['CreateBulletinUploadInput'], idempotencyKey: string) {
@@ -88,10 +94,10 @@ export function createHhcWebClient(options: {
         body: input,
       }))).data
     },
-    async updateBulletinVersion(issueId: string, locale: BulletinLocale, version: number, title: string) {
+    async updateBulletinVersion(issueId: string, locale: BulletinLocale, version: number, title: string, subtitle: string) {
       return (await unwrap(client.PUT('/admin/bulletins/{issueId}/versions/{locale}', {
         params: { path: { issueId, locale }, header: { 'If-Match': `"${version}"` } },
-        body: { title },
+        body: { title, subtitle },
       }))).data
     },
     async deleteBulletinVersion(issueId: string, locale: BulletinLocale, version: number) {

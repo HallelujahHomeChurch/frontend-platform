@@ -122,8 +122,8 @@ export function PaginationBar({countLabel, children, page, totalPages, onPageCha
     <footer className="hhc-pagination-bar">
       <div className="hhc-pagination-bar__count">{countLabel}{children}</div>
       <nav className="hhc-pagination-bar__navigation" aria-label={labels.navigation ?? 'Pagination'}>
-        <span aria-live="polite">{page} / {Math.max(totalPages, 1)}</span>
         <Button className="hhc-pagination-bar__button" variant="ghost" isDisabled={page <= 1} aria-label={labels.previous} onPress={() => onPageChange(page - 1)}>‹</Button>
+        <span aria-live="polite">{page} / {Math.max(totalPages, 1)}</span>
         <Button className="hhc-pagination-bar__button" variant="ghost" isDisabled={page >= totalPages} aria-label={labels.next} onPress={() => onPageChange(page + 1)}>›</Button>
       </nav>
     </footer>
