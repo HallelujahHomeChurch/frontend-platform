@@ -108,6 +108,33 @@ describe('hhc web client', () => {
     expect(retryRequest.method).toBe('POST')
   })
 
+  it('sends the requested news image usage when creating an upload', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
+      data: {
+        asset: { id: 'asset-1' },
+        uploadTarget: { url: 'https://storage.example/upload', method: 'PUT', headers: {}, expiresAt: '2026-08-03T00:00:00Z' },
+      },
+      meta: {},
+      error: null,
+    }), { status: 201, headers: { 'Content-Type': 'application/json' } }))
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
+
+    await client.createNewsCoverUpload('news-1', {
+      fileName: 'home.webp',
+      mimeType: 'image/webp',
+      sizeBytes: 1024,
+      usage: 'home',
+    }, 'upload-1')
+
+    const request = fetcher.mock.calls[0]![0] as Request
+    await expect(request.json()).resolves.toEqual({
+      fileName: 'home.webp',
+      mimeType: 'image/webp',
+      sizeBytes: 1024,
+      usage: 'home',
+    })
+  })
+
   it('updates and removes one bulletin locale version with issue concurrency', async () => {
     const body = JSON.stringify({
       data: { id: 'issue-1', issueDate: '2026-07-31', status: 'draft', version: 3, versions: [], createdBy: 'admin', updatedBy: 'admin', createdAt: '2026-07-31T00:00:00Z', updatedAt: '2026-07-31T00:00:00Z' },
