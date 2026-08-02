@@ -205,6 +205,7 @@
   .hhc-status-badge--danger { color: var(--hhc-danger); background: color-mix(in srgb, var(--hhc-danger) 14%, transparent); }
   .hhc-data-table-frame { display: grid; min-height: 360px; grid-template-rows: minmax(0, 1fr) auto; overflow: hidden; border: 1px solid var(--hhc-border); border-radius: var(--hhc-radius-md); background: var(--hhc-surface); }
   .hhc-data-table-frame__body { min-height: 0; overflow: auto; }
+  .hhc-data-table-frame__body thead { position: sticky; z-index: 1; top: 0; background: var(--hhc-surface); }
   .hhc-pagination-bar { display: flex; min-height: 48px; align-items: center; justify-content: space-between; gap: 16px; padding: 6px 8px 6px 14px; color: var(--hhc-text-muted); background: var(--hhc-surface); }
   .hhc-pagination-bar__count, .hhc-pagination-bar__navigation { display: flex; align-items: center; gap: 8px; }
   .hhc-pagination-bar__button { width: 36px; min-height: 36px; padding: 0; }

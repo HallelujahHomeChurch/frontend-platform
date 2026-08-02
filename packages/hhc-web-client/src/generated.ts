@@ -156,7 +156,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["getAdminBulletin"];
-        put?: never;
+        put: operations["updateBulletinIssue"];
         post?: never;
         delete: operations["deleteBulletin"];
         options?: never;
@@ -502,6 +502,7 @@ export interface components {
             issueId: string;
             locale: components["schemas"]["Locale"];
             title: string;
+            subtitle: string;
             pdfAssetId: string;
             pdfFileName: string;
             publicGrantId?: string;
@@ -520,6 +521,7 @@ export interface components {
         BulletinIssue: {
             /** Format: uuid */
             id: string;
+            issueNumber?: number;
             /** Format: date */
             issueDate: string;
             status: components["schemas"]["BulletinStatus"];
@@ -546,9 +548,12 @@ export interface components {
         PublicBulletin: {
             /** Format: date */
             issueDate: string;
+            issueNumber?: number;
             locale: components["schemas"]["Locale"];
             title: string;
+            subtitle: string;
             downloadUrl: string;
+            downloadFileName: string;
             /** Format: date-time */
             publishedAt: string;
             /** Format: int64 */
@@ -557,6 +562,7 @@ export interface components {
         PublicBulletinIssue: {
             /** Format: date */
             issueDate: string;
+            issueNumber?: number;
             versions: components["schemas"]["PublicBulletin"][];
         };
         Workflow: {
@@ -586,6 +592,12 @@ export interface components {
             uploadTarget: components["schemas"]["UploadTarget"];
         };
         CreateBulletinInput: {
+            issueNumber: number;
+            /** Format: date */
+            issueDate: string;
+        };
+        UpdateBulletinInput: {
+            issueNumber: number;
             /** Format: date */
             issueDate: string;
         };
@@ -599,10 +611,12 @@ export interface components {
         };
         UpdateBulletinVersionInput: {
             title: string;
+            subtitle: string;
         };
         CompleteBulletinUploadInput: {
             locale: components["schemas"]["Locale"];
             title: string;
+            subtitle: string;
             fileName: string;
             /** @constant */
             mimeType: "application/pdf";
@@ -1042,6 +1056,7 @@ export interface operations {
                 page?: components["parameters"]["Page"];
                 pageSize?: components["parameters"]["PageSize"];
                 status?: components["schemas"]["BulletinStatus"];
+                q?: string;
             };
             header?: never;
             path?: never;
@@ -1092,6 +1107,28 @@ export interface operations {
         responses: {
             200: components["responses"]["BulletinIssue"];
             404: components["responses"]["Error"];
+        };
+    };
+    updateBulletinIssue: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                issueId: components["parameters"]["IssueID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateBulletinInput"];
+            };
+        };
+        responses: {
+            200: components["responses"]["BulletinIssue"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
         };
     };
     deleteBulletin: {
