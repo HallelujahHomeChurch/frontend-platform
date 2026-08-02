@@ -59,6 +59,21 @@ export function createHhcWebClient(options: {
     return result.data
   }
 
+  async function listPublicContentPage(
+    module: ContentModule,
+    locale: BulletinLocale,
+    params: { page?: number; pageSize?: number; signal?: AbortSignal } = {},
+  ) {
+    const query = { locale, page: params.page, pageSize: params.pageSize }
+    const result = module === 'news'
+      ? client.GET('/news', { params: { query }, signal: params.signal })
+      : module === 'history'
+        ? client.GET('/history', { params: { query }, signal: params.signal })
+        : client.GET('/videos', { params: { query }, signal: params.signal })
+    const envelope = await unwrap(result)
+    return { data: envelope.data, meta: envelope.meta }
+  }
+
   return {
     async listAdminBulletins(params: { page?: number; pageSize?: number; status?: BulletinStatus; query?: string; signal?: AbortSignal } = {}) {
       const envelope = await unwrap(client.GET('/admin/bulletins', {
@@ -227,14 +242,9 @@ export function createHhcWebClient(options: {
       return (await unwrap(client.POST('/admin/content/news/{contentId}/assets/{assetId}/scan/retry', { params: { path: { contentId, assetId } } }))).data
     },
     async listPublicContent(module: ContentModule, locale: BulletinLocale, signal?: AbortSignal) {
-      const path = module === 'news' ? '/news' : module === 'history' ? '/history' : '/videos'
-      const result = path === '/news'
-        ? client.GET('/news', { params: { query: { locale } }, signal })
-        : path === '/history'
-          ? client.GET('/history', { params: { query: { locale } }, signal })
-          : client.GET('/videos', { params: { query: { locale } }, signal })
-      return (await unwrap(result)).data
+      return (await listPublicContentPage(module, locale, { signal })).data
     },
+    listPublicContentPage,
     async getHome(locale: BulletinLocale, signal?: AbortSignal) {
       return (await unwrap(client.GET('/home', { params: { query: { locale } }, signal }))).data
     },
