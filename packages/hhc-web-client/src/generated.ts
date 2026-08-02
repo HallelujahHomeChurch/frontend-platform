@@ -630,6 +630,8 @@ export interface components {
             mimeType: "image/jpeg" | "image/png" | "image/webp";
             /** Format: int64 */
             sizeBytes: number;
+            /** @enum {string} */
+            usage?: "detail" | "home";
         };
         CompleteImageUploadInput: {
             fileName: string;
@@ -667,6 +669,7 @@ export interface components {
             eventDate?: string;
             youtubeVideoId?: string;
             coverAssetId?: string;
+            homeCoverAssetId?: string;
             featured?: boolean;
             homeEligible?: boolean;
             translations: components["schemas"]["ContentTranslation"][];
@@ -710,6 +713,7 @@ export interface components {
             eventDate?: string;
             imageAlt?: string;
             imageUrl?: string;
+            homeImageUrl?: string;
             href?: string;
             youtubeVideoId?: string;
             featured?: boolean;
