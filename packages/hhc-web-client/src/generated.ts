@@ -625,13 +625,16 @@ export interface components {
             checksumSha256: string;
         };
         CreateImageUploadInput: {
+            /**
+             * @default detail
+             * @enum {string}
+             */
+            usage: "detail" | "home";
             fileName: string;
             /** @enum {string} */
             mimeType: "image/jpeg" | "image/png" | "image/webp";
             /** Format: int64 */
             sizeBytes: number;
-            /** @enum {string} */
-            usage?: "detail" | "home";
         };
         CompleteImageUploadInput: {
             fileName: string;
@@ -670,6 +673,11 @@ export interface components {
             youtubeVideoId?: string;
             coverAssetId?: string;
             homeCoverAssetId?: string;
+            /**
+             * @default top
+             * @enum {string}
+             */
+            detailLayout: "top" | "left" | "right";
             featured?: boolean;
             homeEligible?: boolean;
             translations: components["schemas"]["ContentTranslation"][];
@@ -682,6 +690,7 @@ export interface components {
             /** Format: int64 */
             version: number;
             coverUrl?: string;
+            homeCoverUrl?: string;
             isPublished: boolean;
             /** Format: int64 */
             publishedVersion?: number;
@@ -718,6 +727,8 @@ export interface components {
             youtubeVideoId?: string;
             featured?: boolean;
             homeEligible?: boolean;
+            /** @enum {string} */
+            detailLayout?: "top" | "left" | "right";
         };
         BulletinIssueEnvelope: {
             data: components["schemas"]["BulletinIssue"];
