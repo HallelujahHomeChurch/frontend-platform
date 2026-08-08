@@ -1,4 +1,5 @@
 import {createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode} from 'react';
+import {CircleAlert, CircleCheck, CircleX, Info, X} from 'lucide-react';
 import {
   Cell,
   Column,
@@ -41,11 +42,16 @@ export function EmptyState({title, description, action}: {title: string; descrip
   );
 }
 
-export function Toast({children, tone = 'neutral'}: {children: ReactNode; tone?: 'neutral' | 'success' | 'warning' | 'danger'}) {
-  return <div className={`hhc-toast hhc-toast--${tone}`} role={tone === 'danger' ? 'alert' : 'status'}>{children}</div>;
+export type ToastTone = 'neutral' | 'success' | 'warning' | 'danger';
+
+function ToastIcon({tone}: {tone: ToastTone}) {
+  const Icon = tone === 'success' ? CircleCheck : tone === 'warning' ? CircleAlert : tone === 'danger' ? CircleX : Info;
+  return <Icon className="hhc-toast__icon" aria-hidden="true" />;
 }
 
-export type ToastTone = 'neutral' | 'success' | 'warning' | 'danger';
+export function Toast({children, tone = 'neutral'}: {children: ReactNode; tone?: ToastTone}) {
+  return <div className={`hhc-toast hhc-toast--${tone}`} data-state="visible" role={tone === 'danger' ? 'alert' : 'status'}><ToastIcon tone={tone} /><span className="hhc-toast__message">{children}</span></div>;
+}
 
 interface ToastNotice {
   id: number;
@@ -69,15 +75,45 @@ export function useToast() {
 }
 
 function QueuedToast({notice, dismiss, dismissLabel}: {notice: ToastNotice; dismiss: (id: number) => void; dismissLabel: string}) {
+  const [state, setState] = useState<'entering' | 'visible' | 'exiting'>('entering');
+  const [paused, setPaused] = useState(false);
+
+  const beginExit = useCallback(() => {
+    setState((current) => current === 'exiting' ? current : 'exiting');
+  }, []);
+
   useEffect(() => {
-    const timer = window.setTimeout(() => dismiss(notice.id), notice.durationMs);
+    const timer = window.setTimeout(() => setState('visible'), 0);
     return () => window.clearTimeout(timer);
-  }, [dismiss, notice]);
+  }, []);
+
+  useEffect(() => {
+    if (paused || state === 'exiting') return;
+    const timer = window.setTimeout(beginExit, notice.durationMs);
+    return () => window.clearTimeout(timer);
+  }, [beginExit, notice.durationMs, paused, state]);
+
+  useEffect(() => {
+    if (state !== 'exiting') return;
+    const timer = window.setTimeout(() => dismiss(notice.id), 150);
+    return () => window.clearTimeout(timer);
+  }, [dismiss, notice.id, state]);
 
   return (
-    <div className={`hhc-toast hhc-toast--${notice.tone}`} role={notice.tone === 'danger' ? 'alert' : 'status'}>
-      <span>{notice.message}</span>
-      <button type="button" className="hhc-toast__dismiss" aria-label={dismissLabel} onClick={() => dismiss(notice.id)}>×</button>
+    <div
+      className={`hhc-toast hhc-toast--${notice.tone}`}
+      data-state={state}
+      role={notice.tone === 'danger' ? 'alert' : 'status'}
+      onPointerEnter={() => setPaused(true)}
+      onPointerLeave={() => setPaused(false)}
+      onFocusCapture={() => setPaused(true)}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setPaused(false);
+      }}
+    >
+      <ToastIcon tone={notice.tone} />
+      <span className="hhc-toast__message">{notice.message}</span>
+      <button type="button" className="hhc-toast__dismiss" aria-label={dismissLabel} onClick={beginExit}><X aria-hidden="true" /></button>
     </div>
   );
 }
@@ -98,7 +134,7 @@ export function ToastProvider({children, dismissLabel, regionLabel = 'Notificati
     <ToastContext.Provider value={value}>
       {children}
       <section className="hhc-toast-region" aria-label={regionLabel}>
-        {notices.map((notice) => <QueuedToast key={notice.id} notice={notice} dismiss={dismiss} dismissLabel={dismissLabel} />)}
+        {notices.slice(0, 3).map((notice) => <QueuedToast key={notice.id} notice={notice} dismiss={dismiss} dismissLabel={dismissLabel} />)}
       </section>
     </ToastContext.Provider>
   );
@@ -109,7 +145,7 @@ export function StatusBadge({children, tone = 'neutral'}: {children: ReactNode; 
 }
 
 export function DataTableFrame({children, footer, className}: {children: ReactNode; footer?: ReactNode; className?: string}) {
-  return <section className={['hhc-data-table-frame', className].filter(Boolean).join(' ')}><div className="hhc-data-table-frame__body">{children}</div>{footer}</section>;
+  return <section className={['hhc-data-table-frame', className].filter(Boolean).join(' ')}><div className="hhc-data-table-frame__body" tabIndex={0}>{children}</div>{footer}</section>;
 }
 
 export interface PaginationBarProps extends PaginationProps {

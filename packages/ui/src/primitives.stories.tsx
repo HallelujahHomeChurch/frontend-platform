@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from '@storybook/react-vite';
-import {useEffect} from 'react';
+import {useEffect, useState} from 'react';
 import {
   AccountMenu,
   AlertDialog,
@@ -16,6 +16,7 @@ import {
   Select,
   Skeleton,
   StatusBadge,
+  Switch,
   ToastProvider,
   useToast
 } from './index';
@@ -101,6 +102,7 @@ function ToastExample() {
 }
 
 function AdminControlsExample({theme = 'light'}: {theme?: 'light' | 'dark'}) {
+  const [notifications, setNotifications] = useState(true);
   useEffect(() => {
     const previous = document.documentElement.dataset.theme;
     document.documentElement.dataset.theme = theme;
@@ -123,6 +125,10 @@ function AdminControlsExample({theme = 'light'}: {theme?: 'light' | 'dark'}) {
           <div style={{display: 'flex', justifyContent: 'space-between', padding: 16}}><span>夏季聯會 2026</span><StatusBadge tone="success">已發佈</StatusBadge></div>
         </DataTableFrame>
         <div style={{display: 'flex', gap: 12}}><span>繁中</span><span>简中</span><span>English</span></div>
+        <div style={{display: 'grid', gap: 12}}>
+          <Switch label="電子報通知" description="接收教會消息與重要公告" isSelected={notifications} onChange={setNotifications} />
+          <Switch label="儲存中" description="設定更新時會暫時停用" isSelected isDisabled />
+        </div>
       </div>
     </ToastProvider>
   );
