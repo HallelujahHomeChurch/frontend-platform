@@ -240,6 +240,10 @@
   @keyframes hhc-shimmer { to { background-position: -200% 0; } }
   @keyframes hhc-progress { from { transform: translateX(-100%); } to { transform: translateX(225%); } }
   @media (prefers-reduced-motion: reduce) { .hhc-otp__caret, .hhc-skeleton, .hhc-progress__fill { animation: none; } .hhc-expandable-search, .hhc-switch__track, .hhc-switch__thumb, .hhc-toast { transition: none; } }
+  @media (max-width: 960px) {
+    .hhc-expandable-search--header-overlay { position: absolute; z-index: 3; top: 10px; inset-inline-end: 68px; width: 40px; background: var(--hhc-canvas); }
+    .hhc-expandable-search--header-overlay[data-expanded='true'] { width: calc(100% - 84px); }
+  }
   @media (max-width: 640px) {
     .hhc-card__header, .hhc-card__content { padding: 16px; }
     .hhc-card__header + .hhc-card__content { padding-top: 0; }

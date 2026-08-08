@@ -418,6 +418,34 @@ describe('HHC UI primitives', () => {
     expect(styles).toMatch(/\.hhc-expandable-search\[data-expanded='true'\][^{]*\.hhc-expandable-search__trigger\[data-hovered\][^}]*background:\s*transparent/s);
   });
 
+  it('marks header overlay search without changing the default inline variant', () => {
+    const {rerender} = render(
+      <ExpandableSearchField
+        label="Search"
+        submitLabel="Submit search"
+        clearLabel="Clear search"
+        mobileBehavior="header-overlay"
+      />
+    );
+
+    expect(screen.getByRole('button', {name: 'Search'}).closest('.hhc-expandable-search'))
+      .toHaveClass('hhc-expandable-search--header-overlay');
+
+    rerender(
+      <ExpandableSearchField label="Search" submitLabel="Submit search" clearLabel="Clear search" />
+    );
+    expect(screen.getByRole('button', {name: 'Search'}).closest('.hhc-expandable-search'))
+      .not.toHaveClass('hhc-expandable-search--header-overlay');
+  });
+
+  it('anchors expanded header search inside the mobile header', () => {
+    const styles = readFileSync('src/styles.css', 'utf8');
+
+    expect(styles).toMatch(/@media \(max-width:\s*960px\)[\s\S]*\.hhc-expandable-search--header-overlay[\s\S]*position:\s*absolute/);
+    expect(styles).toMatch(/\.hhc-expandable-search--header-overlay[^}]*inset-inline-end:\s*68px/);
+    expect(styles).toMatch(/\.hhc-expandable-search--header-overlay\[data-expanded='true'\][^}]*width:\s*calc\(100% - 84px\)/);
+  });
+
   it('queues and dismisses accessible toast notifications', async () => {
     vi.useFakeTimers();
 
