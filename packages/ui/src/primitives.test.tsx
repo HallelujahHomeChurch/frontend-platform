@@ -2,7 +2,7 @@ import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {readFileSync} from 'node:fs';
 import {useState} from 'react';
-import {describe, expect, it, vi} from 'vitest';
+import {afterEach, describe, expect, it, vi} from 'vitest';
 import {
   AccountMenu,
   AlertDialog,
@@ -10,6 +10,7 @@ import {
   Button,
   Card,
   DatePicker,
+  DataTableFrame,
   Dialog,
   Drawer,
   EmptyState,
@@ -22,11 +23,13 @@ import {
   Select,
   Skeleton,
   StatusBadge,
+  Switch,
   ToastProvider,
   useToast
 } from './index';
 
 describe('HHC UI primitives', () => {
+  afterEach(() => vi.useRealTimers());
   it('keeps filled primary content readable and button content on one line', () => {
     const styles = readFileSync('src/styles.css', 'utf8');
 
@@ -428,8 +431,55 @@ describe('HHC UI primitives', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Draft saved');
 
     act(() => vi.advanceTimersByTime(4000));
+    expect(screen.getByText('Draft saved').closest('.hhc-toast')).toHaveAttribute('data-state', 'exiting');
+    act(() => vi.advanceTimersByTime(150));
     expect(screen.queryByText('Draft saved')).not.toBeInTheDocument();
     vi.useRealTimers();
+  });
+
+  it('limits visible toasts and pauses dismissal while hovered', () => {
+    vi.useFakeTimers();
+
+    function Example() {
+      const toast = useToast();
+      return <button onClick={() => {
+        for (let index = 1; index <= 4; index += 1) toast.add({message: `Notice ${index}`, durationMs: 1000});
+      }}>Notify</button>;
+    }
+
+    render(<ToastProvider dismissLabel="Dismiss"><Example /></ToastProvider>);
+    fireEvent.click(screen.getByRole('button', {name: 'Notify'}));
+    expect(screen.getAllByRole('status')).toHaveLength(3);
+    const first = screen.getByText('Notice 1').closest('.hhc-toast')!;
+    fireEvent.pointerEnter(first);
+    act(() => vi.advanceTimersByTime(1200));
+    expect(screen.getByText('Notice 1')).toBeInTheDocument();
+    fireEvent.pointerLeave(first);
+    act(() => vi.advanceTimersByTime(1000));
+    act(() => vi.advanceTimersByTime(150));
+    expect(screen.queryByText('Notice 1')).not.toBeInTheDocument();
+    expect(screen.getByText('Notice 4')).toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
+  it('provides an accessible animated switch', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<Switch label="Email notifications" description="Church updates" isSelected={false} onChange={onChange} />);
+
+    const control = screen.getByRole('switch', {name: 'Email notifications'});
+    expect(control).not.toBeChecked();
+    expect(control.closest('.hhc-switch')?.querySelector('.hhc-switch__thumb')).toBeInTheDocument();
+    await user.click(control);
+    expect(onChange).toHaveBeenCalledWith(true);
+  });
+
+  it('adds a mobile scroll affordance to data tables', () => {
+    const styles = readFileSync('src/styles.css', 'utf8');
+    render(<DataTableFrame><table><tbody><tr><td>Row</td></tr></tbody></table></DataTableFrame>);
+
+    expect(document.querySelector('.hhc-data-table-frame__body')).toHaveAttribute('tabindex', '0');
+    expect(styles).toMatch(/\.hhc-data-table-frame__body::after[^}]*linear-gradient/s);
   });
 
   it('renders compact status and table pagination metadata', async () => {

@@ -26,6 +26,8 @@ import {
   SearchField,
   Select as AriaSelect,
   SelectValue,
+  Switch as AriaSwitch,
+  type SwitchProps as AriaSwitchProps,
   Tab,
   TabList,
   TabPanel,
@@ -69,6 +71,33 @@ export interface IconButtonProps extends Omit<ButtonProps, 'children'> {
 
 export function IconButton({icon, ...props}: IconButtonProps) {
   return <Button {...props} className="hhc-icon-button">{icon}</Button>;
+}
+
+export interface SwitchProps extends Omit<AriaSwitchProps, 'children'> {
+  label: string;
+  description?: string;
+}
+
+export function Switch({label, description, className, ...props}: SwitchProps) {
+  return (
+    <AriaSwitch
+      {...props}
+      aria-label={props['aria-label'] ?? label}
+      className={({isDisabled, isFocusVisible, isSelected}) => [
+        'hhc-switch',
+        isDisabled && 'is-disabled',
+        isFocusVisible && 'is-focus-visible',
+        isSelected && 'is-selected',
+        typeof className === 'string' ? className : ''
+      ].filter(Boolean).join(' ')}
+    >
+      <span className="hhc-switch__track" aria-hidden="true"><span className="hhc-switch__thumb" /></span>
+      <span className="hhc-switch__copy">
+        <span className="hhc-switch__label">{label}</span>
+        {description ? <span className="hhc-switch__description">{description}</span> : null}
+      </span>
+    </AriaSwitch>
+  );
 }
 
 export interface AvatarProps {
