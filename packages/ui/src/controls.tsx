@@ -198,9 +198,10 @@ export interface ExpandableSearchFieldProps {
   onSubmit?: (value: string) => void;
   onClear?: () => void;
   isDisabled?: boolean;
+  mobileBehavior?: 'inline' | 'header-overlay';
 }
 
-export function ExpandableSearchField({label, submitLabel, clearLabel, placeholder, value, defaultValue = '', onChange, onSubmit, onClear, isDisabled}: ExpandableSearchFieldProps) {
+export function ExpandableSearchField({label, submitLabel, clearLabel, placeholder, value, defaultValue = '', onChange, onSubmit, onClear, isDisabled, mobileBehavior = 'inline'}: ExpandableSearchFieldProps) {
   const [isExpanded, setExpanded] = useState(false);
   const [query, setQuery] = useState(value ?? defaultValue);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -240,7 +241,11 @@ export function ExpandableSearchField({label, submitLabel, clearLabel, placehold
   });
 
   return (
-    <div ref={rootRef} className="hhc-expandable-search" data-expanded={isExpanded}>
+    <div
+      ref={rootRef}
+      className={`hhc-expandable-search${mobileBehavior === 'header-overlay' ? ' hhc-expandable-search--header-overlay' : ''}`}
+      data-expanded={isExpanded}
+    >
       <SearchField
         aria-label={label}
         className="hhc-expandable-search__field"
