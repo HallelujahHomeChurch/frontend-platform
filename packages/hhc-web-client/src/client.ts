@@ -5,6 +5,7 @@ import type { components, paths } from './generated.js'
 export type BulletinLocale = components['schemas']['Locale']
 export type BulletinStatus = components['schemas']['BulletinStatus']
 export type BulletinIssue = components['schemas']['BulletinIssue']
+export type BulletinNotificationStatus = BulletinIssue['notificationStatus']
 export type BulletinVersion = components['schemas']['BulletinVersion']
 export type BulletinRevision = components['schemas']['BulletinRevision']
 export type PageMeta = components['schemas']['PageMeta']
@@ -126,16 +127,16 @@ export function createHhcWebClient(options: {
         body: input,
       }))).data
     },
-    async publishBulletin(issueId: string, version: number, locale: BulletinLocale) {
+    async publishBulletin(issueId: string, version: number, locale: BulletinLocale, options: { notifySubscribers: boolean }) {
       return (await unwrap(client.POST('/admin/bulletins/{issueId}/publish', {
         params: { path: { issueId }, header: { 'If-Match': `"${version}"` } },
-        body: { locale },
+        body: { locale, notifySubscribers: options.notifySubscribers },
       }))).data
     },
     async unpublishBulletin(issueId: string, version: number, locale: BulletinLocale) {
       return (await unwrap(client.POST('/admin/bulletins/{issueId}/unpublish', {
         params: { path: { issueId }, header: { 'If-Match': `"${version}"` } },
-        body: { locale },
+        body: { locale, notifySubscribers: false },
       }))).data
     },
     async deleteBulletin(issueId: string, version: number) {

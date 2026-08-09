@@ -27,9 +27,24 @@ describe('hhc web client', () => {
     }), { status: 412, headers: { 'Content-Type': 'application/json' } }))
     const client = createHhcWebClient({ baseUrl: 'https://www.alive.org.tw/api', getAccessToken: () => 'token', fetcher })
 
-    await expect(client.publishBulletin('issue-1', 2, 'en')).rejects.toEqual(
+    await expect(client.publishBulletin('issue-1', 2, 'en', { notifySubscribers: false })).rejects.toEqual(
       expect.objectContaining<HhcWebApiError>({ status: 412, code: 'precondition_failed' }),
     )
+  })
+
+  it('forwards the bulletin subscriber notification choice', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
+      data: { id: 'issue-1', issueDate: '2026-07-31', status: 'publishing', notificationStatus: 'not_requested', version: 3, versions: [], createdBy: 'admin', updatedBy: 'admin', createdAt: '2026-07-31T00:00:00Z', updatedAt: '2026-07-31T00:00:00Z' },
+      meta: {},
+      error: null,
+    }), { status: 202, headers: { 'Content-Type': 'application/json' } }))
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
+
+    await client.publishBulletin('issue-1', 2, 'zh-Hant', { notifySubscribers: true })
+
+    const request = fetcher.mock.calls[0]?.[0] as Request
+    expect(request.headers.get('If-Match')).toBe('"2"')
+    await expect(request.json()).resolves.toEqual({ locale: 'zh-Hant', notifySubscribers: true })
   })
 
   it('uses typed content paths and optimistic concurrency', async () => {
