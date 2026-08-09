@@ -37,11 +37,11 @@ import {
   type TextFieldProps
 } from 'react-aria-components';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline' | 'tertiary';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'soft' | 'danger' | 'outline' | 'tertiary';
 
 export interface ButtonProps extends AriaButtonProps {
   variant?: ButtonVariant;
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg';
 }
 
 export function Button({variant = 'primary', size = 'md', className, ...props}: ButtonProps) {

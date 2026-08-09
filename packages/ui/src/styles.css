@@ -84,11 +84,15 @@
   .hhc-button--primary[data-hovered] { background: var(--hhc-primary-solid-hover); }
   .hhc-button--secondary { border-color: var(--hhc-border); background: var(--hhc-surface); }
   .hhc-button--ghost[data-hovered], .hhc-menu__trigger[data-hovered] { background: var(--hhc-primary-soft); }
+  .hhc-button--soft { color: var(--hhc-primary); background: var(--hhc-primary-soft); }
+  .hhc-button--soft[data-hovered] { color: var(--hhc-primary-hover); background: color-mix(in srgb, var(--hhc-primary) 22%, transparent); }
   .hhc-button--danger { color: var(--hhc-danger-foreground); background: var(--hhc-danger); }
   .hhc-button--sm { min-height: 34px; padding-inline: 12px; font-size: .875rem; }
+  .hhc-button--lg { min-height: 44px; padding-inline: 16px; }
   .hhc-button[data-focus-visible], .hhc-menu__trigger[data-focus-visible], .hhc-select__trigger[data-focus-visible], .hhc-listbox__item[data-focus-visible], .hhc-menu__item[data-focus-visible], .hhc-tabs__tab[data-focus-visible] { outline: 2px solid var(--hhc-primary); outline-offset: 2px; }
   .hhc-button[data-disabled] { opacity: .48; cursor: not-allowed; }
   .hhc-icon-button { width: 40px; padding: 0; display: inline-grid; place-items: center; }
+  .hhc-icon-button.hhc-button--lg { width: 44px; padding: 0; }
 
   .hhc-switch { display: inline-flex; width: fit-content; align-items: center; gap: 12px; color: var(--hhc-text); cursor: pointer; }
   .hhc-switch__track { display: inline-flex; width: 44px; height: 24px; flex: none; align-items: center; border: 1px solid var(--hhc-border); border-radius: 999px; background: var(--hhc-surface); padding: 2px; transition: border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease; }
