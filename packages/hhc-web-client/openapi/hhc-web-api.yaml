@@ -5,6 +5,114 @@ info:
 servers:
   - url: https://www.alive.org.tw/api
 paths:
+  /admin/campaigns:
+    get:
+      operationId: listCampaigns
+      security: [{ bearerAuth: [] }]
+      x-required-scopes: ['cms:read']
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/SearchQuery'
+      responses: { '200': { description: Campaign page } }
+    post:
+      operationId: createCampaign
+      security: [{ bearerAuth: [] }]
+      x-required-scopes: ['cms:write']
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateCampaign' }
+      responses: { '201': { description: Campaign draft created } }
+  /admin/campaigns/{campaignId}:
+    parameters:
+      - { name: campaignId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getCampaign
+      security: [{ bearerAuth: [] }]
+      x-required-scopes: ['cms:read']
+      responses: { '200': { description: Campaign detail } }
+    put:
+      operationId: updateCampaign
+      security: [{ bearerAuth: [] }]
+      x-required-scopes: ['cms:write']
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateCampaign' }
+      responses: { '200': { description: Campaign draft updated } }
+    delete:
+      operationId: deleteCampaign
+      security: [{ bearerAuth: [] }]
+      x-required-scopes: ['cms:write']
+      responses: { '204': { description: Campaign draft deleted } }
+  /admin/campaigns/{campaignId}/send:
+    post:
+      operationId: sendCampaign
+      security: [{ bearerAuth: [] }]
+      x-required-scopes: ['cms:write']
+      parameters:
+        - { name: campaignId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { '200': { description: Campaign audience snapshotted and queued } }
+  /admin/campaigns/{campaignId}/deliveries:
+    get:
+      operationId: listCampaignDeliveries
+      security: [{ bearerAuth: [] }]
+      x-required-scopes: ['cms:read']
+      parameters:
+        - { name: campaignId, in: path, required: true, schema: { type: string, format: uuid } }
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses: { '200': { description: Campaign delivery results and summary } }
+  /admin/campaigns/{campaignId}/retry-failed:
+    post:
+      operationId: retryFailedCampaignDeliveries
+      security: [{ bearerAuth: [] }]
+      x-required-scopes: ['cms:write']
+      parameters:
+        - { name: campaignId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { '200': { description: Failed deliveries queued for retry } }
+  /admin/campaign-schedules:
+    get:
+      operationId: listCampaignSchedules
+      security: [{ bearerAuth: [] }]
+      x-required-scopes: ['cms:read']
+      responses: { '200': { description: Campaign schedules } }
+    post:
+      operationId: createCampaignSchedule
+      security: [{ bearerAuth: [] }]
+      x-required-scopes: ['cms:write']
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateCampaignSchedule' }
+      responses: { '201': { description: Campaign schedule created } }
+  /admin/campaign-schedules/{scheduleId}:
+    parameters:
+      - { name: scheduleId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getCampaignSchedule
+      security: [{ bearerAuth: [] }]
+      x-required-scopes: ['cms:read']
+      responses: { '200': { description: Campaign schedule detail } }
+    put:
+      operationId: updateCampaignSchedule
+      security: [{ bearerAuth: [] }]
+      x-required-scopes: ['cms:write']
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateCampaignSchedule' }
+      responses: { '200': { description: Campaign schedule updated } }
+    delete:
+      operationId: deleteCampaignSchedule
+      security: [{ bearerAuth: [] }]
+      x-required-scopes: ['cms:write']
+      responses: { '204': { description: Campaign schedule deleted } }
   /bulletins:
     get:
       operationId: listPublicBulletins
@@ -23,6 +131,16 @@ paths:
       parameters: [{ $ref: '#/components/parameters/Locale' }]
       responses:
         '200': { $ref: '#/components/responses/PublicBulletin' }
+        '404': { $ref: '#/components/responses/Error' }
+  /bulletins/by-number/{issueNumber}:
+    get:
+      operationId: getPublicBulletinByNumber
+      parameters:
+        - { name: issueNumber, in: path, required: true, schema: { type: integer, format: int32, minimum: 1, maximum: 2147483647 } }
+        - $ref: '#/components/parameters/Locale'
+      responses:
+        '200': { $ref: '#/components/responses/PublicBulletin' }
+        '400': { $ref: '#/components/responses/Error' }
         '404': { $ref: '#/components/responses/Error' }
   /bulletins/{issueDate}:
     get:
@@ -483,6 +601,11 @@ components:
     Locale: { name: locale, in: query, schema: { $ref: '#/components/schemas/Locale' } }
     Page: { name: page, in: query, schema: { type: integer, minimum: 1, maximum: 10000, default: 1 } }
     PageSize: { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+    SearchQuery:
+      name: q
+      in: query
+      description: Searches the internal campaign name and localized subject or body.
+      schema: { type: string, maxLength: 120 }
     IssueID: { name: issueId, in: path, required: true, schema: { type: string, format: uuid } }
     IdempotencyKey: { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 1 } }
     IfMatch: { name: If-Match, in: header, required: true, schema: { type: string, pattern: '^"[1-9][0-9]*"$' } }
@@ -538,6 +661,86 @@ components:
         application/json:
           schema: { $ref: '#/components/schemas/PublicContentItemEnvelope' }
   schemas:
+    CampaignTranslation:
+      type: object
+      additionalProperties: false
+      required: [subject, body]
+      properties:
+        subject: { type: string, maxLength: 200 }
+        body: { type: string, maxLength: 20000 }
+        clickBehavior:
+          type: string
+          enum: [home, url, dismiss]
+          description: Web push click behavior. URL requires actionUrl; home and dismiss omit it.
+        actionUrl:
+          type: string
+          maxLength: 2048
+          pattern: '^/(?!/).*$'
+    CreateCampaign:
+      type: object
+      additionalProperties: false
+      required: [name, channel, audienceType, translations]
+      properties:
+        name: { type: string, maxLength: 120 }
+        channel: { type: string, enum: [email, web_push] }
+        audienceType: { type: string, enum: [newsletter, all, role, users] }
+        roleId: { type: string, format: uuid }
+        userIds:
+          type: array
+          maxItems: 500
+          uniqueItems: true
+          items: { type: string, format: uuid }
+        translations:
+          type: object
+          minProperties: 1
+          additionalProperties: { $ref: '#/components/schemas/CampaignTranslation' }
+    UpdateCampaign:
+      type: object
+      additionalProperties: false
+      required: [name, channel, audienceType, translations]
+      properties:
+        name: { type: string, maxLength: 120 }
+        channel: { type: string, enum: [email, web_push] }
+        audienceType: { type: string, enum: [newsletter, all, role, users] }
+        roleId: { type: string, format: uuid }
+        userIds:
+          type: array
+          maxItems: 500
+          uniqueItems: true
+          items: { type: string, format: uuid }
+        translations:
+          type: object
+          minProperties: 1
+          additionalProperties: { $ref: '#/components/schemas/CampaignTranslation' }
+    CreateCampaignSchedule:
+      type: object
+      additionalProperties: false
+      required: [name, channel, audienceType, scheduleType, translations]
+      properties:
+        name: { type: string, maxLength: 120 }
+        channel: { type: string, enum: [email, web_push] }
+        audienceType: { type: string, enum: [newsletter, all, role, users] }
+        roleId: { type: string, format: uuid }
+        userIds:
+          type: array
+          maxItems: 500
+          uniqueItems: true
+          items: { type: string, format: uuid }
+        scheduleType: { type: string, enum: [once, cron] }
+        runAt: { type: [string, 'null'], format: date-time }
+        cronExpression: { type: string }
+        timezone: { type: string, default: Asia/Taipei }
+        translations:
+          type: object
+          minProperties: 1
+          additionalProperties: { $ref: '#/components/schemas/CampaignTranslation' }
+    UpdateCampaignSchedule:
+      allOf:
+        - $ref: '#/components/schemas/CreateCampaignSchedule'
+        - type: object
+          required: [enabled]
+          properties:
+            enabled: { type: boolean }
     Locale:
       type: string
       enum: [zh-Hant, zh-Hans, en]
@@ -588,12 +791,15 @@ components:
         updatedAt: { type: string, format: date-time }
     BulletinIssue:
       type: object
-      required: [id, issueDate, status, version, createdBy, updatedBy, createdAt, updatedAt, versions]
+      required: [id, issueDate, status, notificationStatus, version, createdBy, updatedBy, createdAt, updatedAt, versions]
       properties:
         id: { type: string, format: uuid }
         issueNumber: { type: integer, minimum: 1 }
         issueDate: { type: string, format: date }
         status: { $ref: '#/components/schemas/BulletinStatus' }
+        notificationStatus: { type: string, enum: [not_requested, pending, queued, failed] }
+        notificationQueuedAt: { type: string, format: date-time }
+        notificationErrorCode: { type: string, enum: [NOTIFICATION_QUEUE_FAILED] }
         version: { type: integer, format: int64 }
         createdBy: { type: string }
         updatedBy: { type: string }
@@ -736,6 +942,10 @@ components:
       required: [locale]
       properties:
         locale: { $ref: '#/components/schemas/Locale' }
+        notifySubscribers:
+          type: boolean
+          default: false
+          description: Queue one Web Push campaign after the bulletin is publicly available. Ignored by unpublish operations.
     ContentTranslation:
       type: object
       additionalProperties: false
