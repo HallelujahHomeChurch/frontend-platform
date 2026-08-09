@@ -16,6 +16,7 @@ import {
   EmptyState,
   ExpandableSearchField,
   Field,
+  IconButton,
   Menu,
   Modal,
   Pagination,
@@ -45,6 +46,19 @@ describe('HHC UI primitives', () => {
     expect(styles).toMatch(/\.hhc-progress__fill[^}]*background:\s*var\(--hhc-primary\)/s);
     expect(styles).toMatch(/\.hhc-expandable-search[^}]*width:\s*40px[^}]*transition:\s*width/s);
     expect(styles).toMatch(/prefers-reduced-motion:[^}]*reduce[\s\S]*\.hhc-expandable-search[^}]*transition:\s*none/s);
+  });
+
+  it('supports a 44px soft icon button with shared interaction states', () => {
+    render(<IconButton aria-label="Notifications" variant="soft" size="lg" icon={<svg aria-hidden="true" />} />);
+    const button = screen.getByRole('button', {name: 'Notifications'});
+    const styles = readFileSync('src/styles.css', 'utf8');
+
+    expect(button).toHaveClass('hhc-button--soft', 'hhc-button--lg', 'hhc-icon-button');
+    expect(styles).toMatch(/\.hhc-button--soft[^}]*color:\s*var\(--hhc-primary\)[^}]*background:\s*var\(--hhc-primary-soft\)/s);
+    expect(styles).toMatch(/\.hhc-button--lg[^}]*min-height:\s*44px/s);
+    expect(styles).toMatch(/\.hhc-icon-button\.hhc-button--lg[^}]*width:\s*44px[^}]*padding:\s*0/s);
+    expect(styles).toMatch(/\.hhc-button\[data-focus-visible\][^}]*outline:\s*2px solid var\(--hhc-primary\)/s);
+    expect(styles).toMatch(/\.hhc-button\[data-disabled\][^}]*cursor:\s*not-allowed/s);
   });
 
   it('keeps regular card content padded and flush content opt-in', () => {

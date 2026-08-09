@@ -1,4 +1,5 @@
 import type {Meta, StoryObj} from '@storybook/react-vite';
+import {Bell} from 'lucide-react';
 import {useEffect, useState} from 'react';
 import {
   AccountMenu,
@@ -10,6 +11,7 @@ import {
   EmptyState,
   ExpandableSearchField,
   Field,
+  IconButton,
   OTP,
   Pagination,
   PaginationBar,
@@ -40,6 +42,10 @@ export const Buttons: Story = {
       <Button variant="danger">Delete</Button>
     </div>
   )
+};
+
+export const SoftIconButton: Story = {
+  render: () => <IconButton aria-label="Notifications" variant="soft" size="lg" icon={<Bell aria-hidden="true" />} />
 };
 
 export const FormControls: Story = {
