@@ -79,13 +79,15 @@ describe('HHC UI primitives', () => {
     const user = userEvent.setup();
     render(
       <div>
-        <Menu label="Actions" items={[{id: 'profile', label: 'Profile'}]} onAction={() => undefined} />
+        <Menu label="Actions" items={[{id: 'profile', label: 'Profile'}, {id: 'sign-out', label: 'Sign out', variant: 'danger'}]} onAction={() => undefined} />
         <button>Outside</button>
       </div>
     );
 
     await user.click(screen.getByRole('button', {name: 'Actions'}));
     expect(screen.getByRole('menu')).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', {name: 'Profile'})).toHaveClass('hhc-menu__item--default');
+    expect(screen.getByRole('menuitem', {name: 'Sign out'})).toHaveClass('hhc-menu__item--danger');
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
 
@@ -155,10 +157,24 @@ describe('HHC UI primitives', () => {
     expect(onChange).toHaveBeenCalledWith('en');
   });
 
-  it('supports a ghost select trigger', () => {
-    render(<Select variant="ghost" label="Language" items={[{id: 'en', label: 'English'}]} />);
-    expect(screen.getByRole('button', {name: /Language/})).toHaveClass('hhc-select__trigger--ghost');
-    expect(screen.getByRole('button', {name: /Language/}).querySelector('svg')).toHaveClass('hhc-select__chevron');
+  it('normalizes utility Select and the ghost compatibility alias', async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <Select variant="utility" label="Language" hideLabel defaultSelectedKey="en-US" items={[{id: 'en-US', label: 'English (United States)'}]} />
+        <Select variant="ghost" label="Legacy language" hideLabel items={[{id: 'en-US', label: 'English (United States)'}]} />
+        <Select label="Disabled language" isDisabled items={[{id: 'en-US', label: 'English (United States)'}]} />
+      </>
+    );
+
+    const utility = screen.getByRole('button', {name: /English \(United States\) Language/});
+    expect(utility).toHaveClass('hhc-select__trigger--utility');
+    expect(screen.getByRole('button', {name: /Legacy language/})).toHaveClass('hhc-select__trigger--utility');
+    expect(screen.getByRole('button', {name: /Disabled language/})).toBeDisabled();
+    expect(utility.querySelector('svg')).toHaveClass('hhc-select__chevron');
+
+    await user.click(utility);
+    expect(screen.getByRole('option', {name: 'English (United States)'})).toHaveAttribute('aria-selected', 'true');
   });
 
   it('rotates the select chevron only while the menu is open', async () => {
@@ -188,10 +204,59 @@ describe('HHC UI primitives', () => {
     expect(screen.getByRole('listbox')).toBeInTheDocument();
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
 
     await user.click(trigger);
     await user.click(document.body);
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+
+    await user.click(trigger);
+    await user.click(screen.getByRole('option', {name: 'English'}));
+    expect(trigger).toHaveFocus();
+  });
+
+  it('keeps focus on a focusable outside target when Select and AccountMenu dismiss', async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <Select label="Language" items={[{id: 'en', label: 'English'}]} />
+        <AccountMenu user={{name: 'Ada', email: 'ada@example.com'}} labels={{menu: 'Account menu', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => undefined} />
+        <button>Outside action</button>
+      </>
+    );
+
+    const outside = screen.getByRole('button', {name: 'Outside action'});
+    await user.click(screen.getByRole('button', {name: /Language/}));
+    await user.click(outside);
+    expect(outside).toHaveFocus();
+
+    await user.click(screen.getByRole('button', {name: 'Account menu'}));
+    await user.click(outside);
+    expect(outside).toHaveFocus();
+  });
+
+  it('exposes compact locale labels with full accessible names and selected checks', async () => {
+    const user = userEvent.setup();
+    const locales = [
+      {id: 'zh-Hant', label: '繁中', ariaLabel: '繁體中文'},
+      {id: 'zh-Hans', label: '简中', ariaLabel: '简体中文'},
+      {id: 'en', label: 'EN', ariaLabel: 'English'},
+      {id: 'ja', label: '日本語', ariaLabel: '日本語'},
+      {id: 'ko', label: '한국어', ariaLabel: '한국어'}
+    ];
+    render(<Select variant="utility" label="Language" hideLabel defaultSelectedKey="zh-Hant" items={locales} />);
+
+    const trigger = screen.getByRole('button', {name: /繁體中文 Language/});
+    expect(trigger).toHaveTextContent('繁中');
+    await user.click(trigger);
+
+    for (const locale of locales) {
+      expect(screen.getByRole('option', {name: locale.ariaLabel})).toHaveTextContent(locale.label);
+    }
+    const selected = screen.getByRole('option', {name: '繁體中文'});
+    expect(selected).toHaveAttribute('aria-selected', 'true');
+    expect(selected.querySelector('.hhc-select__check')).toHaveTextContent('✓');
   });
 
   it('dismisses controlled modals and restores focus to the opener', async () => {
@@ -319,7 +384,7 @@ describe('HHC UI primitives', () => {
     expect(screen.getByLabelText('Loading profile')).toBeInTheDocument();
     expect(screen.getByText('No results')).toBeInTheDocument();
     await user.click(screen.getByRole('button', {name: 'Account menu'}));
-    expect(screen.getByText('Hi Ada')).toBeInTheDocument();
+    expect(screen.getByText('Ada')).toBeInTheDocument();
     expect(screen.getByRole('menuitem', {name: 'Sign out'})).not.toHaveAttribute('href');
   });
 
@@ -344,7 +409,7 @@ describe('HHC UI primitives', () => {
     const user = userEvent.setup();
     render(
       <AccountMenu
-        user={{name: 'Ada', email: 'ada@example.com'}}
+        user={{name: 'Ada', email: 'an-accessible-address-that-is-long-enough-to-truncate@example.com'}}
         labels={{menu: 'Account menu', greeting: 'Hi Ada', manageAccount: 'Manage account', signOut: 'Sign out'}}
         manageAccountHref="https://account.alive.org.tw/profile"
         onSignOut={() => undefined}
@@ -357,12 +422,102 @@ describe('HHC UI primitives', () => {
       'https://account.alive.org.tw/profile'
     );
 
+    const identity = screen.getByText('an-accessible-address-that-is-long-enough-to-truncate@example.com');
+    expect(identity).toHaveClass('hhc-account-menu__identity-text');
+    expect(identity).toHaveAttribute('title', 'an-accessible-address-that-is-long-enough-to-truncate@example.com');
+
     const styles = readFileSync('src/styles.css', 'utf8');
     expect(styles).toMatch(/\.hhc-account-menu__trigger[^}]*inline-size:\s*40px[^}]*block-size:\s*40px[^}]*aspect-ratio:\s*1[^}]*flex:\s*none/s);
-    expect(styles).toMatch(/\.hhc-menu__item[^}]*width:\s*100%[^}]*min-height:\s*40px[^}]*align-items:\s*center[^}]*text-decoration:\s*none/s);
+    expect(styles).toMatch(/\.hhc-menu__item[^}]*width:\s*100%[^}]*min-height:\s*44px[^}]*align-items:\s*center[^}]*text-decoration:\s*none/s);
     expect(styles).toMatch(/\.hhc-menu__item\[data-focus-visible\][^}]*outline:\s*0[^}]*box-shadow:\s*inset 0 0 0 2px var\(--hhc-primary\)/s);
-    expect(styles).toMatch(/\.hhc-account-menu \.hhc-menu__item--danger::before[^}]*border-top:\s*1px solid var\(--hhc-border\)/s);
-    expect(styles).toMatch(/\.hhc-account-menu \.hhc-menu__item--danger\[data-hovered\][^}]*background:\s*var\(--hhc-danger-soft\)/s);
+    expect(styles).toMatch(/\.hhc-account-menu__identity-text[^}]*overflow:\s*hidden[^}]*text-overflow:\s*ellipsis/s);
+    expect(styles).toMatch(/\.hhc-menu__item--default[^}]*color:\s*var\(--hhc-text\)/s);
+    expect(styles).toMatch(/\.hhc-menu__item\[data-hovered\][^}]*background:\s*var\(--hhc-primary-soft\)/s);
+    expect(styles).not.toMatch(/\.hhc-account-menu \.hhc-menu__item--danger\[data-hovered\][^}]*background:\s*var\(--hhc-danger-soft\)/s);
+    expect(styles).toMatch(/@media \(forced-colors:\s*active\)[\s\S]*\.hhc-menu__item[^}]*border-color:\s*CanvasText/s);
+    expect(styles).toMatch(/prefers-reduced-motion:\s*reduce[\s\S]*\.hhc-select__chevron[^}]*transition:\s*none/s);
+  });
+
+  it('shows AccountMenu focus treatment for keyboard, not pointer, activation', async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <button>Before account menu</button>
+        <AccountMenu
+          user={{name: 'Ada', email: 'ada@example.com'}}
+          labels={{menu: 'Account menu', greeting: 'Hi Ada', signOut: 'Sign out'}}
+          onSignOut={() => undefined}
+        />
+      </>
+    );
+
+    const trigger = screen.getByRole('button', {name: 'Account menu'});
+    await user.click(trigger);
+    expect(trigger).not.toHaveAttribute('data-focus-visible');
+    await user.click(screen.getByRole('menuitem', {name: 'Sign out'}));
+    expect(trigger).toHaveFocus();
+
+    await user.click(trigger);
+    await user.click(document.body);
+    expect(trigger).toHaveFocus();
+
+    await user.click(screen.getByRole('button', {name: 'Before account menu'}));
+    await user.tab();
+    expect(trigger).toHaveAttribute('data-focus-visible');
+    await user.keyboard('{Enter}{Escape}');
+    expect(trigger).toHaveFocus();
+  });
+
+  it('uses two left-aligned accessible identity lines in a bounded AccountMenu popover', async () => {
+    const user = userEvent.setup();
+    render(
+      <AccountMenu
+        user={{name: 'A display name that is long enough to truncate', email: 'an-accessible-address-that-is-long-enough-to-truncate@example.com'}}
+        labels={{menu: 'Account menu', greeting: 'Legacy greeting', signOut: 'Sign out'}}
+        onSignOut={() => undefined}
+      />
+    );
+
+    await user.click(screen.getByRole('button', {name: 'Account menu'}));
+    expect(screen.getByText('A display name that is long enough to truncate')).toHaveClass('hhc-account-menu__identity-text');
+    expect(screen.getByText('an-accessible-address-that-is-long-enough-to-truncate@example.com')).toHaveClass('hhc-account-menu__identity-text');
+    expect(screen.queryByText('Legacy greeting')).not.toBeInTheDocument();
+
+    const styles = readFileSync('src/styles.css', 'utf8');
+    expect(styles).toMatch(/\.hhc-account-menu \.hhc-menu__popover[^}]*width:\s*240px/s);
+    expect(styles).toMatch(/\.hhc-account-menu__identity[^}]*text-align:\s*left/s);
+    expect(styles).toMatch(/\.hhc-account-menu__identity-text[^}]*overflow:\s*hidden[^}]*text-overflow:\s*ellipsis/s);
+  });
+
+  it('uses the shared halo and restrained popover motion', () => {
+    const styles = readFileSync('src/styles.css', 'utf8');
+
+    expect(styles).toMatch(/\.hhc-account-menu__trigger\[data-hovered\] \.hhc-avatar[^}]*box-shadow:\s*0 0 0 4px var\(--hhc-primary-soft\)/s);
+    expect(styles).toMatch(/\.hhc-menu__popover[^}]*transition:\s*opacity 120ms ease, transform 120ms ease/s);
+    expect(styles).toMatch(/\.hhc-menu__popover\[data-entering\][^}]*opacity:\s*0[^}]*transform:\s*translateY\(-4px\)/s);
+    expect(styles).toMatch(/prefers-reduced-motion:\s*reduce[\s\S]*\.hhc-menu__popover[^}]*transition:\s*none/s);
+    expect(styles).toMatch(/forced-colors:\s*active[\s\S]*\.hhc-select__check[^}]*color:\s*Highlight/s);
+  });
+
+  it('gives Select popovers the same restrained motion contract', async () => {
+    const user = userEvent.setup();
+    render(<Select label="Language" items={[{id: 'en', label: 'English'}]} />);
+
+    await user.click(screen.getByRole('button', {name: /Language/}));
+    expect(screen.getByRole('listbox').closest('.hhc-select__popover')).toBeInTheDocument();
+
+    const styles = readFileSync('src/styles.css', 'utf8');
+    expect(styles).toMatch(/\.hhc-select__popover[^}]*transition:\s*opacity 120ms ease, transform 120ms ease/s);
+    expect(styles).toMatch(/\.hhc-select__popover\[data-entering\][^}]*opacity:\s*0[^}]*transform:\s*translateY\(-4px\)/s);
+    expect(styles).toMatch(/prefers-reduced-motion:\s*reduce[\s\S]*\.hhc-select__popover[^}]*transition:\s*none/s);
+  });
+
+  it('renders one email identity line when the display name is empty', async () => {
+    const user = userEvent.setup();
+    render(<AccountMenu user={{name: '', email: 'ada@example.com'}} labels={{menu: 'Account menu', greeting: 'Legacy greeting', signOut: 'Sign out'}} onSignOut={() => undefined} />);
+
+    await user.click(screen.getByRole('button', {name: 'Account menu'}));
+    expect(screen.getAllByText('ada@example.com')).toHaveLength(1);
   });
 
   it('preserves search value when dismissed and restores focus on Escape', async () => {

@@ -145,14 +145,19 @@ export function Field({label, description, errorMessage, placeholder, ...props}:
 export interface SelectItem {
   id: string;
   label: string;
+  ariaLabel?: string;
   isDisabled?: boolean;
+}
+
+function isFocusableOutsideTarget(element: Element) {
+  return Boolean(element.closest('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'));
 }
 
 export interface SelectProps {
   label: string;
   placeholder?: string;
   items: SelectItem[];
-  variant?: 'default' | 'ghost';
+  variant?: 'default' | 'utility' | 'ghost';
   selectedKey?: string;
   defaultSelectedKey?: string;
   onSelectionChange?: (key: string) => void;
@@ -162,23 +167,48 @@ export interface SelectProps {
   hideLabel?: boolean;
 }
 
-export function Select({label, items, variant = 'default', onSelectionChange, className, triggerClassName, hideLabel, ...props}: SelectProps) {
+export function Select({label, placeholder, items, variant = 'default', selectedKey, defaultSelectedKey, onSelectionChange, className, triggerClassName, hideLabel, ...props}: SelectProps) {
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [uncontrolledSelectedKey, setUncontrolledSelectedKey] = useState(defaultSelectedKey);
+  const [isOpen, setOpen] = useState(false);
+  const normalizedVariant = variant === 'ghost' ? 'utility' : variant;
+  const selectedItem = items.find((item) => item.id === (selectedKey ?? uncontrolledSelectedKey));
   return (
     <AriaSelect
       {...props}
-      className={['hhc-select', `hhc-select--${variant}`, className].filter(Boolean).join(' ')}
-      onSelectionChange={(key) => onSelectionChange?.(String(key))}
+      placeholder={placeholder}
+      selectedKey={selectedKey}
+      defaultSelectedKey={defaultSelectedKey}
+      isOpen={isOpen}
+      className={['hhc-select', `hhc-select--${normalizedVariant}`, className].filter(Boolean).join(' ')}
+      onSelectionChange={(key) => {
+        const nextKey = String(key);
+        setUncontrolledSelectedKey(nextKey);
+        onSelectionChange?.(nextKey);
+      }}
+      onOpenChange={(isOpen) => {
+        setOpen(isOpen);
+        if (!isOpen) queueMicrotask(() => {
+          if (document.activeElement === document.body || document.activeElement === document.documentElement) triggerRef.current?.focus();
+        });
+      }}
     >
       <Label className={hideLabel ? 'hhc-sr-only' : undefined}>{label}</Label>
-      <AriaButton className={['hhc-select__trigger', `hhc-select__trigger--${variant}`, triggerClassName].filter(Boolean).join(' ')}>
-        <SelectValue />
+      <AriaButton ref={triggerRef} className={['hhc-select__trigger', `hhc-select__trigger--${normalizedVariant}`, triggerClassName].filter(Boolean).join(' ')}>
+        <SelectValue>{({selectedText}) => selectedItem ? <><span aria-hidden="true">{selectedItem.label}</span><span className="hhc-sr-only">{selectedItem.ariaLabel ?? selectedItem.label}</span></> : selectedText || placeholder || 'Select an item'}</SelectValue>
         <ChevronDown aria-hidden="true" className="hhc-select__chevron" />
       </AriaButton>
-      <Popover className="hhc-popover">
+      <Popover className="hhc-popover hhc-select__popover" shouldCloseOnInteractOutside={(element) => {
+        if (isFocusableOutsideTarget(element)) {
+          setOpen(false);
+          return false;
+        }
+        return true;
+      }}>
         <ListBox className="hhc-listbox">
           {items.map((item) => (
-            <ListBoxItem id={item.id} key={item.id} isDisabled={item.isDisabled} className="hhc-listbox__item">
-              {item.label}
+            <ListBoxItem id={item.id} key={item.id} isDisabled={item.isDisabled} aria-label={item.ariaLabel} textValue={item.ariaLabel ?? item.label} className="hhc-listbox__item">
+              <span>{item.label}</span><span className="hhc-select__check" aria-hidden="true">✓</span>
             </ListBoxItem>
           ))}
         </ListBox>

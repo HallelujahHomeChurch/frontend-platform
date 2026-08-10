@@ -91,7 +91,7 @@
   .hhc-button--danger { color: var(--hhc-danger-foreground); background: var(--hhc-danger); }
   .hhc-button--sm { min-height: 34px; padding-inline: 12px; font-size: .875rem; }
   .hhc-button--lg { min-height: 44px; padding-inline: 16px; }
-  .hhc-button[data-focus-visible], .hhc-menu__trigger[data-focus-visible], .hhc-select__trigger[data-focus-visible], .hhc-listbox__item[data-focus-visible], .hhc-menu__item[data-focus-visible], .hhc-tabs__tab[data-focus-visible] { outline: 2px solid var(--hhc-primary); outline-offset: 2px; }
+  .hhc-button[data-focus-visible], .hhc-menu__trigger[data-focus-visible], .hhc-tabs__tab[data-focus-visible] { outline: 2px solid var(--hhc-primary); outline-offset: 2px; }
   .hhc-button[data-disabled] { opacity: .48; cursor: not-allowed; }
   .hhc-icon-button { inline-size: 40px; block-size: 40px; min-inline-size: 40px; min-block-size: 40px; aspect-ratio: 1; border-radius: 50%; flex: none; padding: 0; display: inline-grid; place-items: center; }
   .hhc-icon-button.hhc-button--sm { inline-size: 34px; block-size: 34px; min-inline-size: 34px; min-block-size: 34px; padding: 0; }
@@ -114,10 +114,12 @@
   .hhc-avatar--md { width: 40px; height: 40px; }
   .hhc-avatar--lg { width: 96px; height: 96px; }
   .hhc-account-menu__trigger { inline-size: 40px; block-size: 40px; min-inline-size: 40px; min-block-size: 40px; aspect-ratio: 1; flex: none; padding: 0; border: 0; border-radius: 50%; outline: none; background: transparent; cursor: pointer; }
-  .hhc-account-menu__trigger[data-hovered] .hhc-avatar { filter: brightness(.94); }
+  .hhc-account-menu__trigger[data-hovered] .hhc-avatar, .hhc-account-menu__trigger[aria-expanded='true'] .hhc-avatar { box-shadow: 0 0 0 4px var(--hhc-primary-soft); }
   .hhc-account-menu__trigger[data-focus-visible] .hhc-avatar { box-shadow: inset 0 0 0 2px var(--hhc-primary); }
 
   .hhc-popover, .hhc-modal { border: 1px solid var(--hhc-border); border-radius: var(--hhc-radius-md); color: var(--hhc-text); background: var(--hhc-surface-raised); box-shadow: var(--hhc-shadow-raised); }
+  .hhc-menu__popover, .hhc-select__popover { opacity: 1; transform: translateY(0); transition: opacity 120ms ease, transform 120ms ease; }
+  .hhc-menu__popover[data-entering], .hhc-menu__popover[data-exiting], .hhc-select__popover[data-entering], .hhc-select__popover[data-exiting] { opacity: 0; transform: translateY(-4px); }
   .hhc-card { overflow: hidden; border: 1px solid var(--hhc-border); border-radius: var(--hhc-radius-md); color: var(--hhc-text); background: var(--hhc-surface); }
   .hhc-card__header { display: flex; align-items: start; justify-content: space-between; gap: 16px; padding: 20px; }
   .hhc-card__header + .hhc-card__content { padding-top: 0; }
@@ -127,25 +129,33 @@
   .hhc-card__content--flush { padding: 0; }
   .hhc-menu, .hhc-listbox { min-width: 180px; padding: 6px; outline: none; }
   .hhc-menu__header { padding: 12px 14px 8px; text-align: center; font-weight: 600; }
-  .hhc-menu__item, .hhc-listbox__item { display: flex; width: 100%; min-height: 40px; box-sizing: border-box; align-items: center; padding: 10px 12px; border-radius: var(--hhc-radius-sm); text-decoration: none; cursor: pointer; }
+  .hhc-account-menu .hhc-menu__popover { width: 240px; max-width: calc(100vw - 24px); }
+  .hhc-account-menu .hhc-menu__header { padding: 14px; text-align: left; }
+  .hhc-account-menu__identity { display: grid; gap: 2px; min-width: 0; text-align: left; }
+  .hhc-account-menu__identity-text { overflow: hidden; color: var(--hhc-text-muted); font-size: .8125rem; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
+  .hhc-account-menu__identity-text:first-child { color: var(--hhc-text); font-weight: 600; }
+  .hhc-menu__item, .hhc-listbox__item { display: grid; width: 100%; min-height: 44px; box-sizing: border-box; align-items: center; padding: 10px 12px; border: 1px solid transparent; border-radius: var(--hhc-radius-sm); text-decoration: none; cursor: pointer; }
+  .hhc-listbox__item { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
   .hhc-menu__item[data-hovered], .hhc-menu__item[data-focused], .hhc-listbox__item[data-hovered], .hhc-listbox__item[data-focused] { background: var(--hhc-primary-soft); }
-  .hhc-menu__item[data-focus-visible] { outline: 0; box-shadow: inset 0 0 0 2px var(--hhc-primary); }
+  .hhc-menu__item[data-focus-visible], .hhc-listbox__item[data-focus-visible], .hhc-select__trigger[data-focus-visible] { outline: 0; box-shadow: inset 0 0 0 2px var(--hhc-primary); }
+  .hhc-listbox__item[data-selected] { color: var(--hhc-primary); background: var(--hhc-primary-soft); }
+  .hhc-select__check { opacity: 0; font-weight: 700; }
+  .hhc-listbox__item[data-selected] .hhc-select__check { opacity: 1; }
+  .hhc-menu__item--default { color: var(--hhc-text); }
   .hhc-menu__item--danger { color: var(--hhc-danger); }
-  .hhc-account-menu .hhc-menu__item--danger { position: relative; margin-top: 7px; }
-  .hhc-account-menu .hhc-menu__item--danger::before { position: absolute; inset: -4px 0 auto; border-top: 1px solid var(--hhc-border); content: ''; pointer-events: none; }
-  .hhc-account-menu .hhc-menu__item--danger[data-hovered], .hhc-account-menu .hhc-menu__item--danger[data-focused] { background: var(--hhc-danger-soft); }
 
   .hhc-field, .hhc-select { display: grid; gap: 6px; color: var(--hhc-text); }
   .hhc-field input, .hhc-select__trigger { width: 100%; min-height: 44px; border: 1px solid var(--hhc-border); border-radius: var(--hhc-radius-md); padding: 0 12px; color: var(--hhc-text); background: var(--hhc-surface); font: inherit; }
-  .hhc-field input[data-focus-visible], .hhc-select__trigger[data-focus-visible] { border-color: var(--hhc-primary); outline: 2px solid var(--hhc-primary-soft); }
+  .hhc-field input[data-focus-visible], .hhc-select__trigger[data-focus-visible] { border-color: var(--hhc-primary); }
   .hhc-field [slot='description'] { color: var(--hhc-text-muted); font-size: .875rem; }
   .hhc-field [data-invalid] { color: var(--hhc-danger); }
   .hhc-select__trigger { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .hhc-select__chevron { width: 16px; height: 16px; flex: none; transition: transform 160ms ease; }
   .hhc-select[data-open] .hhc-select__chevron { transform: rotate(180deg); }
-  .hhc-select--ghost { display: inline-grid; }
-  .hhc-select__trigger--ghost { width: auto; min-height: 36px; border-color: transparent; background: transparent; }
-  .hhc-select__trigger--ghost[data-hovered] { background: var(--hhc-primary-soft); }
+  .hhc-select--utility { display: inline-grid; }
+  .hhc-select__trigger--utility { width: auto; min-height: 40px; border-color: transparent; background: transparent; }
+  .hhc-select__trigger--utility[data-hovered] { background: var(--hhc-primary-soft); }
+  .hhc-select__trigger[data-disabled] { opacity: .48; cursor: not-allowed; }
 
   .hhc-expandable-search { position: relative; width: 40px; height: 40px; overflow: hidden; border: 1px solid var(--hhc-border); border-radius: 999px; background: var(--hhc-surface); transition: width 180ms ease; }
   .hhc-expandable-search[data-expanded='true'] { width: min(280px, 70vw); }
@@ -250,7 +260,12 @@
   @keyframes hhc-caret { 50% { opacity: 0; } }
   @keyframes hhc-shimmer { to { background-position: -200% 0; } }
   @keyframes hhc-progress { from { transform: translateX(-100%); } to { transform: translateX(225%); } }
-  @media (prefers-reduced-motion: reduce) { .hhc-otp__caret, .hhc-skeleton, .hhc-progress__fill { animation: none; } .hhc-expandable-search, .hhc-switch__track, .hhc-switch__thumb, .hhc-toast { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .hhc-otp__caret, .hhc-skeleton, .hhc-progress__fill { animation: none; } .hhc-expandable-search, .hhc-switch__track, .hhc-switch__thumb, .hhc-toast, .hhc-select__chevron, .hhc-menu__popover, .hhc-select__popover { transition: none; } }
+  @media (forced-colors: active) {
+    .hhc-account-menu__trigger, .hhc-menu__item, .hhc-listbox__item, .hhc-select__trigger { border-color: CanvasText; forced-color-adjust: auto; }
+    .hhc-account-menu__trigger[data-focus-visible] .hhc-avatar { box-shadow: inset 0 0 0 2px Highlight; }
+    .hhc-listbox__item[data-selected] .hhc-select__check { color: Highlight; forced-color-adjust: none; }
+  }
   @media (max-width: 960px) {
     .hhc-expandable-search--header-overlay { position: absolute; z-index: 3; top: 10px; inset-inline-end: 68px; width: 40px; background: var(--hhc-canvas); }
     .hhc-expandable-search--header-overlay[data-expanded='true'] { width: calc(100% - 84px); }

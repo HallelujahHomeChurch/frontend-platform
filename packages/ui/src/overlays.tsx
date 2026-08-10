@@ -1,4 +1,4 @@
-import {useState, type ReactElement, type ReactNode} from 'react';
+import {useRef, useState, type ReactElement, type ReactNode, type RefObject} from 'react';
 import {
   Button as AriaButton,
   Dialog as AriaDialog,
@@ -27,13 +27,30 @@ export interface MenuProps {
   onAction: (id: string) => void;
   trigger?: ReactElement;
   header?: ReactNode;
+  focusTriggerRef?: RefObject<HTMLButtonElement | null>;
 }
 
-export function Menu({label, items, onAction, trigger, header}: MenuProps) {
+function isFocusableOutsideTarget(element: Element) {
+  return Boolean(element.closest('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'));
+}
+
+export function Menu({label, items, onAction, trigger, header, focusTriggerRef}: MenuProps) {
+  const [isOpen, setOpen] = useState(false);
   return (
-    <MenuTrigger>
+    <MenuTrigger isOpen={isOpen} onOpenChange={(isOpen) => {
+      setOpen(isOpen);
+      if (!isOpen) queueMicrotask(() => {
+        if (document.activeElement === document.body || document.activeElement === document.documentElement) focusTriggerRef?.current?.focus();
+      });
+    }}>
       {trigger ?? <AriaButton className="hhc-menu__trigger">{label}</AriaButton>}
-      <Popover className="hhc-popover hhc-menu__popover" placement="bottom end">
+      <Popover className="hhc-popover hhc-menu__popover" placement="bottom end" shouldCloseOnInteractOutside={(element) => {
+        if (isFocusableOutsideTarget(element)) {
+          setOpen(false);
+          return false;
+        }
+        return true;
+      }}>
         {header ? <div className="hhc-menu__header">{header}</div> : null}
         <AriaMenu aria-label={label} className="hhc-menu" onAction={(key) => onAction(String(key))}>
           {items.map((item) => (
@@ -42,7 +59,7 @@ export function Menu({label, items, onAction, trigger, header}: MenuProps) {
               key={item.id}
               {...(item.href ? {href: item.href} : {})}
               isDisabled={item.isDisabled}
-              className={`hhc-menu__item ${item.variant === 'danger' ? 'hhc-menu__item--danger' : ''}`}
+              className={`hhc-menu__item hhc-menu__item--${item.variant ?? 'default'}`}
             >
               {item.label}
             </AriaMenuItem>
@@ -153,6 +170,7 @@ export interface AccountMenuProps {
 }
 
 export function AccountMenu({user, labels, manageAccountHref, onSignOut}: AccountMenuProps) {
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const actions: MenuItem[] = [
     ...(labels.manageAccount && manageAccountHref ? [{id: 'manage', label: labels.manageAccount, href: manageAccountHref}] : []),
     {id: 'sign-out', label: labels.signOut, variant: 'danger' as const}
@@ -162,10 +180,16 @@ export function AccountMenu({user, labels, manageAccountHref, onSignOut}: Accoun
       <Menu
         label={labels.menu}
         items={actions}
-        header={labels.greeting}
+        header={
+          <div className="hhc-account-menu__identity">
+            <span className="hhc-account-menu__identity-text" title={user.name || user.email}>{user.name || user.email}</span>
+            {user.name && user.email ? <span className="hhc-account-menu__identity-text" title={user.email}>{user.email}</span> : null}
+          </div>
+        }
+        focusTriggerRef={triggerRef}
         onAction={(id) => { if (id === 'sign-out') onSignOut(); }}
         trigger={
-          <AriaButton className="hhc-account-menu__trigger" aria-label={labels.menu}>
+          <AriaButton ref={triggerRef} className="hhc-account-menu__trigger" aria-label={labels.menu}>
             <Avatar name={user.name || user.email} src={user.avatarUrl} />
           </AriaButton>
         }
