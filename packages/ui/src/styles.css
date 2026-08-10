@@ -19,6 +19,7 @@
     --hhc-success: #24725f;
     --hhc-warning: #91610d;
     --hhc-danger: #9d3328;
+    --hhc-danger-soft: rgb(157 51 40 / 12%);
     --hhc-danger-foreground: #fff;
     --hhc-scrim: rgb(29 26 25 / 52%);
     --hhc-radius-sm: 6px;
@@ -44,6 +45,7 @@
     --hhc-success: #7bc7ae;
     --hhc-warning: #efc46f;
     --hhc-danger: #ff9b8f;
+    --hhc-danger-soft: rgb(255 155 143 / 14%);
     --hhc-danger-foreground: #2a1715;
     --hhc-scrim: rgb(0 0 0 / 68%);
     --hhc-shadow-raised: 0 16px 40px rgb(0 0 0 / 32%);
@@ -91,8 +93,9 @@
   .hhc-button--lg { min-height: 44px; padding-inline: 16px; }
   .hhc-button[data-focus-visible], .hhc-menu__trigger[data-focus-visible], .hhc-select__trigger[data-focus-visible], .hhc-listbox__item[data-focus-visible], .hhc-menu__item[data-focus-visible], .hhc-tabs__tab[data-focus-visible] { outline: 2px solid var(--hhc-primary); outline-offset: 2px; }
   .hhc-button[data-disabled] { opacity: .48; cursor: not-allowed; }
-  .hhc-icon-button { width: 40px; padding: 0; display: inline-grid; place-items: center; }
-  .hhc-icon-button.hhc-button--lg { width: 44px; padding: 0; }
+  .hhc-icon-button { inline-size: 40px; block-size: 40px; min-inline-size: 40px; min-block-size: 40px; aspect-ratio: 1; border-radius: 50%; flex: none; padding: 0; display: inline-grid; place-items: center; }
+  .hhc-icon-button.hhc-button--sm { inline-size: 34px; block-size: 34px; min-inline-size: 34px; min-block-size: 34px; padding: 0; }
+  .hhc-icon-button.hhc-button--lg { inline-size: 44px; block-size: 44px; min-inline-size: 44px; min-block-size: 44px; padding: 0; }
 
   .hhc-switch { display: inline-flex; width: fit-content; align-items: center; gap: 12px; color: var(--hhc-text); cursor: pointer; }
   .hhc-switch__track { display: inline-flex; width: 44px; height: 24px; flex: none; align-items: center; border: 1px solid var(--hhc-border); border-radius: 999px; background: var(--hhc-surface); padding: 2px; transition: border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease; }
@@ -110,7 +113,7 @@
   .hhc-avatar--sm { width: 32px; height: 32px; }
   .hhc-avatar--md { width: 40px; height: 40px; }
   .hhc-avatar--lg { width: 96px; height: 96px; }
-  .hhc-account-menu__trigger { width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; outline: none; background: transparent; cursor: pointer; }
+  .hhc-account-menu__trigger { inline-size: 40px; block-size: 40px; min-inline-size: 40px; min-block-size: 40px; aspect-ratio: 1; flex: none; padding: 0; border: 0; border-radius: 50%; outline: none; background: transparent; cursor: pointer; }
   .hhc-account-menu__trigger[data-hovered] .hhc-avatar { filter: brightness(.94); }
   .hhc-account-menu__trigger[data-focus-visible] .hhc-avatar { box-shadow: inset 0 0 0 2px var(--hhc-primary); }
 
@@ -124,9 +127,13 @@
   .hhc-card__content--flush { padding: 0; }
   .hhc-menu, .hhc-listbox { min-width: 180px; padding: 6px; outline: none; }
   .hhc-menu__header { padding: 12px 14px 8px; text-align: center; font-weight: 600; }
-  .hhc-menu__item, .hhc-listbox__item { display: flex; width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: var(--hhc-radius-sm); cursor: pointer; }
+  .hhc-menu__item, .hhc-listbox__item { display: flex; width: 100%; min-height: 40px; box-sizing: border-box; align-items: center; padding: 10px 12px; border-radius: var(--hhc-radius-sm); text-decoration: none; cursor: pointer; }
   .hhc-menu__item[data-hovered], .hhc-menu__item[data-focused], .hhc-listbox__item[data-hovered], .hhc-listbox__item[data-focused] { background: var(--hhc-primary-soft); }
+  .hhc-menu__item[data-focus-visible] { outline: 0; box-shadow: inset 0 0 0 2px var(--hhc-primary); }
   .hhc-menu__item--danger { color: var(--hhc-danger); }
+  .hhc-account-menu .hhc-menu__item--danger { position: relative; margin-top: 7px; }
+  .hhc-account-menu .hhc-menu__item--danger::before { position: absolute; inset: -4px 0 auto; border-top: 1px solid var(--hhc-border); content: ''; pointer-events: none; }
+  .hhc-account-menu .hhc-menu__item--danger[data-hovered], .hhc-account-menu .hhc-menu__item--danger[data-focused] { background: var(--hhc-danger-soft); }
 
   .hhc-field, .hhc-select { display: grid; gap: 6px; color: var(--hhc-text); }
   .hhc-field input, .hhc-select__trigger { width: 100%; min-height: 44px; border: 1px solid var(--hhc-border); border-radius: var(--hhc-radius-md); padding: 0 12px; color: var(--hhc-text); background: var(--hhc-surface); font: inherit; }

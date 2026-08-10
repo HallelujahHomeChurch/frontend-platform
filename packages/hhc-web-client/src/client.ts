@@ -104,10 +104,11 @@ export function createHhcWebClient(options: {
         body: { issueNumber, issueDate },
       }))).data
     },
-    async createBulletinUpload(issueId: string, input: components['schemas']['CreateBulletinUploadInput'], idempotencyKey: string) {
+    async createBulletinUpload(issueId: string, input: components['schemas']['CreateBulletinUploadInput'], idempotencyKey: string, signal?: AbortSignal) {
       return (await unwrap(client.POST('/admin/bulletins/{issueId}/upload-sessions', {
         params: { path: { issueId }, header: { 'Idempotency-Key': idempotencyKey } },
         body: input,
+        signal,
       }))).data
     },
     async updateBulletinVersion(issueId: string, locale: BulletinLocale, version: number, title: string, subtitle: string) {
@@ -121,10 +122,11 @@ export function createHhcWebClient(options: {
         params: { path: { issueId, locale }, header: { 'If-Match': `"${version}"` } },
       }))).data
     },
-    async completeBulletinUpload(issueId: string, assetId: string, version: number, input: CompleteBulletinUploadInput) {
+    async completeBulletinUpload(issueId: string, assetId: string, version: number, input: CompleteBulletinUploadInput, signal?: AbortSignal) {
       return (await unwrap(client.POST('/admin/bulletins/{issueId}/assets/{assetId}/complete', {
         params: { path: { issueId, assetId }, header: { 'If-Match': `"${version}"` } },
         body: input,
+        signal,
       }))).data
     },
     async publishBulletin(issueId: string, version: number, locale: BulletinLocale, options: { notifySubscribers: boolean }) {
@@ -226,14 +228,16 @@ export function createHhcWebClient(options: {
         params: { path: { module, contentId, revision }, header: { 'If-Match': `"${version}"` } },
       }))).data
     },
-    async createNewsCoverUpload(contentId: string, input: CreateImageUploadInput, idempotencyKey: string) {
+    async createNewsCoverUpload(contentId: string, input: CreateImageUploadInput, idempotencyKey: string, signal?: AbortSignal) {
       return (await unwrap(client.POST('/admin/content/news/{contentId}/upload-sessions', {
         params: { path: { contentId }, header: { 'Idempotency-Key': idempotencyKey } }, body: input,
+        signal,
       }))).data
     },
-    async completeNewsCoverUpload(contentId: string, assetId: string, version: number, input: CompleteImageUploadInput) {
+    async completeNewsCoverUpload(contentId: string, assetId: string, version: number, input: CompleteImageUploadInput, signal?: AbortSignal) {
       return (await unwrap(client.POST('/admin/content/news/{contentId}/assets/{assetId}/complete', {
         params: { path: { contentId, assetId }, header: { 'If-Match': `"${version}"` } }, body: input,
+        signal,
       }))).data
     },
     async getNewsCoverStatus(contentId: string, assetId: string, signal?: AbortSignal) {

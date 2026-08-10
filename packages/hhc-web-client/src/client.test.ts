@@ -150,6 +150,91 @@ describe('hhc web client', () => {
     })
   })
 
+  it('forwards cancellation to bulletin upload requests', async () => {
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: {
+          asset: { id: 'asset-1' },
+          uploadTarget: { url: 'https://storage.example/upload', method: 'PUT', headers: {}, expiresAt: '2026-08-03T00:00:00Z' },
+        },
+        meta: {},
+        error: null,
+      }), { status: 201, headers: { 'Content-Type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: { id: 'issue-1', issueDate: '2026-07-31', status: 'draft', version: 3, versions: [], createdBy: 'admin', updatedBy: 'admin', createdAt: '2026-07-31T00:00:00Z', updatedAt: '2026-07-31T00:00:00Z' },
+        meta: {},
+        error: null,
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
+    const createController = new AbortController()
+    const completeController = new AbortController()
+
+    await client.createBulletinUpload('issue-1', {
+      locale: 'zh-Hant',
+      title: 'Weekly',
+      subtitle: '',
+      fileName: 'weekly.pdf',
+      mimeType: 'application/pdf',
+      sizeBytes: 1024,
+    }, 'upload-1', createController.signal)
+    await client.completeBulletinUpload('issue-1', 'asset-1', 2, {
+      locale: 'zh-Hant',
+      title: 'Weekly',
+      subtitle: '',
+      fileName: 'weekly.pdf',
+      mimeType: 'application/pdf',
+      sizeBytes: 1024,
+      checksumSha256: 'abc123',
+    }, completeController.signal)
+
+    const createRequest = fetcher.mock.calls[0]![0] as Request
+    const completeRequest = fetcher.mock.calls[1]![0] as Request
+    createController.abort()
+    completeController.abort()
+    expect(createRequest.signal.aborted).toBe(true)
+    expect(completeRequest.signal.aborted).toBe(true)
+  })
+
+  it('forwards cancellation to news image upload requests', async () => {
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: {
+          asset: { id: 'asset-1' },
+          uploadTarget: { url: 'https://storage.example/upload', method: 'PUT', headers: {}, expiresAt: '2026-08-03T00:00:00Z' },
+        },
+        meta: {},
+        error: null,
+      }), { status: 201, headers: { 'Content-Type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: { id: 'asset-1', uploadStatus: 'completed', scanStatus: 'pending', processingStatus: 'not_required', retryable: false },
+        meta: {},
+        error: null,
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
+    const createController = new AbortController()
+    const completeController = new AbortController()
+
+    await client.createNewsCoverUpload('news-1', {
+      fileName: 'cover.webp',
+      mimeType: 'image/webp',
+      sizeBytes: 1024,
+      usage: 'detail',
+    }, 'upload-1', createController.signal)
+    await client.completeNewsCoverUpload('news-1', 'asset-1', 2, {
+      fileName: 'cover.webp',
+      mimeType: 'image/webp',
+      sizeBytes: 1024,
+      checksumSha256: 'abc123',
+    }, completeController.signal)
+
+    const createRequest = fetcher.mock.calls[0]![0] as Request
+    const completeRequest = fetcher.mock.calls[1]![0] as Request
+    createController.abort()
+    completeController.abort()
+    expect(createRequest.signal.aborted).toBe(true)
+    expect(completeRequest.signal.aborted).toBe(true)
+  })
+
   it('updates and removes one bulletin locale version with issue concurrency', async () => {
     const body = JSON.stringify({
       data: { id: 'issue-1', issueDate: '2026-07-31', status: 'draft', version: 3, versions: [], createdBy: 'admin', updatedBy: 'admin', createdAt: '2026-07-31T00:00:00Z', updatedAt: '2026-07-31T00:00:00Z' },
