@@ -1,4 +1,4 @@
-import {useRef, useState, type ReactElement, type ReactNode, type RefObject} from 'react';
+import {useEffect, useRef, useState, type ReactElement, type ReactNode, type RefObject} from 'react';
 import {
   Button as AriaButton,
   Dialog as AriaDialog,
@@ -30,27 +30,50 @@ export interface MenuProps {
   focusTriggerRef?: RefObject<HTMLButtonElement | null>;
 }
 
-function isFocusableOutsideTarget(element: Element) {
-  return Boolean(element.closest('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'));
+function isMeaningfullyFocusable(target: EventTarget | null) {
+  return target instanceof Element && Boolean(target.closest('a[href], area[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), summary, iframe, audio[controls], video[controls], [contenteditable="true"], [tabindex]:not([tabindex="-1"])'));
 }
 
 export function Menu({label, items, onAction, trigger, header, focusTriggerRef}: MenuProps) {
+  const popoverRef = useRef<HTMLElement>(null);
+  const pointerStartedOutsideRef = useRef(false);
+  const shouldRestoreFocusRef = useRef(true);
   const [isOpen, setOpen] = useState(false);
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (nextOpen) shouldRestoreFocusRef.current = true;
+    else if (shouldRestoreFocusRef.current) focusTriggerRef?.current?.focus();
+  };
+  useEffect(() => {
+    const popover = popoverRef.current;
+    if (!isOpen || !popover) return;
+    const ownerDocument = popover.ownerDocument;
+    const onPointerDown = (event: PointerEvent) => {
+      pointerStartedOutsideRef.current = event.button === 0 && !event.composedPath().includes(popover);
+      if (pointerStartedOutsideRef.current) shouldRestoreFocusRef.current = !isMeaningfullyFocusable(event.target);
+    };
+    const onClick = (event: MouseEvent) => {
+      if (!pointerStartedOutsideRef.current || event.composedPath().includes(popover)) return;
+      pointerStartedOutsideRef.current = false;
+      setOpen(false);
+      if (shouldRestoreFocusRef.current) focusTriggerRef?.current?.focus();
+    };
+    ownerDocument.addEventListener('pointerdown', onPointerDown, true);
+    ownerDocument.addEventListener('click', onClick, true);
+    return () => {
+      ownerDocument.removeEventListener('pointerdown', onPointerDown, true);
+      ownerDocument.removeEventListener('click', onClick, true);
+    };
+  }, [focusTriggerRef, isOpen]);
   return (
-    <MenuTrigger isOpen={isOpen} onOpenChange={(isOpen) => {
-      setOpen(isOpen);
-      if (!isOpen) queueMicrotask(() => {
-        if (document.activeElement === document.body || document.activeElement === document.documentElement) focusTriggerRef?.current?.focus();
-      });
-    }}>
+    <MenuTrigger isOpen={isOpen} onOpenChange={handleOpenChange}>
       {trigger ?? <AriaButton className="hhc-menu__trigger">{label}</AriaButton>}
-      <Popover className="hhc-popover hhc-menu__popover" placement="bottom end" shouldCloseOnInteractOutside={(element) => {
-        if (isFocusableOutsideTarget(element)) {
-          setOpen(false);
-          return false;
-        }
-        return true;
-      }}>
+      <Popover
+        ref={popoverRef}
+        className="hhc-popover hhc-menu__popover"
+        placement="bottom end"
+        isNonModal
+      >
         {header ? <div className="hhc-menu__header">{header}</div> : null}
         <AriaMenu aria-label={label} className="hhc-menu" onAction={(key) => onAction(String(key))}>
           {items.map((item) => (

@@ -174,7 +174,11 @@ describe('HHC UI primitives', () => {
     expect(utility.querySelector('svg')).toHaveClass('hhc-select__chevron');
 
     await user.click(utility);
+    expect(utility.closest('.hhc-select')).toHaveAttribute('data-open');
     expect(screen.getByRole('option', {name: 'English (United States)'})).toHaveAttribute('aria-selected', 'true');
+
+    const styles = readFileSync('src/styles.css', 'utf8');
+    expect(styles).toMatch(/\.hhc-select--utility\[data-open\][^{]*\.hhc-select__trigger--utility[^}]*background:\s*var\(--hhc-primary-soft\)/s);
   });
 
   it('rotates the select chevron only while the menu is open', async () => {
@@ -218,22 +222,53 @@ describe('HHC UI primitives', () => {
 
   it('keeps focus on a focusable outside target when Select and AccountMenu dismiss', async () => {
     const user = userEvent.setup();
+    const onOutsideAction = vi.fn();
     render(
       <>
         <Select label="Language" items={[{id: 'en', label: 'English'}]} />
         <AccountMenu user={{name: 'Ada', email: 'ada@example.com'}} labels={{menu: 'Account menu', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => undefined} />
-        <button>Outside action</button>
+        <button onClick={onOutsideAction}>Outside action</button>
       </>
     );
 
     const outside = screen.getByRole('button', {name: 'Outside action'});
     await user.click(screen.getByRole('button', {name: /Language/}));
+    expect(outside.closest('[aria-hidden="true"], [inert]')).toBeNull();
     await user.click(outside);
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
     expect(outside).toHaveFocus();
+    expect(onOutsideAction).toHaveBeenCalledTimes(1);
 
     await user.click(screen.getByRole('button', {name: 'Account menu'}));
+    expect(outside.closest('[aria-hidden="true"], [inert]')).toBeNull();
     await user.click(outside);
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     expect(outside).toHaveFocus();
+    expect(onOutsideAction).toHaveBeenCalledTimes(2);
+  });
+
+  it('restores trigger focus when a non-focusable outside surface dismisses Select and AccountMenu', async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <Select label="Language" items={[{id: 'en', label: 'English'}]} />
+        <AccountMenu user={{name: 'Ada', email: 'ada@example.com'}} labels={{menu: 'Account menu', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => undefined} />
+        <div data-testid="outside-surface">Outside surface</div>
+      </>
+    );
+
+    const outside = screen.getByTestId('outside-surface');
+    const selectTrigger = screen.getByRole('button', {name: /Language/});
+    await user.click(selectTrigger);
+    await user.click(outside);
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(selectTrigger).toHaveFocus();
+
+    const menuTrigger = screen.getByRole('button', {name: 'Account menu'});
+    await user.click(menuTrigger);
+    await user.click(outside);
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(menuTrigger).toHaveFocus();
   });
 
   it('exposes compact locale labels with full accessible names and selected checks', async () => {

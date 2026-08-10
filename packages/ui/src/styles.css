@@ -154,7 +154,7 @@
   .hhc-select[data-open] .hhc-select__chevron { transform: rotate(180deg); }
   .hhc-select--utility { display: inline-grid; }
   .hhc-select__trigger--utility { width: auto; min-height: 40px; border-color: transparent; background: transparent; }
-  .hhc-select__trigger--utility[data-hovered] { background: var(--hhc-primary-soft); }
+  .hhc-select__trigger--utility[data-hovered], .hhc-select--utility[data-open] .hhc-select__trigger--utility { background: var(--hhc-primary-soft); }
   .hhc-select__trigger[data-disabled] { opacity: .48; cursor: not-allowed; }
 
   .hhc-expandable-search { position: relative; width: 40px; height: 40px; overflow: hidden; border: 1px solid var(--hhc-border); border-radius: 999px; background: var(--hhc-surface); transition: width 180ms ease; }

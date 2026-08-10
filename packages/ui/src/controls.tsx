@@ -149,8 +149,8 @@ export interface SelectItem {
   isDisabled?: boolean;
 }
 
-function isFocusableOutsideTarget(element: Element) {
-  return Boolean(element.closest('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'));
+function isMeaningfullyFocusable(target: EventTarget | null) {
+  return target instanceof Element && Boolean(target.closest('a[href], area[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), summary, iframe, audio[controls], video[controls], [contenteditable="true"], [tabindex]:not([tabindex="-1"])'));
 }
 
 export interface SelectProps {
@@ -169,10 +169,39 @@ export interface SelectProps {
 
 export function Select({label, placeholder, items, variant = 'default', selectedKey, defaultSelectedKey, onSelectionChange, className, triggerClassName, hideLabel, ...props}: SelectProps) {
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLElement>(null);
+  const pointerStartedOutsideRef = useRef(false);
+  const shouldRestoreFocusRef = useRef(true);
   const [uncontrolledSelectedKey, setUncontrolledSelectedKey] = useState(defaultSelectedKey);
   const [isOpen, setOpen] = useState(false);
   const normalizedVariant = variant === 'ghost' ? 'utility' : variant;
   const selectedItem = items.find((item) => item.id === (selectedKey ?? uncontrolledSelectedKey));
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (nextOpen) shouldRestoreFocusRef.current = true;
+    else if (shouldRestoreFocusRef.current) triggerRef.current?.focus();
+  };
+  useEffect(() => {
+    const popover = popoverRef.current;
+    if (!isOpen || !popover) return;
+    const ownerDocument = popover.ownerDocument;
+    const onPointerDown = (event: PointerEvent) => {
+      pointerStartedOutsideRef.current = event.button === 0 && !event.composedPath().includes(popover);
+      if (pointerStartedOutsideRef.current) shouldRestoreFocusRef.current = !isMeaningfullyFocusable(event.target);
+    };
+    const onClick = (event: MouseEvent) => {
+      if (!pointerStartedOutsideRef.current || event.composedPath().includes(popover)) return;
+      pointerStartedOutsideRef.current = false;
+      setOpen(false);
+      if (shouldRestoreFocusRef.current) triggerRef.current?.focus();
+    };
+    ownerDocument.addEventListener('pointerdown', onPointerDown, true);
+    ownerDocument.addEventListener('click', onClick, true);
+    return () => {
+      ownerDocument.removeEventListener('pointerdown', onPointerDown, true);
+      ownerDocument.removeEventListener('click', onClick, true);
+    };
+  }, [isOpen]);
   return (
     <AriaSelect
       {...props}
@@ -186,25 +215,18 @@ export function Select({label, placeholder, items, variant = 'default', selected
         setUncontrolledSelectedKey(nextKey);
         onSelectionChange?.(nextKey);
       }}
-      onOpenChange={(isOpen) => {
-        setOpen(isOpen);
-        if (!isOpen) queueMicrotask(() => {
-          if (document.activeElement === document.body || document.activeElement === document.documentElement) triggerRef.current?.focus();
-        });
-      }}
+      onOpenChange={handleOpenChange}
     >
       <Label className={hideLabel ? 'hhc-sr-only' : undefined}>{label}</Label>
       <AriaButton ref={triggerRef} className={['hhc-select__trigger', `hhc-select__trigger--${normalizedVariant}`, triggerClassName].filter(Boolean).join(' ')}>
         <SelectValue>{({selectedText}) => selectedItem ? <><span aria-hidden="true">{selectedItem.label}</span><span className="hhc-sr-only">{selectedItem.ariaLabel ?? selectedItem.label}</span></> : selectedText || placeholder || 'Select an item'}</SelectValue>
         <ChevronDown aria-hidden="true" className="hhc-select__chevron" />
       </AriaButton>
-      <Popover className="hhc-popover hhc-select__popover" shouldCloseOnInteractOutside={(element) => {
-        if (isFocusableOutsideTarget(element)) {
-          setOpen(false);
-          return false;
-        }
-        return true;
-      }}>
+      <Popover
+        ref={popoverRef}
+        className="hhc-popover hhc-select__popover"
+        isNonModal
+      >
         <ListBox className="hhc-listbox">
           {items.map((item) => (
             <ListBoxItem id={item.id} key={item.id} isDisabled={item.isDisabled} aria-label={item.ariaLabel} textValue={item.ariaLabel ?? item.label} className="hhc-listbox__item">
