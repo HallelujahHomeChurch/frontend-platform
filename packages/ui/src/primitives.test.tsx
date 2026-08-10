@@ -56,7 +56,9 @@ describe('HHC UI primitives', () => {
     expect(button).toHaveClass('hhc-button--soft', 'hhc-button--lg', 'hhc-icon-button');
     expect(styles).toMatch(/\.hhc-button--soft[^}]*color:\s*var\(--hhc-primary\)[^}]*background:\s*var\(--hhc-primary-soft\)/s);
     expect(styles).toMatch(/\.hhc-button--lg[^}]*min-height:\s*44px/s);
-    expect(styles).toMatch(/\.hhc-icon-button\.hhc-button--lg[^}]*width:\s*44px[^}]*padding:\s*0/s);
+    expect(styles).toMatch(/\.hhc-icon-button[^}]*inline-size:\s*40px[^}]*block-size:\s*40px[^}]*min-inline-size:\s*40px[^}]*min-block-size:\s*40px[^}]*aspect-ratio:\s*1[^}]*border-radius:\s*50%[^}]*flex:\s*none/s);
+    expect(styles).toMatch(/\.hhc-icon-button\.hhc-button--sm[^}]*inline-size:\s*34px[^}]*block-size:\s*34px/s);
+    expect(styles).toMatch(/\.hhc-icon-button\.hhc-button--lg[^}]*inline-size:\s*44px[^}]*block-size:\s*44px/s);
     expect(styles).toMatch(/\.hhc-button\[data-focus-visible\][^}]*outline:\s*2px solid var\(--hhc-primary\)/s);
     expect(styles).toMatch(/\.hhc-button\[data-disabled\][^}]*cursor:\s*not-allowed/s);
   });
@@ -354,6 +356,13 @@ describe('HHC UI primitives', () => {
       'href',
       'https://account.alive.org.tw/profile'
     );
+
+    const styles = readFileSync('src/styles.css', 'utf8');
+    expect(styles).toMatch(/\.hhc-account-menu__trigger[^}]*inline-size:\s*40px[^}]*block-size:\s*40px[^}]*aspect-ratio:\s*1[^}]*flex:\s*none/s);
+    expect(styles).toMatch(/\.hhc-menu__item[^}]*width:\s*100%[^}]*min-height:\s*40px[^}]*align-items:\s*center[^}]*text-decoration:\s*none/s);
+    expect(styles).toMatch(/\.hhc-menu__item\[data-focus-visible\][^}]*outline:\s*0[^}]*box-shadow:\s*inset 0 0 0 2px var\(--hhc-primary\)/s);
+    expect(styles).toMatch(/\.hhc-account-menu \.hhc-menu__item--danger::before[^}]*border-top:\s*1px solid var\(--hhc-border\)/s);
+    expect(styles).toMatch(/\.hhc-account-menu \.hhc-menu__item--danger\[data-hovered\][^}]*background:\s*var\(--hhc-danger-soft\)/s);
   });
 
   it('preserves search value when dismissed and restores focus on Escape', async () => {
