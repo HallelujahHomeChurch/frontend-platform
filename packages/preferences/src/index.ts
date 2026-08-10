@@ -1,10 +1,32 @@
-export const locales = ['zh-Hant', 'zh-Hans', 'en'] as const;
+export const adminUiLocales = ['zh-Hant', 'zh-Hans', 'en'] as const;
+export const productLocales = ['zh-Hant', 'zh-Hans', 'en', 'ja', 'ko'] as const;
+export const contentLocales = productLocales;
+
+/** @deprecated Use adminUiLocales, productLocales, or contentLocales. */
+export const locales = adminUiLocales;
 export const themes = ['light', 'dark'] as const;
 
+export type AdminUiLocale = (typeof adminUiLocales)[number];
+export type ProductLocale = (typeof productLocales)[number];
+export type ContentLocale = ProductLocale;
+/** @deprecated Use AdminUiLocale, ProductLocale, or ContentLocale. */
 export type Locale = (typeof locales)[number];
 export type Theme = (typeof themes)[number];
 
+export const localeMetadata: readonly {
+  code: ProductLocale;
+  shortLabel: string;
+  nativeLabel: string;
+}[] = [
+  {code: 'zh-Hant', shortLabel: '繁中', nativeLabel: '繁體中文'},
+  {code: 'zh-Hans', shortLabel: '简中', nativeLabel: '简体中文'},
+  {code: 'en', shortLabel: 'EN', nativeLabel: 'English'},
+  {code: 'ja', shortLabel: '日本語', nativeLabel: '日本語'},
+  {code: 'ko', shortLabel: '한국어', nativeLabel: '한국어'}
+];
+
 export const localeCookieName = 'hhc_locale';
+export const adminLocaleCookieName = 'hhc_admin_locale';
 export const themeCookieName = 'hhc_theme';
 
 const cookieMaxAge = 31_536_000;
@@ -29,11 +51,40 @@ export function isLocale(value: string): value is Locale {
   return locales.includes(value as Locale);
 }
 
+export function isAdminUiLocale(value: string): value is AdminUiLocale {
+  return adminUiLocales.includes(value as AdminUiLocale);
+}
+
+export function isProductLocale(value: string): value is ProductLocale {
+  return productLocales.includes(value as ProductLocale);
+}
+
 export function isTheme(value: string): value is Theme {
   return themes.includes(value as Theme);
 }
 
 export function detectLocale(languages: readonly string[]): Locale {
+  return detectAdminUiLocale(languages);
+}
+
+export function detectProductLocale(languages: readonly string[]): ProductLocale {
+  for (const language of languages) {
+    const normalized = language.toLowerCase();
+
+    if (normalized.startsWith('zh-hans') || normalized.startsWith('zh-cn') || normalized.startsWith('zh-sg')) {
+      return 'zh-Hans';
+    }
+
+    if (normalized.startsWith('zh')) return 'zh-Hant';
+    if (normalized.startsWith('ja')) return 'ja';
+    if (normalized.startsWith('ko')) return 'ko';
+    if (normalized.startsWith('en')) return 'en';
+  }
+
+  return 'en';
+}
+
+export function detectAdminUiLocale(languages: readonly string[]): AdminUiLocale {
   for (const language of languages) {
     const normalized = language.toLowerCase();
 
@@ -53,6 +104,16 @@ export function getStoredLocale(cookie: string): Locale | undefined {
   return value !== undefined && isLocale(value) ? value : undefined;
 }
 
+export function getStoredProductLocale(cookie: string): ProductLocale | undefined {
+  const value = getCookieValue(cookie, localeCookieName);
+  return value !== undefined && isProductLocale(value) ? value : undefined;
+}
+
+export function getStoredAdminUiLocale(cookie: string): AdminUiLocale | undefined {
+  const value = getCookieValue(cookie, adminLocaleCookieName);
+  return value !== undefined && isAdminUiLocale(value) ? value : undefined;
+}
+
 export function getStoredTheme(cookie: string): Theme | undefined {
   const value = getCookieValue(cookie, themeCookieName);
   return value !== undefined && isTheme(value) ? value : undefined;
@@ -62,12 +123,28 @@ export function getInitialLocale(cookie: string, languages: readonly string[]): 
   return getStoredLocale(cookie) ?? detectLocale(languages);
 }
 
+export function getInitialProductLocale(cookie: string, languages: readonly string[]): ProductLocale {
+  return getStoredProductLocale(cookie) ?? detectProductLocale(languages);
+}
+
+export function getInitialAdminUiLocale(cookie: string, languages: readonly string[]): AdminUiLocale {
+  return getStoredAdminUiLocale(cookie) ?? detectAdminUiLocale(languages);
+}
+
 export function getInitialTheme(cookie: string, _prefersDark: boolean): Theme {
   return getStoredTheme(cookie) ?? 'light';
 }
 
 export function getLocaleCookie(locale: Locale, context?: CookieContext): string {
   return serializeCookie(localeCookieName, locale, context);
+}
+
+export function getProductLocaleCookie(locale: ProductLocale, context?: CookieContext): string {
+  return serializeCookie(localeCookieName, locale, context);
+}
+
+export function getAdminLocaleCookie(locale: AdminUiLocale, context?: CookieContext): string {
+  return serializeCookie(adminLocaleCookieName, locale, context, false);
 }
 
 export function getThemeCookie(theme: Theme, context?: CookieContext): string {
@@ -81,11 +158,15 @@ export function applyTheme(theme: Theme, root: ThemeRoot = document.documentElem
 }
 
 export function replaceLocale(pathname: string, locale: Locale): string {
+  return replaceProductLocale(pathname, locale);
+}
+
+export function replaceProductLocale(pathname: string, locale: ProductLocale): string {
   const [, path = '', suffix = ''] = /^([^?#]*)(.*)$/.exec(pathname) ?? [];
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
 
-  if (/^\/(?:zh-Hant|zh-Hans|en)(?=\/|$)/.test(normalizedPath)) {
-    return normalizedPath.replace(/^\/(?:zh-Hant|zh-Hans|en)(?=\/|$)/, `/${locale}`) + suffix;
+  if (/^\/(?:zh-Hant|zh-Hans|en|ja|ko)(?=\/|$)/.test(normalizedPath)) {
+    return normalizedPath.replace(/^\/(?:zh-Hant|zh-Hans|en|ja|ko)(?=\/|$)/, `/${locale}`) + suffix;
   }
 
   return normalizedPath === '/' ? `/${locale}${suffix}` : `/${locale}${normalizedPath}${suffix}`;
@@ -110,7 +191,7 @@ function getCookieValue(cookie: string, name: string): string | undefined {
   }
 }
 
-function serializeCookie(name: string, value: string, context?: CookieContext): string {
+function serializeCookie(name: string, value: string, context?: CookieContext, includeProductionDomain = true): string {
   const browserContext = typeof location === 'undefined' ? undefined : location;
   const hostname = context?.hostname ?? browserContext?.hostname;
   const protocol = context?.protocol ?? browserContext?.protocol;
@@ -121,7 +202,7 @@ function serializeCookie(name: string, value: string, context?: CookieContext): 
     'SameSite=Lax'
   ];
 
-  if (hostname === 'alive.org.tw' || hostname?.endsWith(productionCookieDomain)) {
+  if (includeProductionDomain && (hostname === 'alive.org.tw' || hostname?.endsWith(productionCookieDomain))) {
     parts.push(`Domain=${productionCookieDomain}`);
   }
   if (protocol === 'https:') parts.push('Secure');

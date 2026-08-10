@@ -1,4 +1,4 @@
-import {useState, type ReactElement, type ReactNode} from 'react';
+import {useEffect, useRef, useState, type ReactElement, type ReactNode, type RefObject} from 'react';
 import {
   Button as AriaButton,
   Dialog as AriaDialog,
@@ -27,13 +27,53 @@ export interface MenuProps {
   onAction: (id: string) => void;
   trigger?: ReactElement;
   header?: ReactNode;
+  focusTriggerRef?: RefObject<HTMLButtonElement | null>;
 }
 
-export function Menu({label, items, onAction, trigger, header}: MenuProps) {
+function isMeaningfullyFocusable(target: EventTarget | null) {
+  return target instanceof Element && Boolean(target.closest('a[href], area[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), summary, iframe, audio[controls], video[controls], [contenteditable="true"], [tabindex]:not([tabindex="-1"])'));
+}
+
+export function Menu({label, items, onAction, trigger, header, focusTriggerRef}: MenuProps) {
+  const popoverRef = useRef<HTMLElement>(null);
+  const pointerStartedOutsideRef = useRef(false);
+  const shouldRestoreFocusRef = useRef(true);
+  const [isOpen, setOpen] = useState(false);
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (nextOpen) shouldRestoreFocusRef.current = true;
+    else if (shouldRestoreFocusRef.current) focusTriggerRef?.current?.focus();
+  };
+  useEffect(() => {
+    const popover = popoverRef.current;
+    if (!isOpen || !popover) return;
+    const ownerDocument = popover.ownerDocument;
+    const onPointerDown = (event: PointerEvent) => {
+      pointerStartedOutsideRef.current = event.button === 0 && !event.composedPath().includes(popover);
+      if (pointerStartedOutsideRef.current) shouldRestoreFocusRef.current = !isMeaningfullyFocusable(event.target);
+    };
+    const onClick = (event: MouseEvent) => {
+      if (!pointerStartedOutsideRef.current || event.composedPath().includes(popover)) return;
+      pointerStartedOutsideRef.current = false;
+      setOpen(false);
+      if (shouldRestoreFocusRef.current) focusTriggerRef?.current?.focus();
+    };
+    ownerDocument.addEventListener('pointerdown', onPointerDown, true);
+    ownerDocument.addEventListener('click', onClick, true);
+    return () => {
+      ownerDocument.removeEventListener('pointerdown', onPointerDown, true);
+      ownerDocument.removeEventListener('click', onClick, true);
+    };
+  }, [focusTriggerRef, isOpen]);
   return (
-    <MenuTrigger>
+    <MenuTrigger isOpen={isOpen} onOpenChange={handleOpenChange}>
       {trigger ?? <AriaButton className="hhc-menu__trigger">{label}</AriaButton>}
-      <Popover className="hhc-popover hhc-menu__popover" placement="bottom end">
+      <Popover
+        ref={popoverRef}
+        className="hhc-popover hhc-menu__popover"
+        placement="bottom end"
+        isNonModal
+      >
         {header ? <div className="hhc-menu__header">{header}</div> : null}
         <AriaMenu aria-label={label} className="hhc-menu" onAction={(key) => onAction(String(key))}>
           {items.map((item) => (
@@ -42,7 +82,7 @@ export function Menu({label, items, onAction, trigger, header}: MenuProps) {
               key={item.id}
               {...(item.href ? {href: item.href} : {})}
               isDisabled={item.isDisabled}
-              className={`hhc-menu__item ${item.variant === 'danger' ? 'hhc-menu__item--danger' : ''}`}
+              className={`hhc-menu__item hhc-menu__item--${item.variant ?? 'default'}`}
             >
               {item.label}
             </AriaMenuItem>
@@ -153,6 +193,7 @@ export interface AccountMenuProps {
 }
 
 export function AccountMenu({user, labels, manageAccountHref, onSignOut}: AccountMenuProps) {
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const actions: MenuItem[] = [
     ...(labels.manageAccount && manageAccountHref ? [{id: 'manage', label: labels.manageAccount, href: manageAccountHref}] : []),
     {id: 'sign-out', label: labels.signOut, variant: 'danger' as const}
@@ -162,10 +203,16 @@ export function AccountMenu({user, labels, manageAccountHref, onSignOut}: Accoun
       <Menu
         label={labels.menu}
         items={actions}
-        header={labels.greeting}
+        header={
+          <div className="hhc-account-menu__identity">
+            <span className="hhc-account-menu__identity-text" title={user.name || user.email}>{user.name || user.email}</span>
+            {user.name && user.email ? <span className="hhc-account-menu__identity-text" title={user.email}>{user.email}</span> : null}
+          </div>
+        }
+        focusTriggerRef={triggerRef}
         onAction={(id) => { if (id === 'sign-out') onSignOut(); }}
         trigger={
-          <AriaButton className="hhc-account-menu__trigger" aria-label={labels.menu}>
+          <AriaButton ref={triggerRef} className="hhc-account-menu__trigger" aria-label={labels.menu}>
             <Avatar name={user.name || user.email} src={user.avatarUrl} />
           </AriaButton>
         }
