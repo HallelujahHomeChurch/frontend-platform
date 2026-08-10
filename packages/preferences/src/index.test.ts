@@ -1,17 +1,29 @@
 import {describe, expect, it} from 'vitest';
 
 import {
+  adminLocaleCookieName,
+  adminUiLocales,
   applyTheme,
+  contentLocales,
+  detectAdminUiLocale,
+  detectProductLocale,
+  getAdminLocaleCookie,
   getInitialLocale,
   getInitialTheme,
   getLocaleCookie,
+  getProductLocaleCookie,
   getStoredLocale,
   getStoredTheme,
   getThemeBootstrapScript,
   getThemeCookie,
+  isAdminUiLocale,
   isLocale,
+  isProductLocale,
+  localeMetadata,
   isTheme,
   locales,
+  productLocales,
+  replaceProductLocale,
   replaceLocale,
   themes,
   type ThemeRoot
@@ -25,6 +37,21 @@ describe('supported preferences', () => {
     expect(isLocale('fr')).toBe(false);
     expect(isTheme('dark')).toBe(true);
     expect(isTheme('system')).toBe(false);
+  });
+
+  it('separates Admin UI locales from product and content locales', () => {
+    expect(adminUiLocales).toEqual(['zh-Hant', 'zh-Hans', 'en']);
+    expect(productLocales).toEqual(['zh-Hant', 'zh-Hans', 'en', 'ja', 'ko']);
+    expect(contentLocales).toBe(productLocales);
+    expect(localeMetadata).toEqual([
+      {code: 'zh-Hant', shortLabel: '繁中', nativeLabel: '繁體中文'},
+      {code: 'zh-Hans', shortLabel: '简中', nativeLabel: '简体中文'},
+      {code: 'en', shortLabel: 'EN', nativeLabel: 'English'},
+      {code: 'ja', shortLabel: '日本語', nativeLabel: '日本語'},
+      {code: 'ko', shortLabel: '한국어', nativeLabel: '한국어'}
+    ]);
+    expect(isProductLocale('ja')).toBe(true);
+    expect(isAdminUiLocale('ja')).toBe(false);
   });
 });
 
@@ -45,6 +72,29 @@ describe('locale preference', () => {
 
   it('prefers a valid locale cookie over browser languages', () => {
     expect(getInitialLocale('hhc_locale=en', ['zh-TW'])).toBe('en');
+  });
+
+  it('detects Japanese and Korean product browser languages', () => {
+    expect(detectProductLocale(['ja-JP'])).toBe('ja');
+    expect(detectProductLocale(['ko-KR'])).toBe('ko');
+  });
+
+  it('preserves the Chinese product detection rules', () => {
+    expect(detectProductLocale(['zh-CN'])).toBe('zh-Hans');
+    expect(detectProductLocale(['zh-TW'])).toBe('zh-Hant');
+  });
+
+  it('falls back unsupported product languages to English', () => {
+    expect(detectProductLocale(['fr-FR'])).toBe('en');
+  });
+
+  it('falls back Japanese and Korean Admin browser languages to English', () => {
+    expect(detectAdminUiLocale(['ja-JP'])).toBe('en');
+    expect(detectAdminUiLocale(['ko-KR'])).toBe('en');
+  });
+
+  it('continues Admin detection after unsupported browser languages', () => {
+    expect(detectAdminUiLocale(['ja-JP', 'zh-TW'])).toBe('zh-Hant');
   });
 });
 
@@ -73,6 +123,19 @@ describe('preference cookies', () => {
 
   it('omits production-only attributes during local HTTP development', () => {
     expect(getLocaleCookie('en')).toBe('hhc_locale=en; Max-Age=31536000; Path=/; SameSite=Lax');
+  });
+
+  it('serializes the product locale cookie across alive.org.tw subdomains', () => {
+    expect(getProductLocaleCookie('ja', {hostname: 'account.alive.org.tw', protocol: 'https:'})).toBe(
+      'hhc_locale=ja; Max-Age=31536000; Path=/; SameSite=Lax; Domain=.alive.org.tw; Secure'
+    );
+  });
+
+  it('serializes the Admin locale cookie as host-only', () => {
+    expect(adminLocaleCookieName).toBe('hhc_admin_locale');
+    expect(getAdminLocaleCookie('en', {hostname: 'admin.alive.org.tw', protocol: 'https:'})).toBe(
+      'hhc_admin_locale=en; Max-Age=31536000; Path=/; SameSite=Lax; Secure'
+    );
   });
 });
 
@@ -114,6 +177,10 @@ describe('locale paths', () => {
   it('prefixes paths without a supported locale', () => {
     expect(replaceLocale('/privacy-policy', 'zh-Hant')).toBe('/zh-Hant/privacy-policy');
     expect(replaceLocale('/', 'en')).toBe('/en');
+  });
+
+  it('replaces product locale paths with Japanese and Korean', () => {
+    expect(replaceProductLocale('/ja/privacy-policy', 'ko')).toBe('/ko/privacy-policy');
   });
 });
 
