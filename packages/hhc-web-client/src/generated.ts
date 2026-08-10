@@ -667,7 +667,7 @@ export interface components {
          * @default zh-Hant
          * @enum {string}
          */
-        Locale: "zh-Hant" | "zh-Hans" | "en";
+        Locale: "zh-Hant" | "zh-Hans" | "en" | "ja" | "ko";
         /** @enum {string} */
         BulletinStatus: "draft" | "publishing" | "published" | "unpublishing" | "unpublish_failed" | "unpublished";
         /** @enum {string} */
@@ -883,6 +883,8 @@ export interface components {
             featured?: boolean;
             homeEligible?: boolean;
             translations: components["schemas"]["ContentTranslation"][];
+            /** @description Locales omitted from translations are preserved unless they are named here for explicit deletion. */
+            deleteLocales?: components["schemas"]["Locale"][];
         };
         ContentItem: components["schemas"]["ContentWriteInput"] & {
             /** Format: uuid */
@@ -916,6 +918,8 @@ export interface components {
         PublicContentItem: {
             id: string;
             title: string;
+            resolvedLocale: components["schemas"]["Locale"];
+            availableLocales: components["schemas"]["Locale"][];
             summary?: string;
             body?: string;
             dateLabel?: string;
@@ -1974,6 +1978,15 @@ export interface operations {
         requestBody: components["requestBodies"]["ContentWriteInput"];
         responses: {
             200: components["responses"]["ContentItem"];
+            /** @description Existing locales omitted from `translations` must be listed in `deleteLocales` (error code `locale_set_mismatch`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
             412: components["responses"]["Error"];
         };
     };
