@@ -2,7 +2,12 @@ import createClient from 'openapi-fetch'
 
 import type { components, paths } from './generated.js'
 
-export type BulletinLocale = components['schemas']['Locale']
+export type ContentLocale = components['schemas']['ContentLocale']
+export type BulletinEdition = components['schemas']['BulletinEdition']
+/** @deprecated Use BulletinEdition. */
+export type BulletinLocale = BulletinEdition
+export type ContentTranslationTargetLocale = components['schemas']['ContentTranslationTargetLocale']
+export type BulletinTranslationTargetEdition = components['schemas']['BulletinTranslationTargetEdition']
 export type BulletinStatus = components['schemas']['BulletinStatus']
 export type BulletinIssue = components['schemas']['BulletinIssue']
 export type BulletinNotificationStatus = BulletinIssue['notificationStatus']
@@ -62,7 +67,7 @@ export function createHhcWebClient(options: {
 
   async function listPublicContentPage(
     module: ContentModule,
-    locale: BulletinLocale,
+    locale: ContentLocale,
     params: { page?: number; pageSize?: number; signal?: AbortSignal } = {},
   ) {
     const query = { locale, page: params.page, pageSize: params.pageSize }
@@ -111,13 +116,13 @@ export function createHhcWebClient(options: {
         signal,
       }))).data
     },
-    async updateBulletinVersion(issueId: string, locale: BulletinLocale, version: number, title: string, subtitle: string) {
+    async updateBulletinVersion(issueId: string, locale: BulletinEdition, version: number, title: string, subtitle: string) {
       return (await unwrap(client.PUT('/admin/bulletins/{issueId}/versions/{locale}', {
         params: { path: { issueId, locale }, header: { 'If-Match': `"${version}"` } },
         body: { title, subtitle },
       }))).data
     },
-    async deleteBulletinVersion(issueId: string, locale: BulletinLocale, version: number) {
+    async deleteBulletinVersion(issueId: string, locale: BulletinEdition, version: number) {
       return (await unwrap(client.DELETE('/admin/bulletins/{issueId}/versions/{locale}', {
         params: { path: { issueId, locale }, header: { 'If-Match': `"${version}"` } },
       }))).data
@@ -129,13 +134,13 @@ export function createHhcWebClient(options: {
         signal,
       }))).data
     },
-    async publishBulletin(issueId: string, version: number, locale: BulletinLocale, options: { notifySubscribers: boolean }) {
+    async publishBulletin(issueId: string, version: number, locale: BulletinEdition, options: { notifySubscribers: boolean }) {
       return (await unwrap(client.POST('/admin/bulletins/{issueId}/publish', {
         params: { path: { issueId }, header: { 'If-Match': `"${version}"` } },
         body: { locale, notifySubscribers: options.notifySubscribers },
       }))).data
     },
-    async unpublishBulletin(issueId: string, version: number, locale: BulletinLocale) {
+    async unpublishBulletin(issueId: string, version: number, locale: BulletinEdition) {
       return (await unwrap(client.POST('/admin/bulletins/{issueId}/unpublish', {
         params: { path: { issueId }, header: { 'If-Match': `"${version}"` } },
         body: { locale, notifySubscribers: false },
@@ -246,14 +251,14 @@ export function createHhcWebClient(options: {
     async retryNewsCoverScan(contentId: string, assetId: string) {
       return (await unwrap(client.POST('/admin/content/news/{contentId}/assets/{assetId}/scan/retry', { params: { path: { contentId, assetId } } }))).data
     },
-    async listPublicContent(module: ContentModule, locale: BulletinLocale, signal?: AbortSignal) {
+    async listPublicContent(module: ContentModule, locale: ContentLocale, signal?: AbortSignal) {
       return (await listPublicContentPage(module, locale, { signal })).data
     },
     listPublicContentPage,
-    async getHome(locale: BulletinLocale, signal?: AbortSignal) {
+    async getHome(locale: ContentLocale, signal?: AbortSignal) {
       return (await unwrap(client.GET('/home', { params: { query: { locale } }, signal }))).data
     },
-    async getNewsBySlug(locale: BulletinLocale, slug: string, signal?: AbortSignal) {
+    async getNewsBySlug(locale: ContentLocale, slug: string, signal?: AbortSignal) {
       return (await unwrap(client.GET('/news/{slug}', {
         params: { path: { slug }, query: { locale } },
         signal,

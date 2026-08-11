@@ -54,7 +54,7 @@ describe('hhc web client', () => {
     }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
     const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
 
-    await client.updateContent('videos', 'video-1', 2, { youtubeVideoId: 'K3ckFWeSQ-k', homeEligible: true, translations: [{ locale: 'en', title: 'Song' }] })
+    await client.updateContent('videos', 'video-1', 2, { youtubeVideoId: 'K3ckFWeSQ-k', detailLayout: 'top', homeEligible: true, translations: [{ locale: 'en', title: 'Song' }] })
 
     const request = fetcher.mock.calls[0]?.[0] as Request
     expect(request.url).toBe('http://localhost/api/admin/content/videos/video-1')
@@ -171,8 +171,6 @@ describe('hhc web client', () => {
 
     await client.createBulletinUpload('issue-1', {
       locale: 'zh-Hant',
-      title: 'Weekly',
-      subtitle: '',
       fileName: 'weekly.pdf',
       mimeType: 'application/pdf',
       sizeBytes: 1024,

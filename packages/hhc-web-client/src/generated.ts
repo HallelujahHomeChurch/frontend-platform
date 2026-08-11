@@ -440,6 +440,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/bulletins/{issueId}/translation-previews/{targetLocale}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["previewBulletinTranslation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/content/{module}": {
         parameters: {
             query?: never;
@@ -467,6 +483,22 @@ export interface paths {
         put: operations["updateContent"];
         post?: never;
         delete: operations["deleteContent"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/content/{module}/{contentId}/translation-previews/{targetLocale}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["previewContentTranslation"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -667,7 +699,16 @@ export interface components {
          * @default zh-Hant
          * @enum {string}
          */
-        Locale: "zh-Hant" | "zh-Hans" | "en" | "ja" | "ko";
+        ContentLocale: "zh-Hant" | "zh-Hans" | "en" | "ja" | "ko";
+        /**
+         * @default zh-Hant
+         * @enum {string}
+         */
+        BulletinEdition: "zh-Hant" | "zh-Hans" | "en";
+        /** @enum {string} */
+        ContentTranslationTargetLocale: "zh-Hans" | "en" | "ja" | "ko";
+        /** @enum {string} */
+        BulletinTranslationTargetEdition: "zh-Hans" | "en";
         /** @enum {string} */
         BulletinStatus: "draft" | "publishing" | "published" | "unpublishing" | "unpublish_failed" | "unpublished";
         /** @enum {string} */
@@ -691,7 +732,7 @@ export interface components {
             id: string;
             /** Format: uuid */
             issueId: string;
-            locale: components["schemas"]["Locale"];
+            locale: components["schemas"]["BulletinEdition"];
             title: string;
             subtitle: string;
             pdfAssetId: string;
@@ -746,7 +787,7 @@ export interface components {
             /** Format: date */
             issueDate: string;
             issueNumber?: number;
-            locale: components["schemas"]["Locale"];
+            locale: components["schemas"]["BulletinEdition"];
             title: string;
             subtitle: string;
             downloadUrl: string;
@@ -799,7 +840,7 @@ export interface components {
             issueDate: string;
         };
         CreateBulletinUploadInput: {
-            locale: components["schemas"]["Locale"];
+            locale: components["schemas"]["BulletinEdition"];
             fileName: string;
             /** @constant */
             mimeType: "application/pdf";
@@ -811,7 +852,7 @@ export interface components {
             subtitle: string;
         };
         CompleteBulletinUploadInput: {
-            locale: components["schemas"]["Locale"];
+            locale: components["schemas"]["BulletinEdition"];
             title: string;
             subtitle: string;
             fileName: string;
@@ -852,7 +893,7 @@ export interface components {
             retryable: boolean;
         };
         PublicationInput: {
-            locale: components["schemas"]["Locale"];
+            locale: components["schemas"]["BulletinEdition"];
             /**
              * @description Queue one Web Push campaign after the bulletin is publicly available. Ignored by unpublish operations.
              * @default false
@@ -860,12 +901,49 @@ export interface components {
             notifySubscribers: boolean;
         };
         ContentTranslation: {
-            locale: components["schemas"]["Locale"];
+            locale: components["schemas"]["ContentLocale"];
             title: string;
             summary?: string;
             body?: string;
             dateLabel?: string;
             imageAlt?: string;
+        };
+        TranslationPreviewInput: {
+            /** @constant */
+            sourceLocale: "zh-Hant";
+            replaceExisting: boolean;
+        };
+        ContentTranslationPreview: {
+            /** @constant */
+            sourceLocale: "zh-Hant";
+            targetLocale: components["schemas"]["ContentTranslationTargetLocale"];
+            /** Format: int64 */
+            sourceVersion: number;
+            translation: components["schemas"]["NewsTranslationPreview"] | components["schemas"]["HistoryTranslationPreview"] | components["schemas"]["VideoTranslationPreview"];
+        };
+        BulletinTranslationPreview: {
+            /** @constant */
+            sourceLocale: "zh-Hant";
+            targetLocale: components["schemas"]["BulletinTranslationTargetEdition"];
+            /** Format: int64 */
+            sourceVersion: number;
+            translation: components["schemas"]["BulletinTranslationFields"];
+        };
+        NewsTranslationPreview: {
+            title: string;
+            body: string;
+            imageAlt: string;
+        };
+        HistoryTranslationPreview: {
+            title: string;
+            body: string;
+        };
+        VideoTranslationPreview: {
+            title: string;
+        };
+        BulletinTranslationFields: {
+            title: string;
+            subtitle: string;
         };
         ContentWriteInput: {
             slug?: string;
@@ -884,7 +962,7 @@ export interface components {
             homeEligible?: boolean;
             translations: components["schemas"]["ContentTranslation"][];
             /** @description Locales omitted from translations are preserved unless they are named here for explicit deletion. */
-            deleteLocales?: components["schemas"]["Locale"][];
+            deleteLocales?: components["schemas"]["ContentLocale"][];
         };
         ContentItem: components["schemas"]["ContentWriteInput"] & {
             /** Format: uuid */
@@ -918,8 +996,8 @@ export interface components {
         PublicContentItem: {
             id: string;
             title: string;
-            resolvedLocale: components["schemas"]["Locale"];
-            availableLocales: components["schemas"]["Locale"][];
+            resolvedLocale: components["schemas"]["ContentLocale"];
+            availableLocales: components["schemas"]["ContentLocale"][];
             summary?: string;
             body?: string;
             dateLabel?: string;
@@ -994,6 +1072,20 @@ export interface components {
                 [key: string]: unknown;
             };
             error?: null;
+        };
+        ContentTranslationPreviewEnvelope: {
+            data: components["schemas"]["ContentTranslationPreview"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        BulletinTranslationPreviewEnvelope: {
+            data: components["schemas"]["BulletinTranslationPreview"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
         };
         ContentListEnvelope: {
             data: components["schemas"]["ContentItem"][];
@@ -1095,9 +1187,100 @@ export interface components {
                 "application/json": components["schemas"]["PublicContentItemEnvelope"];
             };
         };
+        /** @description Review-only generated translation preview; no CMS state is changed. */
+        ContentTranslationPreview: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ContentTranslationPreviewEnvelope"];
+            };
+        };
+        /** @description Review-only generated bulletin edition preview; no CMS state is changed. */
+        BulletinTranslationPreview: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["BulletinTranslationPreviewEnvelope"];
+            };
+        };
+        /** @description invalid_translation_request */
+        InvalidTranslationRequest: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorEnvelope"];
+            };
+        };
+        /** @description not_found */
+        TranslationNotFound: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorEnvelope"];
+            };
+        };
+        /** @description translation_exists */
+        TranslationExists: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorEnvelope"];
+            };
+        };
+        /** @description version_mismatch */
+        TranslationVersionMismatch: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorEnvelope"];
+            };
+        };
+        /** @description translation_rate_limited */
+        TranslationRateLimited: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorEnvelope"];
+            };
+        };
+        /** @description translation_provider_error */
+        TranslationProviderError: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorEnvelope"];
+            };
+        };
+        /** @description translation_disabled */
+        TranslationDisabled: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorEnvelope"];
+            };
+        };
+        /** @description translation_timeout */
+        TranslationTimeout: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorEnvelope"];
+            };
+        };
     };
     parameters: {
-        Locale: components["schemas"]["Locale"];
+        ContentLocale: components["schemas"]["ContentLocale"];
+        BulletinEdition: components["schemas"]["BulletinEdition"];
         Page: number;
         PageSize: number;
         /** @description Searches the internal campaign name and localized subject or body. */
@@ -1107,6 +1290,8 @@ export interface components {
         IfMatch: string;
         ContentModule: components["schemas"]["ContentModule"];
         ContentID: string;
+        ContentTranslationTargetLocale: components["schemas"]["ContentTranslationTargetLocale"];
+        BulletinTranslationTargetEdition: components["schemas"]["BulletinTranslationTargetEdition"];
         Revision: number;
     };
     requestBodies: {
@@ -1118,6 +1303,11 @@ export interface components {
         ContentWriteInput: {
             content: {
                 "application/json": components["schemas"]["ContentWriteInput"];
+            };
+        };
+        TranslationPreviewInput: {
+            content: {
+                "application/json": components["schemas"]["TranslationPreviewInput"];
             };
         };
     };
@@ -1428,7 +1618,7 @@ export interface operations {
     getLatestPublicBulletin: {
         parameters: {
             query?: {
-                locale?: components["parameters"]["Locale"];
+                locale?: components["parameters"]["BulletinEdition"];
             };
             header?: never;
             path?: never;
@@ -1443,7 +1633,7 @@ export interface operations {
     getPublicBulletinByNumber: {
         parameters: {
             query?: {
-                locale?: components["parameters"]["Locale"];
+                locale?: components["parameters"]["BulletinEdition"];
             };
             header?: never;
             path: {
@@ -1461,7 +1651,7 @@ export interface operations {
     getPublicBulletinByDate: {
         parameters: {
             query?: {
-                locale?: components["parameters"]["Locale"];
+                locale?: components["parameters"]["BulletinEdition"];
             };
             header?: never;
             path: {
@@ -1478,7 +1668,7 @@ export interface operations {
     listPublicNews: {
         parameters: {
             query?: {
-                locale?: components["parameters"]["Locale"];
+                locale?: components["parameters"]["ContentLocale"];
                 page?: components["parameters"]["Page"];
                 pageSize?: components["parameters"]["PageSize"];
             };
@@ -1494,7 +1684,7 @@ export interface operations {
     getPublicNews: {
         parameters: {
             query?: {
-                locale?: components["parameters"]["Locale"];
+                locale?: components["parameters"]["ContentLocale"];
             };
             header?: {
                 "If-None-Match"?: string;
@@ -1520,7 +1710,7 @@ export interface operations {
     listPublicHistory: {
         parameters: {
             query?: {
-                locale?: components["parameters"]["Locale"];
+                locale?: components["parameters"]["ContentLocale"];
                 page?: components["parameters"]["Page"];
                 pageSize?: components["parameters"]["PageSize"];
             };
@@ -1536,7 +1726,7 @@ export interface operations {
     listPublicVideos: {
         parameters: {
             query?: {
-                locale?: components["parameters"]["Locale"];
+                locale?: components["parameters"]["ContentLocale"];
                 page?: components["parameters"]["Page"];
                 pageSize?: components["parameters"]["PageSize"];
             };
@@ -1552,7 +1742,7 @@ export interface operations {
     getPublicHome: {
         parameters: {
             query?: {
-                locale?: components["parameters"]["Locale"];
+                locale?: components["parameters"]["ContentLocale"];
             };
             header?: never;
             path?: never;
@@ -1712,7 +1902,7 @@ export interface operations {
             };
             path: {
                 issueId: components["parameters"]["IssueID"];
-                locale: components["schemas"]["Locale"];
+                locale: components["schemas"]["BulletinEdition"];
             };
             cookie?: never;
         };
@@ -1735,7 +1925,7 @@ export interface operations {
             };
             path: {
                 issueId: components["parameters"]["IssueID"];
-                locale: components["schemas"]["Locale"];
+                locale: components["schemas"]["BulletinEdition"];
             };
             cookie?: never;
         };
@@ -1900,6 +2090,33 @@ export interface operations {
             412: components["responses"]["Error"];
         };
     };
+    previewBulletinTranslation: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                targetLocale: components["parameters"]["BulletinTranslationTargetEdition"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["TranslationPreviewInput"];
+        responses: {
+            200: components["responses"]["BulletinTranslationPreview"];
+            400: components["responses"]["InvalidTranslationRequest"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["TranslationNotFound"];
+            409: components["responses"]["TranslationExists"];
+            412: components["responses"]["TranslationVersionMismatch"];
+            429: components["responses"]["TranslationRateLimited"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["TranslationProviderError"];
+            503: components["responses"]["TranslationDisabled"];
+            504: components["responses"]["TranslationTimeout"];
+        };
+    };
     listAdminContent: {
         parameters: {
             query?: {
@@ -2013,6 +2230,34 @@ export interface operations {
             };
             409: components["responses"]["Error"];
             412: components["responses"]["Error"];
+        };
+    };
+    previewContentTranslation: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                module: components["parameters"]["ContentModule"];
+                contentId: components["parameters"]["ContentID"];
+                targetLocale: components["parameters"]["ContentTranslationTargetLocale"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["TranslationPreviewInput"];
+        responses: {
+            200: components["responses"]["ContentTranslationPreview"];
+            400: components["responses"]["InvalidTranslationRequest"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["TranslationNotFound"];
+            409: components["responses"]["TranslationExists"];
+            412: components["responses"]["TranslationVersionMismatch"];
+            429: components["responses"]["TranslationRateLimited"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["TranslationProviderError"];
+            503: components["responses"]["TranslationDisabled"];
+            504: components["responses"]["TranslationTimeout"];
         };
     };
     publishContent: {

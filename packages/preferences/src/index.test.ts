@@ -4,6 +4,7 @@ import {
   adminLocaleCookieName,
   adminUiLocales,
   applyTheme,
+  bulletinEditions,
   contentLocales,
   detectAdminUiLocale,
   detectProductLocale,
@@ -17,6 +18,7 @@ import {
   getThemeBootstrapScript,
   getThemeCookie,
   isAdminUiLocale,
+  isBulletinEdition,
   isLocale,
   isProductLocale,
   localeMetadata,
@@ -52,6 +54,15 @@ describe('supported preferences', () => {
     ]);
     expect(isProductLocale('ja')).toBe(true);
     expect(isAdminUiLocale('ja')).toBe(false);
+  });
+
+  it('separates weekly bulletin editions from content locales', () => {
+    expect(bulletinEditions).toEqual(['zh-Hant', 'zh-Hans', 'en']);
+    expect(isBulletinEdition('en')).toBe(true);
+    expect(isBulletinEdition('ja')).toBe(false);
+    expect(isBulletinEdition('ko')).toBe(false);
+    expect(isProductLocale('ja')).toBe(true);
+    expect(isProductLocale('ko')).toBe(true);
   });
 });
 

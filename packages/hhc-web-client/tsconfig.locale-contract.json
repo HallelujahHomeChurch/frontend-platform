@@ -1,4 +1,4 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["contracts/content-locales.ts"]
+  "include": ["contracts/content-locales.ts", "contracts/bulletin-editions.ts"]
 }
