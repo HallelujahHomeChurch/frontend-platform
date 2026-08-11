@@ -1,6 +1,7 @@
 export const adminUiLocales = ['zh-Hant', 'zh-Hans', 'en'] as const;
 export const productLocales = ['zh-Hant', 'zh-Hans', 'en', 'ja', 'ko'] as const;
 export const contentLocales = productLocales;
+export const bulletinEditions = ['zh-Hant', 'zh-Hans', 'en'] as const;
 
 /** @deprecated Use adminUiLocales, productLocales, or contentLocales. */
 export const locales = adminUiLocales;
@@ -9,6 +10,7 @@ export const themes = ['light', 'dark'] as const;
 export type AdminUiLocale = (typeof adminUiLocales)[number];
 export type ProductLocale = (typeof productLocales)[number];
 export type ContentLocale = ProductLocale;
+export type BulletinEdition = (typeof bulletinEditions)[number];
 /** @deprecated Use AdminUiLocale, ProductLocale, or ContentLocale. */
 export type Locale = (typeof locales)[number];
 export type Theme = (typeof themes)[number];
@@ -57,6 +59,10 @@ export function isAdminUiLocale(value: string): value is AdminUiLocale {
 
 export function isProductLocale(value: string): value is ProductLocale {
   return productLocales.includes(value as ProductLocale);
+}
+
+export function isBulletinEdition(value: string): value is BulletinEdition {
+  return bulletinEditions.includes(value as BulletinEdition);
 }
 
 export function isTheme(value: string): value is Theme {
