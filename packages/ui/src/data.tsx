@@ -32,6 +32,24 @@ export function Skeleton({label, className}: {label: string; className?: string}
   return <div className={['hhc-skeleton', className].filter(Boolean).join(' ')} aria-label={label} role="status" />;
 }
 
+export interface BrandLoadingScreenProps {
+  label: string;
+  logoSrc?: string;
+  className?: string;
+}
+
+export function BrandLoadingScreen({label, logoSrc = '/assets/brand/logo.png', className}: BrandLoadingScreenProps) {
+  return (
+    <div className={['hhc-brand-loading-screen', className].filter(Boolean).join(' ')} role="status" aria-live="polite" aria-busy="true">
+      <span className="hhc-brand-loading-screen__mark" aria-hidden="true">
+        <span className="hhc-brand-loading-screen__ring" />
+        <img className="hhc-brand-loading-screen__logo" src={logoSrc} alt="" />
+      </span>
+      <span className="hhc-brand-loading-screen__label">{label}</span>
+    </div>
+  );
+}
+
 export function EmptyState({title, description, action}: {title: string; description?: string; action?: ReactNode}) {
   return (
     <section className="hhc-empty-state">

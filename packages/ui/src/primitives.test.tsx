@@ -7,6 +7,7 @@ import {
   AccountMenu,
   AlertDialog,
   Avatar,
+  BrandLoadingScreen,
   Button,
   Card,
   DatePicker,
@@ -31,6 +32,29 @@ import {
 
 describe('HHC UI primitives', () => {
   afterEach(() => vi.useRealTimers());
+
+  it('renders the shared branded loading screen with accessible status semantics', () => {
+    const {rerender} = render(<BrandLoadingScreen label="正在載入" className="consumer-loading" />);
+    const status = screen.getByRole('status');
+
+    expect(status).toHaveClass('hhc-brand-loading-screen', 'consumer-loading');
+    expect(status).toHaveAttribute('aria-live', 'polite');
+    expect(status).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByText('正在載入')).toHaveClass('hhc-brand-loading-screen__label');
+    expect(status.querySelector('img')).toHaveAttribute('src', '/assets/brand/logo.png');
+    expect(status.querySelector('img')).toHaveAttribute('alt', '');
+
+    rerender(<BrandLoadingScreen label="Loading" logoSrc="/brand/custom.png" />);
+    expect(screen.getByRole('status').querySelector('img')).toHaveAttribute('src', '/brand/custom.png');
+  });
+
+  it('keeps the loading screen full viewport and stops only its motion when reduced', () => {
+    const styles = readFileSync('src/styles.css', 'utf8');
+
+    expect(styles).toMatch(/\.hhc-brand-loading-screen\s*\{[^}]*min-block-size:\s*100vh[^}]*min-block-size:\s*100dvh/s);
+    expect(styles).toMatch(/\.hhc-brand-loading-screen__ring[^}]*border[^}]*var\(--hhc-primary\)[^}]*animation:\s*hhc-brand-loading-spin/s);
+    expect(styles).toMatch(/prefers-reduced-motion:\s*reduce[\s\S]*\.hhc-brand-loading-screen__ring[^}]*animation:\s*none/s);
+  });
   it('keeps filled primary content readable and button content on one line', () => {
     const styles = readFileSync('src/styles.css', 'utf8');
 
