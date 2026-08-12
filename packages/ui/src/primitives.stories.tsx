@@ -4,6 +4,7 @@ import {useEffect, useState} from 'react';
 import {
   AccountMenu,
   AlertDialog,
+  BrandLoadingScreen,
   Button,
   Card,
   DataTableFrame,
@@ -46,6 +47,11 @@ export const Buttons: Story = {
 
 export const SoftIconButton: Story = {
   render: () => <IconButton aria-label="Notifications" variant="soft" size="lg" icon={<Bell aria-hidden="true" />} />
+};
+
+export const BrandLoading: Story = {
+  parameters: {layout: 'fullscreen'},
+  render: () => <BrandLoadingScreen label="正在載入" />
 };
 
 export const FormControls: Story = {
