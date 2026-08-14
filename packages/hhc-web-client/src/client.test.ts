@@ -1,8 +1,25 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { HhcWebApiError, createHhcWebClient } from './client'
+import type { PublicContentItem } from './client'
 
 describe('hhc web client', () => {
+  it('exposes public news SEO metadata', () => {
+    const news: PublicContentItem = {
+      id: 'news-1',
+      title: 'News',
+      resolvedLocale: 'zh-Hant',
+      availableLocales: ['zh-Hant'],
+      authorName: '王牧師',
+      firstPublishedAt: '2026-08-12T07:37:32Z',
+      lastPublishedAt: '2026-08-13T07:37:32Z',
+    }
+
+    expect(news.authorName).toBe('王牧師')
+    expect(news.firstPublishedAt).toBe('2026-08-12T07:37:32Z')
+    expect(news.lastPublishedAt).toBe('2026-08-13T07:37:32Z')
+  })
+
   it('maps bulletin list query and authorization through the generated contract', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
       data: [],

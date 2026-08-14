@@ -54,6 +54,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/campaigns/{campaignId}/translation-previews/{targetLocale}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["previewCampaignTranslation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/campaigns/{campaignId}/deliveries": {
         parameters: {
             query?: never;
@@ -112,9 +128,26 @@ export interface paths {
             cookie?: never;
         };
         get: operations["getCampaignSchedule"];
+        /** @description Enabling a schedule additionally requires campaigns:send; legacy cms:write remains accepted during role migration. */
         put: operations["updateCampaignSchedule"];
         post?: never;
         delete: operations["deleteCampaignSchedule"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/campaign-schedules/{scheduleId}/translation-previews/{targetLocale}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["previewCampaignScheduleTranslation"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -710,6 +743,8 @@ export interface components {
         /** @enum {string} */
         BulletinTranslationTargetEdition: "zh-Hans" | "en";
         /** @enum {string} */
+        CampaignTranslationTargetLocale: "en" | "ja" | "ko";
+        /** @enum {string} */
         BulletinStatus: "draft" | "publishing" | "published" | "unpublishing" | "unpublish_failed" | "unpublished";
         /** @enum {string} */
         BulletinVersionStatus: "draft" | "publishing" | "published" | "unpublishing" | "unpublish_failed" | "unpublished";
@@ -919,6 +954,11 @@ export interface components {
             targetLocale: components["schemas"]["ContentTranslationTargetLocale"];
             /** Format: int64 */
             sourceVersion: number;
+            /**
+             * Format: int64
+             * @description Integer seconds until this resource target may be translated again.
+             */
+            retryAfterSeconds: number;
             translation: components["schemas"]["NewsTranslationPreview"] | components["schemas"]["HistoryTranslationPreview"] | components["schemas"]["VideoTranslationPreview"];
         };
         BulletinTranslationPreview: {
@@ -927,7 +967,29 @@ export interface components {
             targetLocale: components["schemas"]["BulletinTranslationTargetEdition"];
             /** Format: int64 */
             sourceVersion: number;
+            /**
+             * Format: int64
+             * @description Integer seconds until this resource target may be translated again.
+             */
+            retryAfterSeconds: number;
             translation: components["schemas"]["BulletinTranslationFields"];
+        };
+        CampaignTranslationPreview: {
+            /** @constant */
+            sourceLocale: "zh-Hant";
+            targetLocale: components["schemas"]["CampaignTranslationTargetLocale"];
+            /** Format: int64 */
+            sourceVersion: number;
+            /**
+             * Format: int64
+             * @description Integer seconds until this resource target may be translated again.
+             */
+            retryAfterSeconds: number;
+            translation: components["schemas"]["CampaignTranslationFields"];
+        };
+        CampaignTranslationFields: {
+            subject: string;
+            body: string;
         };
         NewsTranslationPreview: {
             title: string;
@@ -946,6 +1008,7 @@ export interface components {
             subtitle: string;
         };
         ContentWriteInput: {
+            authorName?: string;
             slug?: string;
             /** Format: date */
             displayDate?: string;
@@ -1013,6 +1076,11 @@ export interface components {
             homeEligible?: boolean;
             /** @enum {string} */
             detailLayout?: "top" | "left" | "right";
+            authorName?: string;
+            /** Format: date-time */
+            firstPublishedAt?: string;
+            /** Format: date-time */
+            lastPublishedAt?: string;
         };
         BulletinIssueEnvelope: {
             data: components["schemas"]["BulletinIssue"];
@@ -1082,6 +1150,13 @@ export interface components {
         };
         BulletinTranslationPreviewEnvelope: {
             data: components["schemas"]["BulletinTranslationPreview"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        CampaignTranslationPreviewEnvelope: {
+            data: components["schemas"]["CampaignTranslationPreview"];
             meta: {
                 [key: string]: unknown;
             };
@@ -1205,6 +1280,15 @@ export interface components {
                 "application/json": components["schemas"]["BulletinTranslationPreviewEnvelope"];
             };
         };
+        /** @description Review-only generated campaign translation preview; no campaign or schedule state is changed. */
+        CampaignTranslationPreview: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["CampaignTranslationPreviewEnvelope"];
+            };
+        };
         /** @description invalid_translation_request */
         InvalidTranslationRequest: {
             headers: {
@@ -1243,6 +1327,17 @@ export interface components {
         };
         /** @description translation_rate_limited */
         TranslationRateLimited: {
+            headers: {
+                /** @description Integer seconds until the caller may retry this translation target. */
+                "Retry-After"?: number;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorEnvelope"];
+            };
+        };
+        /** @description translation_content_filtered */
+        TranslationContentFiltered: {
             headers: {
                 [name: string]: unknown;
             };
@@ -1292,6 +1387,7 @@ export interface components {
         ContentID: string;
         ContentTranslationTargetLocale: components["schemas"]["ContentTranslationTargetLocale"];
         BulletinTranslationTargetEdition: components["schemas"]["BulletinTranslationTargetEdition"];
+        CampaignTranslationTargetLocale: components["schemas"]["CampaignTranslationTargetLocale"];
         Revision: number;
     };
     requestBodies: {
@@ -1445,6 +1541,34 @@ export interface operations {
             };
         };
     };
+    previewCampaignTranslation: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                campaignId: string;
+                targetLocale: components["parameters"]["CampaignTranslationTargetLocale"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["TranslationPreviewInput"];
+        responses: {
+            200: components["responses"]["CampaignTranslationPreview"];
+            400: components["responses"]["InvalidTranslationRequest"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["TranslationNotFound"];
+            409: components["responses"]["TranslationExists"];
+            412: components["responses"]["TranslationVersionMismatch"];
+            422: components["responses"]["TranslationContentFiltered"];
+            429: components["responses"]["TranslationRateLimited"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["TranslationProviderError"];
+            503: components["responses"]["TranslationDisabled"];
+            504: components["responses"]["TranslationTimeout"];
+        };
+    };
     listCampaignDeliveries: {
         parameters: {
             query?: {
@@ -1590,6 +1714,34 @@ export interface operations {
                 };
                 content?: never;
             };
+        };
+    };
+    previewCampaignScheduleTranslation: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                scheduleId: string;
+                targetLocale: components["parameters"]["CampaignTranslationTargetLocale"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["TranslationPreviewInput"];
+        responses: {
+            200: components["responses"]["CampaignTranslationPreview"];
+            400: components["responses"]["InvalidTranslationRequest"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["TranslationNotFound"];
+            409: components["responses"]["TranslationExists"];
+            412: components["responses"]["TranslationVersionMismatch"];
+            422: components["responses"]["TranslationContentFiltered"];
+            429: components["responses"]["TranslationRateLimited"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["TranslationProviderError"];
+            503: components["responses"]["TranslationDisabled"];
+            504: components["responses"]["TranslationTimeout"];
         };
     };
     listPublicBulletins: {
@@ -2110,6 +2262,7 @@ export interface operations {
             404: components["responses"]["TranslationNotFound"];
             409: components["responses"]["TranslationExists"];
             412: components["responses"]["TranslationVersionMismatch"];
+            422: components["responses"]["TranslationContentFiltered"];
             429: components["responses"]["TranslationRateLimited"];
             500: components["responses"]["Error"];
             502: components["responses"]["TranslationProviderError"];
@@ -2253,6 +2406,7 @@ export interface operations {
             404: components["responses"]["TranslationNotFound"];
             409: components["responses"]["TranslationExists"];
             412: components["responses"]["TranslationVersionMismatch"];
+            422: components["responses"]["TranslationContentFiltered"];
             429: components["responses"]["TranslationRateLimited"];
             500: components["responses"]["Error"];
             502: components["responses"]["TranslationProviderError"];
