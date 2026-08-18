@@ -117,7 +117,7 @@ export function SearchableSelect({
       <AriaButton ref={triggerRef} className="hhc-searchable-select__trigger" aria-label={`${label}: ${placeholder}`}>
         <span>{placeholder}</span><span aria-hidden="true">⌄</span>
       </AriaButton>
-      <Popover ref={popoverRef} className="hhc-popover hhc-searchable-select__popover" isNonModal>
+      <Popover ref={popoverRef} className="hhc-popover hhc-searchable-select__popover">
         <div className="hhc-searchable-select__search">
           <AriaInput
             ref={inputRef}
