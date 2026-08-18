@@ -78,6 +78,7 @@ function SearchableSelectExample() {
     <div style={{width: 360}}>
       <SearchableSelect
         label="Search people or roles"
+        placeholder="Choose a person or role"
         inputValue={query}
         items={items}
         emptyText="No matches"

@@ -188,6 +188,7 @@ describe('HHC UI primitives', () => {
     render(
       <SearchableSelect
         label="Access"
+        placeholder="Choose a person or role"
         inputValue="unrelated remote query"
         items={[
           {id: 'role:editor', label: 'Editors', section: 'role'},
@@ -204,6 +205,7 @@ describe('HHC UI primitives', () => {
 
     await user.click(screen.getByRole('button', {name: /Access/}));
     expect(onOpenChange).toHaveBeenCalledWith(true);
+    expect(screen.getByRole('searchbox', {name: 'Access'})).toHaveValue('unrelated remote query');
     expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual([
       'Grace',
       'Ada',
@@ -214,33 +216,53 @@ describe('HHC UI primitives', () => {
     expect(screen.getByText('Roles')).toBeInTheDocument();
   });
 
-  it('supports searchable select keyboard selection, Escape, and focus return', async () => {
+  it('keeps search inside the open selector and clears it after selection or Escape', async () => {
     const user = userEvent.setup();
+    const onInputChange = vi.fn();
     const onSelectionChange = vi.fn();
-    render(
-      <SearchableSelect
-        label="Access"
-        inputValue=""
-        items={[
-          {id: 'user:ada', label: 'Ada', section: 'user'},
-          {id: 'role:editor', label: 'Editors', section: 'role'}
-        ]}
-        emptyText="No results"
-        loadingText="Loading"
-        onInputChange={() => undefined}
-        onSelectionChange={onSelectionChange}
-      />
-    );
+    function Example() {
+      const [query, setQuery] = useState('');
+      return (
+        <SearchableSelect
+          label="Access"
+          placeholder="Choose a person or role"
+          inputValue={query}
+          items={[
+            {id: 'user:ada', label: 'Ada', section: 'user'},
+            {id: 'role:editor', label: 'Editors', section: 'role'}
+          ]}
+          emptyText="No results"
+          loadingText="Loading"
+          onInputChange={(value) => {
+            onInputChange(value);
+            setQuery(value);
+          }}
+          onSelectionChange={onSelectionChange}
+        />
+      );
+    }
+    render(<Example />);
 
-    const input = screen.getByRole('combobox', {name: 'Access'});
-    input.focus();
-    await user.keyboard('{ArrowDown}{Enter}');
+    const trigger = screen.getByRole('button', {name: /Access/});
+    expect(trigger).toHaveTextContent('Choose a person or role');
+    expect(screen.queryByRole('searchbox', {name: 'Access'})).not.toBeInTheDocument();
+
+    await user.click(trigger);
+    const input = screen.getByRole('searchbox', {name: 'Access'});
+    await waitFor(() => expect(input).toHaveFocus());
+    await user.type(input, 'Ada');
+    expect(onInputChange).toHaveBeenLastCalledWith('Ada');
+    await user.click(screen.getByRole('option', {name: 'Ada'}));
     expect(onSelectionChange).toHaveBeenCalledWith('user:ada');
-    expect(input).toHaveFocus();
+    expect(onInputChange).toHaveBeenLastCalledWith('');
+    expect(screen.queryByRole('searchbox', {name: 'Access'})).not.toBeInTheDocument();
+    await waitFor(() => expect(trigger).toHaveFocus());
 
-    await user.keyboard('{ArrowDown}{Escape}');
+    await user.click(trigger);
+    await user.keyboard('{Escape}');
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
-    expect(input).toHaveFocus();
+    expect(onInputChange).toHaveBeenLastCalledWith('');
+    await waitFor(() => expect(trigger).toHaveFocus());
   });
 
   it('does not select disabled items and announces loading and empty states', async () => {
@@ -249,6 +271,7 @@ describe('HHC UI primitives', () => {
     const {rerender} = render(
       <SearchableSelect
         label="Access"
+        placeholder="Choose access"
         inputValue=""
         items={[{id: 'user:ada', label: 'Ada', section: 'selected', isDisabled: true}]}
         emptyText="No results"
@@ -258,14 +281,14 @@ describe('HHC UI primitives', () => {
       />
     );
 
-    const input = screen.getByRole('combobox', {name: 'Access'});
-    input.focus();
-    await user.keyboard('{ArrowDown}{Enter}');
+    await user.click(screen.getByRole('button', {name: /Access/}));
+    await user.click(screen.getByRole('option', {name: 'Ada'}));
     expect(onSelectionChange).not.toHaveBeenCalled();
 
     rerender(
       <SearchableSelect
         label="Access"
+        placeholder="Choose access"
         inputValue=""
         items={[]}
         isLoading
@@ -275,12 +298,12 @@ describe('HHC UI primitives', () => {
         onSelectionChange={onSelectionChange}
       />
     );
-    await user.click(screen.getByRole('button', {name: /Access/}));
     expect(screen.getByRole('status')).toHaveTextContent('Loading');
 
     rerender(
       <SearchableSelect
         label="Access"
+        placeholder="Choose access"
         inputValue=""
         items={[]}
         emptyText="No results"
