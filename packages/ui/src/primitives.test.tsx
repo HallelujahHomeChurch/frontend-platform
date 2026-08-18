@@ -265,31 +265,28 @@ describe('HHC UI primitives', () => {
     await waitFor(() => expect(trigger).toHaveFocus());
   });
 
-  it('preserves focus when an outside control dismisses the searchable select', async () => {
+  it('dismisses the searchable select through its outside interaction layer', async () => {
     const user = userEvent.setup();
     render(
-      <>
-        <SearchableSelect
-          label="Access"
-          placeholder="Choose access"
-          inputValue=""
-          items={[{id: 'user:ada', label: 'Ada', section: 'user'}]}
-          emptyText="No results"
-          loadingText="Loading"
-          onInputChange={() => undefined}
-          onSelectionChange={() => undefined}
-        />
-        <button type="button">Outside action</button>
-      </>
+      <SearchableSelect
+        label="Access"
+        placeholder="Choose access"
+        inputValue=""
+        items={[{id: 'user:ada', label: 'Ada', section: 'user'}]}
+        emptyText="No results"
+        loadingText="Loading"
+        onInputChange={() => undefined}
+        onSelectionChange={() => undefined}
+      />
     );
 
-    await user.click(screen.getByRole('button', {name: /Access/}));
+    const trigger = screen.getByRole('button', {name: /Access/});
+    await user.click(trigger);
     await waitFor(() => expect(screen.getByRole('searchbox', {name: 'Access'})).toHaveFocus());
-    const outside = screen.getByRole('button', {name: 'Outside action'});
-    await user.click(outside);
+    await user.click(screen.getByTestId('underlay'));
 
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
-    expect(outside).toHaveFocus();
+    await waitFor(() => expect(trigger).toHaveFocus());
   });
 
   it('does not select disabled items and announces loading and empty states', async () => {
