@@ -1,7 +1,6 @@
-import type {ComponentProps} from 'react';
+import {useEffect, useRef, useState, type ComponentProps} from 'react';
 import {
   Button as AriaButton,
-  ComboBox,
   FieldError as AriaFieldError,
   Form as AriaForm,
   Header,
@@ -11,6 +10,7 @@ import {
   ListBoxItem,
   ListBoxSection,
   Popover,
+  Select as AriaSelect,
   TextField as AriaTextField
 } from 'react-aria-components';
 
@@ -48,6 +48,7 @@ export type SearchableSelectItem = {
 
 export type SearchableSelectProps = {
   label: string;
+  placeholder?: string;
   inputValue: string;
   items: SearchableSelectItem[];
   isLoading?: boolean;
@@ -67,6 +68,7 @@ const searchableSelectSections = [
 
 export function SearchableSelect({
   label,
+  placeholder = label,
   inputValue,
   items,
   isLoading = false,
@@ -77,23 +79,63 @@ export function SearchableSelect({
   onOpenChange,
   onSelectionChange
 }: SearchableSelectProps) {
+  const [isOpen, setOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const popoverRef = useRef<HTMLElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!isOpen) return;
+    const focusTimer = window.setTimeout(() => inputRef.current?.focus());
+    return () => window.clearTimeout(focusTimer);
+  }, [isOpen]);
+
   return (
-    <ComboBox
-      allowsEmptyCollection
+    <AriaSelect
+      aria-label={label}
       className="hhc-searchable-select"
-      inputValue={inputValue}
-      onInputChange={onInputChange}
-      onOpenChange={(open) => onOpenChange?.(open)}
+      isOpen={isOpen}
+      selectedKey={null}
+      onOpenChange={(open) => {
+        setOpen(open);
+        if (!open) {
+          onInputChange('');
+          window.setTimeout(() => {
+            const trigger = triggerRef.current;
+            if (!trigger) return;
+            if (trigger.ownerDocument.activeElement === trigger.ownerDocument.body) {
+              trigger.focus();
+            }
+          });
+        }
+        onOpenChange?.(open);
+      }}
       onSelectionChange={(key) => {
         if (key !== null) onSelectionChange(String(key));
       }}
     >
-      <AriaLabel className="hhc-field__label">{label}</AriaLabel>
-      <div className="hhc-searchable-select__control">
-        <AriaInput className="hhc-searchable-select__input" placeholder={label} />
-        <AriaButton className="hhc-searchable-select__trigger"><span aria-hidden="true">⌄</span></AriaButton>
-      </div>
-      <Popover className="hhc-popover hhc-searchable-select__popover" isNonModal>
+      <span className="hhc-field__label">{label}</span>
+      <AriaButton ref={triggerRef} className="hhc-searchable-select__trigger" aria-label={`${label}: ${placeholder}`}>
+        <span>{placeholder}</span><span aria-hidden="true">⌄</span>
+      </AriaButton>
+      <Popover ref={popoverRef} className="hhc-popover hhc-searchable-select__popover" isNonModal>
+        <div className="hhc-searchable-select__search">
+          <AriaInput
+            ref={inputRef}
+            aria-label={label}
+            className="hhc-searchable-select__input"
+            placeholder={label}
+            type="search"
+            value={inputValue}
+            onChange={(event) => onInputChange(event.currentTarget.value)}
+            onKeyDown={(event) => {
+              if (event.key !== 'ArrowDown') return;
+              const option = popoverRef.current?.querySelector<HTMLElement>('[role="option"]:not([aria-disabled="true"])');
+              if (!option) return;
+              event.preventDefault();
+              option.focus();
+            }}
+          />
+        </div>
         {isLoading ? <div className="hhc-searchable-select__state" role="status">{loadingText}</div> : null}
         <ListBox
           className="hhc-searchable-select__listbox"
@@ -122,6 +164,6 @@ export function SearchableSelect({
           })}
         </ListBox>
       </Popover>
-    </ComboBox>
+    </AriaSelect>
   );
 }

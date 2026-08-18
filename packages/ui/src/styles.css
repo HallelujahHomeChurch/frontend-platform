@@ -158,13 +158,13 @@
   .hhc-select__trigger[data-disabled] { opacity: .48; cursor: not-allowed; }
 
   .hhc-searchable-select { display: grid; gap: 6px; color: var(--hhc-text); }
-  .hhc-searchable-select__control { display: flex; min-height: 44px; overflow: hidden; border: 1px solid var(--hhc-border); border-radius: var(--hhc-radius-md); background: var(--hhc-surface); }
-  .hhc-searchable-select__control:has(.hhc-searchable-select__input[data-focus-visible]) { border-color: var(--hhc-primary); box-shadow: 0 0 0 2px var(--hhc-primary-soft); }
-  .hhc-searchable-select__input { min-width: 0; flex: 1; border: 0; outline: 0; padding: 0 12px; color: var(--hhc-text); background: transparent; font: inherit; }
-  .hhc-searchable-select__trigger { width: 44px; flex: none; border: 0; color: var(--hhc-text-muted); background: transparent; font: inherit; cursor: pointer; }
+  .hhc-searchable-select__trigger { display: flex; width: 100%; min-height: 44px; align-items: center; justify-content: space-between; gap: 8px; border: 1px solid var(--hhc-border); border-radius: var(--hhc-radius-md); padding: 0 12px; color: var(--hhc-text); background: var(--hhc-surface); font: inherit; cursor: pointer; }
   .hhc-searchable-select__trigger[data-hovered] { background: var(--hhc-primary-soft); }
-  .hhc-searchable-select__trigger[data-focus-visible] { outline: 2px solid var(--hhc-primary); outline-offset: -3px; }
+  .hhc-searchable-select__trigger[data-focus-visible] { border-color: var(--hhc-primary); outline: 0; box-shadow: 0 0 0 2px var(--hhc-primary-soft); }
   .hhc-searchable-select__popover { width: var(--trigger-width); max-width: calc(100vw - 24px); max-height: min(360px, 60vh); overflow: auto; }
+  .hhc-searchable-select__search { position: sticky; z-index: 1; top: 0; padding: 8px; border-bottom: 1px solid var(--hhc-border); background: var(--hhc-surface); }
+  .hhc-searchable-select__input { width: 100%; min-height: 40px; box-sizing: border-box; border: 1px solid var(--hhc-border); border-radius: var(--hhc-radius-sm); outline: 0; padding: 0 10px; color: var(--hhc-text); background: var(--hhc-surface); font: inherit; }
+  .hhc-searchable-select__input[data-focus-visible] { border-color: var(--hhc-primary); box-shadow: 0 0 0 2px var(--hhc-primary-soft); }
   .hhc-searchable-select__listbox { padding: 6px; outline: none; }
   .hhc-searchable-select__section + .hhc-searchable-select__section { margin-top: 4px; border-top: 1px solid var(--hhc-border); padding-top: 4px; }
   .hhc-searchable-select__heading { padding: 8px 12px 4px; color: var(--hhc-text-muted); font-size: .75rem; font-weight: 700; }
