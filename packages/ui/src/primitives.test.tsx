@@ -22,6 +22,7 @@ import {
   Modal,
   Pagination,
   PaginationBar,
+  SearchableSelect,
   Select,
   Skeleton,
   StatusBadge,
@@ -179,6 +180,116 @@ describe('HHC UI primitives', () => {
     await user.click(screen.getByRole('button', {name: /Language/}));
     await user.click(screen.getByRole('option', {name: 'English'}));
     expect(onChange).toHaveBeenCalledWith('en');
+  });
+
+  it('orders searchable select items by selected, user, and role sections', async () => {
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+    render(
+      <SearchableSelect
+        label="Access"
+        inputValue="unrelated remote query"
+        items={[
+          {id: 'role:editor', label: 'Editors', section: 'role'},
+          {id: 'user:ada', label: 'Ada', section: 'user'},
+          {id: 'selected:grace', label: 'Grace', section: 'selected'}
+        ]}
+        emptyText="No results"
+        loadingText="Loading"
+        onInputChange={() => undefined}
+        onOpenChange={onOpenChange}
+        onSelectionChange={() => undefined}
+      />
+    );
+
+    await user.click(screen.getByRole('button', {name: /Access/}));
+    expect(onOpenChange).toHaveBeenCalledWith(true);
+    expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual([
+      'Grace',
+      'Ada',
+      'Editors'
+    ]);
+    expect(screen.getByText('Selected')).toBeInTheDocument();
+    expect(screen.getByText('Users')).toBeInTheDocument();
+    expect(screen.getByText('Roles')).toBeInTheDocument();
+  });
+
+  it('supports searchable select keyboard selection, Escape, and focus return', async () => {
+    const user = userEvent.setup();
+    const onSelectionChange = vi.fn();
+    render(
+      <SearchableSelect
+        label="Access"
+        inputValue=""
+        items={[
+          {id: 'user:ada', label: 'Ada', section: 'user'},
+          {id: 'role:editor', label: 'Editors', section: 'role'}
+        ]}
+        emptyText="No results"
+        loadingText="Loading"
+        onInputChange={() => undefined}
+        onSelectionChange={onSelectionChange}
+      />
+    );
+
+    const input = screen.getByRole('combobox', {name: 'Access'});
+    input.focus();
+    await user.keyboard('{ArrowDown}{Enter}');
+    expect(onSelectionChange).toHaveBeenCalledWith('user:ada');
+    expect(input).toHaveFocus();
+
+    await user.keyboard('{ArrowDown}{Escape}');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(input).toHaveFocus();
+  });
+
+  it('does not select disabled items and announces loading and empty states', async () => {
+    const user = userEvent.setup();
+    const onSelectionChange = vi.fn();
+    const {rerender} = render(
+      <SearchableSelect
+        label="Access"
+        inputValue=""
+        items={[{id: 'user:ada', label: 'Ada', section: 'selected', isDisabled: true}]}
+        emptyText="No results"
+        loadingText="Loading"
+        onInputChange={() => undefined}
+        onSelectionChange={onSelectionChange}
+      />
+    );
+
+    const input = screen.getByRole('combobox', {name: 'Access'});
+    input.focus();
+    await user.keyboard('{ArrowDown}{Enter}');
+    expect(onSelectionChange).not.toHaveBeenCalled();
+
+    rerender(
+      <SearchableSelect
+        label="Access"
+        inputValue=""
+        items={[]}
+        isLoading
+        emptyText="No results"
+        loadingText="Loading"
+        onInputChange={() => undefined}
+        onSelectionChange={onSelectionChange}
+      />
+    );
+    await user.click(screen.getByRole('button', {name: /Access/}));
+    expect(screen.getByRole('status')).toHaveTextContent('Loading');
+
+    rerender(
+      <SearchableSelect
+        label="Access"
+        inputValue=""
+        items={[]}
+        emptyText="No results"
+        loadingText="Loading"
+        onInputChange={() => undefined}
+        onSelectionChange={onSelectionChange}
+      />
+    );
+    expect(screen.getByRole('status')).toHaveTextContent('No results');
   });
 
   it('normalizes utility Select and the ghost compatibility alias', async () => {

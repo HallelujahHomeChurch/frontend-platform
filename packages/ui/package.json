@@ -1,6 +1,6 @@
 {
   "name": "@hallelujahhomechurch/ui",
-  "version": "0.6.8",
+  "version": "0.6.9",
   "type": "module",
   "sideEffects": ["**/*.css"],
   "files": ["dist"],
