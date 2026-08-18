@@ -342,6 +342,28 @@ describe('HHC UI primitives', () => {
     expect(screen.getByRole('status')).toHaveTextContent('No results');
   });
 
+  it('opens an initially empty searchable select so it can load suggestions', async () => {
+    const user = userEvent.setup();
+    render(
+      <SearchableSelect
+        label="Access"
+        placeholder="Choose access"
+        inputValue=""
+        items={[]}
+        isLoading
+        emptyText="No results"
+        loadingText="Loading"
+        onInputChange={() => undefined}
+        onSelectionChange={() => undefined}
+      />
+    );
+
+    await user.click(screen.getByRole('button', {name: /Access/}));
+
+    expect(screen.getByRole('searchbox', {name: 'Access'})).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Loading');
+  });
+
   it('normalizes utility Select and the ghost compatibility alias', async () => {
     const user = userEvent.setup();
     render(
