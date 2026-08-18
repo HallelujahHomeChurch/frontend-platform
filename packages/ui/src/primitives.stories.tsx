@@ -16,6 +16,7 @@ import {
   OTP,
   Pagination,
   PaginationBar,
+  SearchableSelect,
   Select,
   Skeleton,
   StatusBadge,
@@ -64,6 +65,31 @@ export const FormControls: Story = {
     </div>
   )
 };
+
+function SearchableSelectExample() {
+  const [query, setQuery] = useState('');
+  const items = [
+    {id: 'selected:ada', label: 'Ada', description: 'Already selected', section: 'selected' as const, isDisabled: true},
+    {id: 'user:grace', label: 'Grace', description: 'grace@example.com', section: 'user' as const},
+    {id: 'role:editors', label: 'Editors', description: 'Role', section: 'role' as const}
+  ].filter((item) => item.section === 'selected' || !query || item.label.toLowerCase().includes(query.toLowerCase()));
+
+  return (
+    <div style={{width: 360}}>
+      <SearchableSelect
+        label="Search people or roles"
+        inputValue={query}
+        items={items}
+        emptyText="No matches"
+        loadingText="Loading"
+        onInputChange={setQuery}
+        onSelectionChange={() => setQuery('')}
+      />
+    </div>
+  );
+}
+
+export const SearchableSelection: Story = {render: () => <SearchableSelectExample />};
 
 export const CardVariants: Story = {
   render: () => (

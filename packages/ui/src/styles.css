@@ -157,6 +157,26 @@
   .hhc-select__trigger--utility[data-hovered], .hhc-select--utility[data-open] .hhc-select__trigger--utility { background: var(--hhc-primary-soft); }
   .hhc-select__trigger[data-disabled] { opacity: .48; cursor: not-allowed; }
 
+  .hhc-searchable-select { display: grid; gap: 6px; color: var(--hhc-text); }
+  .hhc-searchable-select__control { display: flex; min-height: 44px; overflow: hidden; border: 1px solid var(--hhc-border); border-radius: var(--hhc-radius-md); background: var(--hhc-surface); }
+  .hhc-searchable-select__control:has(.hhc-searchable-select__input[data-focus-visible]) { border-color: var(--hhc-primary); box-shadow: 0 0 0 2px var(--hhc-primary-soft); }
+  .hhc-searchable-select__input { min-width: 0; flex: 1; border: 0; outline: 0; padding: 0 12px; color: var(--hhc-text); background: transparent; font: inherit; }
+  .hhc-searchable-select__trigger { width: 44px; flex: none; border: 0; color: var(--hhc-text-muted); background: transparent; font: inherit; cursor: pointer; }
+  .hhc-searchable-select__trigger[data-hovered] { background: var(--hhc-primary-soft); }
+  .hhc-searchable-select__trigger[data-focus-visible] { outline: 2px solid var(--hhc-primary); outline-offset: -3px; }
+  .hhc-searchable-select__popover { width: var(--trigger-width); max-width: calc(100vw - 24px); max-height: min(360px, 60vh); overflow: auto; }
+  .hhc-searchable-select__listbox { padding: 6px; outline: none; }
+  .hhc-searchable-select__section + .hhc-searchable-select__section { margin-top: 4px; border-top: 1px solid var(--hhc-border); padding-top: 4px; }
+  .hhc-searchable-select__heading { padding: 8px 12px 4px; color: var(--hhc-text-muted); font-size: .75rem; font-weight: 700; }
+  .hhc-searchable-select__option { display: grid; min-height: 44px; box-sizing: border-box; align-content: center; gap: 2px; padding: 8px 12px; border-radius: var(--hhc-radius-sm); outline: none; cursor: pointer; }
+  .hhc-searchable-select__option[data-hovered], .hhc-searchable-select__option[data-focused] { background: var(--hhc-primary-soft); }
+  .hhc-searchable-select__option[data-focus-visible] { box-shadow: inset 0 0 0 2px var(--hhc-primary); }
+  .hhc-searchable-select__option--selected { color: var(--hhc-primary); background: var(--hhc-primary-soft); }
+  .hhc-searchable-select__option[data-disabled] { opacity: .55; cursor: not-allowed; }
+  .hhc-searchable-select__option-label { font-weight: 600; }
+  .hhc-searchable-select__option-description { color: var(--hhc-text-muted); font-size: .8125rem; }
+  .hhc-searchable-select__state { padding: 14px 12px; color: var(--hhc-text-muted); text-align: center; }
+
   .hhc-expandable-search { position: relative; width: 40px; height: 40px; overflow: hidden; border: 1px solid var(--hhc-border); border-radius: 999px; background: var(--hhc-surface); transition: width 180ms ease; }
   .hhc-expandable-search[data-expanded='true'] { width: min(280px, 70vw); }
   .hhc-expandable-search__field { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
@@ -268,7 +288,7 @@
   @keyframes hhc-progress { from { transform: translateX(-100%); } to { transform: translateX(225%); } }
   @media (prefers-reduced-motion: reduce) { .hhc-otp__caret, .hhc-skeleton, .hhc-progress__fill, .hhc-brand-loading-screen__ring { animation: none; } .hhc-expandable-search, .hhc-switch__track, .hhc-switch__thumb, .hhc-toast, .hhc-select__chevron, .hhc-menu__popover, .hhc-select__popover { transition: none; } }
   @media (forced-colors: active) {
-    .hhc-account-menu__trigger, .hhc-menu__item, .hhc-listbox__item, .hhc-select__trigger { border-color: CanvasText; forced-color-adjust: auto; }
+    .hhc-account-menu__trigger, .hhc-menu__item, .hhc-listbox__item, .hhc-select__trigger, .hhc-searchable-select__control { border-color: CanvasText; forced-color-adjust: auto; }
     .hhc-account-menu__trigger[data-focus-visible] .hhc-avatar { box-shadow: inset 0 0 0 2px Highlight; }
     .hhc-listbox__item[data-selected] .hhc-select__check { color: Highlight; forced-color-adjust: none; }
     .hhc-brand-loading-screen__ring { border-color: CanvasText; border-block-start-color: Highlight; border-inline-end-color: Highlight; }
