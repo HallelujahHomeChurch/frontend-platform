@@ -81,6 +81,7 @@ export function SearchableSelect({
 }: SearchableSelectProps) {
   const [isOpen, setOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const popoverRef = useRef<HTMLElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!isOpen) return;
@@ -98,7 +99,13 @@ export function SearchableSelect({
         setOpen(open);
         if (!open) {
           onInputChange('');
-          window.setTimeout(() => triggerRef.current?.focus());
+          window.setTimeout(() => {
+            const trigger = triggerRef.current;
+            if (!trigger) return;
+            if (trigger.ownerDocument.activeElement === trigger.ownerDocument.body) {
+              trigger.focus();
+            }
+          });
         }
         onOpenChange?.(open);
       }}
@@ -110,7 +117,7 @@ export function SearchableSelect({
       <AriaButton ref={triggerRef} className="hhc-searchable-select__trigger" aria-label={`${label}: ${placeholder}`}>
         <span>{placeholder}</span><span aria-hidden="true">⌄</span>
       </AriaButton>
-      <Popover className="hhc-popover hhc-searchable-select__popover" isNonModal>
+      <Popover ref={popoverRef} className="hhc-popover hhc-searchable-select__popover" isNonModal>
         <div className="hhc-searchable-select__search">
           <AriaInput
             ref={inputRef}
@@ -120,6 +127,13 @@ export function SearchableSelect({
             type="search"
             value={inputValue}
             onChange={(event) => onInputChange(event.currentTarget.value)}
+            onKeyDown={(event) => {
+              if (event.key !== 'ArrowDown') return;
+              const option = popoverRef.current?.querySelector<HTMLElement>('[role="option"]:not([aria-disabled="true"])');
+              if (!option) return;
+              event.preventDefault();
+              option.focus();
+            }}
           />
         </div>
         {isLoading ? <div className="hhc-searchable-select__state" role="status">{loadingText}</div> : null}

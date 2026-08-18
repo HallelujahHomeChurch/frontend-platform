@@ -252,7 +252,7 @@ describe('HHC UI primitives', () => {
     await waitFor(() => expect(input).toHaveFocus());
     await user.type(input, 'Ada');
     expect(onInputChange).toHaveBeenLastCalledWith('Ada');
-    await user.click(screen.getByRole('option', {name: 'Ada'}));
+    await user.keyboard('{ArrowDown}{Enter}');
     expect(onSelectionChange).toHaveBeenCalledWith('user:ada');
     expect(onInputChange).toHaveBeenLastCalledWith('');
     expect(screen.queryByRole('searchbox', {name: 'Access'})).not.toBeInTheDocument();
@@ -263,6 +263,33 @@ describe('HHC UI primitives', () => {
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
     expect(onInputChange).toHaveBeenLastCalledWith('');
     await waitFor(() => expect(trigger).toHaveFocus());
+  });
+
+  it('preserves focus when an outside control dismisses the searchable select', async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <SearchableSelect
+          label="Access"
+          placeholder="Choose access"
+          inputValue=""
+          items={[{id: 'user:ada', label: 'Ada', section: 'user'}]}
+          emptyText="No results"
+          loadingText="Loading"
+          onInputChange={() => undefined}
+          onSelectionChange={() => undefined}
+        />
+        <button type="button">Outside action</button>
+      </>
+    );
+
+    await user.click(screen.getByRole('button', {name: /Access/}));
+    await waitFor(() => expect(screen.getByRole('searchbox', {name: 'Access'})).toHaveFocus());
+    const outside = screen.getByRole('button', {name: 'Outside action'});
+    await user.click(outside);
+
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(outside).toHaveFocus();
   });
 
   it('does not select disabled items and announces loading and empty states', async () => {
