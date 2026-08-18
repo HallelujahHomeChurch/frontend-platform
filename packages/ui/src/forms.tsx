@@ -136,12 +136,13 @@ export function SearchableSelect({
             }}
           />
         </div>
-        {isLoading ? <div className="hhc-searchable-select__state" role="status">{loadingText}</div> : null}
-        <ListBox
-          className="hhc-searchable-select__listbox"
-          renderEmptyState={() => isLoading ? null : <div className="hhc-searchable-select__state" role="status">{emptyText}</div>}
-        >
-          {searchableSelectSections.map((section) => {
+        {isLoading && items.length > 0 ? <div className="hhc-searchable-select__state" role="status">{loadingText}</div> : null}
+        <ListBox className="hhc-searchable-select__listbox">
+          {items.length === 0 ? (
+            <ListBoxItem id="__searchable-select-state" isDisabled textValue={isLoading ? loadingText : emptyText} className="hhc-searchable-select__state">
+              <span role="status">{isLoading ? loadingText : emptyText}</span>
+            </ListBoxItem>
+          ) : searchableSelectSections.map((section) => {
             const sectionItems = items.filter((item) => item.section === section.id);
             if (sectionItems.length === 0) return null;
             return (
