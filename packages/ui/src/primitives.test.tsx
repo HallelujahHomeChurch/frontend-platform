@@ -1,4 +1,4 @@
-import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
+import {act, fireEvent, render, screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {readFileSync} from 'node:fs';
 import {useRef, useState} from 'react';
@@ -151,6 +151,34 @@ describe('HHC UI primitives', () => {
     }
   });
 
+  it('keeps an oversized context menu in the viewport and scrollable', () => {
+    const height = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    Object.defineProperty(window, 'innerHeight', {configurable: true, value: 200});
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      bottom: 360,
+      height: 360,
+      left: 0,
+      right: 180,
+      top: 0,
+      width: 180,
+      x: 0,
+      y: 0,
+      toJSON: () => ({})
+    });
+
+    try {
+      render(<ContextMenu label="Actions" x={30} y={180} isOpen items={Array.from({length: 10}, (_, index) => ({id: `item-${index}`, label: `Item ${index}`}))} onAction={() => undefined} onOpenChange={() => undefined} />);
+      const overlay = screen.getByRole('menu').parentElement!;
+      const styles = readFileSync('src/styles.css', 'utf8');
+
+      expect(overlay).toHaveStyle({top: '0px'});
+      expect(styles).toMatch(/\.hhc-context-menu \.hhc-menu[^}]*max-height:\s*calc\(100dvh - 24px\)[^}]*overflow:\s*auto/s);
+    } finally {
+      rect.mockRestore();
+      Object.defineProperty(window, 'innerHeight', height!);
+    }
+  });
+
   it('dismisses a controlled context menu with Escape or an outside click and restores focus', async () => {
     const user = userEvent.setup();
     function Example() {
@@ -202,22 +230,33 @@ describe('HHC UI primitives', () => {
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 
-  it('renders danger, selected, and shortcut item presentation in both menus', () => {
+  it('renders danger, selected, and shortcut item presentation in both menus', async () => {
+    const user = userEvent.setup();
+    const onMenuAction = vi.fn();
     render(
       <>
-        <Menu label="Actions" items={[{id: 'delete', label: 'Delete', variant: 'danger'}, {id: 'grid', label: 'Grid', isSelected: true, shortcut: 'G'}]} onAction={() => undefined} />
-        <ContextMenu label="Context actions" x={40} y={40} isOpen items={[{id: 'delete', label: 'Delete', variant: 'danger'}, {id: 'grid', label: 'Grid', isSelected: true, shortcut: 'G'}]} onAction={() => undefined} onOpenChange={() => undefined} />
+        <Menu label="Actions" items={[{id: 'delete', label: 'Delete', variant: 'danger', isSelected: true, shortcut: '⌘⌫'}, {id: 'grid', label: 'Grid', shortcut: 'G'}]} onAction={onMenuAction} />
+        <ContextMenu label="Context actions" x={40} y={40} isOpen items={[{id: 'delete', label: 'Delete', variant: 'danger', isSelected: true, shortcut: '⌘⌫'}, {id: 'grid', label: 'Grid', shortcut: 'G'}]} onAction={() => undefined} onOpenChange={() => undefined} />
       </>
     );
 
     fireEvent.click(screen.getByRole('button', {name: 'Actions'}));
-    expect(screen.getAllByRole('menuitem', {name: 'Delete'})).toHaveLength(2);
-    for (const item of screen.getAllByRole('menuitem', {name: 'Delete'})) expect(item).toHaveClass('hhc-menu__item--danger');
-    for (const item of screen.getAllByRole('menuitem', {name: 'Grid'})) {
-      expect(item).toHaveClass('hhc-menu__item--selected');
+    const selectedItems = screen.getAllByRole('menuitemradio', {name: 'Delete'});
+    expect(selectedItems).toHaveLength(2);
+    for (const item of selectedItems) {
+      expect(item).toHaveAttribute('aria-checked', 'true');
+      expect(item).toHaveClass('hhc-menu__item--danger');
+      expect(item).toHaveAttribute('data-selected');
       expect(item.querySelector('.hhc-menu__check')).toHaveTextContent('✓');
+      expect(item.querySelector('.hhc-menu__shortcut')).toHaveTextContent('⌘⌫');
+    }
+    for (const item of screen.getAllByRole('menuitemradio', {name: 'Grid'})) {
+      expect(item).toHaveAttribute('aria-checked', 'false');
+      expect(item).not.toHaveAttribute('data-selected');
       expect(item.querySelector('.hhc-menu__shortcut')).toHaveTextContent('G');
     }
+    await user.click(within(screen.getByRole('menu', {name: 'Actions'})).getByRole('menuitemradio', {name: 'Grid'}));
+    expect(onMenuAction).toHaveBeenCalledWith('grid');
   });
 
   it('renders a round avatar fallback without shrinking the image area', () => {

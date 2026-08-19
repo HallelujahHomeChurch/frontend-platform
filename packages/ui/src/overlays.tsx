@@ -44,7 +44,7 @@ function MenuItems({items}: {items: MenuItem[]}) {
       key={item.id}
       {...(item.href ? {href: item.href} : {})}
       isDisabled={item.isDisabled}
-      className={`hhc-menu__item hhc-menu__item--${item.variant ?? 'default'}${item.isSelected ? ' hhc-menu__item--selected' : ''}`}
+      className={`hhc-menu__item hhc-menu__item--${item.variant ?? 'default'}`}
     >
       <span className="hhc-menu__check" aria-hidden="true">✓</span>
       <span className="hhc-menu__label">{item.label}</span>
@@ -53,11 +53,17 @@ function MenuItems({items}: {items: MenuItem[]}) {
   ));
 }
 
+function menuSelection(items: MenuItem[]) {
+  const selectedKeys = new Set(items.filter((item) => item.isSelected).map((item) => item.id));
+  return selectedKeys.size > 0 ? {selectedKeys, selectionMode: 'single' as const} : {};
+}
+
 export function Menu({label, items, onAction, trigger, header, focusTriggerRef}: MenuProps) {
   const popoverRef = useRef<HTMLElement>(null);
   const pointerStartedOutsideRef = useRef(false);
   const shouldRestoreFocusRef = useRef(true);
   const [isOpen, setOpen] = useState(false);
+  const selection = menuSelection(items);
   const handleOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen);
     if (nextOpen) shouldRestoreFocusRef.current = true;
@@ -94,7 +100,7 @@ export function Menu({label, items, onAction, trigger, header, focusTriggerRef}:
         isNonModal
       >
         {header ? <div className="hhc-menu__header">{header}</div> : null}
-        <AriaMenu aria-label={label} className="hhc-menu" onAction={(key) => onAction(String(key))}>
+        <AriaMenu {...selection} aria-label={label} className="hhc-menu" onAction={(key) => onAction(String(key))}>
           <MenuItems items={items} />
         </AriaMenu>
       </Popover>
@@ -116,6 +122,7 @@ export interface ContextMenuProps {
 export function ContextMenu({label, items, onAction, isOpen, onOpenChange, x, y, focusTriggerRef}: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({x, y});
+  const selection = menuSelection(items);
 
   const dismiss = useCallback(() => {
     onOpenChange(false);
@@ -151,7 +158,7 @@ export function ContextMenu({label, items, onAction, isOpen, onOpenChange, x, y,
 
   return createPortal(
     <div ref={menuRef} className="hhc-popover hhc-context-menu" style={{left: position.x, top: position.y}}>
-      <AriaMenu autoFocus="first" aria-label={label} className="hhc-menu" onAction={(key) => {
+      <AriaMenu {...selection} autoFocus="first" aria-label={label} className="hhc-menu" onAction={(key) => {
         onAction(String(key));
         dismiss();
       }}>

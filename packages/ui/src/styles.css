@@ -129,7 +129,7 @@
   .hhc-card__content--flush { padding: 0; }
   .hhc-menu, .hhc-listbox { min-width: 180px; padding: 6px; outline: none; }
   .hhc-context-menu { position: fixed; z-index: 200; max-width: calc(100vw - 24px); }
-  .hhc-context-menu .hhc-menu { min-width: min(180px, calc(100vw - 24px)); }
+  .hhc-context-menu .hhc-menu { min-width: min(180px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; }
   .hhc-menu__header { padding: 12px 14px 8px; text-align: center; font-weight: 600; }
   .hhc-account-menu .hhc-menu__popover { width: 240px; max-width: calc(100vw - 24px); }
   .hhc-account-menu .hhc-menu__header { padding: 14px; text-align: left; }
@@ -146,10 +146,10 @@
   .hhc-listbox__item[data-selected] .hhc-select__check { opacity: 1; }
   .hhc-menu__item--default { color: var(--hhc-text); }
   .hhc-menu__item--danger { color: var(--hhc-danger); }
-  .hhc-menu__item--selected { background: var(--hhc-primary-soft); }
-  .hhc-menu__item--default.hhc-menu__item--selected { color: var(--hhc-primary); }
+  .hhc-menu__item[data-selected] { background: var(--hhc-primary-soft); }
+  .hhc-menu__item--default[data-selected] { color: var(--hhc-primary); }
   .hhc-menu__check { opacity: 0; font-weight: 700; }
-  .hhc-menu__item--selected .hhc-menu__check { opacity: 1; }
+  .hhc-menu__item[data-selected] .hhc-menu__check { opacity: 1; }
   .hhc-menu__label { min-width: 0; }
   .hhc-menu__shortcut { color: var(--hhc-text-muted); font-size: .8125rem; white-space: nowrap; }
 
