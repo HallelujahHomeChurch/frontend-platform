@@ -1,4 +1,5 @@
-import {useEffect, useRef, useState, type ReactElement, type ReactNode, type RefObject} from 'react';
+import {useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactElement, type ReactNode, type RefObject} from 'react';
+import {createPortal} from 'react-dom';
 import {
   Button as AriaButton,
   Dialog as AriaDialog,
@@ -18,6 +19,8 @@ export interface MenuItem {
   label: string;
   href?: string;
   isDisabled?: boolean;
+  isSelected?: boolean;
+  shortcut?: string;
   variant?: 'default' | 'danger';
 }
 
@@ -32,6 +35,22 @@ export interface MenuProps {
 
 function isMeaningfullyFocusable(target: EventTarget | null) {
   return target instanceof Element && Boolean(target.closest('a[href], area[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), summary, iframe, audio[controls], video[controls], [contenteditable="true"], [tabindex]:not([tabindex="-1"])'));
+}
+
+function MenuItems({items}: {items: MenuItem[]}) {
+  return items.map((item) => (
+    <AriaMenuItem
+      id={item.id}
+      key={item.id}
+      {...(item.href ? {href: item.href} : {})}
+      isDisabled={item.isDisabled}
+      className={`hhc-menu__item hhc-menu__item--${item.variant ?? 'default'}${item.isSelected ? ' hhc-menu__item--selected' : ''}`}
+    >
+      <span className="hhc-menu__check" aria-hidden="true">✓</span>
+      <span className="hhc-menu__label">{item.label}</span>
+      {item.shortcut ? <span className="hhc-menu__shortcut" aria-hidden="true">{item.shortcut}</span> : null}
+    </AriaMenuItem>
+  ));
 }
 
 export function Menu({label, items, onAction, trigger, header, focusTriggerRef}: MenuProps) {
@@ -76,20 +95,70 @@ export function Menu({label, items, onAction, trigger, header, focusTriggerRef}:
       >
         {header ? <div className="hhc-menu__header">{header}</div> : null}
         <AriaMenu aria-label={label} className="hhc-menu" onAction={(key) => onAction(String(key))}>
-          {items.map((item) => (
-            <AriaMenuItem
-              id={item.id}
-              key={item.id}
-              {...(item.href ? {href: item.href} : {})}
-              isDisabled={item.isDisabled}
-              className={`hhc-menu__item hhc-menu__item--${item.variant ?? 'default'}`}
-            >
-              {item.label}
-            </AriaMenuItem>
-          ))}
+          <MenuItems items={items} />
         </AriaMenu>
       </Popover>
     </MenuTrigger>
+  );
+}
+
+export interface ContextMenuProps {
+  label: string;
+  items: MenuItem[];
+  onAction: (id: string) => void;
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+  x: number;
+  y: number;
+  focusTriggerRef?: RefObject<HTMLElement | null>;
+}
+
+export function ContextMenu({label, items, onAction, isOpen, onOpenChange, x, y, focusTriggerRef}: ContextMenuProps) {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({x, y});
+
+  const dismiss = useCallback(() => {
+    onOpenChange(false);
+    focusTriggerRef?.current?.focus();
+  }, [focusTriggerRef, onOpenChange]);
+
+  useLayoutEffect(() => {
+    if (!isOpen || !menuRef.current) return;
+    const {width, height} = menuRef.current.getBoundingClientRect();
+    setPosition({
+      x: Math.max(0, Math.min(x, window.innerWidth - width)),
+      y: Math.max(0, Math.min(y, window.innerHeight - height))
+    });
+  }, [isOpen, x, y]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const dismissOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') dismiss();
+    };
+    const dismissOnOutsidePointer = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) dismiss();
+    };
+    document.addEventListener('keydown', dismissOnEscape);
+    document.addEventListener('pointerdown', dismissOnOutsidePointer, true);
+    return () => {
+      document.removeEventListener('keydown', dismissOnEscape);
+      document.removeEventListener('pointerdown', dismissOnOutsidePointer, true);
+    };
+  }, [dismiss, isOpen]);
+
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div ref={menuRef} className="hhc-popover hhc-context-menu" style={{left: position.x, top: position.y}}>
+      <AriaMenu autoFocus="first" aria-label={label} className="hhc-menu" onAction={(key) => {
+        onAction(String(key));
+        dismiss();
+      }}>
+        <MenuItems items={items} />
+      </AriaMenu>
+    </div>,
+    document.body
   );
 }
 
