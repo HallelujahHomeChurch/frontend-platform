@@ -137,7 +137,8 @@
   .hhc-account-menu__identity-text { overflow: hidden; color: var(--hhc-text-muted); font-size: .8125rem; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
   .hhc-account-menu__identity-text:first-child { color: var(--hhc-text); font-weight: 600; }
   .hhc-menu__item, .hhc-listbox__item { display: grid; width: 100%; min-height: 44px; box-sizing: border-box; align-items: center; padding: 10px 12px; border: 1px solid transparent; border-radius: var(--hhc-radius-sm); text-decoration: none; cursor: pointer; }
-  .hhc-menu__item { grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; }
+  .hhc-menu__item { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+  .hhc-menu__item--selectable { grid-template-columns: auto minmax(0, 1fr) auto; }
   .hhc-listbox__item { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
   .hhc-menu__item[data-hovered], .hhc-menu__item[data-focused], .hhc-listbox__item[data-hovered], .hhc-listbox__item[data-focused] { background: var(--hhc-primary-soft); }
   .hhc-menu__item[data-focus-visible], .hhc-listbox__item[data-focus-visible], .hhc-select__trigger[data-focus-visible] { outline: 0; box-shadow: inset 0 0 0 2px var(--hhc-primary); }

@@ -60,13 +60,13 @@ import {createRoot} from 'react-dom/client';
 import {createAccountSessionClient} from '@hallelujahhomechurch/account-client';
 import {createHhcWebClient} from '@hallelujahhomechurch/hhc-web-client';
 import {getInitialTheme} from '@hallelujahhomechurch/preferences';
-import {Button} from '@hallelujahhomechurch/ui';
+import {Button, ContextMenu} from '@hallelujahhomechurch/ui';
 import '@hallelujahhomechurch/ui/styles.css';
 
 void createAccountSessionClient;
 void createHhcWebClient;
 void getInitialTheme;
-createRoot(document.getElementById('root')!).render(<Button>Smoke</Button>);
+createRoot(document.getElementById('root')!).render(<><Button>Smoke</Button><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /></>);
 `);
   run(vite, 'install', '--ignore-workspace');
   run(vite, 'exec', 'node', '--input-type=module', '--eval', `
@@ -105,12 +105,12 @@ export default function Layout({children}: {children: React.ReactNode}) {
 import {createAccountSessionClient} from '@hallelujahhomechurch/account-client';
 import {createHhcWebClient} from '@hallelujahhomechurch/hhc-web-client';
 import {getInitialTheme} from '@hallelujahhomechurch/preferences';
-import {Button} from '@hallelujahhomechurch/ui';
+import {Button, ContextMenu} from '@hallelujahhomechurch/ui';
 
 void createAccountSessionClient;
 void createHhcWebClient;
 void getInitialTheme;
-export default function Page() { return <Button>Smoke</Button>; }
+export default function Page() { return <><Button>Smoke</Button><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /></>; }
 `);
   run(next, 'install', '--ignore-workspace');
   run(next, 'build');

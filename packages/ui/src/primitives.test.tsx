@@ -205,6 +205,58 @@ describe('HHC UI primitives', () => {
     unmount();
   });
 
+  it('dismisses a context menu after Tab moves focus outside without reclaiming it', async () => {
+    const user = userEvent.setup();
+    function Example() {
+      const [isOpen, setOpen] = useState(true);
+      const triggerRef = useRef<HTMLButtonElement>(null);
+      return (
+        <>
+          <button ref={triggerRef}>Trigger</button>
+          <button>Before portal</button>
+          <ContextMenu label="Actions" x={40} y={40} isOpen={isOpen} items={[{id: 'copy', label: 'Copy'}]} onAction={() => undefined} onOpenChange={setOpen} focusTriggerRef={triggerRef} />
+        </>
+      );
+    }
+
+    render(<Example />);
+    const destination = document.createElement('button');
+    destination.textContent = 'After portal';
+    document.body.append(destination);
+
+    try {
+      await waitFor(() => expect(screen.getByRole('menuitem', {name: 'Copy'})).toHaveFocus());
+      await user.tab();
+      expect(destination).toHaveFocus();
+      await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument());
+      expect(destination).toHaveFocus();
+    } finally {
+      destination.remove();
+    }
+  });
+
+  it('dismisses a context menu after Shift+Tab moves focus outside without reclaiming it', async () => {
+    const user = userEvent.setup();
+    function Example() {
+      const [isOpen, setOpen] = useState(true);
+      const triggerRef = useRef<HTMLButtonElement>(null);
+      return (
+        <>
+          <button ref={triggerRef}>Trigger</button>
+          <button>Before portal</button>
+          <ContextMenu label="Actions" x={40} y={40} isOpen={isOpen} items={[{id: 'copy', label: 'Copy'}]} onAction={() => undefined} onOpenChange={setOpen} focusTriggerRef={triggerRef} />
+        </>
+      );
+    }
+
+    render(<Example />);
+    await waitFor(() => expect(screen.getByRole('menuitem', {name: 'Copy'})).toHaveFocus());
+    await user.tab({shift: true});
+    expect(screen.getByRole('button', {name: 'Before portal'})).toHaveFocus();
+    await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument());
+    expect(screen.getByRole('button', {name: 'Before portal'})).toHaveFocus();
+  });
+
   it('navigates a context menu by keyboard and activates the focused action', async () => {
     const user = userEvent.setup();
     const onAction = vi.fn();
@@ -257,6 +309,31 @@ describe('HHC UI primitives', () => {
     }
     await user.click(within(screen.getByRole('menu', {name: 'Actions'})).getByRole('menuitemradio', {name: 'Grid'}));
     expect(onMenuAction).toHaveBeenCalledWith('grid');
+  });
+
+  it('keeps explicit all-false selection items accessible as unchecked radios and leaves ordinary menu items unindented', async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <ContextMenu label="View options" x={40} y={40} isOpen items={[{id: 'grid', label: 'Grid', isSelected: false}, {id: 'list', label: 'List', isSelected: false}]} onAction={() => undefined} onOpenChange={() => undefined} />
+        <Menu label="Actions" items={[{id: 'copy', label: 'Copy'}]} onAction={() => undefined} />
+      </>
+    );
+
+    await user.click(screen.getByRole('button', {name: 'Actions'}));
+    for (const item of screen.getAllByRole('menuitemradio')) {
+      expect(item).toHaveAttribute('aria-checked', 'false');
+      expect(item.querySelector('.hhc-menu__check')).toBeInTheDocument();
+    }
+    const ordinaryItem = within(screen.getByRole('menu', {name: 'Actions'})).getByRole('menuitem', {name: 'Copy'});
+    expect(ordinaryItem.querySelector('.hhc-menu__check')).toBeNull();
+    expect(ordinaryItem).not.toHaveClass('hhc-menu__item--selectable');
+  });
+
+  it('rejects menus with more than one selected item', () => {
+    expect(() => render(
+      <ContextMenu label="View options" x={40} y={40} isOpen items={[{id: 'grid', label: 'Grid', isSelected: true}, {id: 'list', label: 'List', isSelected: true}]} onAction={() => undefined} onOpenChange={() => undefined} />
+    )).toThrow('Menu items must have at most one selected item.');
   });
 
   it('renders a round avatar fallback without shrinking the image area', () => {
