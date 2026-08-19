@@ -1,7 +1,7 @@
-import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
+import {act, fireEvent, render, screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {readFileSync} from 'node:fs';
-import {useState} from 'react';
+import {useRef, useState} from 'react';
 import {afterEach, describe, expect, it, vi} from 'vitest';
 import {
   AccountMenu,
@@ -10,6 +10,7 @@ import {
   BrandLoadingScreen,
   Button,
   Card,
+  ContextMenu,
   DatePicker,
   DataTableFrame,
   Dialog,
@@ -119,6 +120,220 @@ describe('HHC UI primitives', () => {
     await user.click(screen.getByRole('button', {name: 'Actions'}));
     await user.click(document.body);
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+
+  it('positions a controlled context menu at its pointer coordinates and keeps it inside the viewport', () => {
+    const width = Object.getOwnPropertyDescriptor(window, 'innerWidth');
+    const height = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    Object.defineProperty(window, 'innerWidth', {configurable: true, value: 320});
+    Object.defineProperty(window, 'innerHeight', {configurable: true, value: 200});
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      bottom: 120,
+      height: 120,
+      left: 0,
+      right: 180,
+      top: 0,
+      width: 180,
+      x: 0,
+      y: 0,
+      toJSON: () => ({})
+    });
+
+    try {
+      render(<ContextMenu label="Actions" x={300} y={190} isOpen items={[{id: 'copy', label: 'Copy'}]} onAction={() => undefined} onOpenChange={() => undefined} />);
+      const overlay = screen.getByRole('menu').parentElement;
+
+      expect(overlay).toHaveStyle({left: '140px', top: '80px'});
+    } finally {
+      rect.mockRestore();
+      Object.defineProperty(window, 'innerWidth', width!);
+      Object.defineProperty(window, 'innerHeight', height!);
+    }
+  });
+
+  it('keeps an oversized context menu in the viewport and scrollable', () => {
+    const height = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    Object.defineProperty(window, 'innerHeight', {configurable: true, value: 200});
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      bottom: 360,
+      height: 360,
+      left: 0,
+      right: 180,
+      top: 0,
+      width: 180,
+      x: 0,
+      y: 0,
+      toJSON: () => ({})
+    });
+
+    try {
+      render(<ContextMenu label="Actions" x={30} y={180} isOpen items={Array.from({length: 10}, (_, index) => ({id: `item-${index}`, label: `Item ${index}`}))} onAction={() => undefined} onOpenChange={() => undefined} />);
+      const overlay = screen.getByRole('menu').parentElement!;
+      const styles = readFileSync('src/styles.css', 'utf8');
+
+      expect(overlay).toHaveStyle({top: '0px'});
+      expect(styles).toMatch(/\.hhc-context-menu \.hhc-menu[^}]*max-height:\s*calc\(100dvh - 24px\)[^}]*overflow:\s*auto/s);
+    } finally {
+      rect.mockRestore();
+      Object.defineProperty(window, 'innerHeight', height!);
+    }
+  });
+
+  it('dismisses a controlled context menu with Escape or an outside click and restores focus', async () => {
+    const user = userEvent.setup();
+    function Example() {
+      const [isOpen, setOpen] = useState(true);
+      const triggerRef = useRef<HTMLButtonElement>(null);
+      return (
+        <>
+          <button ref={triggerRef}>Trigger</button>
+          <button>Outside</button>
+          <ContextMenu label="Actions" x={40} y={40} isOpen={isOpen} items={[{id: 'copy', label: 'Copy'}]} onAction={() => undefined} onOpenChange={setOpen} focusTriggerRef={triggerRef} />
+        </>
+      );
+    }
+
+    const first = render(<Example />);
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', {name: 'Trigger'})).toHaveFocus();
+    first.unmount();
+
+    const {unmount} = render(<Example />);
+    await user.click(screen.getByRole('button', {name: 'Outside'}));
+    expect(screen.queryAllByRole('menu')).toHaveLength(0);
+    unmount();
+  });
+
+  it('dismisses a context menu after Tab moves focus outside without reclaiming it', async () => {
+    const user = userEvent.setup();
+    function Example() {
+      const [isOpen, setOpen] = useState(true);
+      const triggerRef = useRef<HTMLButtonElement>(null);
+      return (
+        <>
+          <button ref={triggerRef}>Trigger</button>
+          <button>Before portal</button>
+          <ContextMenu label="Actions" x={40} y={40} isOpen={isOpen} items={[{id: 'copy', label: 'Copy'}]} onAction={() => undefined} onOpenChange={setOpen} focusTriggerRef={triggerRef} />
+        </>
+      );
+    }
+
+    render(<Example />);
+    const destination = document.createElement('button');
+    destination.textContent = 'After portal';
+    document.body.append(destination);
+
+    try {
+      await waitFor(() => expect(screen.getByRole('menuitem', {name: 'Copy'})).toHaveFocus());
+      await user.tab();
+      expect(destination).toHaveFocus();
+      await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument());
+      expect(destination).toHaveFocus();
+    } finally {
+      destination.remove();
+    }
+  });
+
+  it('dismisses a context menu after Shift+Tab moves focus outside without reclaiming it', async () => {
+    const user = userEvent.setup();
+    function Example() {
+      const [isOpen, setOpen] = useState(true);
+      const triggerRef = useRef<HTMLButtonElement>(null);
+      return (
+        <>
+          <button ref={triggerRef}>Trigger</button>
+          <button>Before portal</button>
+          <ContextMenu label="Actions" x={40} y={40} isOpen={isOpen} items={[{id: 'copy', label: 'Copy'}]} onAction={() => undefined} onOpenChange={setOpen} focusTriggerRef={triggerRef} />
+        </>
+      );
+    }
+
+    render(<Example />);
+    await waitFor(() => expect(screen.getByRole('menuitem', {name: 'Copy'})).toHaveFocus());
+    await user.tab({shift: true});
+    expect(screen.getByRole('button', {name: 'Before portal'})).toHaveFocus();
+    await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument());
+    expect(screen.getByRole('button', {name: 'Before portal'})).toHaveFocus();
+  });
+
+  it('navigates a context menu by keyboard and activates the focused action', async () => {
+    const user = userEvent.setup();
+    const onAction = vi.fn();
+    function Example() {
+      const [isOpen, setOpen] = useState(true);
+      return <ContextMenu label="Actions" x={40} y={40} isOpen={isOpen} items={[{id: 'alpha', label: 'Alpha'}, {id: 'beta', label: 'Beta'}, {id: 'gamma', label: 'Gamma'}]} onAction={onAction} onOpenChange={setOpen} />;
+    }
+
+    render(<Example />);
+    const alpha = screen.getByRole('menuitem', {name: 'Alpha'});
+    const beta = screen.getByRole('menuitem', {name: 'Beta'});
+    const gamma = screen.getByRole('menuitem', {name: 'Gamma'});
+    await waitFor(() => expect(alpha).toHaveFocus());
+
+    await user.keyboard('{ArrowDown}');
+    expect(beta).toHaveFocus();
+    await user.keyboard('{End}');
+    expect(gamma).toHaveFocus();
+    await user.keyboard('{Home}');
+    expect(alpha).toHaveFocus();
+    await user.keyboard('{Enter}');
+    expect(onAction).toHaveBeenCalledWith('alpha');
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+
+  it('renders danger, selected, and shortcut item presentation in both menus', async () => {
+    const user = userEvent.setup();
+    const onMenuAction = vi.fn();
+    render(
+      <>
+        <Menu label="Actions" items={[{id: 'delete', label: 'Delete', variant: 'danger', isSelected: true, shortcut: '⌘⌫'}, {id: 'grid', label: 'Grid', shortcut: 'G'}]} onAction={onMenuAction} />
+        <ContextMenu label="Context actions" x={40} y={40} isOpen items={[{id: 'delete', label: 'Delete', variant: 'danger', isSelected: true, shortcut: '⌘⌫'}, {id: 'grid', label: 'Grid', shortcut: 'G'}]} onAction={() => undefined} onOpenChange={() => undefined} />
+      </>
+    );
+
+    fireEvent.click(screen.getByRole('button', {name: 'Actions'}));
+    const selectedItems = screen.getAllByRole('menuitemradio', {name: 'Delete'});
+    expect(selectedItems).toHaveLength(2);
+    for (const item of selectedItems) {
+      expect(item).toHaveAttribute('aria-checked', 'true');
+      expect(item).toHaveClass('hhc-menu__item--danger');
+      expect(item).toHaveAttribute('data-selected');
+      expect(item.querySelector('.hhc-menu__check')).toHaveTextContent('✓');
+      expect(item.querySelector('.hhc-menu__shortcut')).toHaveTextContent('⌘⌫');
+    }
+    for (const item of screen.getAllByRole('menuitemradio', {name: 'Grid'})) {
+      expect(item).toHaveAttribute('aria-checked', 'false');
+      expect(item).not.toHaveAttribute('data-selected');
+      expect(item.querySelector('.hhc-menu__shortcut')).toHaveTextContent('G');
+    }
+    await user.click(within(screen.getByRole('menu', {name: 'Actions'})).getByRole('menuitemradio', {name: 'Grid'}));
+    expect(onMenuAction).toHaveBeenCalledWith('grid');
+  });
+
+  it('keeps explicit all-false selection items accessible as unchecked radios and leaves ordinary menu items unindented', async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <ContextMenu label="View options" x={40} y={40} isOpen items={[{id: 'grid', label: 'Grid', isSelected: false}, {id: 'list', label: 'List', isSelected: false}]} onAction={() => undefined} onOpenChange={() => undefined} />
+        <Menu label="Actions" items={[{id: 'copy', label: 'Copy'}]} onAction={() => undefined} />
+      </>
+    );
+
+    await user.click(screen.getByRole('button', {name: 'Actions'}));
+    for (const item of screen.getAllByRole('menuitemradio')) {
+      expect(item).toHaveAttribute('aria-checked', 'false');
+      expect(item.querySelector('.hhc-menu__check')).toBeInTheDocument();
+    }
+    const ordinaryItem = within(screen.getByRole('menu', {name: 'Actions'})).getByRole('menuitem', {name: 'Copy'});
+    expect(ordinaryItem.querySelector('.hhc-menu__check')).toBeNull();
+    expect(ordinaryItem).not.toHaveClass('hhc-menu__item--selectable');
+  });
+
+  it('rejects menus with more than one selected item', () => {
+    expect(() => render(
+      <ContextMenu label="View options" x={40} y={40} isOpen items={[{id: 'grid', label: 'Grid', isSelected: true}, {id: 'list', label: 'List', isSelected: true}]} onAction={() => undefined} onOpenChange={() => undefined} />
+    )).toThrow('Menu items must have at most one selected item.');
   });
 
   it('renders a round avatar fallback without shrinking the image area', () => {

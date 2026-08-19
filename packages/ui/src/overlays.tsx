@@ -1,4 +1,5 @@
-import {useEffect, useRef, useState, type ReactElement, type ReactNode, type RefObject} from 'react';
+import {useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactElement, type ReactNode, type RefObject} from 'react';
+import {createPortal} from 'react-dom';
 import {
   Button as AriaButton,
   Dialog as AriaDialog,
@@ -18,6 +19,8 @@ export interface MenuItem {
   label: string;
   href?: string;
   isDisabled?: boolean;
+  isSelected?: boolean;
+  shortcut?: string;
   variant?: 'default' | 'danger';
 }
 
@@ -34,11 +37,38 @@ function isMeaningfullyFocusable(target: EventTarget | null) {
   return target instanceof Element && Boolean(target.closest('a[href], area[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), summary, iframe, audio[controls], video[controls], [contenteditable="true"], [tabindex]:not([tabindex="-1"])'));
 }
 
+function MenuItems({items, isSelectable}: {items: MenuItem[]; isSelectable: boolean}) {
+  return items.map((item) => (
+    <AriaMenuItem
+      id={item.id}
+      key={item.id}
+      {...(item.href ? {href: item.href} : {})}
+      isDisabled={item.isDisabled}
+      className={`hhc-menu__item hhc-menu__item--${item.variant ?? 'default'}${isSelectable ? ' hhc-menu__item--selectable' : ''}`}
+    >
+      {isSelectable ? <span className="hhc-menu__check" aria-hidden="true">✓</span> : null}
+      <span className="hhc-menu__label">{item.label}</span>
+      {item.shortcut ? <span className="hhc-menu__shortcut" aria-hidden="true">{item.shortcut}</span> : null}
+    </AriaMenuItem>
+  ));
+}
+
+function menuSelection(items: MenuItem[]) {
+  const selectedItems = items.filter((item) => item.isSelected);
+  if (selectedItems.length > 1) throw new Error('Menu items must have at most one selected item.');
+  const isSelectable = items.some((item) => item.isSelected !== undefined);
+  return {
+    isSelectable,
+    selectionProps: isSelectable ? {selectedKeys: new Set(selectedItems.map((item) => item.id)), selectionMode: 'single' as const} : {}
+  };
+}
+
 export function Menu({label, items, onAction, trigger, header, focusTriggerRef}: MenuProps) {
   const popoverRef = useRef<HTMLElement>(null);
   const pointerStartedOutsideRef = useRef(false);
   const shouldRestoreFocusRef = useRef(true);
   const [isOpen, setOpen] = useState(false);
+  const {isSelectable, selectionProps} = menuSelection(items);
   const handleOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen);
     if (nextOpen) shouldRestoreFocusRef.current = true;
@@ -75,21 +105,78 @@ export function Menu({label, items, onAction, trigger, header, focusTriggerRef}:
         isNonModal
       >
         {header ? <div className="hhc-menu__header">{header}</div> : null}
-        <AriaMenu aria-label={label} className="hhc-menu" onAction={(key) => onAction(String(key))}>
-          {items.map((item) => (
-            <AriaMenuItem
-              id={item.id}
-              key={item.id}
-              {...(item.href ? {href: item.href} : {})}
-              isDisabled={item.isDisabled}
-              className={`hhc-menu__item hhc-menu__item--${item.variant ?? 'default'}`}
-            >
-              {item.label}
-            </AriaMenuItem>
-          ))}
+        <AriaMenu {...selectionProps} aria-label={label} className="hhc-menu" onAction={(key) => onAction(String(key))}>
+          <MenuItems items={items} isSelectable={isSelectable} />
         </AriaMenu>
       </Popover>
     </MenuTrigger>
+  );
+}
+
+export interface ContextMenuProps {
+  label: string;
+  items: MenuItem[];
+  onAction: (id: string) => void;
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+  x: number;
+  y: number;
+  focusTriggerRef?: RefObject<HTMLElement | null>;
+}
+
+export function ContextMenu({label, items, onAction, isOpen, onOpenChange, x, y, focusTriggerRef}: ContextMenuProps) {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({x, y});
+  const {isSelectable, selectionProps} = menuSelection(items);
+
+  const dismiss = useCallback(() => {
+    onOpenChange(false);
+    focusTriggerRef?.current?.focus();
+  }, [focusTriggerRef, onOpenChange]);
+
+  useLayoutEffect(() => {
+    if (!isOpen || !menuRef.current) return;
+    const {width, height} = menuRef.current.getBoundingClientRect();
+    setPosition({
+      x: Math.max(0, Math.min(x, window.innerWidth - width)),
+      y: Math.max(0, Math.min(y, window.innerHeight - height))
+    });
+  }, [isOpen, x, y]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const contextMenu = menuRef.current;
+    const dismissOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') dismiss();
+    };
+    const dismissOnOutsidePointer = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) dismiss();
+    };
+    const dismissOnFocusLeave = (event: FocusEvent) => {
+      if (!contextMenu?.contains(event.relatedTarget instanceof Node ? event.relatedTarget : null)) onOpenChange(false);
+    };
+    document.addEventListener('keydown', dismissOnEscape);
+    document.addEventListener('pointerdown', dismissOnOutsidePointer, true);
+    contextMenu?.addEventListener('focusout', dismissOnFocusLeave);
+    return () => {
+      document.removeEventListener('keydown', dismissOnEscape);
+      document.removeEventListener('pointerdown', dismissOnOutsidePointer, true);
+      contextMenu?.removeEventListener('focusout', dismissOnFocusLeave);
+    };
+  }, [dismiss, isOpen, onOpenChange]);
+
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div ref={menuRef} className="hhc-popover hhc-context-menu" style={{left: position.x, top: position.y}}>
+      <AriaMenu {...selectionProps} autoFocus="first" aria-label={label} className="hhc-menu" onAction={(key) => {
+        onAction(String(key));
+        dismiss();
+      }}>
+        <MenuItems items={items} isSelectable={isSelectable} />
+      </AriaMenu>
+    </div>,
+    document.body
   );
 }
 
