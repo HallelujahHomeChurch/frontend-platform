@@ -75,6 +75,62 @@ describe('hhc web client', () => {
     await expect(update.json()).resolves.toEqual(input)
   })
 
+  it('reads public layout, admin settings, and revisions through their exact routes', async () => {
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: { locale: 'zh-Hant' }, meta: {}, error: null }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: { id: 'default' }, meta: {}, error: null }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [], meta: {}, error: null }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
+
+    await expect(client.getSiteLayout('zh-Hant')).resolves.toEqual({ locale: 'zh-Hant' })
+    await expect(client.getSiteSettings()).resolves.toEqual({ id: 'default' })
+    await expect(client.listSiteSettingsRevisions()).resolves.toEqual([])
+
+    const publicRequest = fetcher.mock.calls[0]![0] as Request
+    expect(publicRequest.url).toBe('http://localhost/api/site-layout?locale=zh-Hant')
+    const settingsRequest = fetcher.mock.calls[1]![0] as Request
+    expect(settingsRequest.url).toBe('http://localhost/api/admin/site-settings')
+    expect(settingsRequest.headers.get('Authorization')).toBe('Bearer token')
+    expect((fetcher.mock.calls[2]![0] as Request).url).toBe('http://localhost/api/admin/site-settings/revisions')
+  })
+
+  it('saves, publishes, unpublishes, and restores site settings with optimistic concurrency', async () => {
+    const response = JSON.stringify({ data: { id: 'default' }, meta: {}, error: null })
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(response, { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
+    const input = {
+      locales: [],
+      links: {
+        churchYoutube: 'https://www.youtube.com/@hhc33',
+        churchFacebook: 'https://www.facebook.com/hhc33',
+        musicYoutube: 'https://www.youtube.com/@hhcmusic33',
+      },
+    }
+
+    await client.saveSiteSettings(2, input)
+    await client.publishSiteSettings(3)
+    await client.unpublishSiteSettings(4)
+    await client.restoreSiteSettingsRevision(7, 5)
+
+    const save = fetcher.mock.calls[0]![0] as Request
+    expect(save.url).toBe('http://localhost/api/admin/site-settings')
+    expect(save.method).toBe('PUT')
+    expect(save.headers.get('If-Match')).toBe('"2"')
+    await expect(save.json()).resolves.toEqual(input)
+    const publish = fetcher.mock.calls[1]![0] as Request
+    expect(publish.url).toBe('http://localhost/api/admin/site-settings/publish')
+    expect(publish.method).toBe('POST')
+    expect(publish.headers.get('If-Match')).toBe('"3"')
+    const unpublish = fetcher.mock.calls[2]![0] as Request
+    expect(unpublish.url).toBe('http://localhost/api/admin/site-settings/unpublish')
+    expect(unpublish.method).toBe('POST')
+    expect(unpublish.headers.get('If-Match')).toBe('"4"')
+    const restore = fetcher.mock.calls[3]![0] as Request
+    expect(restore.url).toBe('http://localhost/api/admin/site-settings/revisions/7/restore')
+    expect(restore.method).toBe('POST')
+    expect(restore.headers.get('If-Match')).toBe('"5"')
+  })
+
   it('preserves the API error code and status', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
       data: null,

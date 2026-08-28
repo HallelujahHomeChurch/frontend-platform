@@ -394,6 +394,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/site-layout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the published site layout for one exact locale */
+        get: operations["getPublicSiteLayout"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/home": {
         parameters: {
             query?: never;
@@ -405,6 +422,92 @@ export interface paths {
         get: operations["getPublicHome"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/site-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the Site Settings draft aggregate */
+        get: operations["getSiteSettings"];
+        /** Save the Site Settings aggregate as a draft */
+        put: operations["saveSiteSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/site-settings/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publish all five Site Layout projections atomically */
+        post: operations["publishSiteSettings"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/site-settings/unpublish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Unpublish all Site Layout projections atomically */
+        post: operations["unpublishSiteSettings"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/site-settings/revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Site Settings revisions */
+        get: operations["listSiteSettingsRevisions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/site-settings/revisions/{revision}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore a Site Settings revision to a draft */
+        post: operations["restoreSiteSettingsRevision"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1365,6 +1468,140 @@ export interface components {
             resolvedLocale: components["schemas"]["ContentLocale"];
             availableLocales: components["schemas"]["ContentLocale"][];
         };
+        AdminSiteHeaderNavigationItem: ({
+            /** @enum {string} */
+            key: "about" | "news" | "literature-ministry";
+            label: string;
+            href: string;
+            visible: boolean;
+        } & unknown) & ({
+            /** @constant */
+            key?: "about";
+            /** @constant */
+            href?: "/{locale}/about";
+        } | {
+            /** @constant */
+            key?: "news";
+            /** @constant */
+            href?: "/{locale}/news";
+        } | {
+            /** @constant */
+            key?: "literature-ministry";
+            /** @constant */
+            href?: "/{locale}/literature-ministry";
+        });
+        AdminSiteLegalNavigationItem: ({
+            /** @enum {string} */
+            key: "privacy-policy" | "terms-of-use";
+            label: string;
+            href: string;
+            visible: boolean;
+        } & unknown) & ({
+            /** @constant */
+            key?: "privacy-policy";
+            /** @constant */
+            href?: "/{locale}/privacy-policy";
+        } | {
+            /** @constant */
+            key?: "terms-of-use";
+            /** @constant */
+            href?: "/{locale}/terms-of-use";
+        });
+        PublicSiteHeaderNavigationItem: {
+            /** @enum {string} */
+            key: "about" | "news" | "literature-ministry";
+            label: string;
+            href: string;
+            visible: boolean;
+        } & ({
+            /** @constant */
+            key?: "about";
+            href?: unknown;
+        } | {
+            /** @constant */
+            key?: "news";
+            href?: unknown;
+        } | {
+            /** @constant */
+            key?: "literature-ministry";
+            href?: unknown;
+        });
+        PublicSiteLegalNavigationItem: {
+            /** @enum {string} */
+            key: "privacy-policy" | "terms-of-use";
+            label: string;
+            href: string;
+            visible: boolean;
+        } & ({
+            /** @constant */
+            key?: "privacy-policy";
+            href?: unknown;
+        } | {
+            /** @constant */
+            key?: "terms-of-use";
+            href?: unknown;
+        });
+        /** Format: uri */
+        SiteExternalURL: string & (unknown & unknown & unknown & unknown & unknown);
+        SiteExternalLinks: {
+            churchYoutube: components["schemas"]["SiteExternalURL"];
+            churchFacebook: components["schemas"]["SiteExternalURL"];
+            musicYoutube: components["schemas"]["SiteExternalURL"];
+        };
+        SiteDisplayFields: {
+            locale: components["schemas"]["ContentLocale"];
+            siteName: string;
+            englishName: string;
+            copyrightHolder: string;
+            allRightsReserved: string;
+            seoTitleSuffix: string;
+            seoDescriptionFallback: string;
+        };
+        SiteLocaleSettings: components["schemas"]["SiteDisplayFields"] & {
+            header: components["schemas"]["AdminSiteHeaderNavigationItem"][] & (unknown & unknown & unknown);
+            legal: components["schemas"]["AdminSiteLegalNavigationItem"][] & (unknown & unknown);
+        };
+        SiteLayout: components["schemas"]["SiteDisplayFields"] & {
+            header: components["schemas"]["PublicSiteHeaderNavigationItem"][];
+            legal: components["schemas"]["PublicSiteLegalNavigationItem"][];
+            links: components["schemas"]["SiteExternalLinks"];
+            /** Format: int64 */
+            version: number;
+            /** Format: date-time */
+            publishedAt: string;
+        };
+        SiteSettingsWriteFields: {
+            locales: components["schemas"]["SiteLocaleSettings"][] & (unknown & unknown & unknown & unknown & unknown);
+            links: components["schemas"]["SiteExternalLinks"];
+        };
+        SiteSettingsWriteInput: components["schemas"]["SiteSettingsWriteFields"];
+        SiteSettings: components["schemas"]["SiteSettingsWriteFields"] & {
+            /** @constant */
+            id: "default";
+            /** @enum {string} */
+            status: "draft" | "published" | "unpublished";
+            /** Format: int64 */
+            version: number;
+            createdBy: string;
+            updatedBy: string;
+            publishedBy?: string;
+            /** Format: date-time */
+            publishedAt?: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        SiteSettingsRevision: {
+            /** Format: int64 */
+            revision: number;
+            /** @enum {string} */
+            revisionType: "draft_saved" | "published" | "unpublished" | "seeded" | "restored_to_draft";
+            snapshot: components["schemas"]["SiteSettings"];
+            createdBy: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
         BulletinIssueEnvelope: {
             data: components["schemas"]["BulletinIssue"];
             meta: {
@@ -1475,6 +1712,27 @@ export interface components {
                 [key: string]: unknown;
             };
             error?: null;
+        };
+        SiteLayoutEnvelope: {
+            data: components["schemas"]["SiteLayout"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        SiteSettingsEnvelope: {
+            data: components["schemas"]["SiteSettings"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        SiteSettingsRevisionListEnvelope: {
+            data: components["schemas"]["SiteSettingsRevision"][];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
         };
         HomeEnvelope: {
             data: {
@@ -1656,6 +1914,35 @@ export interface components {
             };
             content: {
                 "application/json": components["schemas"]["PublicLocationListEnvelope"];
+            };
+        };
+        /** @description Published Site Layout for the exact requested locale. */
+        SiteLayout: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["SiteLayoutEnvelope"];
+            };
+        };
+        /** @description Site Settings aggregate. */
+        SiteSettings: {
+            headers: {
+                ETag?: string;
+                "Cache-Control"?: "private, no-store";
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["SiteSettingsEnvelope"];
+            };
+        };
+        /** @description Site Settings revision list. */
+        SiteSettingsRevisionList: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["SiteSettingsRevisionListEnvelope"];
             };
         };
         /** @description Review-only generated translation preview; no CMS state is changed. */
@@ -2365,6 +2652,22 @@ export interface operations {
             400: components["responses"]["Error"];
         };
     };
+    getPublicSiteLayout: {
+        parameters: {
+            query?: {
+                locale?: components["parameters"]["ContentLocale"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["SiteLayout"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
     getPublicHome: {
         parameters: {
             query?: {
@@ -2385,6 +2688,119 @@ export interface operations {
                     "application/json": components["schemas"]["HomeEnvelope"];
                 };
             };
+        };
+    };
+    getSiteSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["SiteSettings"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+        };
+    };
+    saveSiteSettings: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SiteSettingsWriteInput"];
+            };
+        };
+        responses: {
+            200: components["responses"]["SiteSettings"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+        };
+    };
+    publishSiteSettings: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["SiteSettings"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+        };
+    };
+    unpublishSiteSettings: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["SiteSettings"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+        };
+    };
+    listSiteSettingsRevisions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["SiteSettingsRevisionList"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+        };
+    };
+    restoreSiteSettingsRevision: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                revision: components["parameters"]["Revision"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["SiteSettings"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            428: components["responses"]["Error"];
         };
     };
     listAdminBulletins: {

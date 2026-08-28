@@ -29,6 +29,10 @@ export type LocationWriteInput = {
 }
 export type ContentRevision = components['schemas']['ContentRevision']
 export type PublicContentItem = components['schemas']['PublicContentItem']
+export type SiteLayout = components['schemas']['SiteLayout']
+export type SiteSettingsWriteInput = components['schemas']['SiteSettingsWriteInput']
+export type SiteSettings = components['schemas']['SiteSettings']
+export type SiteSettingsRevision = components['schemas']['SiteSettingsRevision']
 export type AssetStatus = components['schemas']['AssetStatus']
 export type CreateImageUploadInput = components['schemas']['CreateImageUploadInput']
 export type CompleteImageUploadInput = components['schemas']['CompleteImageUploadInput']
@@ -279,6 +283,35 @@ export function createHhcWebClient(options: {
     listPublicContentPage,
     async listLocations(locale: ContentLocale, signal?: AbortSignal) {
       return (await unwrap(client.GET('/locations', { params: { query: { locale } }, signal }))).data
+    },
+    async getSiteLayout(locale: ContentLocale, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/site-layout', { params: { query: { locale } }, signal }))).data
+    },
+    async getSiteSettings(signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/site-settings', { signal }))).data
+    },
+    async saveSiteSettings(version: number, input: SiteSettingsWriteInput) {
+      return (await unwrap(client.PUT('/admin/site-settings', {
+        params: { header: { 'If-Match': `"${version}"` } }, body: input,
+      }))).data
+    },
+    async publishSiteSettings(version: number) {
+      return (await unwrap(client.POST('/admin/site-settings/publish', {
+        params: { header: { 'If-Match': `"${version}"` } },
+      }))).data
+    },
+    async unpublishSiteSettings(version: number) {
+      return (await unwrap(client.POST('/admin/site-settings/unpublish', {
+        params: { header: { 'If-Match': `"${version}"` } },
+      }))).data
+    },
+    async listSiteSettingsRevisions(signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/site-settings/revisions', { signal }))).data
+    },
+    async restoreSiteSettingsRevision(revision: number, version: number) {
+      return (await unwrap(client.POST('/admin/site-settings/revisions/{revision}/restore', {
+        params: { path: { revision }, header: { 'If-Match': `"${version}"` } },
+      }))).data
     },
     async getHome(locale: ContentLocale, signal?: AbortSignal) {
       return (await unwrap(client.GET('/home', { params: { query: { locale } }, signal }))).data
