@@ -394,6 +394,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/pages/{pageKey}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get one published fixed editorial page in an exact locale
+         * @description Resolves only the four fixed page keys and never applies locale fallback.
+         */
+        get: operations["getPublicPage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/site-layout": {
         parameters: {
             query?: never;
@@ -1119,7 +1139,11 @@ export interface components {
         /** @enum {string} */
         BulletinVersionStatus: "draft" | "publishing" | "published" | "unpublishing" | "unpublish_failed" | "unpublished";
         /** @enum {string} */
-        ContentModule: "news" | "history" | "videos" | "locations";
+        ContentModule: "news" | "history" | "videos" | "locations" | "pages";
+        /** @enum {string} */
+        CreatableContentModule: "news" | "history" | "videos" | "locations";
+        /** @enum {string} */
+        TranslatableContentModule: "news" | "history" | "videos";
         /** @enum {string} */
         ContentStatus: "draft" | "publishing" | "published" | "publish_failed" | "unpublishing" | "unpublish_failed" | "unpublished";
         PageMeta: {
@@ -1305,13 +1329,122 @@ export interface components {
              */
             notifySubscribers: boolean;
         };
+        HomePageContentV1: {
+            /** @constant */
+            schemaVersion: 1;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            template: "home.v1";
+            data: {
+                heroTitle: string;
+                heroSubtitle: string;
+                newsTitle: string;
+                moreNews: string;
+                weeklyTitle: string;
+                downloadWeekly: string;
+                videosTitle: string;
+                videosSubtitle: string;
+                watchMore: string;
+                aboutTitle: string;
+                aboutBody: string;
+                aboutCta: string;
+                locationsTitle: string;
+                mapLink: string;
+            };
+        };
+        AboutVisionTextSection: {
+            eyebrow: string;
+            title: string;
+            body: string;
+        };
+        AboutVisionCardSection: {
+            eyebrow: string;
+            title: string;
+            cards: {
+                title: string;
+                body: string;
+            }[];
+        };
+        AboutPageContentV1: {
+            /** @constant */
+            schemaVersion: 1;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            template: "about.v1";
+            data: {
+                heroTitle: string;
+                heroSubtitle: string;
+                vision: {
+                    intro: string;
+                    imageAlt: string;
+                    actionsImageAlt: string;
+                    sections: [
+                        components["schemas"]["AboutVisionTextSection"],
+                        components["schemas"]["AboutVisionTextSection"],
+                        components["schemas"]["AboutVisionCardSection"],
+                        components["schemas"]["AboutVisionCardSection"]
+                    ];
+                };
+                history: {
+                    scripture: {
+                        lines: string[];
+                        cite: string;
+                    }[];
+                    imageAlt: string;
+                    intro: string;
+                    title: string;
+                };
+            };
+        };
+        LegalPageContentV1: {
+            /** @constant */
+            schemaVersion: 1;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            template: "legal.v1";
+            data: {
+                heroTitle: string;
+                heroSubtitle?: string;
+                updatedAtLabel: string;
+                updatedAt: string;
+                intro: string;
+                sections: {
+                    title: string;
+                    body: string[];
+                }[];
+            };
+        };
+        PageContent: components["schemas"]["HomePageContentV1"] | components["schemas"]["AboutPageContentV1"] | components["schemas"]["LegalPageContentV1"];
+        PublicEditorialPage: {
+            /** @enum {string} */
+            pageKey: "home" | "about" | "privacy-policy" | "terms-of-use";
+            /** @enum {string} */
+            template: "home.v1" | "about.v1" | "legal.v1";
+            /** @enum {string} */
+            routePath: "/" | "/about" | "/privacy-policy" | "/terms-of-use";
+            indexable: boolean;
+            content: components["schemas"]["PageContent"];
+            resolvedLocale: components["schemas"]["ContentLocale"];
+            availableLocales: components["schemas"]["ContentLocale"][];
+            /** Format: int64 */
+            version: number;
+            /** Format: date-time */
+            publishedAt: string;
+        };
         ContentTranslation: {
             locale: components["schemas"]["ContentLocale"];
-            title: string;
+            title?: string;
             summary?: string;
             body?: string;
             dateLabel?: string;
             imageAlt?: string;
+            bodyJson?: components["schemas"]["PageContent"];
         };
         TranslationPreviewInput: {
             /** @constant */
@@ -1378,7 +1511,7 @@ export interface components {
             subtitle: string;
         };
         ContentWriteInput: components["schemas"]["ContentWriteFields"];
-        /** @description Location fields are optional wire fields for backward compatibility; locations requires them and other content modules reject them. */
+        /** @description Location and fixed-page fields are an optional backward-compatible wire superset; backend validation applies the selected module contract. */
         ContentWriteFields: {
             authorName?: string;
             slug?: string;
@@ -1399,6 +1532,13 @@ export interface components {
             /** Format: uri */
             mapHref?: string;
             sortOrder?: number;
+            /** @enum {string} */
+            pageKey?: "home" | "about" | "privacy-policy" | "terms-of-use";
+            /** @enum {string} */
+            pageTemplate?: "home.v1" | "about.v1" | "legal.v1";
+            /** @enum {string} */
+            routePath?: "/" | "/about" | "/privacy-policy" | "/terms-of-use";
+            indexable?: boolean;
             translations: components["schemas"]["ContentTranslation"][];
             /** @description Locales omitted from translations are preserved unless they are named here for explicit deletion. */
             deleteLocales?: components["schemas"]["ContentLocale"][];
@@ -1661,6 +1801,13 @@ export interface components {
             };
             error?: null;
         };
+        PublicEditorialPageEnvelope: {
+            data: components["schemas"]["PublicEditorialPage"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
         ContentTranslationPreviewEnvelope: {
             data: components["schemas"]["ContentTranslationPreview"];
             meta: {
@@ -1916,6 +2063,26 @@ export interface components {
                 "application/json": components["schemas"]["PublicLocationListEnvelope"];
             };
         };
+        /** @description Published fixed editorial page for the exact requested locale. */
+        PublicEditorialPage: {
+            headers: {
+                ETag?: string;
+                "Cache-Control"?: "public, max-age=30, must-revalidate";
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["PublicEditorialPageEnvelope"];
+            };
+        };
+        /** @description The fixed editorial page has not changed. */
+        PublicEditorialPageNotModified: {
+            headers: {
+                ETag?: string;
+                "Cache-Control"?: "public, max-age=30, must-revalidate";
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
         /** @description Published Site Layout for the exact requested locale. */
         SiteLayout: {
             headers: {
@@ -2081,6 +2248,9 @@ export interface components {
         /** @description Conditional validator; weak validators and comma-separated lists are accepted. */
         IfNoneMatch: string;
         ContentModule: components["schemas"]["ContentModule"];
+        CreatableContentModule: components["schemas"]["CreatableContentModule"];
+        TranslatableContentModule: components["schemas"]["TranslatableContentModule"];
+        PageKey: "home" | "about" | "privacy-policy" | "terms-of-use";
         ContentID: string;
         ContentTranslationTargetLocale: components["schemas"]["ContentTranslationTargetLocale"];
         BulletinTranslationTargetEdition: components["schemas"]["BulletinTranslationTargetEdition"];
@@ -2670,6 +2840,27 @@ export interface operations {
             400: components["responses"]["Error"];
         };
     };
+    getPublicPage: {
+        parameters: {
+            query?: {
+                locale?: components["parameters"]["ContentLocale"];
+            };
+            header?: {
+                /** @description Conditional validator; weak validators and comma-separated lists are accepted. */
+                "If-None-Match"?: components["parameters"]["IfNoneMatch"];
+            };
+            path: {
+                pageKey: components["parameters"]["PageKey"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["PublicEditorialPage"];
+            304: components["responses"]["PublicEditorialPageNotModified"];
+            404: components["responses"]["Error"];
+        };
+    };
     getPublicSiteLayout: {
         parameters: {
             query?: {
@@ -3252,7 +3443,7 @@ export interface operations {
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
             };
             path: {
-                module: components["parameters"]["ContentModule"];
+                module: components["parameters"]["CreatableContentModule"];
             };
             cookie?: never;
         };
@@ -3261,6 +3452,7 @@ export interface operations {
             201: components["responses"]["ContentItem"];
             401: components["responses"]["AdminUnauthorized"];
             403: components["responses"]["AdminForbidden"];
+            405: components["responses"]["Error"];
             409: components["responses"]["Error"];
         };
     };
@@ -3334,6 +3526,7 @@ export interface operations {
             };
             401: components["responses"]["AdminUnauthorized"];
             403: components["responses"]["AdminForbidden"];
+            405: components["responses"]["Error"];
             409: components["responses"]["Error"];
             412: components["responses"]["Error"];
         };
@@ -3345,7 +3538,7 @@ export interface operations {
                 "If-Match": components["parameters"]["IfMatch"];
             };
             path: {
-                module: components["parameters"]["ContentModule"];
+                module: components["parameters"]["TranslatableContentModule"];
                 contentId: components["parameters"]["ContentID"];
                 targetLocale: components["parameters"]["ContentTranslationTargetLocale"];
             };

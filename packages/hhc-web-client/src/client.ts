@@ -18,6 +18,7 @@ export type UploadTarget = components['schemas']['UploadTarget']
 export type CreatedBulletinUpload = components['schemas']['CreatedUpload']
 export type CompleteBulletinUploadInput = components['schemas']['CompleteBulletinUploadInput']
 export type ContentModule = components['schemas']['ContentModule']
+export type CreatableContentModule = components['schemas']['CreatableContentModule']
 export type ContentStatus = components['schemas']['ContentStatus']
 export type ContentItem = components['schemas']['ContentItem']
 export type ContentWriteInput = components['schemas']['ContentWriteInput']
@@ -29,6 +30,22 @@ export type LocationWriteInput = {
 }
 export type ContentRevision = components['schemas']['ContentRevision']
 export type PublicContentItem = components['schemas']['PublicContentItem']
+export type PageKey = components['parameters']['PageKey']
+export type PageContent = components['schemas']['PageContent']
+export type PublicEditorialPage = components['schemas']['PublicEditorialPage']
+type FixedPageWriteInput<PageKey, PageTemplate, RoutePath, BodyJson> = {
+  pageKey: PageKey
+  pageTemplate: PageTemplate
+  routePath: RoutePath
+  indexable: boolean
+  translations: { locale: ContentLocale; bodyJson: BodyJson }[]
+  deleteLocales?: ContentLocale[]
+}
+export type PageWriteInput =
+  | FixedPageWriteInput<'home', 'home.v1', '/', components['schemas']['HomePageContentV1']>
+  | FixedPageWriteInput<'about', 'about.v1', '/about', components['schemas']['AboutPageContentV1']>
+  | FixedPageWriteInput<'privacy-policy', 'legal.v1', '/privacy-policy', components['schemas']['LegalPageContentV1']>
+  | FixedPageWriteInput<'terms-of-use', 'legal.v1', '/terms-of-use', components['schemas']['LegalPageContentV1']>
 export type SiteLayout = components['schemas']['SiteLayout']
 export type SiteSettingsWriteInput = components['schemas']['SiteSettingsWriteInput']
 export type SiteSettings = components['schemas']['SiteSettings']
@@ -76,7 +93,7 @@ export function createHhcWebClient(options: {
   }
 
   async function listPublicContentPage(
-    module: Exclude<ContentModule, 'locations'>,
+    module: Exclude<ContentModule, 'locations' | 'pages'>,
     locale: ContentLocale,
     params: { page?: number; pageSize?: number; signal?: AbortSignal } = {},
   ) {
@@ -92,7 +109,7 @@ export function createHhcWebClient(options: {
     return { data: envelope.data, meta: envelope.meta }
   }
 
-  async function createAdminContent(module: ContentModule, input: ContentWriteInput, idempotencyKey: string) {
+  async function createAdminContent(module: CreatableContentModule, input: ContentWriteInput, idempotencyKey: string) {
     return (await unwrap(client.POST('/admin/content/{module}', {
       params: { path: { module }, header: { 'Idempotency-Key': idempotencyKey } }, body: input,
     }))).data
@@ -223,7 +240,7 @@ export function createHhcWebClient(options: {
     async getContent(module: ContentModule, contentId: string, signal?: AbortSignal) {
       return (await unwrap(client.GET('/admin/content/{module}/{contentId}', { params: { path: { module, contentId } }, signal }))).data
     },
-    async createContent(module: ContentModule, input: ContentWriteInput, idempotencyKey: string) {
+    async createContent(module: CreatableContentModule, input: ContentWriteInput, idempotencyKey: string) {
       return createAdminContent(module, input, idempotencyKey)
     },
     async updateContent(module: ContentModule, contentId: string, version: number, input: ContentWriteInput) {
@@ -235,6 +252,9 @@ export function createHhcWebClient(options: {
     async updateLocation(contentId: string, version: number, input: LocationWriteInput) {
       return updateAdminContent('locations', contentId, version, input as ContentWriteInput)
     },
+    async updatePage(contentId: string, version: number, input: PageWriteInput) {
+      return updateAdminContent('pages', contentId, version, input as ContentWriteInput)
+    },
     async publishContent(module: ContentModule, contentId: string, version: number) {
       return (await unwrap(client.POST('/admin/content/{module}/{contentId}/publish', {
         params: { path: { module, contentId }, header: { 'If-Match': `"${version}"` } },
@@ -245,7 +265,7 @@ export function createHhcWebClient(options: {
         params: { path: { module, contentId }, header: { 'If-Match': `"${version}"` } },
       }))).data
     },
-    async deleteContent(module: ContentModule, contentId: string, version: number) {
+    async deleteContent(module: Exclude<ContentModule, 'pages'>, contentId: string, version: number) {
       const result = await client.DELETE('/admin/content/{module}/{contentId}', {
         params: { path: { module, contentId }, header: { 'If-Match': `"${version}"` } },
       })
@@ -277,12 +297,15 @@ export function createHhcWebClient(options: {
     async retryNewsCoverScan(contentId: string, assetId: string) {
       return (await unwrap(client.POST('/admin/content/news/{contentId}/assets/{assetId}/scan/retry', { params: { path: { contentId, assetId } } }))).data
     },
-    async listPublicContent(module: Exclude<ContentModule, 'locations'>, locale: ContentLocale, signal?: AbortSignal) {
+    async listPublicContent(module: Exclude<ContentModule, 'locations' | 'pages'>, locale: ContentLocale, signal?: AbortSignal) {
       return (await listPublicContentPage(module, locale, { signal })).data
     },
     listPublicContentPage,
     async listLocations(locale: ContentLocale, signal?: AbortSignal) {
       return (await unwrap(client.GET('/locations', { params: { query: { locale } }, signal }))).data
+    },
+    async getPublicPage(pageKey: PageKey, locale: ContentLocale, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/pages/{pageKey}', { params: { path: { pageKey }, query: { locale } }, signal }))).data
     },
     async getSiteLayout(locale: ContentLocale, signal?: AbortSignal) {
       return (await unwrap(client.GET('/site-layout', { params: { query: { locale } }, signal }))).data
