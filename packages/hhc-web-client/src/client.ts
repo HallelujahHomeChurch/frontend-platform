@@ -21,6 +21,12 @@ export type ContentModule = components['schemas']['ContentModule']
 export type ContentStatus = components['schemas']['ContentStatus']
 export type ContentItem = components['schemas']['ContentItem']
 export type ContentWriteInput = components['schemas']['ContentWriteInput']
+export type LocationWriteInput = {
+  locationKey: string
+  mapHref: string
+  sortOrder: number
+  translations: { locale: ContentLocale; title: string; body: string }[]
+}
 export type ContentRevision = components['schemas']['ContentRevision']
 export type PublicContentItem = components['schemas']['PublicContentItem']
 export type AssetStatus = components['schemas']['AssetStatus']
@@ -66,7 +72,7 @@ export function createHhcWebClient(options: {
   }
 
   async function listPublicContentPage(
-    module: ContentModule,
+    module: Exclude<ContentModule, 'locations'>,
     locale: ContentLocale,
     params: { page?: number; pageSize?: number; signal?: AbortSignal } = {},
   ) {
@@ -75,9 +81,23 @@ export function createHhcWebClient(options: {
       ? client.GET('/news', { params: { query }, signal: params.signal })
       : module === 'history'
         ? client.GET('/history', { params: { query }, signal: params.signal })
-        : client.GET('/videos', { params: { query }, signal: params.signal })
+        : module === 'videos'
+          ? client.GET('/videos', { params: { query }, signal: params.signal })
+          : Promise.reject(new Error('Use listLocations for locations.'))
     const envelope = await unwrap(result)
     return { data: envelope.data, meta: envelope.meta }
+  }
+
+  async function createAdminContent(module: ContentModule, input: ContentWriteInput, idempotencyKey: string) {
+    return (await unwrap(client.POST('/admin/content/{module}', {
+      params: { path: { module }, header: { 'Idempotency-Key': idempotencyKey } }, body: input,
+    }))).data
+  }
+
+  async function updateAdminContent(module: ContentModule, contentId: string, version: number, input: ContentWriteInput) {
+    return (await unwrap(client.PUT('/admin/content/{module}/{contentId}', {
+      params: { path: { module, contentId }, header: { 'If-Match': `"${version}"` } }, body: input,
+    }))).data
   }
 
   return {
@@ -200,14 +220,16 @@ export function createHhcWebClient(options: {
       return (await unwrap(client.GET('/admin/content/{module}/{contentId}', { params: { path: { module, contentId } }, signal }))).data
     },
     async createContent(module: ContentModule, input: ContentWriteInput, idempotencyKey: string) {
-      return (await unwrap(client.POST('/admin/content/{module}', {
-        params: { path: { module }, header: { 'Idempotency-Key': idempotencyKey } }, body: input,
-      }))).data
+      return createAdminContent(module, input, idempotencyKey)
     },
     async updateContent(module: ContentModule, contentId: string, version: number, input: ContentWriteInput) {
-      return (await unwrap(client.PUT('/admin/content/{module}/{contentId}', {
-        params: { path: { module, contentId }, header: { 'If-Match': `"${version}"` } }, body: input,
-      }))).data
+      return updateAdminContent(module, contentId, version, input)
+    },
+    async createLocation(input: LocationWriteInput, idempotencyKey: string) {
+      return createAdminContent('locations', input as ContentWriteInput, idempotencyKey)
+    },
+    async updateLocation(contentId: string, version: number, input: LocationWriteInput) {
+      return updateAdminContent('locations', contentId, version, input as ContentWriteInput)
     },
     async publishContent(module: ContentModule, contentId: string, version: number) {
       return (await unwrap(client.POST('/admin/content/{module}/{contentId}/publish', {
@@ -251,10 +273,13 @@ export function createHhcWebClient(options: {
     async retryNewsCoverScan(contentId: string, assetId: string) {
       return (await unwrap(client.POST('/admin/content/news/{contentId}/assets/{assetId}/scan/retry', { params: { path: { contentId, assetId } } }))).data
     },
-    async listPublicContent(module: ContentModule, locale: ContentLocale, signal?: AbortSignal) {
+    async listPublicContent(module: Exclude<ContentModule, 'locations'>, locale: ContentLocale, signal?: AbortSignal) {
       return (await listPublicContentPage(module, locale, { signal })).data
     },
     listPublicContentPage,
+    async listLocations(locale: ContentLocale, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/locations', { params: { query: { locale } }, signal }))).data
+    },
     async getHome(locale: ContentLocale, signal?: AbortSignal) {
       return (await unwrap(client.GET('/home', { params: { query: { locale } }, signal }))).data
     },

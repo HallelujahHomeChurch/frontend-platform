@@ -4,6 +4,74 @@
  */
 
 export interface paths {
+    "/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get health */
+        get: operations["getHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/health/live": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get liveness */
+        get: operations["getLiveness"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ready": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get readiness */
+        get: operations["getReadiness"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/health/ready": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get health readiness */
+        get: operations["getHealthReadiness"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/campaigns": {
         parameters: {
             query?: never;
@@ -11,8 +79,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** List campaigns */
         get: operations["listCampaigns"];
         put?: never;
+        /** Create campaign */
         post: operations["createCampaign"];
         delete?: never;
         options?: never;
@@ -29,9 +99,12 @@ export interface paths {
             };
             cookie?: never;
         };
+        /** Get campaign */
         get: operations["getCampaign"];
+        /** Update campaign */
         put: operations["updateCampaign"];
         post?: never;
+        /** Delete campaign */
         delete: operations["deleteCampaign"];
         options?: never;
         head?: never;
@@ -47,6 +120,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Send campaign */
         post: operations["sendCampaign"];
         delete?: never;
         options?: never;
@@ -63,6 +137,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Preview campaign translation */
         post: operations["previewCampaignTranslation"];
         delete?: never;
         options?: never;
@@ -77,6 +152,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** List campaign deliveries */
         get: operations["listCampaignDeliveries"];
         put?: never;
         post?: never;
@@ -95,6 +171,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Retry failed campaign deliveries */
         post: operations["retryFailedCampaignDeliveries"];
         delete?: never;
         options?: never;
@@ -109,8 +186,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** List campaign schedules */
         get: operations["listCampaignSchedules"];
         put?: never;
+        /** Create campaign schedule */
         post: operations["createCampaignSchedule"];
         delete?: never;
         options?: never;
@@ -127,10 +206,15 @@ export interface paths {
             };
             cookie?: never;
         };
+        /** Get campaign schedule */
         get: operations["getCampaignSchedule"];
-        /** @description Enabling a schedule additionally requires campaigns:send; legacy cms:write remains accepted during role migration. */
+        /**
+         * Update campaign schedule
+         * @description Enabling a schedule additionally requires campaigns:send; legacy cms:write remains accepted during role migration.
+         */
         put: operations["updateCampaignSchedule"];
         post?: never;
+        /** Delete campaign schedule */
         delete: operations["deleteCampaignSchedule"];
         options?: never;
         head?: never;
@@ -146,6 +230,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Preview campaign schedule translation */
         post: operations["previewCampaignScheduleTranslation"];
         delete?: never;
         options?: never;
@@ -160,6 +245,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** List public bulletins */
         get: operations["listPublicBulletins"];
         put?: never;
         post?: never;
@@ -176,6 +262,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Get latest public bulletin */
         get: operations["getLatestPublicBulletin"];
         put?: never;
         post?: never;
@@ -192,6 +279,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Get public bulletin by number */
         get: operations["getPublicBulletinByNumber"];
         put?: never;
         post?: never;
@@ -208,6 +296,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Get public bulletin by date */
         get: operations["getPublicBulletinByDate"];
         put?: never;
         post?: never;
@@ -224,6 +313,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** List public news */
         get: operations["listPublicNews"];
         put?: never;
         post?: never;
@@ -240,6 +330,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Get public news */
         get: operations["getPublicNews"];
         put?: never;
         post?: never;
@@ -256,6 +347,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** List public history */
         get: operations["listPublicHistory"];
         put?: never;
         post?: never;
@@ -272,7 +364,28 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** List public videos */
         get: operations["listPublicVideos"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/locations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List published locations for one locale
+         * @description Reads only the requested published locale; no locale fallback is applied.
+         */
+        get: operations["listPublicLocations"];
         put?: never;
         post?: never;
         delete?: never;
@@ -288,6 +401,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Get public home */
         get: operations["getPublicHome"];
         put?: never;
         post?: never;
@@ -304,8 +418,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** List admin bulletins */
         get: operations["listAdminBulletins"];
         put?: never;
+        /** Create bulletin issue */
         post: operations["createBulletinIssue"];
         delete?: never;
         options?: never;
@@ -320,9 +436,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Get admin bulletin */
         get: operations["getAdminBulletin"];
+        /** Update bulletin issue */
         put: operations["updateBulletinIssue"];
         post?: never;
+        /** Delete bulletin */
         delete: operations["deleteBulletin"];
         options?: never;
         head?: never;
@@ -338,6 +457,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Create bulletin upload session */
         post: operations["createBulletinUploadSession"];
         delete?: never;
         options?: never;
@@ -353,8 +473,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
+        /** Update bulletin version */
         put: operations["updateBulletinVersion"];
         post?: never;
+        /** Delete bulletin version */
         delete: operations["deleteBulletinVersion"];
         options?: never;
         head?: never;
@@ -368,6 +490,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Get bulletin asset status */
         get: operations["getBulletinAssetStatus"];
         put?: never;
         post?: never;
@@ -386,6 +509,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Retry bulletin asset scan */
         post: operations["retryBulletinAssetScan"];
         delete?: never;
         options?: never;
@@ -402,6 +526,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Complete bulletin upload */
         post: operations["completeBulletinUpload"];
         delete?: never;
         options?: never;
@@ -418,6 +543,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Publish bulletin */
         post: operations["publishBulletin"];
         delete?: never;
         options?: never;
@@ -434,6 +560,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Unpublish bulletin */
         post: operations["unpublishBulletin"];
         delete?: never;
         options?: never;
@@ -448,6 +575,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** List bulletin revisions */
         get: operations["listBulletinRevisions"];
         put?: never;
         post?: never;
@@ -466,6 +594,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Restore bulletin revision */
         post: operations["restoreBulletinRevision"];
         delete?: never;
         options?: never;
@@ -482,6 +611,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Preview bulletin translation */
         post: operations["previewBulletinTranslation"];
         delete?: never;
         options?: never;
@@ -496,8 +626,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** List admin content */
         get: operations["listAdminContent"];
         put?: never;
+        /** Create content */
         post: operations["createContent"];
         delete?: never;
         options?: never;
@@ -512,9 +644,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Get admin content */
         get: operations["getAdminContent"];
+        /** Update content */
         put: operations["updateContent"];
         post?: never;
+        /** Delete content */
         delete: operations["deleteContent"];
         options?: never;
         head?: never;
@@ -530,6 +665,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Preview content translation */
         post: operations["previewContentTranslation"];
         delete?: never;
         options?: never;
@@ -546,6 +682,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Publish content */
         post: operations["publishContent"];
         delete?: never;
         options?: never;
@@ -562,6 +699,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Unpublish content */
         post: operations["unpublishContent"];
         delete?: never;
         options?: never;
@@ -576,6 +714,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** List content revisions */
         get: operations["listContentRevisions"];
         put?: never;
         post?: never;
@@ -594,6 +733,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Restore content revision */
         post: operations["restoreContentRevision"];
         delete?: never;
         options?: never;
@@ -610,6 +750,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Create news cover upload */
         post: operations["createNewsCoverUpload"];
         delete?: never;
         options?: never;
@@ -624,6 +765,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Get news cover status */
         get: operations["getNewsCoverStatus"];
         put?: never;
         post?: never;
@@ -642,6 +784,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Retry news cover scan */
         post: operations["retryNewsCoverScan"];
         delete?: never;
         options?: never;
@@ -658,6 +801,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Complete news cover upload */
         post: operations["completeNewsCoverUpload"];
         delete?: never;
         options?: never;
@@ -679,6 +823,128 @@ export interface components {
             clickBehavior?: "home" | "url" | "dismiss";
             actionUrl?: string;
         };
+        /** @enum {string} */
+        CampaignStatus: "draft" | "queued" | "sending" | "completed" | "completed_with_failures" | "failed";
+        CampaignDeliverySummary: {
+            total: number;
+            pending: number;
+            processing: number;
+            submitted: number;
+            sent: number;
+            failed: number;
+            suppressed: number;
+        };
+        Campaign: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @enum {string} */
+            audienceType: "newsletter" | "all" | "role" | "users";
+            /** @enum {string} */
+            channel: "email" | "web_push";
+            /** Format: uuid */
+            roleId?: string;
+            userIds?: string[];
+            translations: {
+                [key: string]: components["schemas"]["CampaignTranslation"];
+            };
+            status: components["schemas"]["CampaignStatus"];
+            recipientCount: number;
+            createdBy: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: date-time */
+            queuedAt: string | null;
+            deliverySummary: components["schemas"]["CampaignDeliverySummary"];
+            /** Format: int64 */
+            version: number;
+        };
+        CampaignPage: {
+            items: components["schemas"]["Campaign"][];
+            page: number;
+            perPage: number;
+            total: number;
+        };
+        CampaignDelivery: {
+            recipientId: string;
+            /** Format: uuid */
+            userId?: string;
+            /** @enum {string} */
+            channel: "email" | "web_push";
+            locale: string;
+            /** @enum {string} */
+            status: "pending" | "processing" | "submitted" | "sent" | "failed" | "suppressed";
+            attemptCount: number;
+            failureCode?: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        CampaignDeliveryPage: {
+            items: components["schemas"]["CampaignDelivery"][];
+            page: number;
+            perPage: number;
+            total: number;
+            summary: components["schemas"]["CampaignDeliverySummary"];
+            campaignStatus: components["schemas"]["CampaignStatus"];
+        };
+        CampaignSchedule: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @enum {string} */
+            channel: "email" | "web_push";
+            /** @enum {string} */
+            audienceType: "newsletter" | "all" | "role" | "users";
+            /** Format: uuid */
+            roleId?: string;
+            userIds?: string[];
+            /** @enum {string} */
+            scheduleType: "once" | "cron";
+            /** Format: date-time */
+            runAt: string | null;
+            cronExpression: string;
+            timezone: string;
+            translations: {
+                [key: string]: components["schemas"]["CampaignTranslation"];
+            };
+            enabled: boolean;
+            /** Format: date-time */
+            nextRunAt: string | null;
+            /** Format: date-time */
+            lastRunAt: string | null;
+            createdBy: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: int64 */
+            version: number;
+        };
+        CampaignEnvelope: {
+            data: components["schemas"]["Campaign"];
+        };
+        CampaignPageEnvelope: {
+            data: components["schemas"]["CampaignPage"];
+        };
+        CampaignDeliveryPageEnvelope: {
+            data: components["schemas"]["CampaignDeliveryPage"];
+        };
+        CampaignScheduleEnvelope: {
+            data: components["schemas"]["CampaignSchedule"];
+        };
+        CampaignScheduleListEnvelope: {
+            data: components["schemas"]["CampaignSchedule"][];
+        };
+        EngagementErrorBody: {
+            /** @enum {string} */
+            code: "ENG_INVALID_REQUEST" | "ENG_REQUEST_INVALID" | "ENG_CAMPAIGN_NOT_FOUND" | "ENG_IDEMPOTENCY_CONFLICT" | "ENG_CAMPAIGN_STATE_CONFLICT" | "ENG_INTERNAL" | "ENG_NOT_READY" | "ENG_UNAUTHORIZED" | "ENG_FORBIDDEN";
+        };
+        EngagementErrorEnvelope: {
+            error: components["schemas"]["EngagementErrorBody"];
+        };
+        EngagementUnavailableEnvelope: components["schemas"]["ErrorEnvelope"] | components["schemas"]["EngagementErrorEnvelope"];
         CreateCampaign: {
             name: string;
             /** @enum {string} */
@@ -705,7 +971,8 @@ export interface components {
                 [key: string]: components["schemas"]["CampaignTranslation"];
             };
         };
-        CreateCampaignSchedule: {
+        CreateCampaignSchedule: components["schemas"]["CampaignScheduleFields"];
+        CampaignScheduleFields: {
             name: string;
             /** @enum {string} */
             channel: "email" | "web_push";
@@ -725,7 +992,7 @@ export interface components {
                 [key: string]: components["schemas"]["CampaignTranslation"];
             };
         };
-        UpdateCampaignSchedule: components["schemas"]["CreateCampaignSchedule"] & {
+        UpdateCampaignSchedule: components["schemas"]["CampaignScheduleFields"] & {
             enabled: boolean;
         };
         /**
@@ -749,7 +1016,7 @@ export interface components {
         /** @enum {string} */
         BulletinVersionStatus: "draft" | "publishing" | "published" | "unpublishing" | "unpublish_failed" | "unpublished";
         /** @enum {string} */
-        ContentModule: "news" | "history" | "videos";
+        ContentModule: "news" | "history" | "videos" | "locations";
         /** @enum {string} */
         ContentStatus: "draft" | "publishing" | "published" | "publish_failed" | "unpublishing" | "unpublish_failed" | "unpublished";
         PageMeta: {
@@ -1007,7 +1274,9 @@ export interface components {
             title: string;
             subtitle: string;
         };
-        ContentWriteInput: {
+        ContentWriteInput: components["schemas"]["ContentWriteFields"];
+        /** @description Location fields are optional wire fields for backward compatibility; locations requires them and other content modules reject them. */
+        ContentWriteFields: {
             authorName?: string;
             slug?: string;
             /** Format: date */
@@ -1023,11 +1292,15 @@ export interface components {
             detailLayout: "top" | "left" | "right";
             featured?: boolean;
             homeEligible?: boolean;
+            locationKey?: string;
+            /** Format: uri */
+            mapHref?: string;
+            sortOrder?: number;
             translations: components["schemas"]["ContentTranslation"][];
             /** @description Locales omitted from translations are preserved unless they are named here for explicit deletion. */
             deleteLocales?: components["schemas"]["ContentLocale"][];
         };
-        ContentItem: components["schemas"]["ContentWriteInput"] & {
+        ContentItem: components["schemas"]["ContentWriteFields"] & {
             /** Format: uuid */
             id: string;
             module: components["schemas"]["ContentModule"];
@@ -1081,6 +1354,16 @@ export interface components {
             firstPublishedAt?: string;
             /** Format: date-time */
             lastPublishedAt?: string;
+        };
+        PublicLocation: {
+            id: string;
+            name: string;
+            address: string;
+            /** Format: uri */
+            mapHref: string;
+            sortOrder: number;
+            resolvedLocale: components["schemas"]["ContentLocale"];
+            availableLocales: components["schemas"]["ContentLocale"][];
         };
         BulletinIssueEnvelope: {
             data: components["schemas"]["BulletinIssue"];
@@ -1186,6 +1469,13 @@ export interface components {
             };
             error?: null;
         };
+        PublicLocationListEnvelope: {
+            data: components["schemas"]["PublicLocation"][];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
+        };
         HomeEnvelope: {
             data: {
                 news: components["schemas"]["PublicContentItem"][];
@@ -1205,6 +1495,22 @@ export interface components {
         };
     };
     responses: {
+        /** @description Service process is healthy or ready. */
+        Health: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    data: {
+                        /** @enum {string} */
+                        status: "healthy" | "ready";
+                    };
+                    meta: Record<string, never>;
+                    error: null;
+                };
+            };
+        };
         /** @description Bulletin issue */
         BulletinIssue: {
             headers: {
@@ -1231,6 +1537,87 @@ export interface components {
             };
             content: {
                 "application/json": components["schemas"]["ErrorEnvelope"];
+            };
+        };
+        /** @description Trusted gateway identity is missing or invalid. */
+        AdminUnauthorized: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorEnvelope"];
+            };
+        };
+        /** @description The trusted Account identity lacks a required scope. */
+        AdminForbidden: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorEnvelope"];
+            };
+        };
+        /** @description Engagement-owned campaign response forwarded unchanged. */
+        Campaign: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["CampaignEnvelope"];
+            };
+        };
+        /** @description Engagement-owned campaign page forwarded unchanged. */
+        CampaignPage: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["CampaignPageEnvelope"];
+            };
+        };
+        /** @description Engagement-owned campaign delivery page forwarded unchanged. */
+        CampaignDeliveryPage: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["CampaignDeliveryPageEnvelope"];
+            };
+        };
+        /** @description Engagement-owned campaign schedule forwarded unchanged. */
+        CampaignSchedule: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["CampaignScheduleEnvelope"];
+            };
+        };
+        /** @description Engagement-owned campaign schedule list forwarded unchanged. */
+        CampaignScheduleList: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["CampaignScheduleListEnvelope"];
+            };
+        };
+        /** @description Engagement API rejected or could not complete the proxied request. */
+        EngagementError: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["EngagementErrorEnvelope"];
+            };
+        };
+        /** @description Engagement API is unavailable locally or reports that it is not ready. */
+        EngagementUnavailable: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["EngagementUnavailableEnvelope"];
             };
         };
         /** @description Typed content item */
@@ -1260,6 +1647,15 @@ export interface components {
             };
             content: {
                 "application/json": components["schemas"]["PublicContentItemEnvelope"];
+            };
+        };
+        /** @description Published locations for the exact requested locale. */
+        PublicLocationList: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["PublicLocationListEnvelope"];
             };
         };
         /** @description Review-only generated translation preview; no CMS state is changed. */
@@ -1378,6 +1774,7 @@ export interface components {
         BulletinEdition: components["schemas"]["BulletinEdition"];
         Page: number;
         PageSize: number;
+        PerPage: number;
         /** @description Searches the internal campaign name and localized subject or body. */
         SearchQuery: string;
         IssueID: string;
@@ -1412,11 +1809,61 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getHealth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Health"];
+        };
+    };
+    getLiveness: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Health"];
+        };
+    };
+    getReadiness: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Health"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getHealthReadiness: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Health"];
+            503: components["responses"]["Error"];
+        };
+    };
     listCampaigns: {
         parameters: {
             query?: {
                 page?: components["parameters"]["Page"];
-                pageSize?: components["parameters"]["PageSize"];
+                perPage?: components["parameters"]["PerPage"];
                 /** @description Searches the internal campaign name and localized subject or body. */
                 q?: components["parameters"]["SearchQuery"];
             };
@@ -1426,13 +1873,12 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Campaign page */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+            200: components["responses"]["CampaignPage"];
+            400: components["responses"]["EngagementError"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            500: components["responses"]["EngagementError"];
+            503: components["responses"]["EngagementUnavailable"];
         };
     };
     createCampaign: {
@@ -1448,13 +1894,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Campaign draft created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+            201: components["responses"]["Campaign"];
+            400: components["responses"]["EngagementError"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["EngagementError"];
+            500: components["responses"]["EngagementError"];
+            503: components["responses"]["EngagementUnavailable"];
         };
     };
     getCampaign: {
@@ -1468,13 +1914,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Campaign detail */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+            200: components["responses"]["Campaign"];
+            400: components["responses"]["EngagementError"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["EngagementError"];
+            500: components["responses"]["EngagementError"];
+            503: components["responses"]["EngagementUnavailable"];
         };
     };
     updateCampaign: {
@@ -1492,13 +1938,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Campaign draft updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+            200: components["responses"]["Campaign"];
+            400: components["responses"]["EngagementError"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["EngagementError"];
+            500: components["responses"]["EngagementError"];
+            503: components["responses"]["EngagementUnavailable"];
         };
     };
     deleteCampaign: {
@@ -1519,6 +1965,12 @@ export interface operations {
                 };
                 content?: never;
             };
+            400: components["responses"]["EngagementError"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["EngagementError"];
+            500: components["responses"]["EngagementError"];
+            503: components["responses"]["EngagementUnavailable"];
         };
     };
     sendCampaign: {
@@ -1532,13 +1984,14 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Campaign audience snapshotted and queued */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+            200: components["responses"]["Campaign"];
+            400: components["responses"]["EngagementError"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["EngagementError"];
+            409: components["responses"]["EngagementError"];
+            500: components["responses"]["EngagementError"];
+            503: components["responses"]["EngagementUnavailable"];
         };
     };
     previewCampaignTranslation: {
@@ -1557,7 +2010,8 @@ export interface operations {
         responses: {
             200: components["responses"]["CampaignTranslationPreview"];
             400: components["responses"]["InvalidTranslationRequest"];
-            403: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
             404: components["responses"]["TranslationNotFound"];
             409: components["responses"]["TranslationExists"];
             412: components["responses"]["TranslationVersionMismatch"];
@@ -1573,7 +2027,7 @@ export interface operations {
         parameters: {
             query?: {
                 page?: components["parameters"]["Page"];
-                pageSize?: components["parameters"]["PageSize"];
+                perPage?: components["parameters"]["PerPage"];
             };
             header?: never;
             path: {
@@ -1583,13 +2037,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Campaign delivery results and summary */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+            200: components["responses"]["CampaignDeliveryPage"];
+            400: components["responses"]["EngagementError"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["EngagementError"];
+            500: components["responses"]["EngagementError"];
+            503: components["responses"]["EngagementUnavailable"];
         };
     };
     retryFailedCampaignDeliveries: {
@@ -1603,13 +2057,14 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Failed deliveries queued for retry */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+            200: components["responses"]["Campaign"];
+            400: components["responses"]["EngagementError"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["EngagementError"];
+            409: components["responses"]["EngagementError"];
+            500: components["responses"]["EngagementError"];
+            503: components["responses"]["EngagementUnavailable"];
         };
     };
     listCampaignSchedules: {
@@ -1621,13 +2076,11 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Campaign schedules */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+            200: components["responses"]["CampaignScheduleList"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            500: components["responses"]["EngagementError"];
+            503: components["responses"]["EngagementUnavailable"];
         };
     };
     createCampaignSchedule: {
@@ -1643,13 +2096,12 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Campaign schedule created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+            201: components["responses"]["CampaignSchedule"];
+            400: components["responses"]["EngagementError"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            500: components["responses"]["EngagementError"];
+            503: components["responses"]["EngagementUnavailable"];
         };
     };
     getCampaignSchedule: {
@@ -1663,13 +2115,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Campaign schedule detail */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+            200: components["responses"]["CampaignSchedule"];
+            400: components["responses"]["EngagementError"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["EngagementError"];
+            500: components["responses"]["EngagementError"];
+            503: components["responses"]["EngagementUnavailable"];
         };
     };
     updateCampaignSchedule: {
@@ -1687,13 +2139,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Campaign schedule updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+            200: components["responses"]["CampaignSchedule"];
+            400: components["responses"]["EngagementError"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["EngagementError"];
+            500: components["responses"]["EngagementError"];
+            503: components["responses"]["EngagementUnavailable"];
         };
     };
     deleteCampaignSchedule: {
@@ -1714,6 +2166,12 @@ export interface operations {
                 };
                 content?: never;
             };
+            400: components["responses"]["EngagementError"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["EngagementError"];
+            500: components["responses"]["EngagementError"];
+            503: components["responses"]["EngagementUnavailable"];
         };
     };
     previewCampaignScheduleTranslation: {
@@ -1732,7 +2190,8 @@ export interface operations {
         responses: {
             200: components["responses"]["CampaignTranslationPreview"];
             400: components["responses"]["InvalidTranslationRequest"];
-            403: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
             404: components["responses"]["TranslationNotFound"];
             409: components["responses"]["TranslationExists"];
             412: components["responses"]["TranslationVersionMismatch"];
@@ -1891,6 +2350,21 @@ export interface operations {
             200: components["responses"]["PublicContentList"];
         };
     };
+    listPublicLocations: {
+        parameters: {
+            query?: {
+                locale?: components["parameters"]["ContentLocale"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["PublicLocationList"];
+            400: components["responses"]["Error"];
+        };
+    };
     getPublicHome: {
         parameters: {
             query?: {
@@ -1936,6 +2410,8 @@ export interface operations {
                     "application/json": components["schemas"]["BulletinListEnvelope"];
                 };
             };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
         };
     };
     createBulletinIssue: {
@@ -1954,6 +2430,8 @@ export interface operations {
         };
         responses: {
             201: components["responses"]["BulletinIssue"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
             409: components["responses"]["Error"];
         };
     };
@@ -1969,6 +2447,8 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["BulletinIssue"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
             404: components["responses"]["Error"];
         };
     };
@@ -1990,6 +2470,8 @@ export interface operations {
         };
         responses: {
             200: components["responses"]["BulletinIssue"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
             409: components["responses"]["Error"];
             412: components["responses"]["Error"];
         };
@@ -2014,6 +2496,8 @@ export interface operations {
                 };
                 content?: never;
             };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
             409: components["responses"]["Error"];
             412: components["responses"]["Error"];
         };
@@ -2044,6 +2528,8 @@ export interface operations {
                     "application/json": components["schemas"]["CreatedUploadEnvelope"];
                 };
             };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
         };
     };
     updateBulletinVersion: {
@@ -2065,6 +2551,8 @@ export interface operations {
         };
         responses: {
             200: components["responses"]["BulletinIssue"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
             409: components["responses"]["Error"];
             412: components["responses"]["Error"];
         };
@@ -2084,6 +2572,8 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["BulletinIssue"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             412: components["responses"]["Error"];
@@ -2110,6 +2600,8 @@ export interface operations {
                     "application/json": components["schemas"]["AssetStatusEnvelope"];
                 };
             };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
             404: components["responses"]["Error"];
         };
     };
@@ -2134,6 +2626,8 @@ export interface operations {
                     "application/json": components["schemas"]["AssetStatusEnvelope"];
                 };
             };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
             409: components["responses"]["Error"];
         };
     };
@@ -2156,6 +2650,8 @@ export interface operations {
         };
         responses: {
             200: components["responses"]["BulletinIssue"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
             412: components["responses"]["Error"];
         };
     };
@@ -2181,6 +2677,8 @@ export interface operations {
                     "application/json": components["schemas"]["WorkflowEnvelope"];
                 };
             };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
             422: components["responses"]["Error"];
         };
     };
@@ -2198,6 +2696,8 @@ export interface operations {
         requestBody: components["requestBodies"]["PublicationInput"];
         responses: {
             200: components["responses"]["BulletinIssue"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
             412: components["responses"]["Error"];
         };
     };
@@ -2221,6 +2721,8 @@ export interface operations {
                     "application/json": components["schemas"]["BulletinRevisionListEnvelope"];
                 };
             };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
         };
     };
     restoreBulletinRevision: {
@@ -2238,6 +2740,8 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["BulletinIssue"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
             404: components["responses"]["Error"];
             412: components["responses"]["Error"];
         };
@@ -2258,7 +2762,8 @@ export interface operations {
         responses: {
             200: components["responses"]["BulletinTranslationPreview"];
             400: components["responses"]["InvalidTranslationRequest"];
-            403: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
             404: components["responses"]["TranslationNotFound"];
             409: components["responses"]["TranslationExists"];
             412: components["responses"]["TranslationVersionMismatch"];
@@ -2298,6 +2803,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
         };
     };
     createContent: {
@@ -2314,6 +2821,8 @@ export interface operations {
         requestBody: components["requestBodies"]["ContentWriteInput"];
         responses: {
             201: components["responses"]["ContentItem"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
             409: components["responses"]["Error"];
         };
     };
@@ -2330,6 +2839,8 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["ContentItem"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
             404: components["responses"]["Error"];
         };
     };
@@ -2348,6 +2859,8 @@ export interface operations {
         requestBody: components["requestBodies"]["ContentWriteInput"];
         responses: {
             200: components["responses"]["ContentItem"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
             /** @description Existing locales omitted from `translations` must be listed in `deleteLocales` (error code `locale_set_mismatch`). */
             409: {
                 headers: {
@@ -2381,6 +2894,8 @@ export interface operations {
                 };
                 content?: never;
             };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
             409: components["responses"]["Error"];
             412: components["responses"]["Error"];
         };
@@ -2402,7 +2917,8 @@ export interface operations {
         responses: {
             200: components["responses"]["ContentTranslationPreview"];
             400: components["responses"]["InvalidTranslationRequest"];
-            403: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
             404: components["responses"]["TranslationNotFound"];
             409: components["responses"]["TranslationExists"];
             412: components["responses"]["TranslationVersionMismatch"];
@@ -2429,6 +2945,8 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["ContentItem"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
             422: components["responses"]["Error"];
         };
     };
@@ -2447,6 +2965,8 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["ContentItem"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
         };
     };
     listContentRevisions: {
@@ -2470,6 +2990,8 @@ export interface operations {
                     "application/json": components["schemas"]["ContentRevisionListEnvelope"];
                 };
             };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
         };
     };
     restoreContentRevision: {
@@ -2488,6 +3010,8 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["ContentItem"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
         };
     };
     createNewsCoverUpload: {
@@ -2516,6 +3040,8 @@ export interface operations {
                     "application/json": components["schemas"]["CreatedUploadEnvelope"];
                 };
             };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
         };
     };
     getNewsCoverStatus: {
@@ -2539,6 +3065,8 @@ export interface operations {
                     "application/json": components["schemas"]["AssetStatusEnvelope"];
                 };
             };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
         };
     };
     retryNewsCoverScan: {
@@ -2562,6 +3090,8 @@ export interface operations {
                     "application/json": components["schemas"]["AssetStatusEnvelope"];
                 };
             };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
             409: components["responses"]["Error"];
         };
     };
@@ -2584,6 +3114,8 @@ export interface operations {
         };
         responses: {
             200: components["responses"]["ContentItem"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
         };
     };
 }

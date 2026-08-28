@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { HhcWebApiError, createHhcWebClient } from './client'
-import type { PublicContentItem } from './client'
+import type { LocationWriteInput, PublicContentItem } from './client'
 
 describe('hhc web client', () => {
   it('exposes public news SEO metadata', () => {
@@ -34,6 +34,45 @@ describe('hhc web client', () => {
     const request = fetcher.mock.calls[0]?.[0] as Request
     expect(request.url).toBe('https://www.alive.org.tw/api/admin/bulletins?page=2&pageSize=50&status=published')
     expect(request.headers.get('Authorization')).toBe('Bearer token')
+  })
+
+  it('lists public locations for the requested locale', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
+      data: [{ id: 'taipei', name: 'Taipei', address: 'Taipei', mapHref: 'https://maps.example/taipei', sortOrder: 0, resolvedLocale: 'zh-Hant', availableLocales: ['zh-Hant'] }],
+      meta: {},
+      error: null,
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => null, fetcher })
+
+    await expect(client.listLocations('zh-Hant')).resolves.toEqual([
+      { id: 'taipei', name: 'Taipei', address: 'Taipei', mapHref: 'https://maps.example/taipei', sortOrder: 0, resolvedLocale: 'zh-Hant', availableLocales: ['zh-Hant'] },
+    ])
+    expect((fetcher.mock.calls[0]![0] as Request).url).toBe('http://localhost/api/locations?locale=zh-Hant')
+  })
+
+  it('creates and updates locations through the generic admin content transport', async () => {
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: { id: 'taipei' }, meta: {}, error: null }), { status: 201, headers: { 'Content-Type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: { id: 'taipei' }, meta: {}, error: null }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
+    const input: LocationWriteInput = {
+      locationKey: 'taipei',
+      mapHref: 'https://maps.example/taipei',
+      sortOrder: 0,
+      translations: [{ locale: 'zh-Hant', title: '台北', body: '台北市' }],
+    }
+
+    await client.createLocation(input, 'location-create-1')
+    await client.updateLocation('5e02a37e-c779-42dd-9b25-c05f4ea9eace', 2, input)
+
+    const create = fetcher.mock.calls[0]![0] as Request
+    const update = fetcher.mock.calls[1]![0] as Request
+    expect(create.url).toBe('http://localhost/api/admin/content/locations')
+    expect(create.headers.get('Idempotency-Key')).toBe('location-create-1')
+    await expect(create.json()).resolves.toEqual(input)
+    expect(update.url).toBe('http://localhost/api/admin/content/locations/5e02a37e-c779-42dd-9b25-c05f4ea9eace')
+    expect(update.headers.get('If-Match')).toBe('"2"')
+    await expect(update.json()).resolves.toEqual(input)
   })
 
   it('preserves the API error code and status', async () => {
@@ -307,5 +346,14 @@ describe('hhc web client', () => {
       meta: { page: 2, pageSize: 12, total: 25 },
     })
     expect((fetcher.mock.calls[0]![0] as Request).url).toBe('http://localhost/api/news?locale=en&page=2&pageSize=12')
+  })
+
+  it('does not route locations through the legacy videos listing', async () => {
+    const fetcher = vi.fn<typeof fetch>()
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => null, fetcher })
+    const legacyClient = client as unknown as { listPublicContent(module: string, locale: 'zh-Hant'): Promise<unknown> }
+
+    await expect(legacyClient.listPublicContent('locations', 'zh-Hant')).rejects.toThrow('Use listLocations for locations.')
+    expect(fetcher).not.toHaveBeenCalled()
   })
 })
