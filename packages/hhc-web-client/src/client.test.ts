@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { HhcWebApiError, createHhcWebClient } from './client'
-import type { LocationWriteInput, PublicContentItem } from './client'
+import type { LocationWriteInput, PageWriteInput, PublicContentItem } from './client'
 
 describe('hhc web client', () => {
   it('exposes public news SEO metadata', () => {
@@ -48,6 +48,51 @@ describe('hhc web client', () => {
       { id: 'taipei', name: 'Taipei', address: 'Taipei', mapHref: 'https://maps.example/taipei', sortOrder: 0, resolvedLocale: 'zh-Hant', availableLocales: ['zh-Hant'] },
     ])
     expect((fetcher.mock.calls[0]![0] as Request).url).toBe('http://localhost/api/locations?locale=zh-Hant')
+  })
+
+  it('reads and updates a fixed editorial page through typed routes', async () => {
+    const publishedPage = {
+      pageKey: 'home',
+      template: 'home.v1',
+      routePath: '/',
+      indexable: true,
+      content: {
+        schemaVersion: 1,
+        template: 'home.v1',
+        data: {
+          heroTitle: 'ハレルヤ', heroSubtitle: 'Home', newsTitle: 'News', moreNews: 'More',
+          weeklyTitle: 'Weekly', downloadWeekly: 'Download', videosTitle: 'Videos', videosSubtitle: 'Watch',
+          watchMore: 'More videos', aboutTitle: 'About', aboutBody: 'Body', aboutCta: 'Learn',
+          locationsTitle: 'Locations', mapLink: 'Map',
+        },
+      },
+      resolvedLocale: 'ja',
+      availableLocales: ['ja'],
+      version: 3,
+      publishedAt: '2026-08-29T00:00:00Z',
+    }
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: publishedPage, meta: {}, error: null }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: { id: 'page-1' }, meta: {}, error: null }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
+    const input: PageWriteInput = {
+      pageKey: 'home',
+      pageTemplate: 'home.v1',
+      routePath: '/',
+      indexable: true,
+      translations: [{ locale: 'ja', bodyJson: publishedPage.content }],
+    }
+
+    await expect(client.getPublicPage('home', 'ja')).resolves.toEqual(publishedPage)
+    await client.updatePage('page-1', 2, input)
+
+    const publicRequest = fetcher.mock.calls[0]![0] as Request
+    const updateRequest = fetcher.mock.calls[1]![0] as Request
+    expect(publicRequest.url).toBe('http://localhost/api/pages/home?locale=ja')
+    expect(updateRequest.url).toBe('http://localhost/api/admin/content/pages/page-1')
+    expect(updateRequest.method).toBe('PUT')
+    expect(updateRequest.headers.get('If-Match')).toBe('"2"')
+    await expect(updateRequest.json()).resolves.toEqual(input)
   })
 
   it('creates and updates locations through the generic admin content transport', async () => {
