@@ -1919,11 +1919,22 @@ export interface components {
         /** @description Published Site Layout for the exact requested locale. */
         SiteLayout: {
             headers: {
+                ETag: components["headers"]["SiteLayoutETag"];
+                "Cache-Control": components["headers"]["SiteLayoutCacheControl"];
                 [name: string]: unknown;
             };
             content: {
                 "application/json": components["schemas"]["SiteLayoutEnvelope"];
             };
+        };
+        /** @description Site Layout has not changed. */
+        SiteLayoutNotModified: {
+            headers: {
+                ETag: components["headers"]["SiteLayoutETag"];
+                "Cache-Control": components["headers"]["SiteLayoutCacheControl"];
+                [name: string]: unknown;
+            };
+            content?: never;
         };
         /** @description Site Settings aggregate. */
         SiteSettings: {
@@ -2067,6 +2078,8 @@ export interface components {
         IssueID: string;
         IdempotencyKey: string;
         IfMatch: string;
+        /** @description Conditional validator; weak validators and comma-separated lists are accepted. */
+        IfNoneMatch: string;
         ContentModule: components["schemas"]["ContentModule"];
         ContentID: string;
         ContentTranslationTargetLocale: components["schemas"]["ContentTranslationTargetLocale"];
@@ -2091,7 +2104,12 @@ export interface components {
             };
         };
     };
-    headers: never;
+    headers: {
+        /** @description Strong validator derived from the published aggregate version. */
+        SiteLayoutETag: string;
+        /** @description Public revalidation policy for Site Layout projections. */
+        SiteLayoutCacheControl: "public, max-age=30, must-revalidate";
+    };
     pathItems: never;
 }
 export type $defs = Record<string, never>;
@@ -2657,13 +2675,17 @@ export interface operations {
             query?: {
                 locale?: components["parameters"]["ContentLocale"];
             };
-            header?: never;
+            header?: {
+                /** @description Conditional validator; weak validators and comma-separated lists are accepted. */
+                "If-None-Match"?: components["parameters"]["IfNoneMatch"];
+            };
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
             200: components["responses"]["SiteLayout"];
+            304: components["responses"]["SiteLayoutNotModified"];
             404: components["responses"]["Error"];
             422: components["responses"]["Error"];
         };
