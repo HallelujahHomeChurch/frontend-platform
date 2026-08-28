@@ -1,4 +1,4 @@
-import type { HhcWebClient, PageContent, PageKey, PageWriteInput } from '../src/client.js'
+import type { ContentItem, HhcWebClient, PageContent, PageKey, PageWriteInput } from '../src/client.js'
 
 type Assert<T extends true> = T
 type IsRequired<T, K extends keyof T> = {} extends Pick<T, K> ? false : true
@@ -27,3 +27,6 @@ if (page.template === 'home.v1') {
   // @ts-expect-error legal-only field must not survive home narrowing
   page.data.updatedAt
 }
+
+declare const content: ContentItem
+content.translations[0]!.title.toUpperCase()

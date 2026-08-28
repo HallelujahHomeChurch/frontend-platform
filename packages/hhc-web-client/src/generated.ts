@@ -1437,9 +1437,18 @@ export interface components {
             /** Format: date-time */
             publishedAt: string;
         };
-        ContentTranslation: {
+        ContentWriteTranslation: {
             locale: components["schemas"]["ContentLocale"];
             title?: string;
+            summary?: string;
+            body?: string;
+            dateLabel?: string;
+            imageAlt?: string;
+            bodyJson?: components["schemas"]["PageContent"];
+        };
+        ContentTranslation: {
+            locale: components["schemas"]["ContentLocale"];
+            title: string;
             summary?: string;
             body?: string;
             dateLabel?: string;
@@ -1539,7 +1548,7 @@ export interface components {
             /** @enum {string} */
             routePath?: "/" | "/about" | "/privacy-policy" | "/terms-of-use";
             indexable?: boolean;
-            translations: components["schemas"]["ContentTranslation"][];
+            translations: components["schemas"]["ContentWriteTranslation"][];
             /** @description Locales omitted from translations are preserved unless they are named here for explicit deletion. */
             deleteLocales?: components["schemas"]["ContentLocale"][];
         };
@@ -1550,6 +1559,7 @@ export interface components {
             status: components["schemas"]["ContentStatus"];
             /** Format: int64 */
             version: number;
+            translations: components["schemas"]["ContentTranslation"][];
             coverUrl?: string;
             homeCoverUrl?: string;
             isPublished: boolean;
