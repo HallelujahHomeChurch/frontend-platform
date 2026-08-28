@@ -21,7 +21,12 @@ export type ContentModule = components['schemas']['ContentModule']
 export type ContentStatus = components['schemas']['ContentStatus']
 export type ContentItem = components['schemas']['ContentItem']
 export type ContentWriteInput = components['schemas']['ContentWriteInput']
-export type LocationWriteInput = ContentWriteInput & Required<Pick<ContentWriteInput, 'locationKey' | 'mapHref' | 'sortOrder' | 'translations'>>
+export type LocationWriteInput = {
+  locationKey: string
+  mapHref: string
+  sortOrder: number
+  translations: { locale: ContentLocale; title: string; body: string }[]
+}
 export type ContentRevision = components['schemas']['ContentRevision']
 export type PublicContentItem = components['schemas']['PublicContentItem']
 export type AssetStatus = components['schemas']['AssetStatus']
@@ -67,7 +72,7 @@ export function createHhcWebClient(options: {
   }
 
   async function listPublicContentPage(
-    module: ContentModule,
+    module: Exclude<ContentModule, 'locations'>,
     locale: ContentLocale,
     params: { page?: number; pageSize?: number; signal?: AbortSignal } = {},
   ) {
@@ -76,7 +81,9 @@ export function createHhcWebClient(options: {
       ? client.GET('/news', { params: { query }, signal: params.signal })
       : module === 'history'
         ? client.GET('/history', { params: { query }, signal: params.signal })
-        : client.GET('/videos', { params: { query }, signal: params.signal })
+        : module === 'videos'
+          ? client.GET('/videos', { params: { query }, signal: params.signal })
+          : Promise.reject(new Error('Use listLocations for locations.'))
     const envelope = await unwrap(result)
     return { data: envelope.data, meta: envelope.meta }
   }
@@ -219,10 +226,10 @@ export function createHhcWebClient(options: {
       return updateAdminContent(module, contentId, version, input)
     },
     async createLocation(input: LocationWriteInput, idempotencyKey: string) {
-      return createAdminContent('locations', input, idempotencyKey)
+      return createAdminContent('locations', input as ContentWriteInput, idempotencyKey)
     },
-    async updateLocation(locationId: string, version: number, input: LocationWriteInput) {
-      return updateAdminContent('locations', locationId, version, input)
+    async updateLocation(contentId: string, version: number, input: LocationWriteInput) {
+      return updateAdminContent('locations', contentId, version, input as ContentWriteInput)
     },
     async publishContent(module: ContentModule, contentId: string, version: number) {
       return (await unwrap(client.POST('/admin/content/{module}/{contentId}/publish', {
@@ -266,7 +273,7 @@ export function createHhcWebClient(options: {
     async retryNewsCoverScan(contentId: string, assetId: string) {
       return (await unwrap(client.POST('/admin/content/news/{contentId}/assets/{assetId}/scan/retry', { params: { path: { contentId, assetId } } }))).data
     },
-    async listPublicContent(module: ContentModule, locale: ContentLocale, signal?: AbortSignal) {
+    async listPublicContent(module: Exclude<ContentModule, 'locations'>, locale: ContentLocale, signal?: AbortSignal) {
       return (await listPublicContentPage(module, locale, { signal })).data
     },
     listPublicContentPage,
