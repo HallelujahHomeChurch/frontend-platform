@@ -1,7 +1,14 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { HhcWebApiError, createHhcWebClient } from './client'
-import type { LocationWriteInput, PageWriteInput, PublicContentItem } from './client'
+import type {
+  HomeBannerCompleteInput,
+  HomeBannerUploadInput,
+  HomePageWriteInputV2,
+  LocationWriteInput,
+  PageWriteInput,
+  PublicContentItem,
+} from './client'
 
 describe('hhc web client', () => {
   it('exposes public news SEO metadata', () => {
@@ -50,7 +57,7 @@ describe('hhc web client', () => {
     expect((fetcher.mock.calls[0]![0] as Request).url).toBe('http://localhost/api/locations?locale=zh-Hant')
   })
 
-  it('reads and updates a fixed editorial page through typed routes', async () => {
+  it('decodes Home v1 and v2 and updates a fixed editorial page through typed routes', async () => {
     const publishedPage = {
       pageKey: 'home',
       template: 'home.v1',
@@ -71,8 +78,36 @@ describe('hhc web client', () => {
       version: 3,
       publishedAt: '2026-08-29T00:00:00Z',
     }
+    const publishedPageV2 = {
+      pageKey: 'home',
+      template: 'home.v2',
+      routePath: '/',
+      indexable: true,
+      content: {
+        schemaVersion: 2,
+        template: 'home.v2',
+        data: {
+          heroTitle: 'Hallelujah',
+          heroSubtitle: 'Home',
+          kingdomJoyDescription: 'Joy',
+          aboutDescription: 'About',
+          bannerImageUrl: '/api/assets/banner',
+          links: {
+            churchYoutube: 'https://youtube.com/@hhc33',
+            churchFacebook: 'https://facebook.com/hhc33',
+            musicYoutube: 'https://youtube.com/@hhcmusic33',
+          },
+          locations: [],
+        },
+      },
+      resolvedLocale: 'en',
+      availableLocales: ['en'],
+      version: 4,
+      publishedAt: '2026-08-29T00:00:00Z',
+    }
     const fetcher = vi.fn<typeof fetch>()
       .mockResolvedValueOnce(new Response(JSON.stringify({ data: publishedPage, meta: {}, error: null }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: publishedPageV2, meta: {}, error: null }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ data: { id: 'page-1' }, meta: {}, error: null }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
     const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
     const input: PageWriteInput = {
@@ -84,15 +119,93 @@ describe('hhc web client', () => {
     }
 
     await expect(client.getPublicPage('home', 'ja')).resolves.toEqual(publishedPage)
+    await expect(client.getPublicPage('home', 'en')).resolves.toEqual(publishedPageV2)
     await client.updatePage('page-1', 2, input)
 
     const publicRequest = fetcher.mock.calls[0]![0] as Request
-    const updateRequest = fetcher.mock.calls[1]![0] as Request
+    const updateRequest = fetcher.mock.calls[2]![0] as Request
     expect(publicRequest.url).toBe('http://localhost/api/pages/home?locale=ja')
     expect(updateRequest.url).toBe('http://localhost/api/admin/content/pages/page-1')
     expect(updateRequest.method).toBe('PUT')
     expect(updateRequest.headers.get('If-Match')).toBe('"2"')
     await expect(updateRequest.json()).resolves.toEqual(input)
+  })
+
+  it('writes the exact Home v2 shape', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
+      data: { id: 'page-1' }, meta: {}, error: null,
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
+    const locales = ['zh-Hant', 'zh-Hans', 'en', 'ja', 'ko'] as const
+    const input: HomePageWriteInputV2 = {
+      pageKey: 'home',
+      pageTemplate: 'home.v2',
+      routePath: '/',
+      indexable: true,
+      bannerAssetId: 'asset-1',
+      links: {
+        churchYoutube: 'https://youtube.com/@hhc33',
+        churchFacebook: 'https://facebook.com/hhc33',
+        musicYoutube: 'https://youtube.com/@hhcmusic33',
+      },
+      locations: [{
+        key: 'taipei',
+        mapHref: 'https://maps.example/taipei',
+        sortOrder: 10,
+        translations: locales.map(locale => ({ locale, name: 'Taipei', address: 'Taipei' })),
+      }],
+      translations: locales.map(locale => ({
+        locale,
+        bodyJson: {
+          schemaVersion: 2,
+          template: 'home.v2',
+          data: {
+            heroTitle: 'Hallelujah',
+            heroSubtitle: 'Home',
+            kingdomJoyDescription: 'Joy',
+            aboutDescription: 'About',
+          },
+        },
+      })),
+    }
+
+    await client.updatePage('page-1', 4, input)
+
+    const request = fetcher.mock.calls[0]![0] as Request
+    expect(request.url).toBe('http://localhost/api/admin/content/pages/page-1')
+    expect(request.headers.get('If-Match')).toBe('"4"')
+    await expect(request.json()).resolves.toEqual(input)
+  })
+
+  it('uses the four Home Banner routes and exact JPEG contracts', async () => {
+    const responses = [
+      { asset: { id: 'asset-1' }, uploadTarget: { url: 'https://storage.example/upload', method: 'PUT', headers: {}, expiresAt: '2026-08-29T00:00:00Z' } },
+      { id: 'asset-1', uploadStatus: 'completed', scanStatus: 'pending', processingStatus: 'not_required', retryable: false },
+      { id: 'asset-1', uploadStatus: 'completed', scanStatus: 'pending', processingStatus: 'not_required', retryable: false },
+      { id: 'page-1' },
+    ]
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({
+      data: responses.shift(), meta: {}, error: null,
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
+    const upload: HomeBannerUploadInput = { usage: 'home_banner', fileName: 'banner.jpg', mimeType: 'image/jpeg', sizeBytes: 1024 }
+    const complete: HomeBannerCompleteInput = { mimeType: 'image/jpeg', sizeBytes: 1024, checksumSha256: 'a'.repeat(64) }
+
+    await client.createHomeBannerUpload('page-1', upload, 'upload-1')
+    await client.getHomeBannerStatus('page-1', 'asset-1')
+    await client.retryHomeBannerScan('page-1', 'asset-1')
+    await client.completeHomeBannerUpload('page-1', 'asset-1', 4, complete)
+
+    const [create, status, retry, finish] = fetcher.mock.calls.map(call => call[0] as Request)
+    expect(create!.url).toBe('http://localhost/api/admin/content/pages/page-1/upload-sessions')
+    expect(create!.headers.get('Idempotency-Key')).toBe('upload-1')
+    await expect(create!.json()).resolves.toEqual(upload)
+    expect(status!.url).toBe('http://localhost/api/admin/content/pages/page-1/assets/asset-1')
+    expect(retry!.url).toBe('http://localhost/api/admin/content/pages/page-1/assets/asset-1/scan/retry')
+    expect(retry!.method).toBe('POST')
+    expect(finish!.url).toBe('http://localhost/api/admin/content/pages/page-1/assets/asset-1/complete')
+    expect(finish!.headers.get('If-Match')).toBe('"4"')
+    await expect(finish!.json()).resolves.toEqual(complete)
   })
 
   it('creates and updates locations through the generic admin content transport', async () => {
