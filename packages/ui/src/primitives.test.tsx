@@ -892,6 +892,27 @@ describe('HHC UI primitives', () => {
     expect(styles).toMatch(/prefers-reduced-motion:\s*reduce[\s\S]*\.hhc-select__chevron[^}]*transition:\s*none/s);
   });
 
+  it('renders ordered account destinations before manage account and sign out', async () => {
+    const user = userEvent.setup();
+    render(
+      <AccountMenu
+        user={{name: 'Ada', email: 'ada@example.com'}}
+        links={[
+          {id: 'projection', label: '投影系統', href: 'https://client.alive.org.tw/'},
+          {id: 'admin', label: '後台管理', href: 'https://admin.alive.org.tw/'}
+        ]}
+        labels={{menu: '帳號選單', greeting: 'Hi Ada', manageAccount: '管理帳號', signOut: '登出'}}
+        manageAccountHref="https://account.alive.org.tw/profile"
+        onSignOut={() => undefined}
+      />
+    );
+
+    await user.click(screen.getByRole('button', {name: '帳號選單'}));
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      '投影系統', '後台管理', '管理帳號', '登出'
+    ]);
+  });
+
   it('shows AccountMenu focus treatment for keyboard, not pointer, activation', async () => {
     const user = userEvent.setup();
     render(

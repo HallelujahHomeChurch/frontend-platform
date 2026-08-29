@@ -274,14 +274,22 @@ export function Drawer({placement = 'right', ...props}: DrawerProps) {
 
 export interface AccountMenuProps {
   user: {name: string; email: string; avatarUrl?: string | null};
+  links?: readonly AccountMenuLink[];
   labels: {menu: string; greeting: string; manageAccount?: string; signOut: string};
   manageAccountHref?: string;
   onSignOut: () => void;
 }
 
-export function AccountMenu({user, labels, manageAccountHref, onSignOut}: AccountMenuProps) {
+export interface AccountMenuLink {
+  id: string;
+  label: string;
+  href: string;
+}
+
+export function AccountMenu({user, links, labels, manageAccountHref, onSignOut}: AccountMenuProps) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const actions: MenuItem[] = [
+    ...(links ?? []),
     ...(labels.manageAccount && manageAccountHref ? [{id: 'manage', label: labels.manageAccount, href: manageAccountHref}] : []),
     {id: 'sign-out', label: labels.signOut, variant: 'danger' as const}
   ];
