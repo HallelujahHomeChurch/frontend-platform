@@ -57,16 +57,17 @@ try {
   write(resolve(vite, 'vite.config.ts'), "import react from '@vitejs/plugin-react';\nimport {defineConfig} from 'vite';\nexport default defineConfig({plugins: [react()]});\n");
   write(resolve(vite, 'src/main.tsx'), `import React from 'react';
 import {createRoot} from 'react-dom/client';
-import {createAccountSessionClient} from '@hallelujahhomechurch/account-client';
+import {createAccountSessionClient, type AccountSessionUser} from '@hallelujahhomechurch/account-client';
 import {createHhcWebClient} from '@hallelujahhomechurch/hhc-web-client';
 import {getInitialTheme} from '@hallelujahhomechurch/preferences';
-import {Button, ContextMenu} from '@hallelujahhomechurch/ui';
+import {AccountMenu, Button, ContextMenu} from '@hallelujahhomechurch/ui';
 import '@hallelujahhomechurch/ui/styles.css';
 
+const accountUser: AccountSessionUser = {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null, admin_access: true};
 void createAccountSessionClient;
 void createHhcWebClient;
 void getInitialTheme;
-createRoot(document.getElementById('root')!).render(<><Button>Smoke</Button><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /></>);
+createRoot(document.getElementById('root')!).render(<><Button>Smoke</Button><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /><AccountMenu user={{name: accountUser.display_name, email: accountUser.email}} links={[{id: 'destination', label: 'Destination', href: 'https://example.com/destination'}]} labels={{menu: 'Account', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => {}} /></>);
 `);
   run(vite, 'install', '--ignore-workspace');
   run(vite, 'exec', 'node', '--input-type=module', '--eval', `
@@ -102,15 +103,16 @@ export default function Layout({children}: {children: React.ReactNode}) {
 }
 `);
   write(resolve(next, 'app/page.tsx'), `'use client';
-import {createAccountSessionClient} from '@hallelujahhomechurch/account-client';
+import {createAccountSessionClient, type AccountSessionUser} from '@hallelujahhomechurch/account-client';
 import {createHhcWebClient} from '@hallelujahhomechurch/hhc-web-client';
 import {getInitialTheme} from '@hallelujahhomechurch/preferences';
-import {Button, ContextMenu} from '@hallelujahhomechurch/ui';
+import {AccountMenu, Button, ContextMenu} from '@hallelujahhomechurch/ui';
 
+const accountUser: AccountSessionUser = {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null, admin_access: true};
 void createAccountSessionClient;
 void createHhcWebClient;
 void getInitialTheme;
-export default function Page() { return <><Button>Smoke</Button><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /></>; }
+export default function Page() { return <><Button>Smoke</Button><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /><AccountMenu user={{name: accountUser.display_name, email: accountUser.email}} links={[{id: 'destination', label: 'Destination', href: 'https://example.com/destination'}]} labels={{menu: 'Account', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => {}} /></>; }
 `);
   run(next, 'install', '--ignore-workspace');
   run(next, 'build');

@@ -892,6 +892,46 @@ describe('HHC UI primitives', () => {
     expect(styles).toMatch(/prefers-reduced-motion:\s*reduce[\s\S]*\.hhc-select__chevron[^}]*transition:\s*none/s);
   });
 
+  it('renders ordered account destinations before manage account and sign out', async () => {
+    const user = userEvent.setup();
+    render(
+      <AccountMenu
+        user={{name: 'Ada', email: 'ada@example.com'}}
+        links={[
+          {id: 'projection', label: '投影系統', href: 'https://client.alive.org.tw/'},
+          {id: 'admin', label: '後台管理', href: 'https://admin.alive.org.tw/'}
+        ]}
+        labels={{menu: '帳號選單', greeting: 'Hi Ada', manageAccount: '管理帳號', signOut: '登出'}}
+        manageAccountHref="https://account.alive.org.tw/profile"
+        onSignOut={() => undefined}
+      />
+    );
+
+    await user.click(screen.getByRole('button', {name: '帳號選單'}));
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      '投影系統', '後台管理', '管理帳號', '登出'
+    ]);
+  });
+
+  it('keeps a sign-out-named account destination as a link', async () => {
+    const user = userEvent.setup();
+    const onSignOut = vi.fn();
+    render(
+      <AccountMenu
+        user={{name: 'Ada', email: 'ada@example.com'}}
+        links={[{id: 'sign-out', label: 'Projection', href: '#projection'}]}
+        labels={{menu: 'Account menu', greeting: 'Hi Ada', signOut: 'Sign out'}}
+        onSignOut={onSignOut}
+      />
+    );
+
+    await user.click(screen.getByRole('button', {name: 'Account menu'}));
+    const destination = screen.getByRole('menuitem', {name: 'Projection'});
+    expect(destination).toHaveAttribute('href', '#projection');
+    await user.click(destination);
+    expect(onSignOut).not.toHaveBeenCalled();
+  });
+
   it('shows AccountMenu focus treatment for keyboard, not pointer, activation', async () => {
     const user = userEvent.setup();
     render(

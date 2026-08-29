@@ -3,6 +3,7 @@ export interface AccountSessionUser {
   email: string;
   display_name: string;
   avatar_url: string | null;
+  admin_access: boolean;
 }
 
 export * from './oauth.js';
@@ -170,7 +171,8 @@ function isAccountSession(value: unknown): value is AccountSession {
     && typeof user.id === 'string'
     && typeof user.email === 'string'
     && typeof user.display_name === 'string'
-    && (typeof user.avatar_url === 'string' || user.avatar_url === null);
+    && (typeof user.avatar_url === 'string' || user.avatar_url === null)
+    && typeof user.admin_access === 'boolean';
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -15,11 +15,11 @@ describe('account session client', () => {
   it('loads the cookie-backed session without calling refresh', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({
       authenticated: true,
-      user: {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null}
+      user: {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null, admin_access: true}
     }));
     const client = createAccountSessionClient({fetcher});
 
-    await expect(client.getSession()).resolves.toMatchObject({authenticated: true});
+    await expect(client.getSession()).resolves.toMatchObject({authenticated: true, user: {admin_access: true}});
     expect(fetcher).toHaveBeenCalledOnce();
     expect(fetcher).toHaveBeenCalledWith('/api/account/v1/session', expect.objectContaining({
       cache: 'no-store',
@@ -73,6 +73,28 @@ describe('account session client', () => {
       expect.objectContaining({name: 'AccountSessionError', status: 500, code: 'ACC_INTERNAL'})
     );
   });
+
+  it('requires the admin access decision for authenticated sessions', async () => {
+    const client = createAccountSessionClient({
+      fetcher: vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({
+        authenticated: true,
+        user: {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null}
+      }))
+    });
+
+    await expect(client.getSession()).rejects.toMatchObject({code: 'INVALID_RESPONSE'});
+  });
+
+  it('requires the admin access decision to be boolean', async () => {
+    const client = createAccountSessionClient({
+      fetcher: vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({
+        authenticated: true,
+        user: {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null, admin_access: 'true'}
+      }))
+    });
+
+    await expect(client.getSession()).rejects.toMatchObject({code: 'INVALID_RESPONSE'});
+  });
 });
 
 describe('account auth lifecycle helpers', () => {
@@ -80,7 +102,7 @@ describe('account auth lifecycle helpers', () => {
     await expect(resolveAccountAuth({
       getSession: async () => ({
         authenticated: true,
-        user: {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null}
+        user: {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null, admin_access: true}
       })
     })).resolves.toMatchObject({status: 'authenticated', user: {id: 'u1'}});
 
