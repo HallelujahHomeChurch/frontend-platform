@@ -289,7 +289,7 @@ export interface AccountMenuLink {
 export function AccountMenu({user, links, labels, manageAccountHref, onSignOut}: AccountMenuProps) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const actions: MenuItem[] = [
-    ...(links ?? []),
+    ...(links?.map((link) => ({...link, id: `account-link:${link.id}`})) ?? []),
     ...(labels.manageAccount && manageAccountHref ? [{id: 'manage', label: labels.manageAccount, href: manageAccountHref}] : []),
     {id: 'sign-out', label: labels.signOut, variant: 'danger' as const}
   ];

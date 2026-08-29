@@ -913,6 +913,25 @@ describe('HHC UI primitives', () => {
     ]);
   });
 
+  it('keeps a sign-out-named account destination as a link', async () => {
+    const user = userEvent.setup();
+    const onSignOut = vi.fn();
+    render(
+      <AccountMenu
+        user={{name: 'Ada', email: 'ada@example.com'}}
+        links={[{id: 'sign-out', label: 'Projection', href: '#projection'}]}
+        labels={{menu: 'Account menu', greeting: 'Hi Ada', signOut: 'Sign out'}}
+        onSignOut={onSignOut}
+      />
+    );
+
+    await user.click(screen.getByRole('button', {name: 'Account menu'}));
+    const destination = screen.getByRole('menuitem', {name: 'Projection'});
+    expect(destination).toHaveAttribute('href', '#projection');
+    await user.click(destination);
+    expect(onSignOut).not.toHaveBeenCalled();
+  });
+
   it('shows AccountMenu focus treatment for keyboard, not pointer, activation', async () => {
     const user = userEvent.setup();
     render(
