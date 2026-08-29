@@ -1,4 +1,4 @@
-import type { ContentItem, HhcWebClient, PageContent, PageKey, PageWriteInput } from '../src/client.js'
+import type { ContentItem, HhcWebClient, HomePageWriteInputV2, PageContent, PageKey, PageWriteInput } from '../src/client.js'
 
 type Assert<T extends true> = T
 type IsRequired<T, K extends keyof T> = {} extends Pick<T, K> ? false : true
@@ -27,6 +27,21 @@ if (page.template === 'home.v1') {
   // @ts-expect-error legal-only field must not survive home narrowing
   page.data.updatedAt
 }
+if (page.template === 'home.v2') {
+  page.data.kingdomJoyDescription satisfies string
+  // @ts-expect-error home.v1-only fields must not survive home.v2 narrowing
+  page.data.weeklyTitle
+}
+
+declare const homeV2: HomePageWriteInputV2
+homeV2.pageKey satisfies 'home'
+homeV2.pageTemplate satisfies 'home.v2'
+homeV2.routePath satisfies '/'
+homeV2.translations[0]!.bodyJson.data.aboutDescription satisfies string
+// @ts-expect-error removed Home v1 fields are not accepted by the Home v2 write contract
+homeV2.translations[0]!.bodyJson.data.newsTitle
+// @ts-expect-error projection-only fields are not accepted in Home v2 draft translations
+homeV2.translations[0]!.bodyJson.data.bannerImageUrl
 
 declare const content: ContentItem
 content.translations[0]!.title.toUpperCase()

@@ -932,6 +932,80 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/content/pages/{contentId}/upload-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create an exact Home Banner JPEG upload
+         * @description Only the fixed home.v2 page is accepted. The asset uses namespace cms.home.banner, owner service hhc-web-api, owner type page, and purpose home_banner.
+         */
+        post: operations["createHomeBannerUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/content/pages/{contentId}/assets/{assetId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the owned Home Banner status */
+        get: operations["getHomeBannerStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/content/pages/{contentId}/assets/{assetId}/scan/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retry a failed owned Home Banner scan */
+        post: operations["retryHomeBannerScan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/content/pages/{contentId}/assets/{assetId}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Complete and attach an exact Home Banner JPEG
+         * @description Revalidates asset ID, namespace, owner, purpose, detected image/jpeg, completed upload, and not_required processing before attaching the Banner to the draft. Scan readiness remains asynchronous.
+         */
+        post: operations["completeHomeBannerUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1311,6 +1385,22 @@ export interface components {
             sizeBytes: number;
             checksumSha256: string;
         };
+        HomeBannerUploadInput: {
+            /** @constant */
+            usage: "home_banner";
+            fileName: string;
+            /** @constant */
+            mimeType: "image/jpeg";
+            /** Format: int64 */
+            sizeBytes: number;
+        };
+        HomeBannerCompleteInput: {
+            /** @constant */
+            mimeType: "image/jpeg";
+            /** Format: int64 */
+            sizeBytes: number;
+            checksumSha256: string;
+        };
         AssetStatus: {
             id: string;
             /** @enum {string} */
@@ -1352,6 +1442,64 @@ export interface components {
                 aboutCta: string;
                 locationsTitle: string;
                 mapLink: string;
+            };
+        };
+        HomePageLocalizedDataV2: {
+            heroTitle: string;
+            heroSubtitle: string;
+            kingdomJoyDescription: string;
+            aboutDescription: string;
+        };
+        HomePageContentV2Draft: {
+            /** @constant */
+            schemaVersion: 2;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            template: "home.v2";
+            data: components["schemas"]["HomePageLocalizedDataV2"];
+        };
+        HomeLocationTranslation: {
+            locale: components["schemas"]["ContentLocale"];
+            name: string;
+            address: string;
+        };
+        HomeLocation: {
+            key: string;
+            /** Format: uri */
+            mapHref: string;
+            sortOrder: number;
+            translations: components["schemas"]["HomeLocationTranslation"][];
+        };
+        PublicHomeLocation: {
+            key: string;
+            name: string;
+            address: string;
+            /** Format: uri */
+            mapHref: string;
+            sortOrder: number;
+        };
+        HomePageContentV2: {
+            /** @constant */
+            schemaVersion: 2;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            template: "home.v2";
+            data: {
+                heroTitle: string;
+                heroSubtitle: string;
+                kingdomJoyDescription: string;
+                aboutDescription: string;
+                /**
+                 * Format: uri-reference
+                 * @description Opaque canonical granted-original URL returned by asset publication.
+                 */
+                bannerImageUrl: string;
+                links: components["schemas"]["SiteExternalLinks"];
+                locations: components["schemas"]["PublicHomeLocation"][];
             };
         };
         AboutVisionTextSection: {
@@ -1420,12 +1568,13 @@ export interface components {
                 }[];
             };
         };
-        PageContent: components["schemas"]["HomePageContentV1"] | components["schemas"]["AboutPageContentV1"] | components["schemas"]["LegalPageContentV1"];
+        PageContent: components["schemas"]["HomePageContentV1"] | components["schemas"]["HomePageContentV2"] | components["schemas"]["AboutPageContentV1"] | components["schemas"]["LegalPageContentV1"];
+        PageWriteContent: components["schemas"]["HomePageContentV1"] | components["schemas"]["HomePageContentV2Draft"] | components["schemas"]["AboutPageContentV1"] | components["schemas"]["LegalPageContentV1"];
         PublicEditorialPage: {
             /** @enum {string} */
             pageKey: "home" | "about" | "privacy-policy" | "terms-of-use";
             /** @enum {string} */
-            template: "home.v1" | "about.v1" | "legal.v1";
+            template: "home.v1" | "home.v2" | "about.v1" | "legal.v1";
             /** @enum {string} */
             routePath: "/" | "/about" | "/privacy-policy" | "/terms-of-use";
             indexable: boolean;
@@ -1444,7 +1593,7 @@ export interface components {
             body?: string;
             dateLabel?: string;
             imageAlt?: string;
-            bodyJson?: components["schemas"]["PageContent"];
+            bodyJson?: components["schemas"]["PageWriteContent"];
         };
         ContentTranslation: {
             locale: components["schemas"]["ContentLocale"];
@@ -1453,7 +1602,7 @@ export interface components {
             body?: string;
             dateLabel?: string;
             imageAlt?: string;
-            bodyJson?: components["schemas"]["PageContent"];
+            bodyJson?: components["schemas"]["PageWriteContent"];
         };
         TranslationPreviewInput: {
             /** @constant */
@@ -1519,6 +1668,23 @@ export interface components {
             title: string;
             subtitle: string;
         };
+        HomePageTranslationV2: {
+            locale: components["schemas"]["ContentLocale"];
+            bodyJson: components["schemas"]["HomePageContentV2Draft"];
+        };
+        HomePageWriteInputV2: {
+            /** @constant */
+            pageKey: "home";
+            /** @constant */
+            pageTemplate: "home.v2";
+            /** @constant */
+            routePath: "/";
+            indexable: boolean;
+            bannerAssetId?: string;
+            links: components["schemas"]["SiteExternalLinks"];
+            locations: components["schemas"]["HomeLocation"][];
+            translations: components["schemas"]["HomePageTranslationV2"][];
+        };
         ContentWriteInput: components["schemas"]["ContentWriteFields"];
         /** @description Location and fixed-page fields are an optional backward-compatible wire superset; backend validation applies the selected module contract. */
         ContentWriteFields: {
@@ -1544,10 +1710,13 @@ export interface components {
             /** @enum {string} */
             pageKey?: "home" | "about" | "privacy-policy" | "terms-of-use";
             /** @enum {string} */
-            pageTemplate?: "home.v1" | "about.v1" | "legal.v1";
+            pageTemplate?: "home.v1" | "home.v2" | "about.v1" | "legal.v1";
             /** @enum {string} */
             routePath?: "/" | "/about" | "/privacy-policy" | "/terms-of-use";
             indexable?: boolean;
+            bannerAssetId?: string;
+            links?: components["schemas"]["SiteExternalLinks"];
+            locations?: components["schemas"]["HomeLocation"][];
             translations: components["schemas"]["ContentWriteTranslation"][];
             /** @description Locales omitted from translations are preserved unless they are named here for explicit deletion. */
             deleteLocales?: components["schemas"]["ContentLocale"][];
@@ -2275,7 +2444,7 @@ export interface components {
         };
         ContentWriteInput: {
             content: {
-                "application/json": components["schemas"]["ContentWriteInput"];
+                "application/json": components["schemas"]["ContentWriteInput"] | components["schemas"]["HomePageWriteInputV2"];
             };
         };
         TranslationPreviewInput: {
@@ -3757,6 +3926,121 @@ export interface operations {
             200: components["responses"]["ContentItem"];
             401: components["responses"]["AdminUnauthorized"];
             403: components["responses"]["AdminForbidden"];
+        };
+    };
+    createHomeBannerUpload: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                contentId: components["parameters"]["ContentID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HomeBannerUploadInput"];
+            };
+        };
+        responses: {
+            /** @description Home Banner upload target */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedUploadEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getHomeBannerStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contentId: components["parameters"]["ContentID"];
+                assetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Home Banner scan status after exact namespace, owner, and purpose validation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetStatusEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    retryHomeBannerScan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contentId: components["parameters"]["ContentID"];
+                assetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Home Banner scan requeued */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetStatusEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    completeHomeBannerUpload: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                contentId: components["parameters"]["ContentID"];
+                assetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HomeBannerCompleteInput"];
+            };
+        };
+        responses: {
+            200: components["responses"]["ContentItem"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
         };
     };
 }

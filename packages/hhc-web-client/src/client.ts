@@ -43,6 +43,7 @@ type FixedPageWriteInput<PageKey, PageTemplate, RoutePath, BodyJson> = {
 }
 export type PageWriteInput =
   | FixedPageWriteInput<'home', 'home.v1', '/', components['schemas']['HomePageContentV1']>
+  | components['schemas']['HomePageWriteInputV2']
   | FixedPageWriteInput<'about', 'about.v1', '/about', components['schemas']['AboutPageContentV1']>
   | FixedPageWriteInput<'privacy-policy', 'legal.v1', '/privacy-policy', components['schemas']['LegalPageContentV1']>
   | FixedPageWriteInput<'terms-of-use', 'legal.v1', '/terms-of-use', components['schemas']['LegalPageContentV1']>
@@ -53,6 +54,9 @@ export type SiteSettingsRevision = components['schemas']['SiteSettingsRevision']
 export type AssetStatus = components['schemas']['AssetStatus']
 export type CreateImageUploadInput = components['schemas']['CreateImageUploadInput']
 export type CompleteImageUploadInput = components['schemas']['CompleteImageUploadInput']
+export type HomePageWriteInputV2 = components['schemas']['HomePageWriteInputV2']
+export type HomeBannerUploadInput = components['schemas']['HomeBannerUploadInput']
+export type HomeBannerCompleteInput = components['schemas']['HomeBannerCompleteInput']
 
 export class HhcWebApiError extends Error {
   readonly status: number
@@ -297,16 +301,36 @@ export function createHhcWebClient(options: {
     async retryNewsCoverScan(contentId: string, assetId: string) {
       return (await unwrap(client.POST('/admin/content/news/{contentId}/assets/{assetId}/scan/retry', { params: { path: { contentId, assetId } } }))).data
     },
+    async createHomeBannerUpload(contentId: string, input: HomeBannerUploadInput, idempotencyKey: string, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/content/pages/{contentId}/upload-sessions', {
+        params: { path: { contentId }, header: { 'Idempotency-Key': idempotencyKey } }, body: input,
+        signal,
+      }))).data
+    },
+    async getHomeBannerStatus(contentId: string, assetId: string, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/content/pages/{contentId}/assets/{assetId}', { params: { path: { contentId, assetId } }, signal }))).data
+    },
+    async retryHomeBannerScan(contentId: string, assetId: string) {
+      return (await unwrap(client.POST('/admin/content/pages/{contentId}/assets/{assetId}/scan/retry', { params: { path: { contentId, assetId } } }))).data
+    },
+    async completeHomeBannerUpload(contentId: string, assetId: string, version: number, input: HomeBannerCompleteInput, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/content/pages/{contentId}/assets/{assetId}/complete', {
+        params: { path: { contentId, assetId }, header: { 'If-Match': `"${version}"` } }, body: input,
+        signal,
+      }))).data
+    },
     async listPublicContent(module: Exclude<ContentModule, 'locations' | 'pages'>, locale: ContentLocale, signal?: AbortSignal) {
       return (await listPublicContentPage(module, locale, { signal })).data
     },
     listPublicContentPage,
+    /** @deprecated Home v2 includes locations in getPublicPage('home', locale). */
     async listLocations(locale: ContentLocale, signal?: AbortSignal) {
       return (await unwrap(client.GET('/locations', { params: { query: { locale } }, signal }))).data
     },
     async getPublicPage(pageKey: PageKey, locale: ContentLocale, signal?: AbortSignal) {
       return (await unwrap(client.GET('/pages/{pageKey}', { params: { path: { pageKey }, query: { locale } }, signal }))).data
     },
+    /** @deprecated Home v2 includes site layout links in getPublicPage('home', locale). */
     async getSiteLayout(locale: ContentLocale, signal?: AbortSignal) {
       return (await unwrap(client.GET('/site-layout', { params: { query: { locale } }, signal }))).data
     },
