@@ -1,4 +1,4 @@
-import type { ContentItem, HhcWebClient, HomePageWriteInputV2, PageContent, PageKey, PageWriteInput } from '../src/client.js'
+import type { ContentItem, HhcWebClient, HomePageWriteInputV2, PageContent, PageKey, PageWriteInput, PublicationContentModule } from '../src/client.js'
 
 type Assert<T extends true> = T
 type IsRequired<T, K extends keyof T> = {} extends Pick<T, K> ? false : true
@@ -20,6 +20,21 @@ type _GenericDeleteRejectsPages = Assert<'pages' extends DeleteModule ? false : 
 type _GenericListAcceptsPages = Assert<'pages' extends ListModule ? true : false>
 type _GenericPublishAcceptsPages = Assert<'pages' extends PublishModule ? true : false>
 type _GenericRestoreAcceptsPages = Assert<'pages' extends RestoreModule ? true : false>
+type _PublicationTypeAcceptsNews = Assert<'news' extends PublicationContentModule ? true : false>
+type _PublicationTypeRejectsHistory = Assert<'history' extends PublicationContentModule ? false : true>
+type _PublicationTypeRejectsVideos = Assert<'videos' extends PublicationContentModule ? false : true>
+
+declare const client: HhcWebClient
+client.publishContent('pages', 'page-1', 1)
+client.publishContent('news', 'news-1', 1)
+// @ts-expect-error History publication is owned by its parent About Page.
+client.publishContent('history', 'history-1', 1)
+// @ts-expect-error Video publication is owned by its parent Home Page.
+client.unpublishContent('videos', 'video-1', 1)
+// @ts-expect-error History restore is owned by its parent About Page revision.
+client.restoreContentRevision('history', 'history-1', 1, 1)
+// @ts-expect-error Video restore is owned by its parent Home Page revision.
+client.restoreContentRevision('videos', 'video-1', 1, 1)
 
 declare const page: PageContent
 if (page.template === 'home.v1') {

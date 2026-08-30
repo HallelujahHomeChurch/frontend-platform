@@ -58,14 +58,18 @@ try {
   write(resolve(vite, 'src/main.tsx'), `import React from 'react';
 import {createRoot} from 'react-dom/client';
 import {createAccountSessionClient, type AccountSessionUser} from '@hallelujahhomechurch/account-client';
-import {createHhcWebClient} from '@hallelujahhomechurch/hhc-web-client';
+import {createHhcWebClient, type ContentStatus, type PageGroupManifest} from '@hallelujahhomechurch/hhc-web-client';
 import {getInitialTheme} from '@hallelujahhomechurch/preferences';
 import {AccountMenu, Button, ContextMenu} from '@hallelujahhomechurch/ui';
 import '@hallelujahhomechurch/ui/styles.css';
 
 const accountUser: AccountSessionUser = {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null, admin_access: true};
+const contentStatus: ContentStatus = 'pending_removal';
+const groupManifest: PageGroupManifest = {pageId: '00000000-0000-0000-0000-000000000001', pageSourceVersion: 1, pageTargetVersion: 2, childModule: 'history', items: [], sha256: 'a'.repeat(64)};
 void createAccountSessionClient;
 void createHhcWebClient;
+void contentStatus;
+void groupManifest;
 void getInitialTheme;
 createRoot(document.getElementById('root')!).render(<><Button>Smoke</Button><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /><AccountMenu user={{name: accountUser.display_name, email: accountUser.email}} links={[{id: 'destination', label: 'Destination', href: 'https://example.com/destination'}]} labels={{menu: 'Account', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => {}} /></>);
 `);
@@ -104,13 +108,17 @@ export default function Layout({children}: {children: React.ReactNode}) {
 `);
   write(resolve(next, 'app/page.tsx'), `'use client';
 import {createAccountSessionClient, type AccountSessionUser} from '@hallelujahhomechurch/account-client';
-import {createHhcWebClient} from '@hallelujahhomechurch/hhc-web-client';
+import {createHhcWebClient, type ContentStatus, type PageGroupManifest} from '@hallelujahhomechurch/hhc-web-client';
 import {getInitialTheme} from '@hallelujahhomechurch/preferences';
 import {AccountMenu, Button, ContextMenu} from '@hallelujahhomechurch/ui';
 
 const accountUser: AccountSessionUser = {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null, admin_access: true};
+const contentStatus: ContentStatus = 'pending_removal';
+const groupManifest: PageGroupManifest = {pageId: '00000000-0000-0000-0000-000000000001', pageSourceVersion: 1, pageTargetVersion: 2, childModule: 'history', items: [], sha256: 'a'.repeat(64)};
 void createAccountSessionClient;
 void createHhcWebClient;
+void contentStatus;
+void groupManifest;
 void getInitialTheme;
 export default function Page() { return <><Button>Smoke</Button><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /><AccountMenu user={{name: accountUser.display_name, email: accountUser.email}} links={[{id: 'destination', label: 'Destination', href: 'https://example.com/destination'}]} labels={{menu: 'Account', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => {}} /></>; }
 `);
