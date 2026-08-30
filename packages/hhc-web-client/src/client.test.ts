@@ -353,6 +353,61 @@ describe('hhc web client', () => {
     expect(deleteRequest.headers.get('If-Match')).toBe('"2"')
   })
 
+  it('decodes pending removal items and Page group revision manifests', async () => {
+    const content = {
+      id: 'history-1', module: 'history', status: 'pending_removal', version: 4, detailLayout: 'top',
+      translations: [], isPublished: true, publishedVersion: 3, createdBy: 'admin', updatedBy: 'admin',
+      createdAt: '2026-08-30T00:00:00Z', updatedAt: '2026-08-30T00:00:00Z',
+    }
+    const manifest = {
+      pageId: '00000000-0000-0000-0000-000000000001', pageSourceVersion: 6, pageTargetVersion: 7,
+      childModule: 'history',
+      items: [{ id: '00000000-0000-0000-0000-000000000002', sourceVersion: 3, targetVersion: 4, action: 'remove' }],
+      sha256: 'a'.repeat(64),
+    }
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: [content], meta: { page: 1, pageSize: 20, total: 1 }, error: null,
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: [{ version: 7, snapshot: content, groupManifest: manifest, createdBy: 'admin', createdAt: '2026-08-30T00:00:00Z' }],
+        meta: {}, error: null,
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
+
+    const listed = await client.listContent('history')
+    const revisions = await client.listContentRevisions('pages', 'page-1')
+
+    expect(listed.data[0]?.status).toBe('pending_removal')
+    expect(revisions[0]?.groupManifest).toEqual(manifest)
+    expect(revisions[0]?.groupManifest?.items[0]?.action).toBe('remove')
+  })
+
+  it('publishes, unpublishes, and restores only supported content modules', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({
+      data: { id: 'content-1' }, meta: {}, error: null,
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
+
+    await client.publishContent('pages', 'page-1', 2)
+    await client.unpublishContent('pages', 'page-1', 3)
+    await client.restoreContentRevision('pages', 'page-1', 1, 4)
+    await client.publishContent('news', 'news-1', 5)
+    await client.unpublishContent('news', 'news-1', 6)
+    await client.restoreContentRevision('news', 'news-1', 2, 7)
+
+    const requests = fetcher.mock.calls.map(call => call[0] as Request)
+    expect(requests.map(request => request.url)).toEqual([
+      'http://localhost/api/admin/content/pages/page-1/publish',
+      'http://localhost/api/admin/content/pages/page-1/unpublish',
+      'http://localhost/api/admin/content/pages/page-1/revisions/1/restore',
+      'http://localhost/api/admin/content/news/news-1/publish',
+      'http://localhost/api/admin/content/news/news-1/unpublish',
+      'http://localhost/api/admin/content/news/news-1/revisions/2/restore',
+    ])
+    expect(requests.map(request => request.headers.get('If-Match'))).toEqual(['"2"', '"3"', '"4"', '"5"', '"6"', '"7"'])
+  })
+
   it('uses optimistic concurrency for bulletin deletion and revision restore', async () => {
     const fetcher = vi.fn<typeof fetch>()
       .mockResolvedValueOnce(new Response(null, { status: 204 }))
@@ -524,9 +579,10 @@ describe('hhc web client', () => {
   })
 
   it('reads home and news detail projections directly', async () => {
+    const home = { news: [{ id: 'news-1', title: 'News' }], videos: [{ id: 'video-1', title: 'Video' }] }
     const fetcher = vi.fn<typeof fetch>()
       .mockResolvedValueOnce(new Response(JSON.stringify({
-        data: { news: [], videos: [] },
+        data: home,
         meta: {},
         error: null,
       }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
@@ -537,7 +593,7 @@ describe('hhc web client', () => {
       }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
     const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => null, fetcher })
 
-    await client.getHome('en')
+    await expect(client.getHome('en')).resolves.toEqual(home)
     await client.getNewsBySlug('en', 'announcement')
 
     expect(fetcher).toHaveBeenCalledTimes(2)

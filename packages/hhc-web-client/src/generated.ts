@@ -772,7 +772,10 @@ export interface paths {
         /** Update content */
         put: operations["updateContent"];
         post?: never;
-        /** Delete content */
+        /**
+         * Delete content
+         * @description Immediately hard deletes a never-published and never-manifested draft. Deleting a published or manifest-backed History or Video child stages pending removal for the next About or Home group publication and still returns 204.
+         */
         delete: operations["deleteContent"];
         options?: never;
         head?: never;
@@ -805,7 +808,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Publish content */
+        /**
+         * Publish content
+         * @description Publishes ordinary content directly. Publishing the Home or About Page is a group operation that atomically publishes its Video or History children; direct child publication returns 405.
+         */
         post: operations["publishContent"];
         delete?: never;
         options?: never;
@@ -822,7 +828,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Unpublish content */
+        /**
+         * Unpublish content
+         * @description Unpublishes ordinary content directly. Unpublishing the Home or About Page is a group operation that atomically removes its Video or History projections; direct child unpublication returns 405.
+         */
         post: operations["unpublishContent"];
         delete?: never;
         options?: never;
@@ -856,7 +865,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Restore content revision */
+        /**
+         * Restore content revision
+         * @description Restores ordinary content as a draft. Restoring a Home or About Page is a group operation that restores included Video or History snapshots as drafts, marks removed or absent children pending removal, and leaves live projections unchanged; direct child restore returns 405.
+         */
         post: operations["restoreContentRevision"];
         delete?: never;
         options?: never;
@@ -1215,11 +1227,13 @@ export interface components {
         /** @enum {string} */
         ContentModule: "news" | "history" | "videos" | "locations" | "pages";
         /** @enum {string} */
+        PublicationContentModule: "news" | "locations" | "pages";
+        /** @enum {string} */
         CreatableContentModule: "news" | "history" | "videos" | "locations";
         /** @enum {string} */
         TranslatableContentModule: "news" | "history" | "videos";
         /** @enum {string} */
-        ContentStatus: "draft" | "publishing" | "published" | "publish_failed" | "unpublishing" | "unpublish_failed" | "unpublished";
+        ContentStatus: "draft" | "publishing" | "published" | "publish_failed" | "unpublishing" | "unpublish_failed" | "unpublished" | "pending_removal";
         PageMeta: {
             page: number;
             pageSize: number;
@@ -1747,9 +1761,32 @@ export interface components {
             /** Format: int64 */
             version: number;
             snapshot: components["schemas"]["ContentItem"];
+            groupManifest?: components["schemas"]["PageGroupManifest"];
             createdBy: string;
             /** Format: date-time */
             createdAt: string;
+        };
+        PageGroupManifest: {
+            /** Format: uuid */
+            pageId: string;
+            /** Format: int64 */
+            pageSourceVersion: number;
+            /** Format: int64 */
+            pageTargetVersion: number;
+            /** @enum {string} */
+            childModule: "history" | "videos";
+            items: components["schemas"]["PageGroupManifestItem"][];
+            sha256: string;
+        };
+        PageGroupManifestItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int64 */
+            sourceVersion: number;
+            /** Format: int64 */
+            targetVersion: number;
+            /** @enum {string} */
+            action: "keep" | "publish" | "remove";
         };
         PublicContentItem: {
             id: string;
@@ -2427,6 +2464,7 @@ export interface components {
         /** @description Conditional validator; weak validators and comma-separated lists are accepted. */
         IfNoneMatch: string;
         ContentModule: components["schemas"]["ContentModule"];
+        PublicationContentModule: components["schemas"]["PublicationContentModule"];
         CreatableContentModule: components["schemas"]["CreatableContentModule"];
         TranslatableContentModule: components["schemas"]["TranslatableContentModule"];
         PageKey: "home" | "about" | "privacy-policy" | "terms-of-use";
@@ -3696,7 +3734,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Content and its revisions deleted */
+            /** @description Draft deleted immediately or group child staged for pending removal */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -3747,7 +3785,7 @@ export interface operations {
                 "If-Match": components["parameters"]["IfMatch"];
             };
             path: {
-                module: components["parameters"]["ContentModule"];
+                module: components["parameters"]["PublicationContentModule"];
                 contentId: components["parameters"]["ContentID"];
             };
             cookie?: never;
@@ -3757,6 +3795,7 @@ export interface operations {
             200: components["responses"]["ContentItem"];
             401: components["responses"]["AdminUnauthorized"];
             403: components["responses"]["AdminForbidden"];
+            405: components["responses"]["Error"];
             422: components["responses"]["Error"];
         };
     };
@@ -3767,7 +3806,7 @@ export interface operations {
                 "If-Match": components["parameters"]["IfMatch"];
             };
             path: {
-                module: components["parameters"]["ContentModule"];
+                module: components["parameters"]["PublicationContentModule"];
                 contentId: components["parameters"]["ContentID"];
             };
             cookie?: never;
@@ -3777,6 +3816,7 @@ export interface operations {
             200: components["responses"]["ContentItem"];
             401: components["responses"]["AdminUnauthorized"];
             403: components["responses"]["AdminForbidden"];
+            405: components["responses"]["Error"];
         };
     };
     listContentRevisions: {
@@ -3811,7 +3851,7 @@ export interface operations {
                 "If-Match": components["parameters"]["IfMatch"];
             };
             path: {
-                module: components["parameters"]["ContentModule"];
+                module: components["parameters"]["PublicationContentModule"];
                 contentId: components["parameters"]["ContentID"];
                 revision: components["parameters"]["Revision"];
             };
@@ -3822,6 +3862,7 @@ export interface operations {
             200: components["responses"]["ContentItem"];
             401: components["responses"]["AdminUnauthorized"];
             403: components["responses"]["AdminForbidden"];
+            405: components["responses"]["Error"];
         };
     };
     createNewsCoverUpload: {

@@ -18,9 +18,11 @@ export type UploadTarget = components['schemas']['UploadTarget']
 export type CreatedBulletinUpload = components['schemas']['CreatedUpload']
 export type CompleteBulletinUploadInput = components['schemas']['CompleteBulletinUploadInput']
 export type ContentModule = components['schemas']['ContentModule']
+export type PublicationContentModule = components['schemas']['PublicationContentModule']
 export type CreatableContentModule = components['schemas']['CreatableContentModule']
 export type ContentStatus = components['schemas']['ContentStatus']
 export type ContentItem = components['schemas']['ContentItem']
+export type PageGroupManifest = components['schemas']['PageGroupManifest']
 export type ContentWriteInput = components['schemas']['ContentWriteInput']
 export type LocationWriteInput = {
   locationKey: string
@@ -259,12 +261,12 @@ export function createHhcWebClient(options: {
     async updatePage(contentId: string, version: number, input: PageWriteInput) {
       return updateAdminContent('pages', contentId, version, input as ContentWriteInput)
     },
-    async publishContent(module: ContentModule, contentId: string, version: number) {
+    async publishContent(module: PublicationContentModule, contentId: string, version: number) {
       return (await unwrap(client.POST('/admin/content/{module}/{contentId}/publish', {
         params: { path: { module, contentId }, header: { 'If-Match': `"${version}"` } },
       }))).data
     },
-    async unpublishContent(module: ContentModule, contentId: string, version: number) {
+    async unpublishContent(module: PublicationContentModule, contentId: string, version: number) {
       return (await unwrap(client.POST('/admin/content/{module}/{contentId}/unpublish', {
         params: { path: { module, contentId }, header: { 'If-Match': `"${version}"` } },
       }))).data
@@ -278,7 +280,7 @@ export function createHhcWebClient(options: {
     async listContentRevisions(module: ContentModule, contentId: string) {
       return (await unwrap(client.GET('/admin/content/{module}/{contentId}/revisions', { params: { path: { module, contentId } } }))).data
     },
-    async restoreContentRevision(module: ContentModule, contentId: string, revision: number, version: number) {
+    async restoreContentRevision(module: PublicationContentModule, contentId: string, revision: number, version: number) {
       return (await unwrap(client.POST('/admin/content/{module}/{contentId}/revisions/{revision}/restore', {
         params: { path: { module, contentId, revision }, header: { 'If-Match': `"${version}"` } },
       }))).data
