@@ -59,6 +59,20 @@ export type CompleteImageUploadInput = components['schemas']['CompleteImageUploa
 export type HomePageWriteInputV2 = components['schemas']['HomePageWriteInputV2']
 export type HomeBannerUploadInput = components['schemas']['HomeBannerUploadInput']
 export type HomeBannerCompleteInput = components['schemas']['HomeBannerCompleteInput']
+export type OperationsStatus = components['schemas']['OperationsStatus']
+export type OperationsVisibility = components['schemas']['OperationsVisibility']
+export type OperationsStatusAction = components['parameters']['StatusAction']
+export type ChurchUnitInput = components['schemas']['ChurchUnitInput']
+export type ChurchUnit = components['schemas']['ChurchUnit']
+export type OperationsResourceInput = components['schemas']['OperationsResourceInput']
+export type OperationsResource = components['schemas']['OperationsResource']
+export type MeetingInput = components['schemas']['MeetingInput']
+export type Meeting = components['schemas']['Meeting']
+export type MeetingDetail = components['schemas']['MeetingDetail']
+export type MeetingOccurrenceOverrideInput = components['schemas']['MeetingOccurrenceOverrideInput']
+export type MeetingOccurrenceOverride = components['schemas']['MeetingOccurrenceOverride']
+export type PublicMeeting = components['schemas']['PublicMeeting']
+export type PublicMeetingOccurrence = components['schemas']['PublicMeetingOccurrence']
 
 export class HhcWebApiError extends Error {
   readonly status: number
@@ -128,6 +142,101 @@ export function createHhcWebClient(options: {
   }
 
   return {
+    async listPublicMeetings(signal?: AbortSignal) {
+      return (await unwrap(client.GET('/meetings', { signal }))).data
+    },
+    async getPublicMeeting(meetingKey: string, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/meetings/{meetingKey}', { params: { path: { meetingKey } }, signal }))).data
+    },
+    async listPublicMeetingOccurrences(params: { from?: string; to?: string; signal?: AbortSignal } = {}) {
+      return (await unwrap(client.GET('/meeting-occurrences', {
+        params: { query: { from: params.from, to: params.to } }, signal: params.signal,
+      }))).data
+    },
+    async listChurchUnits(params: { includeArchived?: boolean; signal?: AbortSignal } = {}) {
+      return (await unwrap(client.GET('/admin/operations/church-units', {
+        params: { query: { includeArchived: params.includeArchived } }, signal: params.signal,
+      }))).data
+    },
+    async getChurchUnit(id: string, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/operations/church-units/{id}', { params: { path: { id } }, signal }))).data
+    },
+    async createChurchUnit(input: ChurchUnitInput, idempotencyKey: string) {
+      return (await unwrap(client.POST('/admin/operations/church-units', {
+        params: { header: { 'Idempotency-Key': idempotencyKey } }, body: input,
+      }))).data
+    },
+    async updateChurchUnit(id: string, version: number, input: ChurchUnitInput) {
+      return (await unwrap(client.PUT('/admin/operations/church-units/{id}', {
+        params: { path: { id }, header: { 'If-Match': `"${version}"` } }, body: input,
+      }))).data
+    },
+    async setChurchUnitStatus(id: string, version: number, action: OperationsStatusAction) {
+      return (await unwrap(client.POST('/admin/operations/church-units/{id}/{action}', {
+        params: { path: { id, action }, header: { 'If-Match': `"${version}"` } },
+      }))).data
+    },
+    async listOperationsResources(params: { includeArchived?: boolean; signal?: AbortSignal } = {}) {
+      return (await unwrap(client.GET('/admin/operations/resources', {
+        params: { query: { includeArchived: params.includeArchived } }, signal: params.signal,
+      }))).data
+    },
+    async getOperationsResource(id: string, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/operations/resources/{id}', { params: { path: { id } }, signal }))).data
+    },
+    async createOperationsResource(input: OperationsResourceInput, idempotencyKey: string) {
+      return (await unwrap(client.POST('/admin/operations/resources', {
+        params: { header: { 'Idempotency-Key': idempotencyKey } }, body: input,
+      }))).data
+    },
+    async updateOperationsResource(id: string, version: number, input: OperationsResourceInput) {
+      return (await unwrap(client.PUT('/admin/operations/resources/{id}', {
+        params: { path: { id }, header: { 'If-Match': `"${version}"` } }, body: input,
+      }))).data
+    },
+    async setOperationsResourceStatus(id: string, version: number, action: OperationsStatusAction) {
+      return (await unwrap(client.POST('/admin/operations/resources/{id}/{action}', {
+        params: { path: { id, action }, header: { 'If-Match': `"${version}"` } },
+      }))).data
+    },
+    async listMeetings(params: { includeArchived?: boolean; signal?: AbortSignal } = {}) {
+      return (await unwrap(client.GET('/admin/operations/meetings', {
+        params: { query: { includeArchived: params.includeArchived } }, signal: params.signal,
+      }))).data
+    },
+    async getMeeting(id: string, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/operations/meetings/{id}', { params: { path: { id } }, signal }))).data
+    },
+    async createMeeting(input: MeetingInput, idempotencyKey: string) {
+      return (await unwrap(client.POST('/admin/operations/meetings', {
+        params: { header: { 'Idempotency-Key': idempotencyKey } }, body: input,
+      }))).data
+    },
+    async updateMeeting(id: string, version: number, input: MeetingInput) {
+      return (await unwrap(client.PUT('/admin/operations/meetings/{id}', {
+        params: { path: { id }, header: { 'If-Match': `"${version}"` } }, body: input,
+      }))).data
+    },
+    async setMeetingStatus(id: string, version: number, action: OperationsStatusAction) {
+      return (await unwrap(client.POST('/admin/operations/meetings/{id}/{action}', {
+        params: { path: { id, action }, header: { 'If-Match': `"${version}"` } },
+      }))).data
+    },
+    async putMeetingOccurrenceOverride(id: string, occurrenceDate: string, version: number, input: MeetingOccurrenceOverrideInput) {
+      return (await unwrap(client.PUT('/admin/operations/meetings/{id}/overrides/{occurrenceDate}', {
+        params: { path: { id, occurrenceDate }, header: { 'If-Match': `"${version}"` } }, body: input,
+      }))).data
+    },
+    async deleteMeetingOccurrenceOverride(id: string, occurrenceDate: string, version: number) {
+      return (await unwrap(client.DELETE('/admin/operations/meetings/{id}/overrides/{occurrenceDate}', {
+        params: { path: { id, occurrenceDate }, header: { 'If-Match': `"${version}"` } },
+      }))).data
+    },
+    async replaceMeetingCollectionBindings(id: string, version: number, collectionIds: string[]) {
+      return (await unwrap(client.PUT('/admin/operations/meetings/{id}/collections', {
+        params: { path: { id }, header: { 'If-Match': `"${version}"` } }, body: { collectionIds },
+      }))).data
+    },
     async listAdminBulletins(params: { page?: number; pageSize?: number; status?: BulletinStatus; query?: string; signal?: AbortSignal } = {}) {
       const envelope = await unwrap(client.GET('/admin/bulletins', {
         params: { query: { page: params.page, pageSize: params.pageSize, status: params.status, q: params.query } },

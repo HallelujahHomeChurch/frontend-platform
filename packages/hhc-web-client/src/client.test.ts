@@ -626,4 +626,78 @@ describe('hhc web client', () => {
     await expect(legacyClient.listPublicContent('locations', 'zh-Hant')).rejects.toThrow('Use listLocations for locations.')
     expect(fetcher).not.toHaveBeenCalled()
   })
+
+  it('maps public meeting queries through the released contract', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({ data: [], meta: {}, error: null }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    }))
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => null, fetcher })
+
+    await client.listPublicMeetings()
+    await client.getPublicMeeting('sunday-service')
+    await client.listPublicMeetingOccurrences({ from: '2026-09-01T00:00:00Z', to: '2026-10-01T00:00:00Z' })
+
+    expect(fetcher.mock.calls.map(call => (call[0] as Request).url)).toEqual([
+      'http://localhost/api/meetings',
+      'http://localhost/api/meetings/sunday-service',
+      'http://localhost/api/meeting-occurrences?from=2026-09-01T00%3A00%3A00Z&to=2026-10-01T00%3A00%3A00Z',
+    ])
+  })
+
+  it('maps meeting operations headers, actions, dates, and bindings', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => {
+      return new Response(JSON.stringify({ data: {}, meta: {}, error: null }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    })
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
+    const unit = { key: 'main', name: 'Main' }
+    const resource = { key: 'sanctuary', name: 'Sanctuary', kind: 'venue' as const, churchUnitId: 'unit-1', timezone: 'Asia/Taipei', visibility: 'public' as const }
+    const meeting = { key: 'sunday-service', name: 'Sunday Service', churchUnitId: 'unit-1', venueResourceId: 'venue-1', timezone: 'Asia/Taipei', schedule: { type: 'weekly' as const, daysOfWeek: [0], startTime: '10:00' }, durationMinutes: 90, visibility: 'public' as const }
+
+    await client.listChurchUnits({ includeArchived: true })
+    await client.createChurchUnit(unit, 'unit-create')
+    await client.updateChurchUnit('unit-1', 2, unit)
+    await client.setChurchUnitStatus('unit-1', 3, 'archive')
+    await client.listOperationsResources({ includeArchived: true })
+    await client.createOperationsResource(resource, 'resource-create')
+    await client.updateOperationsResource('resource-1', 4, resource)
+    await client.setOperationsResourceStatus('resource-1', 5, 'pause')
+    await client.listMeetings({ includeArchived: true })
+    await client.createMeeting(meeting, 'meeting-create')
+    await client.updateMeeting('meeting-1', 6, meeting)
+    await client.setMeetingStatus('meeting-1', 7, 'resume')
+    await client.putMeetingOccurrenceOverride('meeting-1', '2026-09-06', 8, { cancelled: true, reason: 'Typhoon' })
+    await client.deleteMeetingOccurrenceOverride('meeting-1', '2026-09-06', 9)
+    await client.replaceMeetingCollectionBindings('meeting-1', 10, ['collection-1', 'collection-2'])
+
+    const requests = fetcher.mock.calls.map(call => call[0] as Request)
+    expect(requests.map(request => `${request.method} ${new URL(request.url).pathname}${new URL(request.url).search}`)).toEqual([
+      'GET /api/admin/operations/church-units?includeArchived=true',
+      'POST /api/admin/operations/church-units',
+      'PUT /api/admin/operations/church-units/unit-1',
+      'POST /api/admin/operations/church-units/unit-1/archive',
+      'GET /api/admin/operations/resources?includeArchived=true',
+      'POST /api/admin/operations/resources',
+      'PUT /api/admin/operations/resources/resource-1',
+      'POST /api/admin/operations/resources/resource-1/pause',
+      'GET /api/admin/operations/meetings?includeArchived=true',
+      'POST /api/admin/operations/meetings',
+      'PUT /api/admin/operations/meetings/meeting-1',
+      'POST /api/admin/operations/meetings/meeting-1/resume',
+      'PUT /api/admin/operations/meetings/meeting-1/overrides/2026-09-06',
+      'DELETE /api/admin/operations/meetings/meeting-1/overrides/2026-09-06',
+      'PUT /api/admin/operations/meetings/meeting-1/collections',
+    ])
+    expect(requests[1]!.headers.get('Idempotency-Key')).toBe('unit-create')
+    expect(requests[5]!.headers.get('Idempotency-Key')).toBe('resource-create')
+    expect(requests[9]!.headers.get('Idempotency-Key')).toBe('meeting-create')
+    for (const [index, version] of [[2, 2], [3, 3], [6, 4], [7, 5], [10, 6], [11, 7], [12, 8], [13, 9], [14, 10]] as const) {
+      expect(requests[index]!.headers.get('If-Match')).toBe(`"${version}"`)
+    }
+    await expect(requests[12]!.json()).resolves.toEqual({ cancelled: true, reason: 'Typhoon' })
+    await expect(requests[14]!.json()).resolves.toEqual({ collectionIds: ['collection-1', 'collection-2'] })
+  })
 })

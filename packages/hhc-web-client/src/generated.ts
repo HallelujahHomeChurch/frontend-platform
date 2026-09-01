@@ -72,6 +72,324 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/meetings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List public meetings */
+        get: operations["listPublicMeetings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/meetings/{meetingKey}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meetingKey: components["parameters"]["MeetingKey"];
+            };
+            cookie?: never;
+        };
+        /** Get a public meeting */
+        get: operations["getPublicMeeting"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/meeting-occurrences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List public meeting occurrences */
+        get: operations["listPublicMeetingOccurrences"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/meeting-sync-windows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List redacted meeting media sync windows */
+        get: operations["listMeetingSyncWindows"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/operations/church-units": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List church units */
+        get: operations["listChurchUnits"];
+        put?: never;
+        /** Create a church unit */
+        post: operations["createChurchUnit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/operations/church-units/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["OperationsID"];
+            };
+            cookie?: never;
+        };
+        /** Get a church unit */
+        get: operations["getChurchUnit"];
+        /** Update a church unit */
+        put: operations["updateChurchUnit"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/operations/church-units/{id}/{action}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["OperationsID"];
+                action: components["parameters"]["StatusAction"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change a church unit status */
+        post: operations["setChurchUnitStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/operations/resources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List operations resources */
+        get: operations["listOperationsResources"];
+        put?: never;
+        /** Create an operations resource */
+        post: operations["createOperationsResource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/operations/resources/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["OperationsID"];
+            };
+            cookie?: never;
+        };
+        /** Get an operations resource */
+        get: operations["getOperationsResource"];
+        /** Update an operations resource */
+        put: operations["updateOperationsResource"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/operations/resources/{id}/{action}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["OperationsID"];
+                action: components["parameters"]["StatusAction"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change an operations resource status */
+        post: operations["setOperationsResourceStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/operations/meetings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List meetings for administration */
+        get: operations["listMeetings"];
+        put?: never;
+        /** Create a meeting */
+        post: operations["createMeeting"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/operations/meetings/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["OperationsID"];
+            };
+            cookie?: never;
+        };
+        /** Get a meeting for administration */
+        get: operations["getMeeting"];
+        /** Update a meeting */
+        put: operations["updateMeeting"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/operations/meetings/{id}/{action}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["OperationsID"];
+                action: components["parameters"]["StatusAction"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change a meeting status */
+        post: operations["setMeetingStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/operations/meetings/{id}/overrides/{occurrenceDate}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["OperationsID"];
+                occurrenceDate: components["parameters"]["OccurrenceDate"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Create or replace a meeting occurrence override */
+        put: operations["putMeetingOccurrenceOverride"];
+        post?: never;
+        /** Delete a meeting occurrence override */
+        delete: operations["deleteMeetingOccurrenceOverride"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/operations/meetings/{id}/collections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["OperationsID"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace meeting collection bindings */
+        put: operations["replaceMeetingCollectionBindings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/priv/meeting-occurrences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List internal meeting occurrences */
+        get: operations["listPrivateMeetingOccurrences"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/priv/meeting-sync-windows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List internal meeting media sync windows */
+        get: operations["listPrivateMeetingSyncWindows"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/campaigns": {
         parameters: {
             query?: never;
@@ -1022,6 +1340,185 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @enum {string} */
+        OperationsStatus: "active" | "paused" | "archived";
+        /** @enum {string} */
+        OperationsVisibility: "public" | "internal";
+        MeetingSchedule: {
+            /** @enum {string} */
+            type: "weekly" | "once";
+            daysOfWeek?: number[];
+            startTime?: string;
+            /** Format: date-time */
+            startsAt?: string;
+        };
+        ChurchUnitInput: {
+            key: string;
+            name: string;
+            description?: string;
+            /** Format: uuid */
+            parentId?: string;
+        };
+        ChurchUnit: components["schemas"]["ChurchUnitInput"] & {
+            /** Format: uuid */
+            id: string;
+            status: components["schemas"]["OperationsStatus"];
+            /** Format: int64 */
+            version: number;
+        };
+        OperationsResourceInput: {
+            key: string;
+            name: string;
+            description?: string;
+            /** @enum {string} */
+            kind: "venue";
+            /** Format: uuid */
+            churchUnitId: string;
+            /** Format: uuid */
+            locationContentId?: string;
+            timezone: string;
+            visibility: components["schemas"]["OperationsVisibility"];
+        };
+        OperationsResource: components["schemas"]["OperationsResourceInput"] & {
+            /** Format: uuid */
+            id: string;
+            /** @constant */
+            reservationEnabled: false;
+            status: components["schemas"]["OperationsStatus"];
+            /** Format: int64 */
+            version: number;
+        };
+        MeetingInput: {
+            key: string;
+            name: string;
+            description?: string;
+            /** Format: uuid */
+            churchUnitId: string;
+            /** Format: uuid */
+            venueResourceId: string;
+            timezone: string;
+            schedule: components["schemas"]["MeetingSchedule"];
+            durationMinutes: number;
+            visibility: components["schemas"]["OperationsVisibility"];
+        };
+        Meeting: components["schemas"]["MeetingInput"] & {
+            /** Format: uuid */
+            id: string;
+            status: components["schemas"]["OperationsStatus"];
+            /** Format: int64 */
+            version: number;
+        };
+        PublicMeeting: {
+            key: string;
+            name: string;
+            description?: string;
+            timezone: string;
+            schedule: components["schemas"]["MeetingSchedule"];
+            durationMinutes: number;
+            nextOccurrence?: components["schemas"]["PublicMeetingOccurrence"];
+        };
+        PublicMeetingOccurrence: {
+            /** Format: uuid */
+            occurrenceId: string;
+            meetingKey: string;
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string;
+            /** @enum {string} */
+            status: "scheduled" | "cancelled";
+        };
+        MeetingOccurrence: {
+            /** Format: uuid */
+            occurrenceId: string;
+            /** Format: uuid */
+            meetingId: string;
+            meetingKey: string;
+            /** Format: uuid */
+            churchUnitId: string;
+            /** Format: uuid */
+            venueResourceId: string;
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string;
+            /** @enum {string} */
+            status: "scheduled" | "cancelled";
+            /** Format: int64 */
+            version: number;
+        };
+        MeetingOccurrenceOverrideInput: {
+            cancelled?: boolean;
+            /** Format: date-time */
+            startsAt?: string;
+            durationMinutes?: number;
+            /** Format: uuid */
+            venueResourceId?: string;
+            reason?: string;
+        };
+        MeetingOccurrenceOverride: components["schemas"]["MeetingOccurrenceOverrideInput"] & {
+            /** Format: uuid */
+            meetingId: string;
+            /** Format: date */
+            occurrenceDate: string;
+            /** Format: int64 */
+            version: number;
+        };
+        MediaSyncWindow: {
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string;
+        };
+        MeetingCollectionBindings: {
+            collectionIds: string[];
+        };
+        MeetingMutation: components["schemas"]["Meeting"] & {
+            nextOccurrence?: components["schemas"]["MeetingOccurrence"];
+        };
+        MeetingDetail: components["schemas"]["Meeting"] & {
+            overrides: components["schemas"]["MeetingOccurrenceOverride"][];
+            collectionIds: string[];
+        };
+        PublicMeetingListEnvelope: {
+            data: components["schemas"]["PublicMeeting"][];
+        };
+        PublicMeetingEnvelope: {
+            data: components["schemas"]["PublicMeeting"];
+        };
+        PublicMeetingOccurrenceListEnvelope: {
+            data: components["schemas"]["PublicMeetingOccurrence"][];
+        };
+        MediaSyncWindowListEnvelope: {
+            data: components["schemas"]["MediaSyncWindow"][];
+        };
+        MeetingOccurrenceListEnvelope: {
+            data: components["schemas"]["MeetingOccurrence"][];
+        };
+        ChurchUnitListEnvelope: {
+            data: components["schemas"]["ChurchUnit"][];
+        };
+        ChurchUnitEnvelope: {
+            data: components["schemas"]["ChurchUnit"];
+        };
+        OperationsResourceListEnvelope: {
+            data: components["schemas"]["OperationsResource"][];
+        };
+        OperationsResourceEnvelope: {
+            data: components["schemas"]["OperationsResource"];
+        };
+        MeetingListEnvelope: {
+            data: components["schemas"]["Meeting"][];
+        };
+        MeetingMutationEnvelope: {
+            data: components["schemas"]["MeetingMutation"];
+        };
+        MeetingDetailEnvelope: {
+            data: components["schemas"]["MeetingDetail"];
+        };
+        MeetingOccurrenceOverrideEnvelope: {
+            data: components["schemas"]["MeetingOccurrenceOverride"];
+        };
         CampaignTranslation: {
             subject: string;
             body: string;
@@ -2116,6 +2613,145 @@ export interface components {
         };
     };
     responses: {
+        /** @description Public meeting list; no internal IDs, bindings, or audit fields. */
+        PublicMeetingList: {
+            headers: {
+                ETag?: string;
+                "Cache-Control"?: "public, max-age=30";
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["PublicMeetingListEnvelope"];
+            };
+        };
+        /** @description Public meeting; no internal IDs, bindings, or audit fields. */
+        PublicMeeting: {
+            headers: {
+                ETag?: string;
+                "Cache-Control"?: "public, max-age=30";
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["PublicMeetingEnvelope"];
+            };
+        };
+        /** @description Public meeting occurrences including cancelled occurrences. */
+        PublicMeetingOccurrenceList: {
+            headers: {
+                ETag?: string;
+                "Cache-Control"?: "public, max-age=30";
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["PublicMeetingOccurrenceListEnvelope"];
+            };
+        };
+        /** @description The public meeting projection has not changed. */
+        MeetingNotModified: {
+            headers: {
+                ETag?: string;
+                "Cache-Control"?: "public, max-age=30";
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
+        /** @description Redacted media sync windows. */
+        MediaSyncWindowList: {
+            headers: {
+                "Cache-Control"?: "private, no-store";
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["MediaSyncWindowListEnvelope"];
+            };
+        };
+        /** @description Internal meeting occurrences without collection bindings. */
+        MeetingOccurrenceList: {
+            headers: {
+                "Cache-Control"?: "private, no-store";
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["MeetingOccurrenceListEnvelope"];
+            };
+        };
+        /** @description Church unit list. */
+        ChurchUnitList: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ChurchUnitListEnvelope"];
+            };
+        };
+        /** @description Church unit. */
+        ChurchUnit: {
+            headers: {
+                ETag?: string;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ChurchUnitEnvelope"];
+            };
+        };
+        /** @description Operations resource list. */
+        OperationsResourceList: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["OperationsResourceListEnvelope"];
+            };
+        };
+        /** @description Operations resource. */
+        OperationsResource: {
+            headers: {
+                ETag?: string;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["OperationsResourceEnvelope"];
+            };
+        };
+        /** @description Administrative meeting list. */
+        MeetingList: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["MeetingListEnvelope"];
+            };
+        };
+        /** @description Meeting mutation result. */
+        Meeting: {
+            headers: {
+                ETag?: string;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["MeetingMutationEnvelope"];
+            };
+        };
+        /** @description Administrative meeting detail with overrides and collection bindings. */
+        MeetingDetail: {
+            headers: {
+                ETag?: string;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["MeetingDetailEnvelope"];
+            };
+        };
+        /** @description Meeting occurrence override. */
+        MeetingOccurrenceOverride: {
+            headers: {
+                ETag?: string;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["MeetingOccurrenceOverrideEnvelope"];
+            };
+        };
         /** @description Service process is healthy or ready. */
         Health: {
             headers: {
@@ -2473,8 +3109,42 @@ export interface components {
         BulletinTranslationTargetEdition: components["schemas"]["BulletinTranslationTargetEdition"];
         CampaignTranslationTargetLocale: components["schemas"]["CampaignTranslationTargetLocale"];
         Revision: number;
+        MeetingKey: string;
+        OperationsID: string;
+        StatusAction: "pause" | "resume" | "archive" | "restore";
+        OccurrenceDate: string;
+        IncludeArchived: boolean;
+        /** @description Inclusive range start; defaults to now. */
+        RangeFrom: string;
+        /** @description Exclusive range end; defaults to 30 days after from and cannot exceed 90 days. */
+        RangeTo: string;
     };
     requestBodies: {
+        ChurchUnitInput: {
+            content: {
+                "application/json": components["schemas"]["ChurchUnitInput"];
+            };
+        };
+        OperationsResourceInput: {
+            content: {
+                "application/json": components["schemas"]["OperationsResourceInput"];
+            };
+        };
+        MeetingInput: {
+            content: {
+                "application/json": components["schemas"]["MeetingInput"];
+            };
+        };
+        MeetingOccurrenceOverrideInput: {
+            content: {
+                "application/json": components["schemas"]["MeetingOccurrenceOverrideInput"];
+            };
+        };
+        MeetingCollectionBindings: {
+            content: {
+                "application/json": components["schemas"]["MeetingCollectionBindings"];
+            };
+        };
         PublicationInput: {
             content: {
                 "application/json": components["schemas"]["PublicationInput"];
@@ -2549,6 +3219,497 @@ export interface operations {
         responses: {
             200: components["responses"]["Health"];
             503: components["responses"]["Error"];
+        };
+    };
+    listPublicMeetings: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Conditional validator; weak validators and comma-separated lists are accepted. */
+                "If-None-Match"?: components["parameters"]["IfNoneMatch"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["PublicMeetingList"];
+            304: components["responses"]["MeetingNotModified"];
+            500: components["responses"]["Error"];
+        };
+    };
+    getPublicMeeting: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Conditional validator; weak validators and comma-separated lists are accepted. */
+                "If-None-Match"?: components["parameters"]["IfNoneMatch"];
+            };
+            path: {
+                meetingKey: components["parameters"]["MeetingKey"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["PublicMeeting"];
+            304: components["responses"]["MeetingNotModified"];
+            404: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    listPublicMeetingOccurrences: {
+        parameters: {
+            query?: {
+                /** @description Inclusive range start; defaults to now. */
+                from?: components["parameters"]["RangeFrom"];
+                /** @description Exclusive range end; defaults to 30 days after from and cannot exceed 90 days. */
+                to?: components["parameters"]["RangeTo"];
+            };
+            header?: {
+                /** @description Conditional validator; weak validators and comma-separated lists are accepted. */
+                "If-None-Match"?: components["parameters"]["IfNoneMatch"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["PublicMeetingOccurrenceList"];
+            304: components["responses"]["MeetingNotModified"];
+            400: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    listMeetingSyncWindows: {
+        parameters: {
+            query?: {
+                /** @description Inclusive range start; defaults to now. */
+                from?: components["parameters"]["RangeFrom"];
+                /** @description Exclusive range end; defaults to 30 days after from and cannot exceed 90 days. */
+                to?: components["parameters"]["RangeTo"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["MediaSyncWindowList"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            500: components["responses"]["Error"];
+        };
+    };
+    listChurchUnits: {
+        parameters: {
+            query?: {
+                includeArchived?: components["parameters"]["IncludeArchived"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ChurchUnitList"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            500: components["responses"]["Error"];
+        };
+    };
+    createChurchUnit: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["ChurchUnitInput"];
+        responses: {
+            201: components["responses"]["ChurchUnit"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    getChurchUnit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["OperationsID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ChurchUnit"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    updateChurchUnit: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                id: components["parameters"]["OperationsID"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["ChurchUnitInput"];
+        responses: {
+            200: components["responses"]["ChurchUnit"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    setChurchUnitStatus: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                id: components["parameters"]["OperationsID"];
+                action: components["parameters"]["StatusAction"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ChurchUnit"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    listOperationsResources: {
+        parameters: {
+            query?: {
+                includeArchived?: components["parameters"]["IncludeArchived"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["OperationsResourceList"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            500: components["responses"]["Error"];
+        };
+    };
+    createOperationsResource: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["OperationsResourceInput"];
+        responses: {
+            201: components["responses"]["OperationsResource"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    getOperationsResource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["OperationsID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["OperationsResource"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    updateOperationsResource: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                id: components["parameters"]["OperationsID"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["OperationsResourceInput"];
+        responses: {
+            200: components["responses"]["OperationsResource"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    setOperationsResourceStatus: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                id: components["parameters"]["OperationsID"];
+                action: components["parameters"]["StatusAction"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["OperationsResource"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    listMeetings: {
+        parameters: {
+            query?: {
+                includeArchived?: components["parameters"]["IncludeArchived"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["MeetingList"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            500: components["responses"]["Error"];
+        };
+    };
+    createMeeting: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["MeetingInput"];
+        responses: {
+            201: components["responses"]["Meeting"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    getMeeting: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["OperationsID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["MeetingDetail"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    updateMeeting: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                id: components["parameters"]["OperationsID"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["MeetingInput"];
+        responses: {
+            200: components["responses"]["Meeting"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    setMeetingStatus: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                id: components["parameters"]["OperationsID"];
+                action: components["parameters"]["StatusAction"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Meeting"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    putMeetingOccurrenceOverride: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                id: components["parameters"]["OperationsID"];
+                occurrenceDate: components["parameters"]["OccurrenceDate"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["MeetingOccurrenceOverrideInput"];
+        responses: {
+            200: components["responses"]["MeetingOccurrenceOverride"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    deleteMeetingOccurrenceOverride: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                id: components["parameters"]["OperationsID"];
+                occurrenceDate: components["parameters"]["OccurrenceDate"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Meeting"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    replaceMeetingCollectionBindings: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                id: components["parameters"]["OperationsID"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["MeetingCollectionBindings"];
+        responses: {
+            200: components["responses"]["Meeting"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+        };
+    };
+    listPrivateMeetingOccurrences: {
+        parameters: {
+            query?: {
+                /** @description Inclusive range start; defaults to now. */
+                from?: components["parameters"]["RangeFrom"];
+                /** @description Exclusive range end; defaults to 30 days after from and cannot exceed 90 days. */
+                to?: components["parameters"]["RangeTo"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["MeetingOccurrenceList"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            500: components["responses"]["Error"];
+        };
+    };
+    listPrivateMeetingSyncWindows: {
+        parameters: {
+            query?: {
+                /** @description Inclusive range start; defaults to now. */
+                from?: components["parameters"]["RangeFrom"];
+                /** @description Exclusive range end; defaults to 30 days after from and cannot exceed 90 days. */
+                to?: components["parameters"]["RangeTo"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["MediaSyncWindowList"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            500: components["responses"]["Error"];
         };
     };
     listCampaigns: {
