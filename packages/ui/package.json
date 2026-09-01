@@ -1,6 +1,7 @@
 {
   "name": "@hallelujahhomechurch/ui",
   "version": "0.6.20",
+  "license": "UNLICENSED",
   "type": "module",
   "sideEffects": ["**/*.css"],
   "files": ["dist"],
@@ -18,7 +19,7 @@
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com",
-    "access": "restricted"
+    "access": "public"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && cp src/styles.css dist/styles.css",

@@ -2,6 +2,7 @@
   "name": "hhc-frontend-platform",
   "version": "0.6.20",
   "private": true,
+  "license": "UNLICENSED",
   "packageManager": "pnpm@10.12.1",
   "engines": {
     "node": ">=22"

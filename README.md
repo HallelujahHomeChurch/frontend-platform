@@ -9,6 +9,11 @@ Shared, versioned frontend packages for HHC web applications:
 
 Packages are published to GitHub Packages from version tags.
 
+## License
+
+The source and published packages are publicly visible but remain all rights
+reserved. See [LICENSE](LICENSE).
+
 ## Development
 
 ```sh
