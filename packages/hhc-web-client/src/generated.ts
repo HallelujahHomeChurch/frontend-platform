@@ -1407,6 +1407,8 @@ export interface components {
             status: components["schemas"]["OperationsStatus"];
             /** Format: int64 */
             version: number;
+            /** @description Next scheduled or ongoing occurrence within 90 days for Admin reads, including internal meetings. Null when none or inactive. */
+            readonly nextOccurrence?: components["schemas"]["MeetingOccurrence"] | null;
         };
         PublicMeeting: {
             key: string;
@@ -1429,6 +1431,15 @@ export interface components {
             status: "scheduled" | "cancelled";
         };
         MeetingOccurrence: {
+            /** @description Canonical meeting name for authorized consumers. */
+            meetingName?: string;
+            /**
+             * Format: date
+             * @description Original recurrence date in the meeting timezone; retained when an occurrence is moved.
+             */
+            occurrenceDate?: string;
+            /** @description IANA timezone owned by the meeting. */
+            timezone?: string;
             /** Format: uuid */
             occurrenceId: string;
             /** Format: uuid */
