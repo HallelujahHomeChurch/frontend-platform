@@ -2,6 +2,10 @@ import createClient from 'openapi-fetch'
 
 import type { components, paths } from './generated.js'
 
+export type ActiveStatement = components['schemas']['ActiveStatement']
+export type StatementNotificationRequest = components['schemas']['StatementNotificationRequest']
+export type StatementNotificationBatch = components['schemas']['StatementNotificationBatch']
+export type StatementNotificationPreview = components['schemas']['StatementNotificationPreview']
 export type ContentLocale = components['schemas']['ContentLocale']
 export type BulletinEdition = components['schemas']['BulletinEdition']
 /** @deprecated Use BulletinEdition. */
@@ -77,12 +81,14 @@ export type PublicMeetingOccurrence = components['schemas']['PublicMeetingOccurr
 export class HhcWebApiError extends Error {
   readonly status: number
   readonly code: string
+  readonly contentId?: string
 
-  constructor(status: number, code: string, message: string) {
+  constructor(status: number, code: string, message: string, contentId?: string) {
     super(message)
     this.name = 'HhcWebApiError'
     this.status = status
     this.code = code
+    this.contentId = contentId
   }
 }
 
@@ -327,7 +333,23 @@ export function createHhcWebClient(options: {
       })
       if (!response.ok) throw new HhcWebApiError(response.status, 'upload_failed', 'The file could not be uploaded.')
     },
+    async getActiveStatement(locale: ContentLocale, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/statements/active', { params: { query: { locale } }, cache: 'no-store', signal }))).data
+    },
+    async endStatementPopup(contentId: string, version: number) {
+      return (await unwrap(client.POST('/admin/content/news/{contentId}/statement-popup/end', { params: { path: { contentId }, header: { 'If-Match': `"${version}"` } } }))).data
+    },
+    async listStatementNotifications(contentId: string) {
+      return (await unwrap(client.GET('/admin/content/news/{contentId}/statement-notifications', { params: { path: { contentId } } }))).data
+    },
+    async previewStatementNotification(contentId: string, input: StatementNotificationRequest) {
+      return (await unwrap(client.POST('/admin/content/news/{contentId}/statement-notifications/preview', { params: { path: { contentId } }, body: input }))).data
+    },
+    async requestStatementNotification(contentId: string, version: number, publishedVersion: number, input: StatementNotificationRequest) {
+      return (await unwrap(client.POST('/admin/content/news/{contentId}/statement-notifications', { params: { path: { contentId }, header: { 'If-Match': `"${version}"` } }, body: { ...input, publishedVersion } }))).data
+    },
     async listContent(module: ContentModule, params: {
+      kind?: 'general' | 'statement'
       page?: number
       pageSize?: number
       query?: string
@@ -340,6 +362,7 @@ export function createHhcWebClient(options: {
         params: {
           path: { module },
           query: {
+            kind: params.kind,
             page: params.page,
             pageSize: params.pageSize,
             q: params.query,
@@ -370,8 +393,9 @@ export function createHhcWebClient(options: {
     async updatePage(contentId: string, version: number, input: PageWriteInput) {
       return updateAdminContent('pages', contentId, version, input as ContentWriteInput)
     },
-    async publishContent(module: PublicationContentModule, contentId: string, version: number) {
+    async publishContent(module: PublicationContentModule, contentId: string, version: number, statementNotification?: StatementNotificationRequest) {
       return (await unwrap(client.POST('/admin/content/{module}/{contentId}/publish', {
+        body: statementNotification ? { statementNotification } : undefined,
         params: { path: { module, contentId }, header: { 'If-Match': `"${version}"` } },
       }))).data
     },
@@ -485,12 +509,13 @@ export function createHhcWebClient(options: {
 
 function apiError(response: Response, value: unknown) {
   const error = value && typeof value === 'object' && 'error' in value
-    ? (value as { error?: { code?: string; message?: string } }).error
+    ? (value as { error?: { code?: string; message?: string; contentId?: string } }).error
     : undefined
   return new HhcWebApiError(
     response.status,
     error?.code ?? 'request_failed',
     (error?.message ?? response.statusText) || 'Request failed.',
+    typeof error?.contentId === 'string' ? error.contentId : undefined,
   )
 }
 
