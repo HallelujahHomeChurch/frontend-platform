@@ -81,12 +81,14 @@ export type PublicMeetingOccurrence = components['schemas']['PublicMeetingOccurr
 export class HhcWebApiError extends Error {
   readonly status: number
   readonly code: string
+  readonly contentId?: string
 
-  constructor(status: number, code: string, message: string) {
+  constructor(status: number, code: string, message: string, contentId?: string) {
     super(message)
     this.name = 'HhcWebApiError'
     this.status = status
     this.code = code
+    this.contentId = contentId
   }
 }
 
@@ -507,12 +509,13 @@ export function createHhcWebClient(options: {
 
 function apiError(response: Response, value: unknown) {
   const error = value && typeof value === 'object' && 'error' in value
-    ? (value as { error?: { code?: string; message?: string } }).error
+    ? (value as { error?: { code?: string; message?: string; contentId?: string } }).error
     : undefined
   return new HhcWebApiError(
     response.status,
     error?.code ?? 'request_failed',
     (error?.message ?? response.statusText) || 'Request failed.',
+    typeof error?.contentId === 'string' ? error.contentId : undefined,
   )
 }
 
