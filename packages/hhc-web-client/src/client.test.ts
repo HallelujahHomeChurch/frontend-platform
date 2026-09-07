@@ -701,3 +701,22 @@ describe('hhc web client', () => {
     await expect(requests[14]!.json()).resolves.toEqual({ collectionIds: ['collection-1', 'collection-2'] })
   })
 })
+
+describe('statement contracts', () => {
+  it('does not cache active periods and retains request identity on notification retries', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({data: [], meta: {}})))
+    const client = createHhcWebClient({baseUrl: 'https://www.alive.org.tw/api', getAccessToken: () => null, fetcher})
+    await client.getActiveStatement('ja')
+    const active = fetcher.mock.calls[0]![0] as Request
+    expect(active.url).toBe('https://www.alive.org.tw/api/statements/active?locale=ja')
+    expect(active.cache).toBe('no-store')
+    const input = {requestId: 'request-1', channels: ['email', 'web_push'] as ('email' | 'web_push')[], subject: '聲明', body: '原文'}
+    await client.requestStatementNotification('content-1', 4, 3, input)
+    await client.requestStatementNotification('content-1', 4, 3, input)
+    for (const call of fetcher.mock.calls.slice(1)) {
+      const request = call[0] as Request
+      expect(request.headers.get('If-Match')).toBe('"4"')
+      expect(await request.json()).toEqual({...input, publishedVersion: 3})
+    }
+  })
+})

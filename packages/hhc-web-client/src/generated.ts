@@ -624,6 +624,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/statements/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the active published church statement and next time boundary */
+        get: operations["getActiveStatement"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/content/news/{contentId}/statement-popup/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** endStatementPopup */
+        post: operations["endStatementPopup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/content/news/{contentId}/statement-notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** listStatementNotifications */
+        get: operations["listStatementNotifications"];
+        put?: never;
+        /** requestStatementNotification */
+        post: operations["requestStatementNotification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/content/news/{contentId}/statement-notifications/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** previewStatementNotification */
+        post: operations["previewStatementNotification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/news": {
         parameters: {
             query?: never;
@@ -1128,7 +1197,7 @@ export interface paths {
         put?: never;
         /**
          * Publish content
-         * @description Publishes ordinary content directly. Publishing the Home or About Page is a group operation that atomically publishes its Video or History children; direct child publication returns 405.
+         * @description Publishes ordinary content directly. News requires every saved locale AI summary to be ready; pending or failed summaries return 409 summary_processing without changing the public projection. Legacy drafts enqueue missing summaries before returning 409. Publishing the Home or About Page is a group operation that atomically publishes its Video or History children; direct child publication returns 405.
          */
         post: operations["publishContent"];
         delete?: never;
@@ -2111,6 +2180,7 @@ export interface components {
         ContentWriteTranslation: {
             locale: components["schemas"]["ContentLocale"];
             title?: string;
+            /** @description Server-owned AI summary for news; legacy input is ignored. */
             summary?: string;
             body?: string;
             dateLabel?: string;
@@ -2121,6 +2191,11 @@ export interface components {
             locale: components["schemas"]["ContentLocale"];
             title: string;
             summary?: string;
+            /**
+             * @description News only. Legacy drafts without generated state are pending.
+             * @enum {string}
+             */
+            readonly summaryStatus?: "pending" | "ready" | "failed";
             body?: string;
             dateLabel?: string;
             imageAlt?: string;
@@ -2210,6 +2285,12 @@ export interface components {
         ContentWriteInput: components["schemas"]["ContentWriteFields"];
         /** @description Location and fixed-page fields are an optional backward-compatible wire superset; backend validation applies the selected module contract. */
         ContentWriteFields: {
+            /** @enum {string} */
+            kind?: "general" | "statement";
+            /** Format: date-time */
+            popupStartsAt?: string | null;
+            /** Format: date-time */
+            popupEndsAt?: string | null;
             authorName?: string;
             slug?: string;
             /** Format: date */
@@ -2244,6 +2325,12 @@ export interface components {
             deleteLocales?: components["schemas"]["ContentLocale"][];
         };
         ContentItem: components["schemas"]["ContentWriteFields"] & {
+            /** Format: date-time */
+            serverNow?: string;
+            /** Format: date-time */
+            publishedPopupStartsAt?: string | null;
+            /** Format: date-time */
+            publishedPopupEndsAt?: string | null;
             /** Format: uuid */
             id: string;
             module: components["schemas"]["ContentModule"];
@@ -2297,6 +2384,15 @@ export interface components {
             action: "keep" | "publish" | "remove";
         };
         PublicContentItem: {
+            /** Format: int64 */
+            publishedVersion?: number;
+            requestedLocale?: components["schemas"]["ContentLocale"];
+            /** @enum {string} */
+            kind?: "general" | "statement";
+            /** Format: date-time */
+            popupStartsAt?: string | null;
+            /** Format: date-time */
+            popupEndsAt?: string | null;
             id: string;
             title: string;
             resolvedLocale: components["schemas"]["ContentLocale"];
@@ -2617,6 +2713,80 @@ export interface components {
         };
         AssetStatusEnvelope: {
             data: components["schemas"]["AssetStatus"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
+        };
+        ActiveStatement: {
+            /** Format: date-time */
+            serverNow: string;
+            /** Format: date-time */
+            nextChangeAt: string | null;
+            statement: components["schemas"]["PublicContentItem"] | null;
+        };
+        StatementNotificationRequest: {
+            /** Format: uuid */
+            requestId: string;
+            channels: ("email" | "web_push")[];
+            subject: string;
+            body: string;
+        };
+        StatementNotificationSendRequest: components["schemas"]["StatementNotificationRequest"] & {
+            /** Format: int64 */
+            publishedVersion: number;
+        };
+        StatementNotificationBatch: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            contentId: string;
+            /** Format: int64 */
+            publishedVersion: number;
+            /** Format: uuid */
+            requestId: string;
+            /** @enum {string} */
+            channel: "email" | "web_push";
+            /** Format: uuid */
+            campaignId?: string;
+            /** @enum {string} */
+            status: "pending" | "queued" | "cancelled" | "failed";
+            subject: string;
+            body: string;
+            href: string;
+            /** Format: date-time */
+            cancelledAt?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            campaign?: {
+                [key: string]: unknown;
+            };
+        };
+        StatementNotificationPreview: {
+            subject: string;
+            body: string;
+            href: string;
+            channels: ("email" | "web_push")[];
+            eligibleCounts: {
+                [key: string]: number;
+            };
+        };
+        ActiveStatementEnvelope: {
+            data: components["schemas"]["ActiveStatement"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
+        };
+        StatementNotificationListEnvelope: {
+            data: components["schemas"]["StatementNotificationBatch"][];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
+        };
+        StatementNotificationPreviewEnvelope: {
+            data: components["schemas"]["StatementNotificationPreview"];
             meta: {
                 [key: string]: unknown;
             };
@@ -4140,6 +4310,140 @@ export interface operations {
             404: components["responses"]["Error"];
         };
     };
+    getActiveStatement: {
+        parameters: {
+            query?: {
+                locale?: components["parameters"]["ContentLocale"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current statement, or null; Cache-Control no-store */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActiveStatementEnvelope"];
+                };
+            };
+        };
+    };
+    endStatementPopup: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                contentId: components["parameters"]["ContentID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Statement operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentItemEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+        };
+    };
+    listStatementNotifications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contentId: components["parameters"]["ContentID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Statement operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementNotificationListEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+        };
+    };
+    requestStatementNotification: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                contentId: components["parameters"]["ContentID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatementNotificationSendRequest"];
+            };
+        };
+        responses: {
+            /** @description Statement operation result */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementNotificationListEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+        };
+    };
+    previewStatementNotification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contentId: components["parameters"]["ContentID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatementNotificationRequest"];
+            };
+        };
+        responses: {
+            /** @description Statement operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementNotificationPreviewEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+        };
+    };
     listPublicNews: {
         parameters: {
             query?: {
@@ -4796,6 +5100,7 @@ export interface operations {
     listAdminContent: {
         parameters: {
             query?: {
+                kind?: "general" | "statement";
                 page?: components["parameters"]["Page"];
                 pageSize?: components["parameters"]["PageSize"];
                 q?: string;
@@ -4962,12 +5267,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": {
+                    statementNotification?: components["schemas"]["StatementNotificationRequest"];
+                };
+            };
+        };
         responses: {
             200: components["responses"]["ContentItem"];
             401: components["responses"]["AdminUnauthorized"];
             403: components["responses"]["AdminForbidden"];
             405: components["responses"]["Error"];
+            409: components["responses"]["Error"];
             422: components["responses"]["Error"];
         };
     };
