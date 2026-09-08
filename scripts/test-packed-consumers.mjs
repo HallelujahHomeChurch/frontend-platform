@@ -63,7 +63,7 @@ import {getInitialTheme} from '@hallelujahhomechurch/preferences';
 import {AccountMenu, Button, ContextMenu} from '@hallelujahhomechurch/ui';
 import '@hallelujahhomechurch/ui/styles.css';
 
-const accountUser: AccountSessionUser = {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null, admin_access: true};
+const accountUser: AccountSessionUser = {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null, permissions: ['*']};
 const contentStatus: ContentStatus = 'pending_removal';
 const groupManifest: PageGroupManifest = {pageId: '00000000-0000-0000-0000-000000000001', pageSourceVersion: 1, pageTargetVersion: 2, childModule: 'history', items: [], sha256: 'a'.repeat(64)};
 void createAccountSessionClient;
@@ -112,7 +112,7 @@ import {createHhcWebClient, type ContentStatus, type PageGroupManifest} from '@h
 import {getInitialTheme} from '@hallelujahhomechurch/preferences';
 import {AccountMenu, Button, ContextMenu} from '@hallelujahhomechurch/ui';
 
-const accountUser: AccountSessionUser = {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null, admin_access: true};
+const accountUser: AccountSessionUser = {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null, permissions: ['*']};
 const contentStatus: ContentStatus = 'pending_removal';
 const groupManifest: PageGroupManifest = {pageId: '00000000-0000-0000-0000-000000000001', pageSourceVersion: 1, pageTargetVersion: 2, childModule: 'history', items: [], sha256: 'a'.repeat(64)};
 void createAccountSessionClient;

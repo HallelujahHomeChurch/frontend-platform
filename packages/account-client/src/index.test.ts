@@ -15,11 +15,11 @@ describe('account session client', () => {
   it('loads the cookie-backed session without calling refresh', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({
       authenticated: true,
-      user: {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null, admin_access: true}
+      user: {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null, permissions: ['*']}
     }));
     const client = createAccountSessionClient({fetcher});
 
-    await expect(client.getSession()).resolves.toMatchObject({authenticated: true, user: {admin_access: true}});
+    await expect(client.getSession()).resolves.toMatchObject({authenticated: true, user: {permissions: ['*']}});
     expect(fetcher).toHaveBeenCalledOnce();
     expect(fetcher).toHaveBeenCalledWith('/api/account/v1/session', expect.objectContaining({
       cache: 'no-store',
@@ -74,7 +74,7 @@ describe('account session client', () => {
     );
   });
 
-  it('requires the admin access decision for authenticated sessions', async () => {
+  it('requires permissions for authenticated sessions', async () => {
     const client = createAccountSessionClient({
       fetcher: vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({
         authenticated: true,
@@ -85,11 +85,11 @@ describe('account session client', () => {
     await expect(client.getSession()).rejects.toMatchObject({code: 'INVALID_RESPONSE'});
   });
 
-  it('requires the admin access decision to be boolean', async () => {
+  it('rejects legacy access flags without permissions', async () => {
     const client = createAccountSessionClient({
       fetcher: vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({
         authenticated: true,
-        user: {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null, admin_access: 'true'}
+        user: {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null, admin_access: true}
       }))
     });
 
@@ -102,7 +102,7 @@ describe('account auth lifecycle helpers', () => {
     await expect(resolveAccountAuth({
       getSession: async () => ({
         authenticated: true,
-        user: {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null, admin_access: true}
+        user: {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null, permissions: ['*']}
       })
     })).resolves.toMatchObject({status: 'authenticated', user: {id: 'u1'}});
 
