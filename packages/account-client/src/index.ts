@@ -3,9 +3,7 @@ export interface AccountSessionUser {
   email: string;
   display_name: string;
   avatar_url: string | null;
-  /** @deprecated Evaluate permissions instead. */
-  admin_access?: boolean;
-  permissions?: string[];
+  permissions: string[];
 }
 
 export * from './oauth.js';
@@ -183,8 +181,7 @@ function isAccountSession(value: unknown): value is AccountSession {
     && typeof user.email === 'string'
     && typeof user.display_name === 'string'
     && (typeof user.avatar_url === 'string' || user.avatar_url === null)
-    && (user.admin_access === undefined || typeof user.admin_access === 'boolean')
-    && ('permissions' in user ? isPermissionList(user.permissions) : typeof user.admin_access === 'boolean');
+    && isPermissionList(user.permissions);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
