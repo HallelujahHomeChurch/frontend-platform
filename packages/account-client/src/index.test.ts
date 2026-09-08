@@ -172,3 +172,19 @@ describe('account auth lifecycle helpers', () => {
     expect(request).toHaveBeenCalledOnce();
   });
 });
+
+describe('generic permission session contract', () => {
+  it.each([[], ['cms:read'], ['*']].map(permissions => ({permissions})))('accepts permissions without application flags: %j', async ({permissions}) => {
+    const client = createAccountSessionClient({fetcher: async () => jsonResponse({authenticated: true,
+      user: {id: 'u1', email: 'a@example.test', display_name: 'A', avatar_url: null, permissions}
+    })});
+    await expect(client.getSession()).resolves.toMatchObject({user: {permissions}});
+  });
+
+  it.each([null, 'cms:read', [true], ['cms:read', 42]].map(permissions => ({permissions})))('rejects malformed permissions despite legacy access: %j', async ({permissions}) => {
+    const client = createAccountSessionClient({fetcher: async () => jsonResponse({authenticated: true,
+      user: {id: 'u1', email: 'a@example.test', display_name: 'A', avatar_url: null, admin_access: true, permissions}
+    })});
+    await expect(client.getSession()).rejects.toMatchObject({code: 'INVALID_RESPONSE'});
+  });
+});
