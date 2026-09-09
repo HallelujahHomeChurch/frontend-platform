@@ -302,6 +302,70 @@ describe('hhc web client', () => {
     )
   })
 
+  it('uses the exact bulletin access routes, headers, body, and abort signal', async () => {
+    const publicAccess = { enabled: true }
+    const adminAccess = {
+      requestedEnabled: false,
+      effectiveEnabled: true,
+      status: 'disabling',
+      version: 4,
+      operationId: 'operation-1',
+      completed: 2,
+      total: 5,
+      errorCode: null,
+      updatedAt: '2026-09-09T00:00:00Z',
+    }
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: publicAccess, meta: {}, error: null }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: adminAccess, meta: {}, error: null }), { status: 200, headers: { 'Content-Type': 'application/json', ETag: '"4"' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: adminAccess, meta: {}, error: null }), { status: 202, headers: { 'Content-Type': 'application/json', ETag: '"4"' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: adminAccess, meta: {}, error: null }), { status: 202, headers: { 'Content-Type': 'application/json', ETag: '"4"' } }))
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
+    const controller = new AbortController()
+
+    await expect(client.getBulletinAccess(controller.signal)).resolves.toEqual(publicAccess)
+    await expect(client.getAdminBulletinAccess(controller.signal)).resolves.toEqual(adminAccess)
+    await expect(client.setBulletinAccess(false, 3, 'set-access-1', controller.signal)).resolves.toEqual(adminAccess)
+    await expect(client.retryBulletinAccess(4, 'retry-access-1', controller.signal)).resolves.toEqual(adminAccess)
+
+    const [publicRequest, adminRequest, setRequest, retryRequest] = fetcher.mock.calls.map(call => call[0] as Request)
+    expect(publicRequest!.url).toBe('http://localhost/api/bulletin-access')
+    expect(adminRequest!.url).toBe('http://localhost/api/admin/bulletin-access')
+    expect(setRequest!.url).toBe('http://localhost/api/admin/bulletin-access')
+    expect(setRequest!.method).toBe('PUT')
+    expect(setRequest!.headers.get('If-Match')).toBe('"3"')
+    expect(setRequest!.headers.get('Idempotency-Key')).toBe('set-access-1')
+    await expect(setRequest!.json()).resolves.toEqual({ enabled: false })
+    expect(retryRequest!.url).toBe('http://localhost/api/admin/bulletin-access/retry')
+    expect(retryRequest!.method).toBe('POST')
+    expect(retryRequest!.headers.get('If-Match')).toBe('"4"')
+    expect(retryRequest!.headers.get('Idempotency-Key')).toBe('retry-access-1')
+    controller.abort()
+    expect(fetcher.mock.calls.every(call => (call[0] as Request).signal.aborted)).toBe(true)
+  })
+
+  it.each([
+    ['public read', 404, 'bulletin_disabled', (client: ReturnType<typeof createHhcWebClient>) => client.getBulletinAccess()],
+    ['public read', 409, 'access_transition_in_progress', (client: ReturnType<typeof createHhcWebClient>) => client.getBulletinAccess()],
+    ['public read', 503, 'service_unavailable', (client: ReturnType<typeof createHhcWebClient>) => client.getBulletinAccess()],
+    ['admin read', 503, 'service_unavailable', (client: ReturnType<typeof createHhcWebClient>) => client.getAdminBulletinAccess()],
+    ['set', 409, 'access_transition_in_progress', (client: ReturnType<typeof createHhcWebClient>) => client.setBulletinAccess(false, 3, 'set-access-1')],
+    ['set', 503, 'service_unavailable', (client: ReturnType<typeof createHhcWebClient>) => client.setBulletinAccess(false, 3, 'set-access-1')],
+    ['retry', 409, 'access_transition_in_progress', (client: ReturnType<typeof createHhcWebClient>) => client.retryBulletinAccess(4, 'retry-access-1')],
+    ['retry', 503, 'service_unavailable', (client: ReturnType<typeof createHhcWebClient>) => client.retryBulletinAccess(4, 'retry-access-1')],
+  ])('preserves %s error %i and code %s', async (_operation, status, code, invoke) => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
+      data: null,
+      meta: {},
+      error: { code, message: 'Bulletin access failed.' },
+    }), { status, headers: { 'Content-Type': 'application/json' } }))
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => null, fetcher })
+
+    await expect(invoke(client)).rejects.toEqual(
+      expect.objectContaining<HhcWebApiError>({ status, code }),
+    )
+  })
+
   it('forwards the bulletin subscriber notification choice', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
       data: { id: 'issue-1', issueDate: '2026-07-31', status: 'publishing', notificationStatus: 'not_requested', version: 3, versions: [], createdBy: 'admin', updatedBy: 'admin', createdAt: '2026-07-31T00:00:00Z', updatedAt: '2026-07-31T00:00:00Z' },
