@@ -13,6 +13,9 @@ export type BulletinLocale = BulletinEdition
 export type ContentTranslationTargetLocale = components['schemas']['ContentTranslationTargetLocale']
 export type BulletinTranslationTargetEdition = components['schemas']['BulletinTranslationTargetEdition']
 export type BulletinStatus = components['schemas']['BulletinStatus']
+export type BulletinAccessStatus = components['schemas']['BulletinAccessStatus']
+export type PublicBulletinAccess = components['schemas']['PublicBulletinAccess']
+export type BulletinAccess = components['schemas']['BulletinAccess']
 export type BulletinIssue = components['schemas']['BulletinIssue']
 export type BulletinNotificationStatus = BulletinIssue['notificationStatus']
 export type BulletinVersion = components['schemas']['BulletinVersion']
@@ -148,6 +151,23 @@ export function createHhcWebClient(options: {
   }
 
   return {
+    async getBulletinAccess(signal?: AbortSignal) {
+      return (await unwrap(client.GET('/bulletin-access', { signal }))).data
+    },
+    async getAdminBulletinAccess(signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/bulletin-access', { signal }))).data
+    },
+    async setBulletinAccess(enabled: boolean, version: number, idempotencyKey: string, signal?: AbortSignal) {
+      return (await unwrap(client.PUT('/admin/bulletin-access', {
+        params: { header: { 'If-Match': `"${version}"`, 'Idempotency-Key': idempotencyKey } },
+        body: { enabled }, signal,
+      }))).data
+    },
+    async retryBulletinAccess(version: number, idempotencyKey: string, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/bulletin-access/retry', {
+        params: { header: { 'If-Match': `"${version}"`, 'Idempotency-Key': idempotencyKey } }, signal,
+      }))).data
+    },
     async listPublicMeetings(signal?: AbortSignal) {
       return (await unwrap(client.GET('/meetings', { signal }))).data
     },
