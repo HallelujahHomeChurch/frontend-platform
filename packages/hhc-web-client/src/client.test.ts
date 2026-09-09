@@ -345,10 +345,15 @@ describe('hhc web client', () => {
   })
 
   it.each([
-    [404, 'bulletin_disabled'],
-    [409, 'access_transition_in_progress'],
-    [503, 'service_unavailable'],
-  ])('preserves bulletin access error %i and code %s', async (status, code) => {
+    ['public read', 404, 'bulletin_disabled', (client: ReturnType<typeof createHhcWebClient>) => client.getBulletinAccess()],
+    ['public read', 409, 'access_transition_in_progress', (client: ReturnType<typeof createHhcWebClient>) => client.getBulletinAccess()],
+    ['public read', 503, 'service_unavailable', (client: ReturnType<typeof createHhcWebClient>) => client.getBulletinAccess()],
+    ['admin read', 503, 'service_unavailable', (client: ReturnType<typeof createHhcWebClient>) => client.getAdminBulletinAccess()],
+    ['set', 409, 'access_transition_in_progress', (client: ReturnType<typeof createHhcWebClient>) => client.setBulletinAccess(false, 3, 'set-access-1')],
+    ['set', 503, 'service_unavailable', (client: ReturnType<typeof createHhcWebClient>) => client.setBulletinAccess(false, 3, 'set-access-1')],
+    ['retry', 409, 'access_transition_in_progress', (client: ReturnType<typeof createHhcWebClient>) => client.retryBulletinAccess(4, 'retry-access-1')],
+    ['retry', 503, 'service_unavailable', (client: ReturnType<typeof createHhcWebClient>) => client.retryBulletinAccess(4, 'retry-access-1')],
+  ])('preserves %s error %i and code %s', async (_operation, status, code, invoke) => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
       data: null,
       meta: {},
@@ -356,7 +361,7 @@ describe('hhc web client', () => {
     }), { status, headers: { 'Content-Type': 'application/json' } }))
     const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => null, fetcher })
 
-    await expect(client.getBulletinAccess()).rejects.toEqual(
+    await expect(invoke(client)).rejects.toEqual(
       expect.objectContaining<HhcWebApiError>({ status, code }),
     )
   })
