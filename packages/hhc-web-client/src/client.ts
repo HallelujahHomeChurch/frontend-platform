@@ -16,6 +16,7 @@ export type BulletinStatus = components['schemas']['BulletinStatus']
 export type BulletinAccessStatus = components['schemas']['BulletinAccessStatus']
 export type PublicBulletinAccess = components['schemas']['PublicBulletinAccess']
 export type MemberBulletinAccess = components['schemas']['MemberBulletinAccess']
+export type BulletinWatermarkLookup = components['schemas']['BulletinWatermarkLookupResult']
 export type BulletinAccess = components['schemas']['BulletinAccess']
 export type PublicBulletin = components['schemas']['PublicBulletin']
 export type PublicBulletinIssue = components['schemas']['PublicBulletinIssue']
@@ -155,10 +156,10 @@ export function createHhcWebClient(options: {
 
   return {
     async getBulletinAccess(signal?: AbortSignal) {
-      return (await unwrap(client.GET('/bulletin-access', { signal }))).data
+      return (await unwrap(client.GET('/bulletin-access', { signal, cache: 'no-store' }))).data
     },
     async getMemberBulletinAccess(signal?: AbortSignal) {
-      return (await unwrap(client.GET('/member/bulletin-access', { signal }))).data
+      return (await unwrap(client.GET('/member/bulletin-access', { signal, cache: 'no-store' }))).data
     },
     async listMemberBulletins(params: { page?: number; pageSize?: number; signal?: AbortSignal } = {}) {
       const envelope = await unwrap(client.GET('/member/bulletins', {
@@ -177,6 +178,14 @@ export function createHhcWebClient(options: {
     },
     async getAdminBulletinAccess(signal?: AbortSignal) {
       return (await unwrap(client.GET('/admin/bulletin-access', { signal }))).data
+    },
+    async lookupBulletinWatermark(code: string, reason: string, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/bulletins/watermark-lookups', {body: {code, reason}, signal, cache: 'no-store'}))).data
+    },
+    async activateBulletinMembership(version: number, idempotencyKey: string, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/bulletin-access/membership', {
+        params: {header: {'If-Match': `"${version}"`, 'Idempotency-Key': idempotencyKey}}, signal, cache: 'no-store',
+      }))).data
     },
     async setBulletinAccess(enabled: boolean, version: number, idempotencyKey: string, signal?: AbortSignal) {
       return (await unwrap(client.PUT('/admin/bulletin-access', {

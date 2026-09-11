@@ -11,6 +11,21 @@ import type {
 } from './client'
 
 describe('hhc web client', () => {
+  it('posts trace lookup privately and activates membership with concurrency headers', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({data: {}, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}}))
+    const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'trace-token', fetcher})
+    await client.lookupBulletinWatermark('TEST-CODE', 'Reason with sufficient length')
+    await client.activateBulletinMembership(3, 'activation-key')
+    const [lookup, activate] = fetcher.mock.calls.map(call => call[0] as Request)
+    expect(lookup!.method).toBe('POST')
+    expect(lookup!.url).toBe('http://localhost/api/admin/bulletins/watermark-lookups')
+    expect(await lookup!.json()).toEqual({code: 'TEST-CODE', reason: 'Reason with sufficient length'})
+    expect(lookup!.headers.get('Authorization')).toBe('Bearer trace-token')
+    expect(activate!.headers.get('If-Match')).toBe('"3"')
+    expect(activate!.headers.get('Idempotency-Key')).toBe('activation-key')
+    expect(await activate!.text()).toBe('')
+  })
+
   it('reads member bulletin access and content with bearer authorization', async () => {
     const fetcher = vi.fn<typeof fetch>()
       .mockResolvedValueOnce(new Response(JSON.stringify({ data: { canRead: true, publicEnabled: false, policyVersion: 2 }, meta: {}, error: null }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
