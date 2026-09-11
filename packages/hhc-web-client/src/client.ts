@@ -15,7 +15,10 @@ export type BulletinTranslationTargetEdition = components['schemas']['BulletinTr
 export type BulletinStatus = components['schemas']['BulletinStatus']
 export type BulletinAccessStatus = components['schemas']['BulletinAccessStatus']
 export type PublicBulletinAccess = components['schemas']['PublicBulletinAccess']
+export type MemberBulletinAccess = components['schemas']['MemberBulletinAccess']
 export type BulletinAccess = components['schemas']['BulletinAccess']
+export type PublicBulletin = components['schemas']['PublicBulletin']
+export type PublicBulletinIssue = components['schemas']['PublicBulletinIssue']
 export type BulletinIssue = components['schemas']['BulletinIssue']
 export type BulletinNotificationStatus = BulletinIssue['notificationStatus']
 export type BulletinVersion = components['schemas']['BulletinVersion']
@@ -153,6 +156,24 @@ export function createHhcWebClient(options: {
   return {
     async getBulletinAccess(signal?: AbortSignal) {
       return (await unwrap(client.GET('/bulletin-access', { signal }))).data
+    },
+    async getMemberBulletinAccess(signal?: AbortSignal) {
+      return (await unwrap(client.GET('/member/bulletin-access', { signal }))).data
+    },
+    async listMemberBulletins(params: { page?: number; pageSize?: number; signal?: AbortSignal } = {}) {
+      const envelope = await unwrap(client.GET('/member/bulletins', {
+        params: { query: { page: params.page, pageSize: params.pageSize } }, signal: params.signal,
+      }))
+      return { data: envelope.data, meta: envelope.meta }
+    },
+    async getLatestMemberBulletin(locale: BulletinEdition, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/member/bulletins/latest', { params: { query: { locale } }, signal }))).data
+    },
+    async getMemberBulletinByNumber(issueNumber: number, locale: BulletinEdition, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/member/bulletins/by-number/{issueNumber}', { params: { path: { issueNumber }, query: { locale } }, signal }))).data
+    },
+    async getMemberBulletinByDate(issueDate: string, locale: BulletinEdition, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/member/bulletins/{issueDate}', { params: { path: { issueDate }, query: { locale } }, signal }))).data
     },
     async getAdminBulletinAccess(signal?: AbortSignal) {
       return (await unwrap(client.GET('/admin/bulletin-access', { signal }))).data
