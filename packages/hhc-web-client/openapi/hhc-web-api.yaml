@@ -3023,26 +3023,15 @@ components:
       additionalProperties: false
       required:
       - scope
-      - page
-      - reason
       properties:
         scope:
           $ref: '#/components/schemas/BulletinWatermarkCandidateScope'
-        page:
-          type: integer
-          minimum: 1
-          maximum: 60
-        reason:
-          type: string
-          minLength: 10
-          maxLength: 300
     BulletinWatermarkInvestigation:
       type: object
       additionalProperties: false
       required:
       - id
       - scope
-      - page
       - status
       - createdAt
       - expiresAt
@@ -3052,10 +3041,6 @@ components:
           format: uuid
         scope:
           $ref: '#/components/schemas/BulletinWatermarkCandidateScope'
-        page:
-          type: integer
-          minimum: 1
-          maximum: 60
         status:
           type: string
           enum:
@@ -3120,8 +3105,6 @@ components:
       required:
       - id
       - scope
-      - page
-      - reason
       - status
       - evidenceSha256
       - createdAt
@@ -3133,10 +3116,6 @@ components:
           format: uuid
         scope:
           $ref: '#/components/schemas/BulletinWatermarkCandidateScope'
-        page:
-          type: integer
-        reason:
-          type: string
         status:
           type: string
         result:
@@ -3186,15 +3165,10 @@ components:
       additionalProperties: false
       required:
       - code
-      - reason
       properties:
         code:
           type: string
           maxLength: 40
-        reason:
-          type: string
-          minLength: 10
-          maxLength: 300
     BulletinWatermarkLookupResult:
       type: object
       additionalProperties: false

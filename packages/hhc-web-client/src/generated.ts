@@ -1741,14 +1741,11 @@ export interface components {
         };
         BulletinWatermarkInvestigationInput: {
             scope: components["schemas"]["BulletinWatermarkCandidateScope"];
-            page: number;
-            reason: string;
         };
         BulletinWatermarkInvestigation: {
             /** Format: uuid */
             id: string;
             scope: components["schemas"]["BulletinWatermarkCandidateScope"];
-            page: number;
             /** @enum {string} */
             status: "queued" | "running" | "completed" | "failed" | "expired";
             /** @enum {string} */
@@ -1777,8 +1774,6 @@ export interface components {
             /** Format: uuid */
             id: string;
             scope: components["schemas"]["BulletinWatermarkCandidateScope"];
-            page: number;
-            reason: string;
             status: string;
             result?: string;
             errorCode?: string;
@@ -1799,7 +1794,6 @@ export interface components {
         };
         BulletinWatermarkLookupInput: {
             code: string;
-            reason: string;
         };
         BulletinWatermarkLookupResult: {
             /** Format: uuid */

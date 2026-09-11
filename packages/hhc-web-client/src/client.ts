@@ -203,8 +203,8 @@ export function createHhcWebClient(options: {
         params: {path: {id}}, signal, cache: 'no-store',
       }))).data
     },
-    async lookupBulletinWatermark(code: string, reason: string, signal?: AbortSignal) {
-      return (await unwrap(client.POST('/admin/bulletins/watermark-lookups', {body: {code, reason}, signal, cache: 'no-store'}))).data
+    async lookupBulletinWatermark(code: string, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/bulletins/watermark-lookups', {body: {code}, signal, cache: 'no-store'}))).data
     },
     async activateBulletinMembership(version: number, idempotencyKey: string, signal?: AbortSignal) {
       return (await unwrap(client.POST('/admin/bulletin-access/membership', {

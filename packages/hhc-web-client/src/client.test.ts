@@ -14,7 +14,7 @@ describe('hhc web client', () => {
   it('uploads a private screenshot with the generated scope and reads its creator-owned job', async () => {
     const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({data: {id: 'job-1', versions: []}}), {headers: {'Content-Type': 'application/json'}}))
     const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'trace-token', fetcher})
-    const input = {scope: {issueId: 'issue-1', locale: 'zh-Hant', revision: 3, sourceAssetId: 'asset-1', sourceSha256: 'a'.repeat(64), rendererVersion: 'pdf-engine', modelSha256: 'b'.repeat(64)}, page: 3, reason: 'Investigation reason'}
+    const input = {scope: {issueId: 'issue-1', locale: 'zh-Hant', revision: 3, sourceAssetId: 'asset-1', sourceSha256: 'a'.repeat(64), rendererVersion: 'pdf-engine', modelSha256: 'b'.repeat(64)}}
     const controller = new AbortController()
     await client.listBulletinWatermarkVersions('issue-1', controller.signal)
     await client.createBulletinWatermarkInvestigation(input, new Blob(['pixels'], {type: 'image/png'}), 'request-key', controller.signal)
@@ -38,12 +38,12 @@ describe('hhc web client', () => {
   it('posts trace lookup privately and activates membership with concurrency headers', async () => {
     const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({data: {}, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}}))
     const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'trace-token', fetcher})
-    await client.lookupBulletinWatermark('TEST-CODE', 'Reason with sufficient length')
+    await client.lookupBulletinWatermark('TEST-CODE')
     await client.activateBulletinMembership(3, 'activation-key')
     const [lookup, activate] = fetcher.mock.calls.map(call => call[0] as Request)
     expect(lookup!.method).toBe('POST')
     expect(lookup!.url).toBe('http://localhost/api/admin/bulletins/watermark-lookups')
-    expect(await lookup!.json()).toEqual({code: 'TEST-CODE', reason: 'Reason with sufficient length'})
+    expect(await lookup!.json()).toEqual({code: 'TEST-CODE'})
     expect(lookup!.headers.get('Authorization')).toBe('Bearer trace-token')
     expect(activate!.headers.get('If-Match')).toBe('"3"')
     expect(activate!.headers.get('Idempotency-Key')).toBe('activation-key')
