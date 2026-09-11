@@ -38,6 +38,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/bulletins/{issueId}/watermark-versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List eligible retained reconstruction versions */
+        get: operations["listBulletinWatermarkVersions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletin-watermark-investigations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Queue a private screenshot investigation */
+        post: operations["createBulletinWatermarkInvestigation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletin-watermark-investigations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the creator-owned investigation and audited result */
+        get: operations["getBulletinWatermarkInvestigation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/priv/bulletin-watermarks/dsr/exports": {
         parameters: {
             query?: never;
@@ -47,7 +98,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Process Account-owned watermark DSR export */
+        /**
+         * Process Account-owned watermark DSR export
+         * @description Receipt UUID cursors remain valid. After the last receipt page, investigations: starts the investigation phase; subsequent cursors append a job UUID.
+         */
         post: operations["applyBulletinWatermarkDSRExport"];
         delete?: never;
         options?: never;
@@ -1655,6 +1709,94 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        BulletinWatermarkCandidateScope: {
+            /** Format: uuid */
+            issueId: string;
+            locale: string;
+            revision: number;
+            /** Format: uuid */
+            sourceAssetId: string;
+            sourceSha256: string;
+            rendererVersion: string;
+            modelSha256: string;
+        };
+        BulletinWatermarkVersion: {
+            /** Format: uuid */
+            issueId: string;
+            locale: string;
+            revision: number;
+            /** Format: uuid */
+            sourceAssetId: string;
+            sourceSha256: string;
+            rendererVersion: string;
+            modelSha256: string;
+            pageCount: number;
+        };
+        BulletinWatermarkVersionsEnvelope: {
+            data: {
+                versions: components["schemas"]["BulletinWatermarkVersion"][];
+            };
+            meta?: Record<string, never>;
+            error?: Record<string, never> | null;
+        };
+        BulletinWatermarkInvestigationInput: {
+            scope: components["schemas"]["BulletinWatermarkCandidateScope"];
+            page: number;
+            reason: string;
+        };
+        BulletinWatermarkInvestigation: {
+            /** Format: uuid */
+            id: string;
+            scope: components["schemas"]["BulletinWatermarkCandidateScope"];
+            page: number;
+            /** @enum {string} */
+            status: "queued" | "running" | "completed" | "failed" | "expired";
+            /** @enum {string} */
+            result?: "matched" | "inconclusive";
+            errorCode?: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+            receipt?: components["schemas"]["BulletinWatermarkLookupResult"];
+        };
+        BulletinWatermarkInvestigationEnvelope: {
+            data: components["schemas"]["BulletinWatermarkInvestigation"];
+            meta?: Record<string, never>;
+            error?: Record<string, never> | null;
+        };
+        BulletinWatermarkInvestigationAcceptedEnvelope: {
+            data: {
+                /** Format: uuid */
+                id: string;
+            };
+            meta?: Record<string, never>;
+            error?: Record<string, never> | null;
+        };
+        BulletinWatermarkInvestigationHistory: {
+            /** Format: uuid */
+            id: string;
+            scope: components["schemas"]["BulletinWatermarkCandidateScope"];
+            page: number;
+            reason: string;
+            status: string;
+            result?: string;
+            errorCode?: string;
+            evidenceSha256: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: date-time */
+            evidenceExpiresAt: string;
+        };
+        BulletinWatermarkPageMetadata: {
+            page: number;
+            width: number;
+            height: number;
+            source_sha256: string;
+            output_sha256: string;
+        };
         BulletinWatermarkLookupInput: {
             code: string;
             reason: string;
@@ -1698,6 +1840,9 @@ export interface components {
             privacyNoticeVersion: string;
             /** Format: date-time */
             expiresAt: string;
+            fingerprintPayload?: string;
+            modelSha256?: string;
+            pages?: components["schemas"]["BulletinWatermarkPageMetadata"][];
         };
         BulletinWatermarkDSRExportInput: {
             /** Format: uuid */
@@ -1719,11 +1864,11 @@ export interface components {
         BulletinWatermarkDSRExportEnvelope: {
             data: {
                 records: {
-                    /** @constant */
-                    recordType: "bulletin_watermark_receipt";
+                    /** @enum {string} */
+                    recordType: "bulletin_watermark_receipt" | "bulletin_watermark_investigation";
                     /** Format: uuid */
                     recordKey: string;
-                    data: components["schemas"]["BulletinWatermarkReceipt"];
+                    data: components["schemas"]["BulletinWatermarkReceipt"] | components["schemas"]["BulletinWatermarkInvestigationHistory"];
                 }[];
                 recordCount: number;
                 nextCursor?: string;
@@ -3793,6 +3938,109 @@ export interface operations {
             401: components["responses"]["AdminUnauthorized"];
             403: components["responses"]["AdminForbidden"];
             404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listBulletinWatermarkVersions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                issueId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List eligible retained reconstruction versions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulletinWatermarkVersionsEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            413: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    createBulletinWatermarkInvestigation: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Stable UUID for retries. Reuse with changed content returns 409. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** @description JSON BulletinWatermarkInvestigationInput; unknown fields rejected. */
+                    metadata: string;
+                    /**
+                     * Format: binary
+                     * @description Decoded PNG/JPEG only, at most 10 MiB and 20 million pixels.
+                     */
+                    image: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Queue a private screenshot investigation */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulletinWatermarkInvestigationAcceptedEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            413: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getBulletinWatermarkInvestigation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Read the creator-owned investigation and audited result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulletinWatermarkInvestigationEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            413: components["responses"]["Error"];
             422: components["responses"]["Error"];
             429: components["responses"]["Error"];
             503: components["responses"]["Error"];
