@@ -11,6 +11,30 @@ import type {
 } from './client'
 
 describe('hhc web client', () => {
+  it('uploads a private screenshot with the generated scope and reads its creator-owned job', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({data: {id: 'job-1', versions: []}}), {headers: {'Content-Type': 'application/json'}}))
+    const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'trace-token', fetcher})
+    const input = {scope: {issueId: 'issue-1', locale: 'zh-Hant', revision: 3, sourceAssetId: 'asset-1', sourceSha256: 'a'.repeat(64), rendererVersion: 'pdf-engine', modelSha256: 'b'.repeat(64)}, page: 3, reason: 'Investigation reason'}
+    const controller = new AbortController()
+    await client.listBulletinWatermarkVersions('issue-1', controller.signal)
+    await client.createBulletinWatermarkInvestigation(input, new Blob(['pixels'], {type: 'image/png'}), 'request-key', controller.signal)
+    await client.getBulletinWatermarkInvestigation('job-1', controller.signal)
+    const requests = fetcher.mock.calls.map(call => call[0] as Request)
+    expect(requests[0]!.url).toBe('http://localhost/api/admin/bulletins/issue-1/watermark-versions')
+    expect(requests[1]!.headers.get('Idempotency-Key')).toBe('request-key')
+    expect(requests[1]!.headers.get('Content-Type')).toMatch(/^multipart\/form-data; boundary=/)
+    const body = await requests[1]!.formData()
+    expect(JSON.parse(body.get('metadata') as string)).toEqual(input)
+    expect(await (body.get('image') as Blob).text()).toBe('pixels')
+    expect(requests[2]!.url).toBe('http://localhost/api/admin/bulletin-watermark-investigations/job-1')
+    for (const request of requests) {
+      expect(request.headers.get('Authorization')).toBe('Bearer trace-token')
+      expect(request.cache).toBe('no-store')
+    }
+    controller.abort()
+    expect(requests.every(request => request.signal.aborted)).toBe(true)
+  })
+
   it('posts trace lookup privately and activates membership with concurrency headers', async () => {
     const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({data: {}, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}}))
     const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'trace-token', fetcher})

@@ -17,6 +17,9 @@ export type BulletinAccessStatus = components['schemas']['BulletinAccessStatus']
 export type PublicBulletinAccess = components['schemas']['PublicBulletinAccess']
 export type MemberBulletinAccess = components['schemas']['MemberBulletinAccess']
 export type BulletinWatermarkLookup = components['schemas']['BulletinWatermarkLookupResult']
+export type BulletinWatermarkVersion = components['schemas']['BulletinWatermarkVersion']
+export type BulletinWatermarkInvestigationInput = components['schemas']['BulletinWatermarkInvestigationInput']
+export type BulletinWatermarkInvestigation = components['schemas']['BulletinWatermarkInvestigation']
 export type BulletinAccess = components['schemas']['BulletinAccess']
 export type PublicBulletin = components['schemas']['PublicBulletin']
 export type PublicBulletinIssue = components['schemas']['PublicBulletinIssue']
@@ -178,6 +181,27 @@ export function createHhcWebClient(options: {
     },
     async getAdminBulletinAccess(signal?: AbortSignal) {
       return (await unwrap(client.GET('/admin/bulletin-access', { signal }))).data
+    },
+    async listBulletinWatermarkVersions(issueId: string, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/bulletins/{issueId}/watermark-versions', {
+        params: {path: {issueId}}, signal, cache: 'no-store',
+      }))).data.versions
+    },
+    async createBulletinWatermarkInvestigation(input: BulletinWatermarkInvestigationInput, image: Blob, idempotencyKey: string, signal?: AbortSignal) {
+      const metadata = JSON.stringify(input)
+      const form = new FormData()
+      form.set('metadata', metadata)
+      form.set('image', image, image.type === 'image/jpeg' ? 'screenshot.jpg' : 'screenshot.png')
+      return (await unwrap(client.POST('/admin/bulletin-watermark-investigations', {
+        params: {header: {'Idempotency-Key': idempotencyKey}}, signal, cache: 'no-store',
+        // OpenAPI binary fields are strings; the serializer supplies the actual Blob.
+        body: {metadata, image: ''}, bodySerializer: () => form,
+      }))).data
+    },
+    async getBulletinWatermarkInvestigation(id: string, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/bulletin-watermark-investigations/{id}', {
+        params: {path: {id}}, signal, cache: 'no-store',
+      }))).data
     },
     async lookupBulletinWatermark(code: string, reason: string, signal?: AbortSignal) {
       return (await unwrap(client.POST('/admin/bulletins/watermark-lookups', {body: {code, reason}, signal, cache: 'no-store'}))).data

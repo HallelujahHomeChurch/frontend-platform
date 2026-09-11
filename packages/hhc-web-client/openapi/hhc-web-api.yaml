@@ -80,10 +80,137 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BulletinWatermarkLookupInput'
+  /admin/bulletins/{issueId}/watermark-versions:
+    get:
+      operationId: listBulletinWatermarkVersions
+      summary: List eligible retained reconstruction versions
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: ['bulletin:trace']
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      responses:
+        '200':
+          description: List eligible retained reconstruction versions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulletinWatermarkVersionsEnvelope'
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+      parameters:
+      - in: path
+        name: issueId
+        required: true
+        schema:
+          type: string
+          format: uuid
+  /admin/bulletin-watermark-investigations:
+    post:
+      operationId: createBulletinWatermarkInvestigation
+      summary: Queue a private screenshot investigation
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: ['bulletin:trace']
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      responses:
+        '202':
+          description: Queue a private screenshot investigation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulletinWatermarkInvestigationAcceptedEnvelope'
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Stable UUID for retries. Reuse with changed content returns 409.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+              - metadata
+              - image
+              properties:
+                metadata:
+                  type: string
+                  maxLength: 8192
+                  contentMediaType: application/json
+                  contentSchema:
+                    $ref: '#/components/schemas/BulletinWatermarkInvestigationInput'
+                  description: JSON BulletinWatermarkInvestigationInput; unknown fields
+                    rejected.
+                image:
+                  type: string
+                  format: binary
+                  description: Decoded PNG/JPEG only, at most 10 MiB and 20 million
+                    pixels.
+  /admin/bulletin-watermark-investigations/{id}:
+    get:
+      operationId: getBulletinWatermarkInvestigation
+      summary: Read the creator-owned investigation and audited result
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: ['bulletin:trace']
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      responses:
+        '200':
+          description: Read the creator-owned investigation and audited result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulletinWatermarkInvestigationEnvelope'
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
   /priv/bulletin-watermarks/dsr/exports:
     post:
       operationId: applyBulletinWatermarkDSRExport
       summary: Process Account-owned watermark DSR export
+      description: >-
+        Receipt UUID cursors remain valid. After the last receipt page, investigations:
+        starts the investigation phase; subsequent cursors append a job UUID.
       tags: [Private]
       x-hhc-visibility: private
       x-hhc-callers: [account-api]
@@ -2798,6 +2925,262 @@ components:
       description: Public revalidation policy for Site Layout projections.
       schema: { type: string, const: 'public, max-age=30, must-revalidate' }
   schemas:
+    BulletinWatermarkCandidateScope:
+      type: object
+      additionalProperties: false
+      required:
+      - issueId
+      - locale
+      - revision
+      - sourceAssetId
+      - sourceSha256
+      - rendererVersion
+      - modelSha256
+      properties:
+        issueId:
+          type: string
+          format: uuid
+        locale:
+          type: string
+          minLength: 1
+        revision:
+          type: integer
+          minimum: 1
+        sourceAssetId:
+          type: string
+          format: uuid
+        sourceSha256:
+          type: string
+          pattern: ^[a-f0-9]{64}$
+        rendererVersion:
+          type: string
+          minLength: 1
+        modelSha256:
+          type: string
+          pattern: ^[a-f0-9]{64}$
+    BulletinWatermarkVersion:
+      type: object
+      additionalProperties: false
+      required:
+      - issueId
+      - locale
+      - revision
+      - sourceAssetId
+      - sourceSha256
+      - rendererVersion
+      - modelSha256
+      - pageCount
+      properties:
+        issueId:
+          type: string
+          format: uuid
+        locale:
+          type: string
+          minLength: 1
+        revision:
+          type: integer
+          minimum: 1
+        sourceAssetId:
+          type: string
+          format: uuid
+        sourceSha256:
+          type: string
+          pattern: ^[a-f0-9]{64}$
+        rendererVersion:
+          type: string
+          minLength: 1
+        modelSha256:
+          type: string
+          pattern: ^[a-f0-9]{64}$
+        pageCount:
+          type: integer
+          minimum: 1
+          maximum: 60
+    BulletinWatermarkVersionsEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+      - data
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+          - versions
+          properties:
+            versions:
+              type: array
+              items:
+                $ref: '#/components/schemas/BulletinWatermarkVersion'
+        meta:
+          type: object
+        error:
+          type:
+          - object
+          - 'null'
+    BulletinWatermarkInvestigationInput:
+      type: object
+      additionalProperties: false
+      required:
+      - scope
+      - page
+      - reason
+      properties:
+        scope:
+          $ref: '#/components/schemas/BulletinWatermarkCandidateScope'
+        page:
+          type: integer
+          minimum: 1
+          maximum: 60
+        reason:
+          type: string
+          minLength: 10
+          maxLength: 300
+    BulletinWatermarkInvestigation:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - scope
+      - page
+      - status
+      - createdAt
+      - expiresAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        scope:
+          $ref: '#/components/schemas/BulletinWatermarkCandidateScope'
+        page:
+          type: integer
+          minimum: 1
+          maximum: 60
+        status:
+          type: string
+          enum:
+          - queued
+          - running
+          - completed
+          - failed
+          - expired
+        result:
+          type: string
+          enum:
+          - matched
+          - inconclusive
+        errorCode:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        receipt:
+          $ref: '#/components/schemas/BulletinWatermarkLookupResult'
+    BulletinWatermarkInvestigationEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+      - data
+      properties:
+        data:
+          $ref: '#/components/schemas/BulletinWatermarkInvestigation'
+        meta:
+          type: object
+        error:
+          type:
+          - object
+          - 'null'
+    BulletinWatermarkInvestigationAcceptedEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+      - data
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+          - id
+          properties:
+            id:
+              type: string
+              format: uuid
+        meta:
+          type: object
+        error:
+          type:
+          - object
+          - 'null'
+    BulletinWatermarkInvestigationHistory:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - scope
+      - page
+      - reason
+      - status
+      - evidenceSha256
+      - createdAt
+      - expiresAt
+      - evidenceExpiresAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        scope:
+          $ref: '#/components/schemas/BulletinWatermarkCandidateScope'
+        page:
+          type: integer
+        reason:
+          type: string
+        status:
+          type: string
+        result:
+          type: string
+        errorCode:
+          type: string
+        evidenceSha256:
+          type: string
+          pattern: ^[a-f0-9]{64}$
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        evidenceExpiresAt:
+          type: string
+          format: date-time
+    BulletinWatermarkPageMetadata:
+      type: object
+      additionalProperties: false
+      required:
+      - page
+      - width
+      - height
+      - source_sha256
+      - output_sha256
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          maximum: 60
+        width:
+          type: integer
+          minimum: 1
+        height:
+          type: integer
+          minimum: 1
+        source_sha256:
+          type: string
+          pattern: ^[a-f0-9]{64}$
+        output_sha256:
+          type: string
+          pattern: ^[a-f0-9]{64}$
     BulletinWatermarkLookupInput:
       type: object
       additionalProperties: false
@@ -2882,6 +3265,18 @@ components:
         outputSha256: *id002
         privacyNoticeVersion: *id002
         expiresAt: *id004
+        fingerprintPayload:
+          type: string
+          pattern: '^[01]{61}$'
+        modelSha256:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+        pages:
+          type: array
+          minItems: 1
+          maxItems: 60
+          items:
+            $ref: '#/components/schemas/BulletinWatermarkPageMetadata'
     BulletinWatermarkDSRExportInput:
       type: object
       additionalProperties: false
@@ -2943,10 +3338,12 @@ components:
                 properties:
                   recordType:
                     type: string
-                    const: bulletin_watermark_receipt
+                    enum: [bulletin_watermark_receipt, bulletin_watermark_investigation]
                   recordKey: *id001
                   data:
-                    $ref: '#/components/schemas/BulletinWatermarkReceipt'
+                    oneOf:
+                    - $ref: '#/components/schemas/BulletinWatermarkReceipt'
+                    - $ref: '#/components/schemas/BulletinWatermarkInvestigationHistory'
             recordCount: &id005
               type: integer
               minimum: 0
