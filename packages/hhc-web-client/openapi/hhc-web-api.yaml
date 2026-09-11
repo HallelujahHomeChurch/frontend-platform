@@ -23,6 +23,214 @@ servers:
   - url: https://www.alive.org.tw/api
     description: Public and admin gateway surface; api-gateway validates browser JWTs and injects trusted identity headers.
 paths:
+  /admin/bulletin-access/membership:
+    post:
+      operationId: activateBulletinMembership
+      summary: Explicitly enable member access and reconcile private grants
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:publish]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+      - $ref: '#/components/parameters/IfMatch'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '202':
+          description: Bulletin access retry accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulletinAccessEnvelope'
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/bulletins/watermark-lookups:
+    post:
+      operationId: lookupBulletinWatermark
+      summary: Resolve an exact document code to its issuance account
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [bulletin:trace]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      responses:
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+        '200':
+          description: BulletinWatermarkLookupEnvelope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulletinWatermarkLookupEnvelope'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulletinWatermarkLookupInput'
+  /priv/bulletin-watermarks/dsr/exports:
+    post:
+      operationId: applyBulletinWatermarkDSRExport
+      summary: Process Account-owned watermark DSR export
+      tags: [Private]
+      x-hhc-visibility: private
+      x-hhc-callers: [account-api]
+      x-hhc-required-headers:
+      - Dapr-Caller-App-Id
+      - dapr-api-token
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [] }]
+      servers: [{ url: / }]
+      responses:
+        '401': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+        '200':
+          description: BulletinWatermarkDSRExportEnvelope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulletinWatermarkDSRExportEnvelope'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulletinWatermarkDSRExportInput'
+  /priv/bulletin-watermarks/dsr/actions:
+    post:
+      operationId: applyBulletinWatermarkDSRAction
+      summary: Process Account-owned watermark DSR action
+      tags: [Private]
+      x-hhc-visibility: private
+      x-hhc-callers: [account-api]
+      x-hhc-required-headers:
+      - Dapr-Caller-App-Id
+      - dapr-api-token
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [] }]
+      servers: [{ url: / }]
+      responses:
+        '401': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+        '200':
+          description: BulletinWatermarkDSRActionEnvelope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulletinWatermarkDSRActionEnvelope'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulletinWatermarkDSRActionInput'
+  /admin/bulletin-access/retry:
+    post:
+      operationId: retryBulletinAccess
+      summary: Retry the failed bulletin access operation
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      x-required-scopes: ['cms:publish']
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters: [{ $ref: '#/components/parameters/IfMatch' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+      responses:
+        '202': { description: Bulletin access retry accepted, content: { application/json: { schema: { $ref: '#/components/schemas/BulletinAccessEnvelope' } } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/bulletin-access:
+    get:
+      operationId: getAdminBulletinAccess
+      summary: Get bulletin access transition state
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      x-required-scopes: ['cms:read']
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      responses:
+        '200':
+          description: Bulletin access transition state
+          headers: { ETag: { schema: { type: string } }, Cache-Control: { schema: { type: string, const: no-store } } }
+          content: { application/json: { schema: { $ref: '#/components/schemas/BulletinAccessEnvelope' } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '503': { $ref: '#/components/responses/Error' }
+    put:
+      operationId: setBulletinAccess
+      summary: Enable or disable public bulletin access
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      x-required-scopes: ['cms:publish']
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters: [{ $ref: '#/components/parameters/IfMatch' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/SetBulletinAccessInput' } } }
+      responses:
+        '200': { description: Requested state already effective, content: { application/json: { schema: { $ref: '#/components/schemas/BulletinAccessEnvelope' } } } }
+        '202': { description: Bulletin access transition accepted, content: { application/json: { schema: { $ref: '#/components/schemas/BulletinAccessEnvelope' } } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /bulletin-access:
+    get:
+      operationId: getBulletinAccess
+      summary: Get effective public bulletin access
+      tags: [Public]
+      x-hhc-visibility: public
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: no-store
+      security: []
+      responses:
+        '200':
+          description: Effective public bulletin access
+          headers: { Cache-Control: { schema: { type: string, const: no-store } } }
+          content: { application/json: { schema: { $ref: '#/components/schemas/PublicBulletinAccessEnvelope' } } }
+        '503': { $ref: '#/components/responses/Error' }
+  /member/bulletin-access:
+    get:
+      operationId: getMemberBulletinAccess
+      summary: Get the signed-in user's effective bulletin access
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      responses:
+        '200':
+          description: Effective bulletin access
+          content: { application/json: { schema: { $ref: '#/components/schemas/MemberBulletinAccessEnvelope' } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '503': { $ref: '#/components/responses/Error' }
   /health:
     get:
       operationId: getHealth
@@ -538,6 +746,41 @@ paths:
         '400': { $ref: '#/components/responses/Error' }
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
         '500': { $ref: '#/components/responses/Error' }
+  /priv/bulletins/{issueID}/notification-policy:
+    get:
+      operationId: getPrivateBulletinNotificationPolicy
+      summary: Check current publication and audience policy for a bulletin delivery
+      tags: [Private]
+      x-hhc-visibility: private
+      x-hhc-callers: [engagement-api]
+      x-hhc-required-headers: [Dapr-Caller-App-Id, dapr-api-token]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [] }]
+      servers: [{ url: / }]
+      parameters:
+        - name: issueID
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Current delivery policy
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [published, membersOnly, enabled]
+                    properties:
+                      published: { type: boolean }
+                      membersOnly: { type: boolean }
+                      enabled: { type: boolean }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '404': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
   /priv/meeting-sync-windows:
     get:
       operationId: listPrivateMeetingSyncWindows
@@ -878,21 +1121,6 @@ paths:
         '502': { $ref: '#/components/responses/TranslationProviderError' }
         '503': { $ref: '#/components/responses/TranslationDisabled' }
         '504': { $ref: '#/components/responses/TranslationTimeout' }
-  /bulletin-access:
-    get:
-      operationId: getBulletinAccess
-      summary: Get effective public bulletin access
-      tags: [Public]
-      x-hhc-visibility: public
-      x-hhc-callers: [api-gateway]
-      x-hhc-cache: no-store
-      security: []
-      responses:
-        '200':
-          description: Effective public bulletin access
-          headers: { Cache-Control: { schema: { type: string, const: no-store } } }
-          content: { application/json: { schema: { $ref: '#/components/schemas/PublicBulletinAccessEnvelope' } } }
-        '503': { $ref: '#/components/responses/Error' }
   /bulletins:
     get:
       operationId: listPublicBulletins
@@ -951,6 +1179,162 @@ paths:
       responses:
         '200': { $ref: '#/components/responses/PublicBulletin' }
         '404': { $ref: '#/components/responses/Error' }
+  /member/bulletins:
+    get:
+      operationId: listMemberBulletins
+      summary: List bulletins available to a verified member
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-required-scopes: ['bulletin:read']
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters: [{ $ref: '#/components/parameters/Page' }, { $ref: '#/components/parameters/PageSize' }]
+      responses:
+        '200': { description: Member bulletin page, content: { application/json: { schema: { $ref: '#/components/schemas/PublicBulletinListEnvelope' } } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+  /member/bulletins/latest:
+    get:
+      operationId: getLatestMemberBulletin
+      summary: Get the latest bulletin available to a verified member
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-required-scopes: ['bulletin:read']
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters: [{ $ref: '#/components/parameters/BulletinEdition' }]
+      responses:
+        '200': { $ref: '#/components/responses/PublicBulletin' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+  /member/bulletins/by-number/{issueNumber}:
+    get:
+      operationId: getMemberBulletinByNumber
+      summary: Get a bulletin by number for a verified member
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-required-scopes: ['bulletin:read']
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+        - { name: issueNumber, in: path, required: true, schema: { type: integer, format: int32, minimum: 1, maximum: 2147483647 } }
+        - $ref: '#/components/parameters/BulletinEdition'
+      responses:
+        '200': { $ref: '#/components/responses/PublicBulletin' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+  /member/bulletins/{issueDate}:
+    get:
+      operationId: getMemberBulletinByDate
+      summary: Get a bulletin by date for a verified member
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-required-scopes: ['bulletin:read']
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+        - { name: issueDate, in: path, required: true, schema: { type: string, format: date } }
+        - $ref: '#/components/parameters/BulletinEdition'
+      responses:
+        '200': { $ref: '#/components/responses/PublicBulletin' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+  /member/bulletin-downloads/{issueDate}:
+    get:
+      operationId: downloadMemberBulletin
+      summary: Download a bulletin through the verified-member boundary
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-required-scopes: [bulletin:read]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+      - name: issueDate
+        in: path
+        required: true
+        schema:
+          type: string
+          format: date
+      - $ref: '#/components/parameters/BulletinEdition'
+      - name: Range
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: If-Range
+        in: header
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Bulletin PDF
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '206':
+          description: Partial bulletin PDF
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+      description: Member mode returns a complete personalized PDF (Range ignored).
+        Public mode preserves the original PDF and range behavior. Authorization is
+        checked on every request. No unmarked member fallback.
+    head:
+      operationId: headMemberBulletin
+      summary: Check download access without issuing a personalized PDF
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-required-scopes: [bulletin:read]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+      - name: issueDate
+        in: path
+        required: true
+        schema:
+          type: string
+          format: date
+      - $ref: '#/components/parameters/BulletinEdition'
+      - name: Range
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: If-Range
+        in: header
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Document available; no receipt issued, no content length promised
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+      description: Member mode returns a complete personalized PDF (Range ignored).
+        Public mode preserves the original PDF and range behavior. Authorization is
+        checked on every request. No unmarked member fallback.
   /statements/active:
     get:
       operationId: getActiveStatement
@@ -1286,68 +1670,6 @@ paths:
         '409': { $ref: '#/components/responses/Error' }
         '422': { $ref: '#/components/responses/Error' }
         '428': { $ref: '#/components/responses/Error' }
-  /admin/bulletin-access:
-    get:
-      operationId: getAdminBulletinAccess
-      summary: Get bulletin access transition state
-      tags: [Admin]
-      x-hhc-visibility: admin
-      x-hhc-callers: [api-gateway]
-      x-hhc-cache: 'private, no-store'
-      x-required-scopes: ['cms:read']
-      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
-      servers: [{ url: https://admin.alive.org.tw/api }]
-      responses:
-        '200':
-          description: Bulletin access transition state
-          headers: { ETag: { schema: { type: string } }, Cache-Control: { schema: { type: string, const: no-store } } }
-          content: { application/json: { schema: { $ref: '#/components/schemas/BulletinAccessEnvelope' } } }
-        '401': { $ref: '#/components/responses/AdminUnauthorized' }
-        '403': { $ref: '#/components/responses/AdminForbidden' }
-        '503': { $ref: '#/components/responses/Error' }
-    put:
-      operationId: setBulletinAccess
-      summary: Enable or disable public bulletin access
-      tags: [Admin]
-      x-hhc-visibility: admin
-      x-hhc-callers: [api-gateway]
-      x-hhc-cache: 'private, no-store'
-      x-required-scopes: ['cms:publish']
-      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
-      servers: [{ url: https://admin.alive.org.tw/api }]
-      parameters: [{ $ref: '#/components/parameters/IfMatch' }, { $ref: '#/components/parameters/IdempotencyKey' }]
-      requestBody:
-        required: true
-        content: { application/json: { schema: { $ref: '#/components/schemas/SetBulletinAccessInput' } } }
-      responses:
-        '200': { description: Requested state already effective, content: { application/json: { schema: { $ref: '#/components/schemas/BulletinAccessEnvelope' } } } }
-        '202': { description: Bulletin access transition accepted, content: { application/json: { schema: { $ref: '#/components/schemas/BulletinAccessEnvelope' } } } }
-        '401': { $ref: '#/components/responses/AdminUnauthorized' }
-        '403': { $ref: '#/components/responses/AdminForbidden' }
-        '409': { $ref: '#/components/responses/Error' }
-        '422': { $ref: '#/components/responses/Error' }
-        '428': { $ref: '#/components/responses/Error' }
-        '503': { $ref: '#/components/responses/Error' }
-  /admin/bulletin-access/retry:
-    post:
-      operationId: retryBulletinAccess
-      summary: Retry the failed bulletin access operation
-      tags: [Admin]
-      x-hhc-visibility: admin
-      x-hhc-callers: [api-gateway]
-      x-hhc-cache: 'private, no-store'
-      x-required-scopes: ['cms:publish']
-      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
-      servers: [{ url: https://admin.alive.org.tw/api }]
-      parameters: [{ $ref: '#/components/parameters/IfMatch' }, { $ref: '#/components/parameters/IdempotencyKey' }]
-      responses:
-        '202': { description: Bulletin access retry accepted, content: { application/json: { schema: { $ref: '#/components/schemas/BulletinAccessEnvelope' } } } }
-        '401': { $ref: '#/components/responses/AdminUnauthorized' }
-        '403': { $ref: '#/components/responses/AdminForbidden' }
-        '409': { $ref: '#/components/responses/Error' }
-        '422': { $ref: '#/components/responses/Error' }
-        '428': { $ref: '#/components/responses/Error' }
-        '503': { $ref: '#/components/responses/Error' }
   /admin/bulletins:
     get:
       operationId: listAdminBulletins
@@ -2476,6 +2798,265 @@ components:
       description: Public revalidation policy for Site Layout projections.
       schema: { type: string, const: 'public, max-age=30, must-revalidate' }
   schemas:
+    BulletinWatermarkLookupInput:
+      type: object
+      additionalProperties: false
+      required:
+      - code
+      - reason
+      properties:
+        code:
+          type: string
+          maxLength: 40
+        reason:
+          type: string
+          minLength: 10
+          maxLength: 300
+    BulletinWatermarkLookupResult:
+      type: object
+      additionalProperties: false
+      required:
+      - receiptId
+      - userId
+      - issueId
+      - locale
+      - revision
+      - issuedAt
+      - rendererVersion
+      properties:
+        receiptId: &id001
+          type: string
+          format: uuid
+        userId: *id001
+        issueId: *id001
+        locale: &id002
+          type: string
+        revision: &id003
+          type: integer
+          format: int64
+          minimum: 1
+        issuedAt: &id004
+          type: string
+          format: date-time
+        rendererVersion: *id002
+    BulletinWatermarkLookupEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+      - data
+      properties:
+        data:
+          $ref: '#/components/schemas/BulletinWatermarkLookupResult'
+        meta:
+          type: object
+        error:
+          type:
+          - object
+          - 'null'
+    BulletinWatermarkReceipt:
+      type: object
+      additionalProperties: false
+      required:
+      - receiptId
+      - userId
+      - issueId
+      - locale
+      - revision
+      - issuedAt
+      - rendererVersion
+      - sourceAssetId
+      - sourceSha256
+      - outputSha256
+      - privacyNoticeVersion
+      - expiresAt
+      properties:
+        receiptId: *id001
+        userId: *id001
+        issueId: *id001
+        locale: *id002
+        revision: *id003
+        issuedAt: *id004
+        rendererVersion: *id002
+        sourceAssetId: *id001
+        sourceSha256: *id002
+        outputSha256: *id002
+        privacyNoticeVersion: *id002
+        expiresAt: *id004
+    BulletinWatermarkDSRExportInput:
+      type: object
+      additionalProperties: false
+      required:
+      - requestId
+      - userId
+      - limit
+      properties:
+        requestId: *id001
+        userId: *id001
+        cursor: *id002
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+    BulletinWatermarkDSRActionInput:
+      type: object
+      additionalProperties: false
+      required:
+      - requestId
+      - userId
+      - action
+      - idempotencyKey
+      properties:
+        requestId: *id001
+        userId: *id001
+        action:
+          type: string
+          enum:
+          - erase
+          - restrict_processing
+        idempotencyKey:
+          type: string
+          minLength: 1
+          maxLength: 200
+    BulletinWatermarkDSRExportEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+      - data
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+          - records
+          - recordCount
+          - exceptions
+          properties:
+            records:
+              type: array
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                - recordType
+                - recordKey
+                - data
+                properties:
+                  recordType:
+                    type: string
+                    const: bulletin_watermark_receipt
+                  recordKey: *id001
+                  data:
+                    $ref: '#/components/schemas/BulletinWatermarkReceipt'
+            recordCount: &id005
+              type: integer
+              minimum: 0
+            nextCursor: *id002
+            exceptions:
+              type: array
+              items:
+                type: object
+        meta:
+          type: object
+        error:
+          type:
+          - object
+          - 'null'
+    BulletinWatermarkDSRActionEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+      - data
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+          - owner
+          - action
+          - status
+          - recordCount
+          - reasonCodes
+          properties:
+            owner:
+              type: string
+              const: website_watermark
+            action:
+              type: string
+              enum:
+              - erase
+              - restrict_processing
+            status:
+              type: string
+              const: completed
+            recordCount: *id005
+            reasonCodes:
+              type: array
+              items: *id002
+        meta:
+          type: object
+        error:
+          type:
+          - object
+          - 'null'
+    BulletinAccessEnvelope:
+      type: object
+      required: [data, meta, error]
+      properties:
+        data: { $ref: '#/components/schemas/BulletinAccess' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: ['null'] }
+    PublicBulletinAccessEnvelope:
+      type: object
+      required: [data, meta, error]
+      properties:
+        data: { $ref: '#/components/schemas/PublicBulletinAccess' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: ['null'] }
+    MemberBulletinAccessEnvelope:
+      type: object
+      required: [data, meta, error]
+      properties:
+        data: { $ref: '#/components/schemas/MemberBulletinAccess' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: ['null'] }
+    SetBulletinAccessInput:
+      type: object
+      additionalProperties: false
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
+    BulletinAccess:
+      type: object
+      additionalProperties: false
+      required: [requestedEnabled, effectiveEnabled, membershipEnabled, status, version, operationId, completed, total, errorCode, updatedAt]
+      properties:
+        membershipEnabled: { type: boolean }
+        requestedEnabled: { type: boolean }
+        effectiveEnabled: { type: boolean }
+        status: { $ref: '#/components/schemas/BulletinAccessStatus' }
+        version: { type: integer, format: int64, minimum: 1 }
+        operationId: { type: [string, 'null'], format: uuid }
+        completed: { type: integer, minimum: 0 }
+        total: { type: integer, minimum: 0 }
+        errorCode: { type: [string, 'null'] }
+        updatedAt: { type: string, format: date-time }
+    PublicBulletinAccess:
+      type: object
+      additionalProperties: false
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
+    MemberBulletinAccess:
+      type: object
+      additionalProperties: false
+      required: [canRead, publicEnabled, policyVersion]
+      properties:
+        canRead: { type: boolean }
+        publicEnabled: { type: boolean }
+        policyVersion: { type: integer, format: int64, minimum: 1 }
+    BulletinAccessStatus:
+      type: string
+      enum: [enabled, disabling, disabled, enabling, failed]
     OperationsStatus: { type: string, enum: [active, paused, archived] }
     OperationsVisibility: { type: string, enum: [public, internal] }
     MeetingSchedule:
@@ -2912,35 +3493,6 @@ components:
     BulletinStatus:
       type: string
       enum: [draft, publishing, published, unpublishing, unpublish_failed, unpublished]
-    BulletinAccessStatus:
-      type: string
-      enum: [enabled, disabling, disabled, enabling, failed]
-    PublicBulletinAccess:
-      type: object
-      additionalProperties: false
-      required: [enabled]
-      properties:
-        enabled: { type: boolean }
-    BulletinAccess:
-      type: object
-      additionalProperties: false
-      required: [requestedEnabled, effectiveEnabled, status, version, operationId, completed, total, errorCode, updatedAt]
-      properties:
-        requestedEnabled: { type: boolean }
-        effectiveEnabled: { type: boolean }
-        status: { $ref: '#/components/schemas/BulletinAccessStatus' }
-        version: { type: integer, format: int64, minimum: 1 }
-        operationId: { type: [string, 'null'], format: uuid }
-        completed: { type: integer, minimum: 0 }
-        total: { type: integer, minimum: 0 }
-        errorCode: { type: [string, 'null'] }
-        updatedAt: { type: string, format: date-time }
-    SetBulletinAccessInput:
-      type: object
-      additionalProperties: false
-      required: [enabled]
-      properties:
-        enabled: { type: boolean }
     BulletinVersionStatus:
       type: string
       enum: [draft, publishing, published, unpublishing, unpublish_failed, unpublished]
@@ -3884,20 +4436,6 @@ components:
       required: [data, meta]
       properties:
         data: { $ref: '#/components/schemas/PublicBulletin' }
-        meta: { type: object, additionalProperties: true }
-        error: { type: ['null'] }
-    PublicBulletinAccessEnvelope:
-      type: object
-      required: [data, meta, error]
-      properties:
-        data: { $ref: '#/components/schemas/PublicBulletinAccess' }
-        meta: { type: object, additionalProperties: true }
-        error: { type: ['null'] }
-    BulletinAccessEnvelope:
-      type: object
-      required: [data, meta, error]
-      properties:
-        data: { $ref: '#/components/schemas/BulletinAccess' }
         meta: { type: object, additionalProperties: true }
         error: { type: ['null'] }
     PublicBulletinListEnvelope:

@@ -4,6 +4,143 @@
  */
 
 export interface paths {
+    "/admin/bulletin-access/membership": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Explicitly enable member access and reconcile private grants */
+        post: operations["activateBulletinMembership"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/watermark-lookups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resolve an exact document code to its issuance account */
+        post: operations["lookupBulletinWatermark"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/priv/bulletin-watermarks/dsr/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Process Account-owned watermark DSR export */
+        post: operations["applyBulletinWatermarkDSRExport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/priv/bulletin-watermarks/dsr/actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Process Account-owned watermark DSR action */
+        post: operations["applyBulletinWatermarkDSRAction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletin-access/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retry the failed bulletin access operation */
+        post: operations["retryBulletinAccess"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletin-access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get bulletin access transition state */
+        get: operations["getAdminBulletinAccess"];
+        /** Enable or disable public bulletin access */
+        put: operations["setBulletinAccess"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/bulletin-access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get effective public bulletin access */
+        get: operations["getBulletinAccess"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/bulletin-access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the signed-in user's effective bulletin access */
+        get: operations["getMemberBulletinAccess"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -373,6 +510,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/priv/bulletins/{issueID}/notification-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Check current publication and audience policy for a bulletin delivery */
+        get: operations["getPrivateBulletinNotificationPolicy"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/priv/meeting-sync-windows": {
         parameters: {
             query?: never;
@@ -556,23 +710,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/bulletin-access": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get effective public bulletin access */
-        get: operations["getBulletinAccess"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/bulletins": {
         parameters: {
             query?: never;
@@ -638,6 +775,98 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/bulletins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List bulletins available to a verified member */
+        get: operations["listMemberBulletins"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/bulletins/latest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the latest bulletin available to a verified member */
+        get: operations["getLatestMemberBulletin"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/bulletins/by-number/{issueNumber}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a bulletin by number for a verified member */
+        get: operations["getMemberBulletinByNumber"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/bulletins/{issueDate}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a bulletin by date for a verified member */
+        get: operations["getMemberBulletinByDate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/bulletin-downloads/{issueDate}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download a bulletin through the verified-member boundary
+         * @description Member mode returns a complete personalized PDF (Range ignored). Public mode preserves the original PDF and range behavior. Authorization is checked on every request. No unmarked member fallback.
+         */
+        get: operations["downloadMemberBulletin"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        /**
+         * Check download access without issuing a personalized PDF
+         * @description Member mode returns a complete personalized PDF (Range ignored). Public mode preserves the original PDF and range behavior. Authorization is checked on every request. No unmarked member fallback.
+         */
+        head: operations["headMemberBulletin"];
         patch?: never;
         trace?: never;
     };
@@ -932,41 +1161,6 @@ export interface paths {
         put?: never;
         /** Restore a Site Settings revision to a draft */
         post: operations["restoreSiteSettingsRevision"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/bulletin-access": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get bulletin access transition state */
-        get: operations["getAdminBulletinAccess"];
-        /** Enable or disable public bulletin access */
-        put: operations["setBulletinAccess"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/bulletin-access/retry": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Retry the failed bulletin access operation */
-        post: operations["retryBulletinAccess"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1461,6 +1655,147 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        BulletinWatermarkLookupInput: {
+            code: string;
+            reason: string;
+        };
+        BulletinWatermarkLookupResult: {
+            /** Format: uuid */
+            receiptId: string;
+            /** Format: uuid */
+            userId: string;
+            /** Format: uuid */
+            issueId: string;
+            locale: string;
+            /** Format: int64 */
+            revision: number;
+            /** Format: date-time */
+            issuedAt: string;
+            rendererVersion: string;
+        };
+        BulletinWatermarkLookupEnvelope: {
+            data: components["schemas"]["BulletinWatermarkLookupResult"];
+            meta?: Record<string, never>;
+            error?: Record<string, never> | null;
+        };
+        BulletinWatermarkReceipt: {
+            /** Format: uuid */
+            receiptId: string;
+            /** Format: uuid */
+            userId: string;
+            /** Format: uuid */
+            issueId: string;
+            locale: string;
+            /** Format: int64 */
+            revision: number;
+            /** Format: date-time */
+            issuedAt: string;
+            rendererVersion: string;
+            /** Format: uuid */
+            sourceAssetId: string;
+            sourceSha256: string;
+            outputSha256: string;
+            privacyNoticeVersion: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        BulletinWatermarkDSRExportInput: {
+            /** Format: uuid */
+            requestId: string;
+            /** Format: uuid */
+            userId: string;
+            cursor?: string;
+            limit: number;
+        };
+        BulletinWatermarkDSRActionInput: {
+            /** Format: uuid */
+            requestId: string;
+            /** Format: uuid */
+            userId: string;
+            /** @enum {string} */
+            action: "erase" | "restrict_processing";
+            idempotencyKey: string;
+        };
+        BulletinWatermarkDSRExportEnvelope: {
+            data: {
+                records: {
+                    /** @constant */
+                    recordType: "bulletin_watermark_receipt";
+                    /** Format: uuid */
+                    recordKey: string;
+                    data: components["schemas"]["BulletinWatermarkReceipt"];
+                }[];
+                recordCount: number;
+                nextCursor?: string;
+                exceptions: Record<string, never>[];
+            };
+            meta?: Record<string, never>;
+            error?: Record<string, never> | null;
+        };
+        BulletinWatermarkDSRActionEnvelope: {
+            data: {
+                /** @constant */
+                owner: "website_watermark";
+                /** @enum {string} */
+                action: "erase" | "restrict_processing";
+                /** @constant */
+                status: "completed";
+                recordCount: number;
+                reasonCodes: string[];
+            };
+            meta?: Record<string, never>;
+            error?: Record<string, never> | null;
+        };
+        BulletinAccessEnvelope: {
+            data: components["schemas"]["BulletinAccess"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        PublicBulletinAccessEnvelope: {
+            data: components["schemas"]["PublicBulletinAccess"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        MemberBulletinAccessEnvelope: {
+            data: components["schemas"]["MemberBulletinAccess"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        SetBulletinAccessInput: {
+            enabled: boolean;
+        };
+        BulletinAccess: {
+            membershipEnabled: boolean;
+            requestedEnabled: boolean;
+            effectiveEnabled: boolean;
+            status: components["schemas"]["BulletinAccessStatus"];
+            /** Format: int64 */
+            version: number;
+            /** Format: uuid */
+            operationId: string | null;
+            completed: number;
+            total: number;
+            errorCode: string | null;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        PublicBulletinAccess: {
+            enabled: boolean;
+        };
+        MemberBulletinAccess: {
+            canRead: boolean;
+            publicEnabled: boolean;
+            /** Format: int64 */
+            policyVersion: number;
+        };
+        /** @enum {string} */
+        BulletinAccessStatus: "enabled" | "disabling" | "disabled" | "enabling" | "failed";
         /** @enum {string} */
         OperationsStatus: "active" | "paused" | "archived";
         /** @enum {string} */
@@ -1851,28 +2186,6 @@ export interface components {
         CampaignTranslationTargetLocale: "en" | "ja" | "ko";
         /** @enum {string} */
         BulletinStatus: "draft" | "publishing" | "published" | "unpublishing" | "unpublish_failed" | "unpublished";
-        /** @enum {string} */
-        BulletinAccessStatus: "enabled" | "disabling" | "disabled" | "enabling" | "failed";
-        PublicBulletinAccess: {
-            enabled: boolean;
-        };
-        BulletinAccess: {
-            requestedEnabled: boolean;
-            effectiveEnabled: boolean;
-            status: components["schemas"]["BulletinAccessStatus"];
-            /** Format: int64 */
-            version: number;
-            /** Format: uuid */
-            operationId: string | null;
-            completed: number;
-            total: number;
-            errorCode: string | null;
-            /** Format: date-time */
-            updatedAt: string;
-        };
-        SetBulletinAccessInput: {
-            enabled: boolean;
-        };
         /** @enum {string} */
         BulletinVersionStatus: "draft" | "publishing" | "published" | "unpublishing" | "unpublish_failed" | "unpublished";
         /** @enum {string} */
@@ -2662,20 +2975,6 @@ export interface components {
             };
             error?: null;
         };
-        PublicBulletinAccessEnvelope: {
-            data: components["schemas"]["PublicBulletinAccess"];
-            meta: {
-                [key: string]: unknown;
-            };
-            error: null;
-        };
-        BulletinAccessEnvelope: {
-            data: components["schemas"]["BulletinAccess"];
-            meta: {
-                [key: string]: unknown;
-            };
-            error: null;
-        };
         PublicBulletinListEnvelope: {
             data: components["schemas"]["PublicBulletinIssue"][];
             meta: components["schemas"]["PageMeta"];
@@ -3440,6 +3739,260 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    activateBulletinMembership: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bulletin access retry accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulletinAccessEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    lookupBulletinWatermark: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulletinWatermarkLookupInput"];
+            };
+        };
+        responses: {
+            /** @description BulletinWatermarkLookupEnvelope */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulletinWatermarkLookupEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    applyBulletinWatermarkDSRExport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulletinWatermarkDSRExportInput"];
+            };
+        };
+        responses: {
+            /** @description BulletinWatermarkDSRExportEnvelope */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulletinWatermarkDSRExportEnvelope"];
+                };
+            };
+            401: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    applyBulletinWatermarkDSRAction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulletinWatermarkDSRActionInput"];
+            };
+        };
+        responses: {
+            /** @description BulletinWatermarkDSRActionEnvelope */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulletinWatermarkDSRActionEnvelope"];
+                };
+            };
+            401: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    retryBulletinAccess: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bulletin access retry accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulletinAccessEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getAdminBulletinAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bulletin access transition state */
+            200: {
+                headers: {
+                    ETag?: string;
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulletinAccessEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            503: components["responses"]["Error"];
+        };
+    };
+    setBulletinAccess: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetBulletinAccessInput"];
+            };
+        };
+        responses: {
+            /** @description Requested state already effective */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulletinAccessEnvelope"];
+                };
+            };
+            /** @description Bulletin access transition accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulletinAccessEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getBulletinAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Effective public bulletin access */
+            200: {
+                headers: {
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicBulletinAccessEnvelope"];
+                };
+            };
+            503: components["responses"]["Error"];
+        };
+    };
+    getMemberBulletinAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Effective bulletin access */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberBulletinAccessEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            503: components["responses"]["Error"];
+        };
+    };
     getHealth: {
         parameters: {
             query?: never;
@@ -3961,6 +4514,37 @@ export interface operations {
             500: components["responses"]["Error"];
         };
     };
+    getPrivateBulletinNotificationPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                issueID: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current delivery policy */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            published: boolean;
+                            membersOnly: boolean;
+                            enabled: boolean;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            404: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
     listPrivateMeetingSyncWindows: {
         parameters: {
             query?: {
@@ -4325,28 +4909,6 @@ export interface operations {
             504: components["responses"]["TranslationTimeout"];
         };
     };
-    getBulletinAccess: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Effective public bulletin access */
-            200: {
-                headers: {
-                    "Cache-Control"?: "no-store";
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PublicBulletinAccessEnvelope"];
-                };
-            };
-            503: components["responses"]["Error"];
-        };
-    };
     listPublicBulletins: {
         parameters: {
             query?: {
@@ -4418,6 +4980,157 @@ export interface operations {
         responses: {
             200: components["responses"]["PublicBulletin"];
             404: components["responses"]["Error"];
+        };
+    };
+    listMemberBulletins: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["Page"];
+                pageSize?: components["parameters"]["PageSize"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Member bulletin page */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicBulletinListEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+        };
+    };
+    getLatestMemberBulletin: {
+        parameters: {
+            query?: {
+                locale?: components["parameters"]["BulletinEdition"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["PublicBulletin"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+        };
+    };
+    getMemberBulletinByNumber: {
+        parameters: {
+            query?: {
+                locale?: components["parameters"]["BulletinEdition"];
+            };
+            header?: never;
+            path: {
+                issueNumber: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["PublicBulletin"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+        };
+    };
+    getMemberBulletinByDate: {
+        parameters: {
+            query?: {
+                locale?: components["parameters"]["BulletinEdition"];
+            };
+            header?: never;
+            path: {
+                issueDate: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["PublicBulletin"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+        };
+    };
+    downloadMemberBulletin: {
+        parameters: {
+            query?: {
+                locale?: components["parameters"]["BulletinEdition"];
+            };
+            header?: {
+                Range?: string;
+                "If-Range"?: string;
+            };
+            path: {
+                issueDate: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bulletin PDF */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            /** @description Partial bulletin PDF */
+            206: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    headMemberBulletin: {
+        parameters: {
+            query?: {
+                locale?: components["parameters"]["BulletinEdition"];
+            };
+            header?: {
+                Range?: string;
+                "If-Range"?: string;
+            };
+            path: {
+                issueDate: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Document available; no receipt issued, no content length promised */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
         };
     };
     getActiveStatement: {
@@ -4817,102 +5530,6 @@ export interface operations {
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
             428: components["responses"]["Error"];
-        };
-    };
-    getAdminBulletinAccess: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Bulletin access transition state */
-            200: {
-                headers: {
-                    ETag?: string;
-                    "Cache-Control"?: "no-store";
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BulletinAccessEnvelope"];
-                };
-            };
-            401: components["responses"]["AdminUnauthorized"];
-            403: components["responses"]["AdminForbidden"];
-            503: components["responses"]["Error"];
-        };
-    };
-    setBulletinAccess: {
-        parameters: {
-            query?: never;
-            header: {
-                "If-Match": components["parameters"]["IfMatch"];
-                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SetBulletinAccessInput"];
-            };
-        };
-        responses: {
-            /** @description Requested state already effective */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BulletinAccessEnvelope"];
-                };
-            };
-            /** @description Bulletin access transition accepted */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BulletinAccessEnvelope"];
-                };
-            };
-            401: components["responses"]["AdminUnauthorized"];
-            403: components["responses"]["AdminForbidden"];
-            409: components["responses"]["Error"];
-            422: components["responses"]["Error"];
-            428: components["responses"]["Error"];
-            503: components["responses"]["Error"];
-        };
-    };
-    retryBulletinAccess: {
-        parameters: {
-            query?: never;
-            header: {
-                "If-Match": components["parameters"]["IfMatch"];
-                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Bulletin access retry accepted */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BulletinAccessEnvelope"];
-                };
-            };
-            401: components["responses"]["AdminUnauthorized"];
-            403: components["responses"]["AdminForbidden"];
-            409: components["responses"]["Error"];
-            422: components["responses"]["Error"];
-            428: components["responses"]["Error"];
-            503: components["responses"]["Error"];
         };
     };
     listAdminBulletins: {
