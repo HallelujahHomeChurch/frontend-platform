@@ -113,6 +113,27 @@ paths:
         schema:
           type: string
           format: uuid
+  /admin/bulletins/{issueId}/watermark-investigations:
+    get:
+      operationId: listBulletinWatermarkInvestigations
+      summary: List retained investigations for one bulletin issue
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: ['bulletin:trace']
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+      - { name: issueId, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: cursor, in: query, schema: { type: string, format: uuid } }
+      - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+      responses:
+        '200': { description: Issue investigation history, content: { application/json: { schema: { $ref: '#/components/schemas/BulletinWatermarkInvestigationPageEnvelope' } } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '422': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
   /admin/bulletin-watermark-investigations:
     post:
       operationId: createBulletinWatermarkInvestigation
@@ -1441,16 +1462,6 @@ paths:
           type: string
           format: date
       - $ref: '#/components/parameters/BulletinEdition'
-      - name: Range
-        in: header
-        required: false
-        schema:
-          type: string
-      - name: If-Range
-        in: header
-        required: false
-        schema:
-          type: string
       responses:
         '200':
           description: Document available; no receipt issued, no content length promised
@@ -1459,9 +1470,72 @@ paths:
         '404': { $ref: '#/components/responses/Error' }
         '409': { $ref: '#/components/responses/Error' }
         '503': { $ref: '#/components/responses/Error' }
-      description: Member mode returns a complete personalized PDF (Range ignored).
-        Public mode preserves the original PDF and range behavior. Authorization is
-        checked on every request. No unmarked member fallback.
+  /member/bulletin-download-jobs:
+    post:
+      operationId: createMemberBulletinDownloadJob
+      summary: Prepare a personalized member bulletin asynchronously
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-required-scopes: [bulletin:read]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+      - { name: Idempotency-Key, in: header, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [issueDate, locale]
+              properties:
+                issueDate: { type: string, format: date }
+                locale: { type: string, enum: [zh-Hant, zh-Hans, en] }
+      responses:
+        '200': { description: Existing preparation is ready, content: { application/json: { schema: { $ref: '#/components/schemas/BulletinDownloadJobEnvelope' } } } }
+        '202': { description: Preparation accepted, content: { application/json: { schema: { $ref: '#/components/schemas/BulletinDownloadJobEnvelope' } } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /member/bulletin-download-jobs/{id}:
+    get:
+      operationId: getMemberBulletinDownloadJob
+      summary: Read an owned member bulletin preparation
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-required-scopes: [bulletin:read]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200': { description: Current preparation state, content: { application/json: { schema: { $ref: '#/components/schemas/BulletinDownloadJobEnvelope' } } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /member/bulletin-download-jobs/{id}/file:
+    get:
+      operationId: downloadPreparedMemberBulletin
+      summary: Download a ready owned member bulletin
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-required-scopes: [bulletin:read]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200': { description: Prepared bulletin PDF, content: { application/pdf: { schema: { type: string, format: binary } } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
   /statements/active:
     get:
       operationId: getActiveStatement
@@ -3099,6 +3173,64 @@ components:
           type:
           - object
           - 'null'
+    BulletinTraceIdentity:
+      type: object
+      additionalProperties: false
+      required: [id, available]
+      properties:
+        id: { type: string, format: uuid }
+        available: { type: boolean }
+        displayName: { type: string }
+        email: { type: string, format: email }
+        canNavigate: { type: boolean }
+    BulletinWatermarkInvestigationRow:
+      type: object
+      additionalProperties: false
+      required: [id, locale, revision, status, createdAt, submittedBy]
+      properties:
+        id: { type: string, format: uuid }
+        locale: { type: string }
+        revision: { type: integer, minimum: 1 }
+        status: { type: string, enum: [queued, running, completed, failed, expired] }
+        result: { type: string, enum: [matched, inconclusive] }
+        errorCode: { type: string }
+        createdAt: { type: string, format: date-time }
+        issuedAt: { type: string, format: date-time }
+        submittedBy: { $ref: '#/components/schemas/BulletinTraceIdentity' }
+        matchedAccount: { $ref: '#/components/schemas/BulletinTraceIdentity' }
+    BulletinWatermarkInvestigationPageEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [items]
+          properties:
+            items: { type: array, items: { $ref: '#/components/schemas/BulletinWatermarkInvestigationRow' } }
+        meta:
+          type: object
+          properties: { nextCursor: { type: string, format: uuid } }
+        error: { type: [object, 'null'] }
+    BulletinDownloadJob:
+      type: object
+      additionalProperties: false
+      required: [id, status, createdAt, expiresAt]
+      properties:
+        id: { type: string, format: uuid }
+        status: { type: string, enum: [queued, running, ready, failed, expired] }
+        errorCode: { type: string }
+        createdAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+    BulletinDownloadJobEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/BulletinDownloadJob' }
+        meta: { type: object }
+        error: { type: [object, 'null'] }
     BulletinWatermarkInvestigationHistory:
       type: object
       additionalProperties: false

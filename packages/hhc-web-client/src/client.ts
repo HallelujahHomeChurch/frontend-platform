@@ -20,6 +20,12 @@ export type BulletinWatermarkLookup = components['schemas']['BulletinWatermarkLo
 export type BulletinWatermarkVersion = components['schemas']['BulletinWatermarkVersion']
 export type BulletinWatermarkInvestigationInput = components['schemas']['BulletinWatermarkInvestigationInput']
 export type BulletinWatermarkInvestigation = components['schemas']['BulletinWatermarkInvestigation']
+export type BulletinTraceIdentity = components['schemas']['BulletinTraceIdentity']
+export type BulletinWatermarkInvestigationRow = components['schemas']['BulletinWatermarkInvestigationRow']
+export type BulletinWatermarkInvestigationPage = {
+  items: BulletinWatermarkInvestigationRow[]
+  nextCursor?: string
+}
 export type BulletinAccess = components['schemas']['BulletinAccess']
 export type PublicBulletin = components['schemas']['PublicBulletin']
 export type PublicBulletinIssue = components['schemas']['PublicBulletinIssue']
@@ -186,6 +192,12 @@ export function createHhcWebClient(options: {
       return (await unwrap(client.GET('/admin/bulletins/{issueId}/watermark-versions', {
         params: {path: {issueId}}, signal, cache: 'no-store',
       }))).data.versions
+    },
+    async listBulletinWatermarkInvestigations(issueId: string, params: {cursor?: string; limit?: number; signal?: AbortSignal} = {}): Promise<BulletinWatermarkInvestigationPage> {
+      const envelope = await unwrap(client.GET('/admin/bulletins/{issueId}/watermark-investigations', {
+        params: {path: {issueId}, query: {cursor: params.cursor, limit: params.limit}}, signal: params.signal, cache: 'no-store',
+      }))
+      return {items: envelope.data.items, nextCursor: envelope.meta?.nextCursor}
     },
     async createBulletinWatermarkInvestigation(input: BulletinWatermarkInvestigationInput, image: Blob, idempotencyKey: string, signal?: AbortSignal) {
       const metadata = JSON.stringify(input)

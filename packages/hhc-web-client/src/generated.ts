@@ -55,6 +55,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/bulletins/{issueId}/watermark-investigations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List retained investigations for one bulletin issue */
+        get: operations["listBulletinWatermarkInvestigations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/bulletin-watermark-investigations": {
         parameters: {
             query?: never;
@@ -916,11 +933,59 @@ export interface paths {
         post?: never;
         delete?: never;
         options?: never;
-        /**
-         * Check download access without issuing a personalized PDF
-         * @description Member mode returns a complete personalized PDF (Range ignored). Public mode preserves the original PDF and range behavior. Authorization is checked on every request. No unmarked member fallback.
-         */
+        /** Check download access without issuing a personalized PDF */
         head: operations["headMemberBulletin"];
+        patch?: never;
+        trace?: never;
+    };
+    "/member/bulletin-download-jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Prepare a personalized member bulletin asynchronously */
+        post: operations["createMemberBulletinDownloadJob"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/bulletin-download-jobs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read an owned member bulletin preparation */
+        get: operations["getMemberBulletinDownloadJob"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/bulletin-download-jobs/{id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download a ready owned member bulletin */
+        get: operations["downloadPreparedMemberBulletin"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
         patch?: never;
         trace?: never;
     };
@@ -1767,6 +1832,58 @@ export interface components {
                 /** Format: uuid */
                 id: string;
             };
+            meta?: Record<string, never>;
+            error?: Record<string, never> | null;
+        };
+        BulletinTraceIdentity: {
+            /** Format: uuid */
+            id: string;
+            available: boolean;
+            displayName?: string;
+            /** Format: email */
+            email?: string;
+            canNavigate?: boolean;
+        };
+        BulletinWatermarkInvestigationRow: {
+            /** Format: uuid */
+            id: string;
+            locale: string;
+            revision: number;
+            /** @enum {string} */
+            status: "queued" | "running" | "completed" | "failed" | "expired";
+            /** @enum {string} */
+            result?: "matched" | "inconclusive";
+            errorCode?: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            issuedAt?: string;
+            submittedBy: components["schemas"]["BulletinTraceIdentity"];
+            matchedAccount?: components["schemas"]["BulletinTraceIdentity"];
+        };
+        BulletinWatermarkInvestigationPageEnvelope: {
+            data: {
+                items: components["schemas"]["BulletinWatermarkInvestigationRow"][];
+            };
+            meta?: {
+                /** Format: uuid */
+                nextCursor?: string;
+            };
+            error?: Record<string, never> | null;
+        };
+        BulletinDownloadJob: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "queued" | "running" | "ready" | "failed" | "expired";
+            errorCode?: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        BulletinDownloadJobEnvelope: {
+            data: components["schemas"]["BulletinDownloadJob"];
             meta?: Record<string, never>;
             error?: Record<string, never> | null;
         };
@@ -3967,6 +4084,35 @@ export interface operations {
             503: components["responses"]["Error"];
         };
     };
+    listBulletinWatermarkInvestigations: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                issueId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Issue investigation history */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulletinWatermarkInvestigationPageEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            422: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
     createBulletinWatermarkInvestigation: {
         parameters: {
             query?: never;
@@ -5350,10 +5496,7 @@ export interface operations {
             query?: {
                 locale?: components["parameters"]["BulletinEdition"];
             };
-            header?: {
-                Range?: string;
-                "If-Range"?: string;
-            };
+            header?: never;
             path: {
                 issueDate: string;
             };
@@ -5367,6 +5510,104 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    createMemberBulletinDownloadJob: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: date */
+                    issueDate: string;
+                    /** @enum {string} */
+                    locale: "zh-Hant" | "zh-Hans" | "en";
+                };
+            };
+        };
+        responses: {
+            /** @description Existing preparation is ready */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulletinDownloadJobEnvelope"];
+                };
+            };
+            /** @description Preparation accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulletinDownloadJobEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getMemberBulletinDownloadJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current preparation state */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulletinDownloadJobEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
+    downloadPreparedMemberBulletin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Prepared bulletin PDF */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
             };
             401: components["responses"]["AdminUnauthorized"];
             403: components["responses"]["AdminForbidden"];

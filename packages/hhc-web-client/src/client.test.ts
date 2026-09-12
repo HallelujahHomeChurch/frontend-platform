@@ -35,6 +35,22 @@ describe('hhc web client', () => {
     expect(requests.every(request => request.signal.aborted)).toBe(true)
   })
 
+  it('lists issue-scoped bulletin investigation history', async () => {
+    const row = {id: 'job-1', locale: 'zh-Hant', revision: 3, status: 'completed', result: 'matched', createdAt: '2026-09-13T00:00:00Z', submittedBy: {id: 'actor-1', available: true, displayName: 'Admin', email: 'admin@example.com'}, matchedAccount: {id: 'user-1', available: true, displayName: 'Member', email: 'member@example.com', canNavigate: true}}
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({data: {items: [row]}, meta: {nextCursor: 'next-1'}, error: null}), {headers: {'Content-Type': 'application/json'}}))
+    const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'trace-token', fetcher})
+    const controller = new AbortController()
+
+    await expect(client.listBulletinWatermarkInvestigations('issue-1', {cursor: 'cursor-1', limit: 25, signal: controller.signal})).resolves.toEqual({items: [row], nextCursor: 'next-1'})
+
+    const request = fetcher.mock.calls[0]![0] as Request
+    expect(request.url).toBe('http://localhost/api/admin/bulletins/issue-1/watermark-investigations?cursor=cursor-1&limit=25')
+    expect(request.headers.get('Authorization')).toBe('Bearer trace-token')
+    expect(request.cache).toBe('no-store')
+    controller.abort()
+    expect(request.signal.aborted).toBe(true)
+  })
+
   it('posts trace lookup privately and activates membership with concurrency headers', async () => {
     const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({data: {}, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}}))
     const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'trace-token', fetcher})
