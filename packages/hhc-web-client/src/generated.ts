@@ -45,7 +45,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List eligible retained reconstruction versions */
+        /** List eligible retained reconstruction locales */
         get: operations["listBulletinWatermarkVersions"];
         put?: never;
         post?: never;
@@ -81,7 +81,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Queue a private screenshot investigation */
+        /** Queue a private document investigation */
         post: operations["createBulletinWatermarkInvestigation"];
         delete?: never;
         options?: never;
@@ -1799,13 +1799,17 @@ export interface components {
         };
         BulletinWatermarkVersionsEnvelope: {
             data: {
+                locales: ("zh-Hant" | "zh-Hans" | "en")[];
                 versions: components["schemas"]["BulletinWatermarkVersion"][];
             };
             meta?: Record<string, never>;
             error?: Record<string, never> | null;
         };
         BulletinWatermarkInvestigationInput: {
-            scope: components["schemas"]["BulletinWatermarkCandidateScope"];
+            /** Format: uuid */
+            issueId: string;
+            /** @enum {string} */
+            locale: "zh-Hant" | "zh-Hans" | "en";
         };
         BulletinWatermarkInvestigation: {
             /** Format: uuid */
@@ -1814,7 +1818,7 @@ export interface components {
             /** @enum {string} */
             status: "queued" | "running" | "completed" | "failed" | "expired";
             /** @enum {string} */
-            result?: "matched" | "inconclusive";
+            result?: "matched" | "inconclusive" | "conflict";
             errorCode?: string;
             /** Format: date-time */
             createdAt: string;
@@ -1852,7 +1856,7 @@ export interface components {
             /** @enum {string} */
             status: "queued" | "running" | "completed" | "failed" | "expired";
             /** @enum {string} */
-            result?: "matched" | "inconclusive";
+            result?: "matched" | "inconclusive" | "conflict";
             errorCode?: string;
             /** Format: date-time */
             createdAt: string;
@@ -1877,6 +1881,7 @@ export interface components {
             /** @enum {string} */
             status: "queued" | "running" | "ready" | "failed" | "expired";
             errorCode?: string;
+            progress: number;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -4128,16 +4133,13 @@ export interface operations {
                 "multipart/form-data": {
                     /** @description JSON BulletinWatermarkInvestigationInput; unknown fields rejected. */
                     metadata: string;
-                    /**
-                     * Format: binary
-                     * @description Decoded PNG/JPEG only, at most 10 MiB and 20 million pixels.
-                     */
-                    image: string;
+                    /** @description PNG, JPEG, or PDF files totaling at most 10 MiB. */
+                    files: string[];
                 };
             };
         };
         responses: {
-            /** @description Queue a private screenshot investigation */
+            /** @description Queue a private document investigation */
             202: {
                 headers: {
                     [name: string]: unknown;

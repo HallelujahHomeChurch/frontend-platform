@@ -83,7 +83,7 @@ paths:
   /admin/bulletins/{issueId}/watermark-versions:
     get:
       operationId: listBulletinWatermarkVersions
-      summary: List eligible retained reconstruction versions
+      summary: List eligible retained reconstruction locales
       tags: [Admin]
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
@@ -137,7 +137,7 @@ paths:
   /admin/bulletin-watermark-investigations:
     post:
       operationId: createBulletinWatermarkInvestigation
-      summary: Queue a private screenshot investigation
+      summary: Queue a private document investigation
       tags: [Admin]
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
@@ -147,7 +147,7 @@ paths:
       servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
         '202':
-          description: Queue a private screenshot investigation
+          description: Queue a private document investigation
           content:
             application/json:
               schema:
@@ -177,7 +177,7 @@ paths:
               additionalProperties: false
               required:
               - metadata
-              - image
+              - files
               properties:
                 metadata:
                   type: string
@@ -187,11 +187,12 @@ paths:
                     $ref: '#/components/schemas/BulletinWatermarkInvestigationInput'
                   description: JSON BulletinWatermarkInvestigationInput; unknown fields
                     rejected.
-                image:
-                  type: string
-                  format: binary
-                  description: Decoded PNG/JPEG only, at most 10 MiB and 20 million
-                    pixels.
+                files:
+                  type: array
+                  minItems: 1
+                  maxItems: 10
+                  items: { type: string, format: binary }
+                  description: PNG, JPEG, or PDF files totaling at most 10 MiB.
   /admin/bulletin-watermark-investigations/{id}:
     get:
       operationId: getBulletinWatermarkInvestigation
@@ -3080,8 +3081,12 @@ components:
           type: object
           additionalProperties: false
           required:
+          - locales
           - versions
           properties:
+            locales:
+              type: array
+              items: { type: string, enum: [zh-Hant, zh-Hans, en] }
             versions:
               type: array
               items:
@@ -3096,10 +3101,11 @@ components:
       type: object
       additionalProperties: false
       required:
-      - scope
+      - issueId
+      - locale
       properties:
-        scope:
-          $ref: '#/components/schemas/BulletinWatermarkCandidateScope'
+        issueId: { type: string, format: uuid }
+        locale: { type: string, enum: [zh-Hant, zh-Hans, en] }
     BulletinWatermarkInvestigation:
       type: object
       additionalProperties: false
@@ -3128,6 +3134,7 @@ components:
           enum:
           - matched
           - inconclusive
+          - conflict
         errorCode:
           type: string
         createdAt:
@@ -3192,7 +3199,7 @@ components:
         locale: { type: string }
         revision: { type: integer, minimum: 1 }
         status: { type: string, enum: [queued, running, completed, failed, expired] }
-        result: { type: string, enum: [matched, inconclusive] }
+        result: { type: string, enum: [matched, inconclusive, conflict] }
         errorCode: { type: string }
         createdAt: { type: string, format: date-time }
         issuedAt: { type: string, format: date-time }
@@ -3216,11 +3223,12 @@ components:
     BulletinDownloadJob:
       type: object
       additionalProperties: false
-      required: [id, status, createdAt, expiresAt]
+      required: [id, status, progress, createdAt, expiresAt]
       properties:
         id: { type: string, format: uuid }
         status: { type: string, enum: [queued, running, ready, failed, expired] }
         errorCode: { type: string }
+        progress: { type: integer, minimum: 0, maximum: 100 }
         createdAt: { type: string, format: date-time }
         expiresAt: { type: string, format: date-time }
     BulletinDownloadJobEnvelope:
