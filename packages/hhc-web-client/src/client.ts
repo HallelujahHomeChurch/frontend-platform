@@ -199,15 +199,18 @@ export function createHhcWebClient(options: {
       }))
       return {items: envelope.data.items, nextCursor: envelope.meta?.nextCursor}
     },
-    async createBulletinWatermarkInvestigation(input: BulletinWatermarkInvestigationInput, image: Blob, idempotencyKey: string, signal?: AbortSignal) {
+    async createBulletinWatermarkInvestigation(input: BulletinWatermarkInvestigationInput, files: Blob[], idempotencyKey: string, signal?: AbortSignal) {
       const metadata = JSON.stringify(input)
       const form = new FormData()
       form.set('metadata', metadata)
-      form.set('image', image, image.type === 'image/jpeg' ? 'screenshot.jpg' : 'screenshot.png')
+      for (const [index, file] of files.entries()) {
+        const extension = file.type === 'application/pdf' ? 'pdf' : file.type === 'image/jpeg' ? 'jpg' : 'png'
+        form.append('files', file, `evidence-${index + 1}.${extension}`)
+      }
       return (await unwrap(client.POST('/admin/bulletin-watermark-investigations', {
         params: {header: {'Idempotency-Key': idempotencyKey}}, signal, cache: 'no-store',
         // OpenAPI binary fields are strings; the serializer supplies the actual Blob.
-        body: {metadata, image: ''}, bodySerializer: () => form,
+        body: {metadata, files: []}, bodySerializer: () => form,
       }))).data
     },
     async getBulletinWatermarkInvestigation(id: string, signal?: AbortSignal) {
