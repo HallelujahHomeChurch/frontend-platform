@@ -172,6 +172,10 @@ One runtime owns one stable session client. It caches a token until 30 seconds b
   mapping. For this approved breaking redesign the mapping is exactly `{}`;
   removed codes are never accepted. Domain AuthZ adapters consume the names;
   AuthN modules do not import them.
+- Resource reservation, centralized Audit, DSR owner orchestration, permanent
+  deletion, donations, and the structured bulletin reader all consume this
+  seam. None may add permission semantics, capability names, qualification,
+  owner results, or refresh behavior to AuthN/session modules.
 
 ## UX Contract
 

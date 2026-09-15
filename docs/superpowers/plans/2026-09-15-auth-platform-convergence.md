@@ -521,17 +521,20 @@ upstream input, so there is no reverse "handoff to RBAC" step.
 ## Integrated Cross-Repository Sequence
 
 1. Freeze the unified authorization and AuthN/AuthZ contracts; no code release.
-2. Admit `operations-api` foundation dark.
-3. Prepare Account RBAC/session/scope and Operations domain producer PRs; hold
+2. Admit `operations-api` and `audit-log` foundations dark.
+3. Complete the backward-safe Account deletion diagnostic/root-cause release,
+   then prepare Account RBAC/session/scope and Operations domain producer PRs; hold
    incompatible merges while final OpenAPI is frozen.
-4. Prepare and verify `hhc-web-api`, `asset-api`, and `engagement-api` producer
+4. Prepare and verify Operations Resource reservations, final DSR owners,
+   domain audit outboxes, `hhc-web-api`, `asset-api`, and `engagement-api`
    contracts in their dependency order.
 5. Build and publish the one breaking `frontend-platform` package set.
 6. Prepare one consumer integration PR per repository: `hhc-web`, `account-fe`,
    `admin-fe`, and `hhc-client-v2`; prepare LINE against protected bulletin
    contracts. These may run in parallel after the package is immutable.
-7. Prepare the single Gateway route-policy PR and staging harness. Deploy only
-   backward-safe infrastructure and `operations-api` dark before cutover.
+7. Prepare the single Gateway route-policy PR and staging harness, including
+   exact Operations and Audit query routes. Deploy only backward-safe
+   infrastructure plus dark `operations-api`/`audit-log` before cutover.
 8. In the authorized release window, use the unified cutover manifest for
    Account and domain APIs, consumers, Gateway switch, retained-data import,
    session invalidation, grant/cache reconciliation, and real-client checks.
