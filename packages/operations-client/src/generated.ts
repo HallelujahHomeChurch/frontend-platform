@@ -1008,6 +1008,7 @@ export interface components {
             status: components["schemas"]["OperationStatus"];
             version: number;
         };
+        OrgUnitList: components["schemas"]["OrgUnit"][];
         ResourceInput: {
             key: string;
             name: string;
@@ -1039,6 +1040,7 @@ export interface components {
             status: components["schemas"]["OperationStatus"];
             version: number;
         };
+        ResourceList: components["schemas"]["Resource"][];
         Schedule: {
             /** @enum {string} */
             type: "weekly" | "once";
@@ -1076,7 +1078,33 @@ export interface components {
             visibility: components["schemas"]["Visibility"];
             status: components["schemas"]["OperationStatus"];
             version: number;
-            nextOccurrence?: Record<string, never>;
+            nextOccurrence?: components["schemas"]["Occurrence"];
+        };
+        Occurrence: {
+            meetingName: string;
+            /** Format: date */
+            occurrenceDate: string;
+            timezone: string;
+            occurrenceId: string;
+            /** Format: uuid */
+            meetingId: string;
+            meetingKey: string;
+            /** Format: uuid */
+            churchUnitId: string;
+            /** Format: uuid */
+            venueResourceId: string;
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string;
+            /** @enum {string} */
+            status: "scheduled" | "cancelled";
+            version: number;
+        };
+        MeetingList: components["schemas"]["Meeting"][];
+        MeetingDetail: components["schemas"]["Meeting"] & {
+            overrides: components["schemas"]["OccurrenceOverride"][];
+            collectionIds: string[];
         };
         OccurrenceOverrideInput: {
             cancelled: boolean;
@@ -1569,8 +1597,6 @@ export interface components {
         Limit: number;
         IdempotencyKey: string;
         IfMatch: string;
-        /** @description Gateway-verified opaque space-delimited Account scopes; an empty value is authenticated with no staff permissions. */
-        Scopes: string;
     };
     requestBodies: never;
     headers: never;
@@ -1700,7 +1726,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["OrgUnitList"];
+                };
             };
             /** @description Permission denied */
             403: {
@@ -1731,7 +1759,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["OrgUnit"];
+                };
             };
             /** @description Permission denied */
             403: {
@@ -1758,7 +1788,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["OrgUnit"];
+                };
             };
             /** @description Permission denied */
             403: {
@@ -1798,7 +1830,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["OrgUnit"];
+                };
             };
             /** @description Permission denied */
             403: {
@@ -1835,7 +1869,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["OrgUnit"];
+                };
             };
             /** @description Permission denied */
             403: {
@@ -1867,7 +1903,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ResourceList"];
+                };
             };
             /** @description Authorization unavailable */
             503: {
@@ -1898,7 +1936,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
             };
             /** @description Scope denied */
             403: {
@@ -1932,7 +1972,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
             };
             /** @description Scope denied */
             403: {
@@ -1979,7 +2021,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
             };
             /** @description Scope denied */
             403: {
@@ -2023,7 +2067,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
             };
             /** @description Scope denied */
             403: {
@@ -2062,7 +2108,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MeetingList"];
+                };
             };
             /** @description Authorization unavailable */
             503: {
@@ -2093,7 +2141,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Meeting"];
+                };
             };
             /** @description Scope denied */
             403: {
@@ -2127,7 +2177,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MeetingDetail"];
+                };
             };
             /** @description Scope denied */
             403: {
@@ -2174,7 +2226,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Meeting"];
+                };
             };
             /** @description Scope denied */
             403: {
@@ -2218,7 +2272,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Meeting"];
+                };
             };
             /** @description Scope denied */
             403: {
@@ -2266,7 +2322,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["OccurrenceOverride"];
+                };
             };
             /** @description Scope denied */
             403: {
@@ -2310,7 +2368,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Meeting"];
+                };
             };
             /** @description Scope denied */
             403: {
@@ -2357,7 +2417,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Meeting"];
+                };
             };
             /** @description Scope denied */
             403: {
@@ -3483,10 +3545,7 @@ export interface operations {
     getMyOperationsAccess: {
         parameters: {
             query?: never;
-            header: {
-                /** @description Gateway-verified opaque space-delimited Account scopes; an empty value is authenticated with no staff permissions. */
-                "X-HHC-Scopes": components["parameters"]["Scopes"];
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -3527,10 +3586,7 @@ export interface operations {
     listMyReservableResources: {
         parameters: {
             query?: never;
-            header: {
-                /** @description Gateway-verified opaque space-delimited Account scopes; an empty value is authenticated with no staff permissions. */
-                "X-HHC-Scopes": components["parameters"]["Scopes"];
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -3567,10 +3623,7 @@ export interface operations {
                 from: string;
                 to: string;
             };
-            header: {
-                /** @description Gateway-verified opaque space-delimited Account scopes; an empty value is authenticated with no staff permissions. */
-                "X-HHC-Scopes": components["parameters"]["Scopes"];
-            };
+            header?: never;
             path: {
                 resourceKey: string;
             };
@@ -3613,10 +3666,7 @@ export interface operations {
     listMyResourceReservations: {
         parameters: {
             query?: never;
-            header: {
-                /** @description Gateway-verified opaque space-delimited Account scopes; an empty value is authenticated with no staff permissions. */
-                "X-HHC-Scopes": components["parameters"]["Scopes"];
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -3637,8 +3687,6 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description Gateway-verified opaque space-delimited Account scopes; an empty value is authenticated with no staff permissions. */
-                "X-HHC-Scopes": components["parameters"]["Scopes"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
             };
             path?: never;
@@ -3685,10 +3733,7 @@ export interface operations {
     getMyResourceReservation: {
         parameters: {
             query?: never;
-            header: {
-                /** @description Gateway-verified opaque space-delimited Account scopes; an empty value is authenticated with no staff permissions. */
-                "X-HHC-Scopes": components["parameters"]["Scopes"];
-            };
+            header?: never;
             path: {
                 reservationId: string;
             };
@@ -3718,8 +3763,6 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description Gateway-verified opaque space-delimited Account scopes; an empty value is authenticated with no staff permissions. */
-                "X-HHC-Scopes": components["parameters"]["Scopes"];
                 "If-Match": components["parameters"]["IfMatch"];
             };
             path: {
@@ -3764,10 +3807,7 @@ export interface operations {
     getResourceReservationSettings: {
         parameters: {
             query?: never;
-            header: {
-                /** @description Gateway-verified opaque space-delimited Account scopes; an empty value is authenticated with no staff permissions. */
-                "X-HHC-Scopes": components["parameters"]["Scopes"];
-            };
+            header?: never;
             path: {
                 resourceId: string;
             };
@@ -3797,8 +3837,6 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description Gateway-verified opaque space-delimited Account scopes; an empty value is authenticated with no staff permissions. */
-                "X-HHC-Scopes": components["parameters"]["Scopes"];
                 "If-Match": components["parameters"]["IfMatch"];
             };
             path: {
@@ -3852,10 +3890,7 @@ export interface operations {
                 resourceId?: string;
                 status?: components["schemas"]["ReservationStatus"];
             };
-            header: {
-                /** @description Gateway-verified opaque space-delimited Account scopes; an empty value is authenticated with no staff permissions. */
-                "X-HHC-Scopes": components["parameters"]["Scopes"];
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -3875,10 +3910,7 @@ export interface operations {
     getAdminResourceReservation: {
         parameters: {
             query?: never;
-            header: {
-                /** @description Gateway-verified opaque space-delimited Account scopes; an empty value is authenticated with no staff permissions. */
-                "X-HHC-Scopes": components["parameters"]["Scopes"];
-            };
+            header?: never;
             path: {
                 reservationId: string;
             };
@@ -3908,8 +3940,6 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description Gateway-verified opaque space-delimited Account scopes; an empty value is authenticated with no staff permissions. */
-                "X-HHC-Scopes": components["parameters"]["Scopes"];
                 "If-Match": components["parameters"]["IfMatch"];
             };
             path: {
@@ -3962,8 +3992,6 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description Gateway-verified opaque space-delimited Account scopes; an empty value is authenticated with no staff permissions. */
-                "X-HHC-Scopes": components["parameters"]["Scopes"];
                 "If-Match": components["parameters"]["IfMatch"];
             };
             path: {
@@ -4016,8 +4044,6 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description Gateway-verified opaque space-delimited Account scopes; an empty value is authenticated with no staff permissions. */
-                "X-HHC-Scopes": components["parameters"]["Scopes"];
                 "If-Match": components["parameters"]["IfMatch"];
             };
             path: {
@@ -4071,10 +4097,7 @@ export interface operations {
             query?: {
                 resourceId?: string;
             };
-            header: {
-                /** @description Gateway-verified opaque space-delimited Account scopes; an empty value is authenticated with no staff permissions. */
-                "X-HHC-Scopes": components["parameters"]["Scopes"];
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -4095,8 +4118,6 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description Gateway-verified opaque space-delimited Account scopes; an empty value is authenticated with no staff permissions. */
-                "X-HHC-Scopes": components["parameters"]["Scopes"];
                 "Idempotency-Key": components["parameters"]["IdempotencyKey"];
             };
             path?: never;
@@ -4129,10 +4150,7 @@ export interface operations {
     getResourceMaintenanceBlock: {
         parameters: {
             query?: never;
-            header: {
-                /** @description Gateway-verified opaque space-delimited Account scopes; an empty value is authenticated with no staff permissions. */
-                "X-HHC-Scopes": components["parameters"]["Scopes"];
-            };
+            header?: never;
             path: {
                 blockId: string;
             };
@@ -4162,8 +4180,6 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description Gateway-verified opaque space-delimited Account scopes; an empty value is authenticated with no staff permissions. */
-                "X-HHC-Scopes": components["parameters"]["Scopes"];
                 "If-Match": components["parameters"]["IfMatch"];
             };
             path: {
@@ -4206,8 +4222,6 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description Gateway-verified opaque space-delimited Account scopes; an empty value is authenticated with no staff permissions. */
-                "X-HHC-Scopes": components["parameters"]["Scopes"];
                 "If-Match": components["parameters"]["IfMatch"];
             };
             path: {

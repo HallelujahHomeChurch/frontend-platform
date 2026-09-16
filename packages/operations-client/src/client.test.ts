@@ -40,4 +40,20 @@ describe('Operations client authentication', () => {
     expect(refresh).not.toHaveBeenCalled();
     expect(fetcher).toHaveBeenCalledOnce();
   });
+
+  it('uses the contract path without sending trusted Gateway headers', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(json({memberships: [], orgRoles: [], qualifications: [], entitlements: [], version: 'a'.repeat(64)}));
+    const client = createOperationsClient({
+      baseUrl: '',
+      getAccessToken: async () => 'token',
+      refreshAfterUnauthorized: async () => null,
+      fetcher
+    });
+
+    await client.getMyAccess();
+
+    const request = fetcher.mock.calls[0]?.[0] as Request;
+    expect(request.url).toBe('http://localhost/api/operations/me/access');
+    expect(request.headers.has('x-hhc-scopes')).toBe(false);
+  });
 });
