@@ -68,6 +68,27 @@ paths:
       parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/OrgUnitInput' } } } }
       responses: { '201': { description: Organization unit created, content: { application/json: { schema: { $ref: '#/components/schemas/OrgUnit' } } } }, '403': { description: Permission denied } }
+  /api/admin/operations/options/{domain}:
+    get:
+      tags: [Operations]
+      operationId: getAdminOperationOptions
+      summary: List scoped reference data needed by one Operations domain
+      description: The server authorizes every returned organization unit with the exact read action selected by domain.
+      x-hhc-visibility: admin
+      x-hhc-required-permission-by-domain:
+        meetings: operations:meetings:read
+        resources: operations:resources:read
+        reservations: operations:reservations:read
+      security: [{ gatewayPrincipal: [] }]
+      parameters:
+        - name: domain
+          in: path
+          required: true
+          schema: { type: string, enum: [meetings, resources, reservations] }
+      responses:
+        '200': { description: Scoped reference options, content: { application/json: { schema: { $ref: '#/components/schemas/OperationOptions' } } } }
+        '403': { description: Permission denied }
+        '503': { description: Authorization unavailable }
   /api/admin/operations/church-units/{id}:
     get:
       tags: [Operations]
@@ -962,6 +983,13 @@ components:
     ResourceList:
       type: array
       items: { $ref: '#/components/schemas/Resource' }
+    OperationOptions:
+      type: object
+      additionalProperties: false
+      required: [orgUnits, resources]
+      properties:
+        orgUnits: { $ref: '#/components/schemas/OrgUnitList' }
+        resources: { $ref: '#/components/schemas/ResourceList' }
     Schedule:
       type: object
       additionalProperties: false
