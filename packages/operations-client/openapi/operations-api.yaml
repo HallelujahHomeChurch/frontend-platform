@@ -56,6 +56,7 @@ paths:
       x-hhc-visibility: admin
       x-hhc-required-permission: memberships:read
       security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/IncludeArchived' }]
       responses: { '200': { description: Organization units, content: { application/json: { schema: { $ref: '#/components/schemas/OrgUnitList' } } } }, '403': { description: Permission denied } }
     post:
       tags: [Operations]
@@ -105,6 +106,7 @@ paths:
       x-hhc-visibility: admin
       x-hhc-required-permission: operations:resources:read
       security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/IncludeArchived' }]
       responses: { '200': { description: Scoped resources, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceList' } } } }, '503': { description: Authorization unavailable } }
     post:
       tags: [Operations]
@@ -154,6 +156,7 @@ paths:
       x-hhc-visibility: admin
       x-hhc-required-permission: operations:meetings:read
       security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/IncludeArchived' }]
       responses: { '200': { description: Scoped meetings, content: { application/json: { schema: { $ref: '#/components/schemas/MeetingList' } } } }, '503': { description: Authorization unavailable } }
     post:
       tags: [Operations]
@@ -888,6 +891,7 @@ components:
     OrgUnitID: { name: orgUnitId, in: query, schema: { type: string, format: uuid } }
     Status: { name: status, in: query, schema: { type: string } }
     EffectiveAt: { name: effectiveAt, in: query, schema: { type: string, format: date-time } }
+    IncludeArchived: { name: includeArchived, in: query, schema: { type: boolean, default: false } }
     Limit: { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
     IdempotencyKey: { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 1, maxLength: 200 } }
     IfMatch: { name: If-Match, in: header, required: true, schema: { type: string, pattern: '^"[1-9][0-9]*"$' } }
