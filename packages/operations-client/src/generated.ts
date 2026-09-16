@@ -1594,6 +1594,7 @@ export interface components {
         OrgUnitID: string;
         Status: string;
         EffectiveAt: string;
+        IncludeArchived: boolean;
         Limit: number;
         IdempotencyKey: string;
         IfMatch: string;
@@ -1714,7 +1715,9 @@ export interface operations {
     };
     listAdminOrgUnits: {
         parameters: {
-            query?: never;
+            query?: {
+                includeArchived?: components["parameters"]["IncludeArchived"];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1891,7 +1894,9 @@ export interface operations {
     };
     listAdminResources: {
         parameters: {
-            query?: never;
+            query?: {
+                includeArchived?: components["parameters"]["IncludeArchived"];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2096,7 +2101,9 @@ export interface operations {
     };
     listAdminMeetings: {
         parameters: {
-            query?: never;
+            query?: {
+                includeArchived?: components["parameters"]["IncludeArchived"];
+            };
             header?: never;
             path?: never;
             cookie?: never;
