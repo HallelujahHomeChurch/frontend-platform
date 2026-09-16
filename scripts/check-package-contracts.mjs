@@ -9,7 +9,7 @@ const packageDirs = (await readdir(packageRoot, { withFileTypes: true }))
   .map((entry) => entry.name)
   .sort()
 
-assert.equal(packageDirs.length, 4, 'expected four frontend packages')
+assert.equal(packageDirs.length, 5, 'expected five frontend packages')
 
 for (const directory of packageDirs) {
   const manifestPath = new URL(`${directory}/package.json`, packageRoot)
@@ -30,6 +30,18 @@ for (const directory of packageDirs) {
   for (const target of targets) {
     assert.ok(target.startsWith('./dist/'), `${directory}: export must target dist: ${target}`)
   }
+}
+
+const accountManifest = JSON.parse(await readFile(new URL('account-client/package.json', packageRoot), 'utf8'))
+assert.equal(accountManifest.license, 'MIT', 'account-client must ship under MIT')
+assert.equal(accountManifest.dependencies, undefined, 'account-client must remain runtime dependency-free')
+assert.ok(accountManifest.exports?.['./admin-access'], 'Admin AuthZ must use an explicit subpath')
+assert.equal(accountManifest.exports?.['.']?.adminAccess, undefined, 'package root must remain product-neutral')
+await readFile(new URL('account-client/LICENSE', packageRoot), 'utf8')
+
+for (const file of ['index.ts', 'session-client.ts', 'browser-runtime.ts', 'oauth.ts', 'conformance.ts']) {
+  const source = await readFile(new URL(`account-client/src/${file}`, packageRoot), 'utf8')
+  assert.doesNotMatch(source, /admin-access|operations-client/, `${file}: AuthN must not import domain AuthZ`)
 }
 
 console.log(`Package contracts pass (${packageDirs.length} packages checked).`)

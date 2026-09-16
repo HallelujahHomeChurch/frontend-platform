@@ -13,7 +13,7 @@ const tarballs = Object.fromEntries(
     .map((file) => [file.match(new RegExp(`hallelujahhomechurch-(.+)-${version.replaceAll('.', '\\.')}.tgz$`))?.[1], resolve(artifacts, file)])
 );
 
-for (const name of ['preferences', 'account-client', 'hhc-web-client', 'ui']) {
+for (const name of ['preferences', 'account-client', 'hhc-web-client', 'operations-client', 'ui']) {
   if (!tarballs[name]) throw new Error(`Missing package tarball: ${name}`);
 }
 
@@ -51,22 +51,31 @@ try {
       'react-dom': '19.2.7',
       vite: '8.1.4'
     },
-    devDependencies: {}
+    devDependencies: {},
+    pnpm: {overrides: packageDependencies}
   }, null, 2));
   write(resolve(vite, 'index.html'), '<main id="root"></main><script type="module" src="/src/main.tsx"></script>');
   write(resolve(vite, 'vite.config.ts'), "import react from '@vitejs/plugin-react';\nimport {defineConfig} from 'vite';\nexport default defineConfig({plugins: [react()]});\n");
   write(resolve(vite, 'src/main.tsx'), `import React from 'react';
 import {createRoot} from 'react-dom/client';
-import {createAccountSessionClient, type AccountSessionUser} from '@hallelujahhomechurch/account-client';
+import {createAccountSessionClient, createBrowserAccountAuthRuntime, type AccountSessionUser} from '@hallelujahhomechurch/account-client';
+import {canAccessAdmin} from '@hallelujahhomechurch/account-client/admin-access';
 import {createHhcWebClient, type ContentStatus, type PageGroupManifest} from '@hallelujahhomechurch/hhc-web-client';
+import {createOperationsClient} from '@hallelujahhomechurch/operations-client';
 import {getInitialTheme} from '@hallelujahhomechurch/preferences';
 import {AccountMenu, Button, ContextMenu} from '@hallelujahhomechurch/ui';
 import '@hallelujahhomechurch/ui/styles.css';
 
-const accountUser: AccountSessionUser = {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null, permissions: ['*']};
+const accountUser: AccountSessionUser = {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null};
+const accountSessionClient = createAccountSessionClient();
+const authRuntime = createBrowserAccountAuthRuntime({client: accountSessionClient});
+const operationsClient = createOperationsClient({baseUrl: '/api', getAccessToken: authRuntime.getAccessToken, refreshAfterUnauthorized: authRuntime.refreshAfterUnauthorized});
 const contentStatus: ContentStatus = 'pending_removal';
 const groupManifest: PageGroupManifest = {pageId: '00000000-0000-0000-0000-000000000001', pageSourceVersion: 1, pageTargetVersion: 2, childModule: 'history', items: [], sha256: 'a'.repeat(64)};
 void createAccountSessionClient;
+void canAccessAdmin;
+void operationsClient;
+authRuntime.dispose();
 void createHhcWebClient;
 void contentStatus;
 void groupManifest;
@@ -99,7 +108,7 @@ createRoot(document.getElementById('root')!).render(<><Button>Smoke</Button><Con
       '@types/react-dom': '19.2.3',
       typescript: '6.0.3'
     },
-    pnpm: {onlyBuiltDependencies: ['sharp']}
+    pnpm: {onlyBuiltDependencies: ['sharp'], overrides: packageDependencies}
   }, null, 2));
   write(resolve(next, 'app/layout.tsx'), `import '@hallelujahhomechurch/ui/styles.css';
 export default function Layout({children}: {children: React.ReactNode}) {
@@ -107,15 +116,23 @@ export default function Layout({children}: {children: React.ReactNode}) {
 }
 `);
   write(resolve(next, 'app/page.tsx'), `'use client';
-import {createAccountSessionClient, type AccountSessionUser} from '@hallelujahhomechurch/account-client';
+import {createAccountSessionClient, createBrowserAccountAuthRuntime, type AccountSessionUser} from '@hallelujahhomechurch/account-client';
+import {canAccessAdmin} from '@hallelujahhomechurch/account-client/admin-access';
 import {createHhcWebClient, type ContentStatus, type PageGroupManifest} from '@hallelujahhomechurch/hhc-web-client';
+import {createOperationsClient} from '@hallelujahhomechurch/operations-client';
 import {getInitialTheme} from '@hallelujahhomechurch/preferences';
 import {AccountMenu, Button, ContextMenu} from '@hallelujahhomechurch/ui';
 
-const accountUser: AccountSessionUser = {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null, permissions: ['*']};
+const accountUser: AccountSessionUser = {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null};
+const accountSessionClient = createAccountSessionClient();
+const authRuntime = createBrowserAccountAuthRuntime({client: accountSessionClient});
+const operationsClient = createOperationsClient({baseUrl: '/api', getAccessToken: authRuntime.getAccessToken, refreshAfterUnauthorized: authRuntime.refreshAfterUnauthorized});
 const contentStatus: ContentStatus = 'pending_removal';
 const groupManifest: PageGroupManifest = {pageId: '00000000-0000-0000-0000-000000000001', pageSourceVersion: 1, pageTargetVersion: 2, childModule: 'history', items: [], sha256: 'a'.repeat(64)};
 void createAccountSessionClient;
+void canAccessAdmin;
+void operationsClient;
+authRuntime.dispose();
 void createHhcWebClient;
 void contentStatus;
 void groupManifest;

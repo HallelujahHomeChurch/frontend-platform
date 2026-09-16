@@ -23,33 +23,6 @@ servers:
   - url: https://www.alive.org.tw/api
     description: Public and admin gateway surface; api-gateway validates browser JWTs and injects trusted identity headers.
 paths:
-  /admin/bulletin-access/membership:
-    post:
-      operationId: activateBulletinMembership
-      summary: Explicitly enable member access and reconcile private grants
-      tags: [Admin]
-      x-hhc-visibility: admin
-      x-hhc-callers: [api-gateway]
-      x-hhc-cache: private, no-store
-      x-required-scopes: [cms:publish]
-      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
-      servers: [{ url: https://admin.alive.org.tw/api }]
-      parameters:
-      - $ref: '#/components/parameters/IfMatch'
-      - $ref: '#/components/parameters/IdempotencyKey'
-      responses:
-        '202':
-          description: Bulletin access retry accepted
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BulletinAccessEnvelope'
-        '401': { $ref: '#/components/responses/AdminUnauthorized' }
-        '403': { $ref: '#/components/responses/AdminForbidden' }
-        '409': { $ref: '#/components/responses/Error' }
-        '422': { $ref: '#/components/responses/Error' }
-        '428': { $ref: '#/components/responses/Error' }
-        '503': { $ref: '#/components/responses/Error' }
   /admin/bulletins/watermark-lookups:
     post:
       operationId: lookupBulletinWatermark
@@ -58,7 +31,7 @@ paths:
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
-      x-required-scopes: [bulletin:trace]
+      x-required-scopes: [cms:bulletins:investigate]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
@@ -88,7 +61,7 @@ paths:
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
-      x-required-scopes: ['bulletin:trace']
+      x-required-scopes: [cms:bulletins:investigate]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
@@ -121,7 +94,7 @@ paths:
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
-      x-required-scopes: ['bulletin:trace']
+      x-required-scopes: [cms:bulletins:investigate]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
       parameters:
@@ -142,7 +115,7 @@ paths:
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
-      x-required-scopes: ['bulletin:trace']
+      x-required-scopes: [cms:bulletins:investigate]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
@@ -201,7 +174,7 @@ paths:
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
-      x-required-scopes: ['bulletin:trace']
+      x-required-scopes: [cms:bulletins:investigate]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
@@ -287,99 +260,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BulletinWatermarkDSRActionInput'
-  /admin/bulletin-access/retry:
-    post:
-      operationId: retryBulletinAccess
-      summary: Retry the failed bulletin access operation
-      tags: [Admin]
-      x-hhc-visibility: admin
-      x-hhc-callers: [api-gateway]
-      x-hhc-cache: 'private, no-store'
-      x-required-scopes: ['cms:publish']
-      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
-      servers: [{ url: https://admin.alive.org.tw/api }]
-      parameters: [{ $ref: '#/components/parameters/IfMatch' }, { $ref: '#/components/parameters/IdempotencyKey' }]
-      responses:
-        '202': { description: Bulletin access retry accepted, content: { application/json: { schema: { $ref: '#/components/schemas/BulletinAccessEnvelope' } } } }
-        '401': { $ref: '#/components/responses/AdminUnauthorized' }
-        '403': { $ref: '#/components/responses/AdminForbidden' }
-        '409': { $ref: '#/components/responses/Error' }
-        '422': { $ref: '#/components/responses/Error' }
-        '428': { $ref: '#/components/responses/Error' }
-        '503': { $ref: '#/components/responses/Error' }
-  /admin/bulletin-access:
-    get:
-      operationId: getAdminBulletinAccess
-      summary: Get bulletin access transition state
-      tags: [Admin]
-      x-hhc-visibility: admin
-      x-hhc-callers: [api-gateway]
-      x-hhc-cache: 'private, no-store'
-      x-required-scopes: ['cms:read']
-      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
-      servers: [{ url: https://admin.alive.org.tw/api }]
-      responses:
-        '200':
-          description: Bulletin access transition state
-          headers: { ETag: { schema: { type: string } }, Cache-Control: { schema: { type: string, const: no-store } } }
-          content: { application/json: { schema: { $ref: '#/components/schemas/BulletinAccessEnvelope' } } }
-        '401': { $ref: '#/components/responses/AdminUnauthorized' }
-        '403': { $ref: '#/components/responses/AdminForbidden' }
-        '503': { $ref: '#/components/responses/Error' }
-    put:
-      operationId: setBulletinAccess
-      summary: Enable or disable public bulletin access
-      tags: [Admin]
-      x-hhc-visibility: admin
-      x-hhc-callers: [api-gateway]
-      x-hhc-cache: 'private, no-store'
-      x-required-scopes: ['cms:publish']
-      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
-      servers: [{ url: https://admin.alive.org.tw/api }]
-      parameters: [{ $ref: '#/components/parameters/IfMatch' }, { $ref: '#/components/parameters/IdempotencyKey' }]
-      requestBody:
-        required: true
-        content: { application/json: { schema: { $ref: '#/components/schemas/SetBulletinAccessInput' } } }
-      responses:
-        '200': { description: Requested state already effective, content: { application/json: { schema: { $ref: '#/components/schemas/BulletinAccessEnvelope' } } } }
-        '202': { description: Bulletin access transition accepted, content: { application/json: { schema: { $ref: '#/components/schemas/BulletinAccessEnvelope' } } } }
-        '401': { $ref: '#/components/responses/AdminUnauthorized' }
-        '403': { $ref: '#/components/responses/AdminForbidden' }
-        '409': { $ref: '#/components/responses/Error' }
-        '422': { $ref: '#/components/responses/Error' }
-        '428': { $ref: '#/components/responses/Error' }
-        '503': { $ref: '#/components/responses/Error' }
-  /bulletin-access:
-    get:
-      operationId: getBulletinAccess
-      summary: Get effective public bulletin access
-      tags: [Public]
-      x-hhc-visibility: public
-      x-hhc-callers: [api-gateway]
-      x-hhc-cache: no-store
-      security: []
-      responses:
-        '200':
-          description: Effective public bulletin access
-          headers: { Cache-Control: { schema: { type: string, const: no-store } } }
-          content: { application/json: { schema: { $ref: '#/components/schemas/PublicBulletinAccessEnvelope' } } }
-        '503': { $ref: '#/components/responses/Error' }
-  /member/bulletin-access:
-    get:
-      operationId: getMemberBulletinAccess
-      summary: Get the signed-in user's effective bulletin access
-      tags: [Authenticated]
-      x-hhc-visibility: authenticated
-      x-hhc-callers: [api-gateway]
-      x-hhc-cache: 'private, no-store'
-      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
-      responses:
-        '200':
-          description: Effective bulletin access
-          content: { application/json: { schema: { $ref: '#/components/schemas/MemberBulletinAccessEnvelope' } } }
-        '401': { $ref: '#/components/responses/AdminUnauthorized' }
-        '403': { $ref: '#/components/responses/AdminForbidden' }
-        '503': { $ref: '#/components/responses/Error' }
   /health:
     get:
       operationId: getHealth
@@ -898,7 +778,7 @@ paths:
   /priv/bulletins/{issueID}/notification-policy:
     get:
       operationId: getPrivateBulletinNotificationPolicy
-      summary: Check current publication and audience policy for a bulletin delivery
+      summary: Resolve published bulletin locale entitlements for delivery
       tags: [Private]
       x-hhc-visibility: private
       x-hhc-callers: [engagement-api]
@@ -922,11 +802,18 @@ paths:
                 properties:
                   data:
                     type: object
-                    required: [published, membersOnly, enabled]
+                    required: [published, entitlements]
                     properties:
                       published: { type: boolean }
-                      membersOnly: { type: boolean }
-                      enabled: { type: boolean }
+                      entitlements:
+                        type: array
+                        items:
+                          type: object
+                          additionalProperties: false
+                          required: [locale, entitlementCode]
+                          properties:
+                            locale: { type: string, enum: [zh-Hant, zh-Hans, en] }
+                            entitlementCode: { type: string, pattern: '^bulletin\.general\.(zh-Hant|zh-Hans|en)\.access$' }
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
         '404': { $ref: '#/components/responses/Error' }
         '503': { $ref: '#/components/responses/Error' }
@@ -958,7 +845,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-any-scopes: ['campaigns:read', 'cms:read']
+      x-required-scopes: [campaigns:read]
       parameters:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PerPage'
@@ -978,7 +865,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-any-scopes: ['campaigns:write', 'cms:write']
+      x-required-scopes: [campaigns:write]
       requestBody:
         required: true
         content:
@@ -1003,7 +890,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-any-scopes: ['campaigns:read', 'cms:read']
+      x-required-scopes: [campaigns:read]
       responses:
         '200': { $ref: '#/components/responses/Campaign' }
         '400': { $ref: '#/components/responses/EngagementError' }
@@ -1020,7 +907,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-any-scopes: ['campaigns:write', 'cms:write']
+      x-required-scopes: [campaigns:write]
       requestBody:
         required: true
         content:
@@ -1042,7 +929,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-any-scopes: ['campaigns:write', 'cms:write']
+      x-required-scopes: [campaigns:write]
       responses:
         '204': { description: Campaign draft deleted }
         '400': { $ref: '#/components/responses/EngagementError' }
@@ -1060,7 +947,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-any-scopes: ['campaigns:send', 'cms:write']
+      x-required-scopes: [campaigns:send]
       parameters:
         - { name: campaignId, in: path, required: true, schema: { type: string, format: uuid } }
       responses:
@@ -1081,7 +968,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-any-scopes: ['campaigns:write', 'cms:write']
+      x-required-scopes: [campaigns:write]
       parameters:
         - { name: campaignId, in: path, required: true, schema: { type: string, format: uuid } }
         - $ref: '#/components/parameters/CampaignTranslationTargetLocale'
@@ -1110,7 +997,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-any-scopes: ['campaigns:read', 'cms:read']
+      x-required-scopes: [campaigns:read]
       parameters:
         - { name: campaignId, in: path, required: true, schema: { type: string, format: uuid } }
         - $ref: '#/components/parameters/Page'
@@ -1132,7 +1019,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-any-scopes: ['campaigns:send', 'cms:write']
+      x-required-scopes: [campaigns:send]
       parameters:
         - { name: campaignId, in: path, required: true, schema: { type: string, format: uuid } }
       responses:
@@ -1153,7 +1040,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-any-scopes: ['campaigns:read', 'cms:read']
+      x-required-scopes: [campaigns:read]
       responses:
         '200': { $ref: '#/components/responses/CampaignScheduleList' }
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
@@ -1168,7 +1055,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scope-sets: [['campaigns:write', 'campaigns:send'], ['cms:write']]
+      x-required-scopes: [campaigns:write, campaigns:send]
       requestBody:
         required: true
         content:
@@ -1192,7 +1079,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-any-scopes: ['campaigns:read', 'cms:read']
+      x-required-scopes: [campaigns:read]
       responses:
         '200': { $ref: '#/components/responses/CampaignSchedule' }
         '400': { $ref: '#/components/responses/EngagementError' }
@@ -1209,8 +1096,8 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-any-scopes: ['campaigns:write', 'cms:write']
-      description: Enabling a schedule additionally requires campaigns:send; legacy cms:write remains accepted during role migration.
+      x-required-scopes: [campaigns:write]
+      description: Enabling a schedule additionally requires campaigns:send.
       requestBody:
         required: true
         content:
@@ -1232,7 +1119,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-any-scopes: ['campaigns:write', 'cms:write']
+      x-required-scopes: [campaigns:write]
       responses:
         '204': { description: Campaign schedule deleted }
         '400': { $ref: '#/components/responses/EngagementError' }
@@ -1250,7 +1137,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-any-scopes: ['campaigns:write', 'cms:write']
+      x-required-scopes: [campaigns:write]
       parameters:
         - { name: scheduleId, in: path, required: true, schema: { type: string, format: uuid } }
         - $ref: '#/components/parameters/CampaignTranslationTargetLocale'
@@ -1270,272 +1157,80 @@ paths:
         '502': { $ref: '#/components/responses/TranslationProviderError' }
         '503': { $ref: '#/components/responses/TranslationDisabled' }
         '504': { $ref: '#/components/responses/TranslationTimeout' }
-  /bulletins:
-    get:
-      operationId: listPublicBulletins
-      summary: List public bulletins
-      tags: [Public]
-      x-hhc-visibility: public
-      x-hhc-callers: [api-gateway]
-      security: []
-      parameters:
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/PageSize'
-      responses:
-        '200':
-          description: Published bulletin page
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/PublicBulletinListEnvelope' }
-  /bulletins/latest:
-    get:
-      operationId: getLatestPublicBulletin
-      summary: Get latest public bulletin
-      tags: [Public]
-      x-hhc-visibility: public
-      x-hhc-callers: [api-gateway]
-      security: []
-      parameters: [{ $ref: '#/components/parameters/BulletinEdition' }]
-      responses:
-        '200': { $ref: '#/components/responses/PublicBulletin' }
-        '404': { $ref: '#/components/responses/Error' }
-  /bulletins/by-number/{issueNumber}:
-    get:
-      operationId: getPublicBulletinByNumber
-      summary: Get public bulletin by number
-      tags: [Public]
-      x-hhc-visibility: public
-      x-hhc-callers: [api-gateway]
-      security: []
-      parameters:
-        - { name: issueNumber, in: path, required: true, schema: { type: integer, format: int32, minimum: 1, maximum: 2147483647 } }
-        - $ref: '#/components/parameters/BulletinEdition'
-      responses:
-        '200': { $ref: '#/components/responses/PublicBulletin' }
-        '400': { $ref: '#/components/responses/Error' }
-        '404': { $ref: '#/components/responses/Error' }
-  /bulletins/{issueDate}:
-    get:
-      operationId: getPublicBulletinByDate
-      summary: Get public bulletin by date
-      tags: [Public]
-      x-hhc-visibility: public
-      x-hhc-callers: [api-gateway]
-      security: []
-      parameters:
-        - { name: issueDate, in: path, required: true, schema: { type: string, format: date } }
-        - $ref: '#/components/parameters/BulletinEdition'
-      responses:
-        '200': { $ref: '#/components/responses/PublicBulletin' }
-        '404': { $ref: '#/components/responses/Error' }
   /member/bulletins:
     get:
-      operationId: listMemberBulletins
-      summary: List bulletins available to a verified member
+      operationId: listProtectedBulletins
+      summary: List published bulletins authorized by exact series and locale entitlement
       tags: [Authenticated]
       x-hhc-visibility: authenticated
-      x-hhc-callers: [api-gateway]
-      x-required-scopes: ['bulletin:read']
+      x-hhc-callers: [api-gateway, hhc-line-function-bot]
       x-hhc-cache: 'private, no-store'
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
-      parameters: [{ $ref: '#/components/parameters/Page' }, { $ref: '#/components/parameters/PageSize' }]
+      parameters:
+        - $ref: '#/components/parameters/BulletinSeries'
+        - $ref: '#/components/parameters/BulletinLocale'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - { name: issueNumber, in: query, schema: { type: integer, format: int32, minimum: 1, maximum: 2147483647 } }
       responses:
-        '200': { description: Member bulletin page, content: { application/json: { schema: { $ref: '#/components/schemas/PublicBulletinListEnvelope' } } } }
+        '200': { description: Authorized bulletin page, content: { application/json: { schema: { $ref: '#/components/schemas/ProtectedBulletinListEnvelope' } } } }
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
-        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/ProtectedBulletinNotFound' }
+        '503': { $ref: '#/components/responses/Error' }
   /member/bulletins/latest:
     get:
-      operationId: getLatestMemberBulletin
-      summary: Get the latest bulletin available to a verified member
+      operationId: getLatestProtectedBulletin
+      summary: Get the latest published bulletin authorized by exact entitlement
       tags: [Authenticated]
       x-hhc-visibility: authenticated
-      x-hhc-callers: [api-gateway]
-      x-required-scopes: ['bulletin:read']
+      x-hhc-callers: [api-gateway, hhc-line-function-bot]
       x-hhc-cache: 'private, no-store'
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
-      parameters: [{ $ref: '#/components/parameters/BulletinEdition' }]
+      parameters: [{ $ref: '#/components/parameters/BulletinSeries' }, { $ref: '#/components/parameters/BulletinLocale' }]
       responses:
-        '200': { $ref: '#/components/responses/PublicBulletin' }
+        '200': { $ref: '#/components/responses/ProtectedBulletin' }
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
-        '403': { $ref: '#/components/responses/AdminForbidden' }
-        '404': { $ref: '#/components/responses/Error' }
-  /member/bulletins/by-number/{issueNumber}:
+        '404': { $ref: '#/components/responses/ProtectedBulletinNotFound' }
+        '503': { $ref: '#/components/responses/Error' }
+  /member/bulletins/{issueID}/versions/{locale}:
     get:
-      operationId: getMemberBulletinByNumber
-      summary: Get a bulletin by number for a verified member
+      operationId: getProtectedBulletinVersion
+      summary: Get one published bulletin version authorized by exact entitlement
       tags: [Authenticated]
       x-hhc-visibility: authenticated
-      x-hhc-callers: [api-gateway]
-      x-required-scopes: ['bulletin:read']
-      x-hhc-cache: 'private, no-store'
-      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
-      parameters:
-        - { name: issueNumber, in: path, required: true, schema: { type: integer, format: int32, minimum: 1, maximum: 2147483647 } }
-        - $ref: '#/components/parameters/BulletinEdition'
-      responses:
-        '200': { $ref: '#/components/responses/PublicBulletin' }
-        '401': { $ref: '#/components/responses/AdminUnauthorized' }
-        '403': { $ref: '#/components/responses/AdminForbidden' }
-        '404': { $ref: '#/components/responses/Error' }
-  /member/bulletins/{issueDate}:
-    get:
-      operationId: getMemberBulletinByDate
-      summary: Get a bulletin by date for a verified member
-      tags: [Authenticated]
-      x-hhc-visibility: authenticated
-      x-hhc-callers: [api-gateway]
-      x-required-scopes: ['bulletin:read']
+      x-hhc-callers: [api-gateway, hhc-line-function-bot]
       x-hhc-cache: 'private, no-store'
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       parameters:
-        - { name: issueDate, in: path, required: true, schema: { type: string, format: date } }
-        - $ref: '#/components/parameters/BulletinEdition'
+        - { name: issueID, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: locale, in: path, required: true, schema: { $ref: '#/components/schemas/BulletinEdition' } }
+        - $ref: '#/components/parameters/BulletinSeries'
       responses:
-        '200': { $ref: '#/components/responses/PublicBulletin' }
+        '200': { $ref: '#/components/responses/ProtectedBulletin' }
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
-        '403': { $ref: '#/components/responses/AdminForbidden' }
-        '404': { $ref: '#/components/responses/Error' }
-  /member/bulletin-downloads/{issueDate}:
+        '404': { $ref: '#/components/responses/ProtectedBulletinNotFound' }
+        '503': { $ref: '#/components/responses/Error' }
+  /member/bulletins/{issueID}/versions/{locale}/download:
     get:
-      operationId: downloadMemberBulletin
-      summary: Download a bulletin through the verified-member boundary
+      operationId: downloadProtectedBulletinVersion
+      summary: Stream one authorized private bulletin PDF
       tags: [Authenticated]
       x-hhc-visibility: authenticated
-      x-hhc-callers: [api-gateway]
-      x-required-scopes: [bulletin:read]
-      x-hhc-cache: private, no-store
+      x-hhc-callers: [api-gateway, hhc-line-function-bot]
+      x-hhc-cache: 'private, no-store'
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       parameters:
-      - name: issueDate
-        in: path
-        required: true
-        schema:
-          type: string
-          format: date
-      - $ref: '#/components/parameters/BulletinEdition'
-      - name: Range
-        in: header
-        required: false
-        schema:
-          type: string
-      - name: If-Range
-        in: header
-        required: false
-        schema:
-          type: string
+        - { name: issueID, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: locale, in: path, required: true, schema: { $ref: '#/components/schemas/BulletinEdition' } }
+        - $ref: '#/components/parameters/BulletinSeries'
+        - { name: Range, in: header, schema: { type: string } }
+        - { name: If-Range, in: header, schema: { type: string } }
       responses:
-        '200':
-          description: Bulletin PDF
-          content:
-            application/pdf:
-              schema:
-                type: string
-                format: binary
-        '206':
-          description: Partial bulletin PDF
-          content:
-            application/pdf:
-              schema:
-                type: string
-                format: binary
+        '200': { description: Authorized private bulletin PDF, content: { application/pdf: { schema: { type: string, format: binary } } } }
+        '206': { description: Authorized private bulletin byte range, content: { application/pdf: { schema: { type: string, format: binary } } } }
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
-        '403': { $ref: '#/components/responses/AdminForbidden' }
-        '404': { $ref: '#/components/responses/Error' }
-        '409': { $ref: '#/components/responses/Error' }
-        '503': { $ref: '#/components/responses/Error' }
-      description: Member mode returns a complete personalized PDF (Range ignored).
-        Public mode preserves the original PDF and range behavior. Authorization is
-        checked on every request. No unmarked member fallback.
-    head:
-      operationId: headMemberBulletin
-      summary: Check download access without issuing a personalized PDF
-      tags: [Authenticated]
-      x-hhc-visibility: authenticated
-      x-hhc-callers: [api-gateway]
-      x-required-scopes: [bulletin:read]
-      x-hhc-cache: private, no-store
-      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
-      parameters:
-      - name: issueDate
-        in: path
-        required: true
-        schema:
-          type: string
-          format: date
-      - $ref: '#/components/parameters/BulletinEdition'
-      responses:
-        '200':
-          description: Document available; no receipt issued, no content length promised
-        '401': { $ref: '#/components/responses/AdminUnauthorized' }
-        '403': { $ref: '#/components/responses/AdminForbidden' }
-        '404': { $ref: '#/components/responses/Error' }
-        '409': { $ref: '#/components/responses/Error' }
-        '503': { $ref: '#/components/responses/Error' }
-  /member/bulletin-download-jobs:
-    post:
-      operationId: createMemberBulletinDownloadJob
-      summary: Prepare a personalized member bulletin asynchronously
-      tags: [Authenticated]
-      x-hhc-visibility: authenticated
-      x-hhc-callers: [api-gateway]
-      x-required-scopes: [bulletin:read]
-      x-hhc-cache: private, no-store
-      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
-      parameters:
-      - { name: Idempotency-Key, in: header, required: true, schema: { type: string, format: uuid } }
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: false
-              required: [issueDate, locale]
-              properties:
-                issueDate: { type: string, format: date }
-                locale: { type: string, enum: [zh-Hant, zh-Hans, en] }
-      responses:
-        '200': { description: Existing preparation is ready, content: { application/json: { schema: { $ref: '#/components/schemas/BulletinDownloadJobEnvelope' } } } }
-        '202': { description: Preparation accepted, content: { application/json: { schema: { $ref: '#/components/schemas/BulletinDownloadJobEnvelope' } } } }
-        '401': { $ref: '#/components/responses/AdminUnauthorized' }
-        '403': { $ref: '#/components/responses/AdminForbidden' }
-        '409': { $ref: '#/components/responses/Error' }
-        '422': { $ref: '#/components/responses/Error' }
-        '503': { $ref: '#/components/responses/Error' }
-  /member/bulletin-download-jobs/{id}:
-    get:
-      operationId: getMemberBulletinDownloadJob
-      summary: Read an owned member bulletin preparation
-      tags: [Authenticated]
-      x-hhc-visibility: authenticated
-      x-hhc-callers: [api-gateway]
-      x-required-scopes: [bulletin:read]
-      x-hhc-cache: private, no-store
-      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
-      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
-      responses:
-        '200': { description: Current preparation state, content: { application/json: { schema: { $ref: '#/components/schemas/BulletinDownloadJobEnvelope' } } } }
-        '401': { $ref: '#/components/responses/AdminUnauthorized' }
-        '403': { $ref: '#/components/responses/AdminForbidden' }
-        '404': { $ref: '#/components/responses/Error' }
-        '409': { $ref: '#/components/responses/Error' }
-  /member/bulletin-download-jobs/{id}/file:
-    get:
-      operationId: downloadPreparedMemberBulletin
-      summary: Download a ready owned member bulletin
-      tags: [Authenticated]
-      x-hhc-visibility: authenticated
-      x-hhc-callers: [api-gateway]
-      x-required-scopes: [bulletin:read]
-      x-hhc-cache: private, no-store
-      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
-      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
-      responses:
-        '200': { description: Prepared bulletin PDF, content: { application/pdf: { schema: { type: string, format: binary } } } }
-        '401': { $ref: '#/components/responses/AdminUnauthorized' }
-        '403': { $ref: '#/components/responses/AdminForbidden' }
-        '404': { $ref: '#/components/responses/Error' }
-        '409': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/ProtectedBulletinNotFound' }
+        '416': { description: Requested range is not satisfiable }
         '503': { $ref: '#/components/responses/Error' }
   /statements/active:
     get:
@@ -1561,7 +1256,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:publish']
+      x-required-scopes: [cms:news:publish]
       parameters:
         - $ref: '#/components/parameters/ContentID'
         - $ref: '#/components/parameters/IfMatch'
@@ -1583,7 +1278,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:read']
+      x-required-scopes: [cms:news:read]
       parameters:
         - $ref: '#/components/parameters/ContentID'
       responses:
@@ -1603,7 +1298,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['campaigns:send']
+      x-required-scopes: [cms:news:read, campaigns:send]
       parameters:
         - $ref: '#/components/parameters/ContentID'
         - $ref: '#/components/parameters/IfMatch'
@@ -1630,7 +1325,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['campaigns:send']
+      x-required-scopes: [cms:news:read, campaigns:send]
       parameters:
         - $ref: '#/components/parameters/ContentID'
       requestBody:
@@ -1772,7 +1467,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:read']
+      x-required-scopes: [cms:pages:read]
       responses:
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
         '403': { $ref: '#/components/responses/AdminForbidden' }
@@ -1786,7 +1481,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:write']
+      x-required-scopes: [cms:pages:write]
       parameters: [{ $ref: '#/components/parameters/IfMatch' }]
       requestBody:
         required: true
@@ -1810,7 +1505,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:publish']
+      x-required-scopes: [cms:pages:publish]
       parameters: [{ $ref: '#/components/parameters/IfMatch' }]
       responses:
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
@@ -1828,7 +1523,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:publish']
+      x-required-scopes: [cms:pages:publish]
       parameters: [{ $ref: '#/components/parameters/IfMatch' }]
       responses:
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
@@ -1846,7 +1541,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:read']
+      x-required-scopes: [cms:pages:read]
       responses:
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
         '403': { $ref: '#/components/responses/AdminForbidden' }
@@ -1860,7 +1555,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:write']
+      x-required-scopes: [cms:pages:write]
       parameters:
         - $ref: '#/components/parameters/Revision'
         - $ref: '#/components/parameters/IfMatch'
@@ -1881,7 +1576,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:read']
+      x-required-scopes: [cms:bulletins:read]
       parameters:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
@@ -1907,7 +1602,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:write']
+      x-required-scopes: [cms:bulletins:write]
       parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody:
         required: true
@@ -1928,7 +1623,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:read']
+      x-required-scopes: [cms:bulletins:read]
       parameters: [{ $ref: '#/components/parameters/IssueID' }]
       responses:
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
@@ -1943,7 +1638,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:write']
+      x-required-scopes: [cms:bulletins:write]
       parameters:
         - $ref: '#/components/parameters/IssueID'
         - $ref: '#/components/parameters/IfMatch'
@@ -1966,7 +1661,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:write']
+      x-required-scopes: [cms:bulletins:write]
       parameters:
         - $ref: '#/components/parameters/IssueID'
         - $ref: '#/components/parameters/IfMatch'
@@ -1985,7 +1680,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:write', 'assets:write']
+      x-required-scopes: [cms:bulletins:write]
       parameters:
         - $ref: '#/components/parameters/IssueID'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -2011,7 +1706,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:write']
+      x-required-scopes: [cms:bulletins:write]
       parameters:
         - $ref: '#/components/parameters/IssueID'
         - { name: locale, in: path, required: true, schema: { $ref: '#/components/schemas/BulletinEdition' } }
@@ -2035,7 +1730,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:write']
+      x-required-scopes: [cms:bulletins:write]
       parameters:
         - $ref: '#/components/parameters/IssueID'
         - { name: locale, in: path, required: true, schema: { $ref: '#/components/schemas/BulletinEdition' } }
@@ -2056,7 +1751,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:read']
+      x-required-scopes: [cms:bulletins:read]
       parameters:
         - $ref: '#/components/parameters/IssueID'
         - { name: assetId, in: path, required: true, schema: { type: string } }
@@ -2078,7 +1773,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:write', 'assets:write']
+      x-required-scopes: [cms:bulletins:write]
       parameters:
         - $ref: '#/components/parameters/IssueID'
         - { name: assetId, in: path, required: true, schema: { type: string } }
@@ -2100,7 +1795,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:write', 'assets:write']
+      x-required-scopes: [cms:bulletins:write]
       parameters:
         - $ref: '#/components/parameters/IssueID'
         - { name: assetId, in: path, required: true, schema: { type: string } }
@@ -2124,7 +1819,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:publish']
+      x-required-scopes: [cms:bulletins:publish]
       parameters:
         - $ref: '#/components/parameters/IssueID'
         - $ref: '#/components/parameters/IfMatch'
@@ -2147,7 +1842,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:publish']
+      x-required-scopes: [cms:bulletins:publish]
       parameters:
         - $ref: '#/components/parameters/IssueID'
         - $ref: '#/components/parameters/IfMatch'
@@ -2166,7 +1861,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:read']
+      x-required-scopes: [cms:bulletins:read]
       parameters: [{ $ref: '#/components/parameters/IssueID' }]
       responses:
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
@@ -2185,7 +1880,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:write']
+      x-required-scopes: [cms:bulletins:write]
       parameters:
         - $ref: '#/components/parameters/IssueID'
         - $ref: '#/components/parameters/Revision'
@@ -2205,7 +1900,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:write']
+      x-required-scopes: [cms:bulletins:write]
       parameters:
         - $ref: '#/components/parameters/IssueID'
         - $ref: '#/components/parameters/BulletinTranslationTargetEdition'
@@ -2234,7 +1929,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:read']
+      x-required-scopes-by-module: { news: 'cms:news:read', history: 'cms:pages:read', videos: 'cms:pages:read', locations: 'cms:pages:read', pages: 'cms:pages:read' }
       parameters:
         - in: query
           name: kind
@@ -2263,7 +1958,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:write']
+      x-required-scopes-by-module: { news: 'cms:news:write', history: 'cms:pages:write', videos: 'cms:pages:write', locations: 'cms:pages:write', pages: 'cms:pages:write' }
       parameters:
         - $ref: '#/components/parameters/CreatableContentModule'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -2283,7 +1978,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:read']
+      x-required-scopes-by-module: { news: 'cms:news:read', history: 'cms:pages:read', videos: 'cms:pages:read', locations: 'cms:pages:read', pages: 'cms:pages:read' }
       parameters:
         - $ref: '#/components/parameters/ContentModule'
         - $ref: '#/components/parameters/ContentID'
@@ -2300,7 +1995,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:write']
+      x-required-scopes-by-module: { news: 'cms:news:write', history: 'cms:pages:write', videos: 'cms:pages:write', locations: 'cms:pages:write', pages: 'cms:pages:write' }
       parameters:
         - $ref: '#/components/parameters/ContentModule'
         - $ref: '#/components/parameters/ContentID'
@@ -2325,7 +2020,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:write']
+      x-required-scopes-by-module: { news: 'cms:news:write', history: 'cms:pages:write', videos: 'cms:pages:write', locations: 'cms:pages:write', pages: 'cms:pages:write' }
       parameters:
         - $ref: '#/components/parameters/ContentModule'
         - $ref: '#/components/parameters/ContentID'
@@ -2346,7 +2041,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:write']
+      x-required-scopes-by-module: { news: 'cms:news:write', history: 'cms:pages:write', videos: 'cms:pages:write', locations: 'cms:pages:write', pages: 'cms:pages:write' }
       parameters:
         - $ref: '#/components/parameters/TranslatableContentModule'
         - $ref: '#/components/parameters/ContentID'
@@ -2377,7 +2072,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:publish']
+      x-required-scopes-by-module: { news: 'cms:news:publish', history: 'cms:pages:publish', videos: 'cms:pages:publish', locations: 'cms:pages:publish', pages: 'cms:pages:publish' }
       parameters:
         - $ref: '#/components/parameters/PublicationContentModule'
         - $ref: '#/components/parameters/ContentID'
@@ -2407,7 +2102,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:publish']
+      x-required-scopes-by-module: { news: 'cms:news:publish', history: 'cms:pages:publish', videos: 'cms:pages:publish', locations: 'cms:pages:publish', pages: 'cms:pages:publish' }
       parameters:
         - $ref: '#/components/parameters/PublicationContentModule'
         - $ref: '#/components/parameters/ContentID'
@@ -2426,7 +2121,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:read']
+      x-required-scopes-by-module: { news: 'cms:news:read', history: 'cms:pages:read', videos: 'cms:pages:read', locations: 'cms:pages:read', pages: 'cms:pages:read' }
       parameters:
         - $ref: '#/components/parameters/ContentModule'
         - $ref: '#/components/parameters/ContentID'
@@ -2448,7 +2143,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:write']
+      x-required-scopes-by-module: { news: 'cms:news:write', history: 'cms:pages:write', videos: 'cms:pages:write', locations: 'cms:pages:write', pages: 'cms:pages:write' }
       parameters:
         - $ref: '#/components/parameters/PublicationContentModule'
         - $ref: '#/components/parameters/ContentID'
@@ -2468,7 +2163,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:write', 'assets:write']
+      x-required-scopes: [cms:news:write]
       parameters:
         - $ref: '#/components/parameters/ContentID'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -2494,7 +2189,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:read']
+      x-required-scopes: [cms:news:read]
       parameters:
         - $ref: '#/components/parameters/ContentID'
         - { name: assetId, in: path, required: true, schema: { type: string } }
@@ -2515,7 +2210,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:write', 'assets:write']
+      x-required-scopes: [cms:news:write]
       parameters:
         - { name: contentId, in: path, required: true, schema: { type: string } }
         - { name: assetId, in: path, required: true, schema: { type: string } }
@@ -2537,7 +2232,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:write', 'assets:write']
+      x-required-scopes: [cms:news:write]
       parameters:
         - $ref: '#/components/parameters/ContentID'
         - { name: assetId, in: path, required: true, schema: { type: string } }
@@ -2561,7 +2256,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:write', 'assets:write']
+      x-required-scopes: [cms:pages:write]
       parameters:
         - $ref: '#/components/parameters/ContentID'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -2589,7 +2284,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:read']
+      x-required-scopes: [cms:pages:read]
       parameters:
         - $ref: '#/components/parameters/ContentID'
         - { name: assetId, in: path, required: true, schema: { type: string } }
@@ -2612,7 +2307,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:write', 'assets:write']
+      x-required-scopes: [cms:pages:write]
       parameters:
         - $ref: '#/components/parameters/ContentID'
         - { name: assetId, in: path, required: true, schema: { type: string } }
@@ -2637,7 +2332,7 @@ paths:
       x-hhc-callers: [api-gateway]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: ['cms:write', 'assets:write']
+      x-required-scopes: [cms:pages:write]
       parameters:
         - $ref: '#/components/parameters/ContentID'
         - { name: assetId, in: path, required: true, schema: { type: string } }
@@ -2685,7 +2380,8 @@ components:
       description: Sanitized Account scopes injected by api-gateway and enforced per operation.
   parameters:
     ContentLocale: { name: locale, in: query, schema: { $ref: '#/components/schemas/ContentLocale' } }
-    BulletinEdition: { name: locale, in: query, schema: { $ref: '#/components/schemas/BulletinEdition' } }
+    BulletinLocale: { name: locale, in: query, schema: { $ref: '#/components/schemas/BulletinEdition' } }
+    BulletinSeries: { name: series, in: query, schema: { type: string, pattern: '^[a-z][a-z0-9_-]{0,49}$', default: general } }
     Page: { name: page, in: query, schema: { type: integer, minimum: 1, maximum: 10000, default: 1 } }
     PageSize: { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
     PerPage: { name: perPage, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
@@ -2828,11 +2524,16 @@ components:
       content:
         application/json:
           schema: { $ref: '#/components/schemas/BulletinIssueEnvelope' }
-    PublicBulletin:
-      description: Published bulletin
+    ProtectedBulletin:
+      description: Published bulletin metadata returned only after exact entitlement authorization.
       content:
         application/json:
-          schema: { $ref: '#/components/schemas/PublicBulletinEnvelope' }
+          schema: { $ref: '#/components/schemas/ProtectedBulletinEnvelope' }
+    ProtectedBulletinNotFound:
+      description: Bulletin, entitlement, or protected asset is absent; the response does not disclose which condition failed.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
     Error:
       description: Standard API error envelope
       content:
@@ -3220,25 +2921,6 @@ components:
           type: object
           properties: { nextCursor: { type: string, format: uuid } }
         error: { type: [object, 'null'] }
-    BulletinDownloadJob:
-      type: object
-      additionalProperties: false
-      required: [id, status, progress, createdAt, expiresAt]
-      properties:
-        id: { type: string, format: uuid }
-        status: { type: string, enum: [queued, running, ready, failed, expired] }
-        errorCode: { type: string }
-        progress: { type: integer, minimum: 0, maximum: 100 }
-        createdAt: { type: string, format: date-time }
-        expiresAt: { type: string, format: date-time }
-    BulletinDownloadJobEnvelope:
-      type: object
-      additionalProperties: false
-      required: [data]
-      properties:
-        data: { $ref: '#/components/schemas/BulletinDownloadJob' }
-        meta: { type: object }
-        error: { type: [object, 'null'] }
     BulletinWatermarkInvestigationHistory:
       type: object
       additionalProperties: false
@@ -3509,65 +3191,6 @@ components:
           type:
           - object
           - 'null'
-    BulletinAccessEnvelope:
-      type: object
-      required: [data, meta, error]
-      properties:
-        data: { $ref: '#/components/schemas/BulletinAccess' }
-        meta: { type: object, additionalProperties: true }
-        error: { type: ['null'] }
-    PublicBulletinAccessEnvelope:
-      type: object
-      required: [data, meta, error]
-      properties:
-        data: { $ref: '#/components/schemas/PublicBulletinAccess' }
-        meta: { type: object, additionalProperties: true }
-        error: { type: ['null'] }
-    MemberBulletinAccessEnvelope:
-      type: object
-      required: [data, meta, error]
-      properties:
-        data: { $ref: '#/components/schemas/MemberBulletinAccess' }
-        meta: { type: object, additionalProperties: true }
-        error: { type: ['null'] }
-    SetBulletinAccessInput:
-      type: object
-      additionalProperties: false
-      required: [enabled]
-      properties:
-        enabled: { type: boolean }
-    BulletinAccess:
-      type: object
-      additionalProperties: false
-      required: [requestedEnabled, effectiveEnabled, membershipEnabled, status, version, operationId, completed, total, errorCode, updatedAt]
-      properties:
-        membershipEnabled: { type: boolean }
-        requestedEnabled: { type: boolean }
-        effectiveEnabled: { type: boolean }
-        status: { $ref: '#/components/schemas/BulletinAccessStatus' }
-        version: { type: integer, format: int64, minimum: 1 }
-        operationId: { type: [string, 'null'], format: uuid }
-        completed: { type: integer, minimum: 0 }
-        total: { type: integer, minimum: 0 }
-        errorCode: { type: [string, 'null'] }
-        updatedAt: { type: string, format: date-time }
-    PublicBulletinAccess:
-      type: object
-      additionalProperties: false
-      required: [enabled]
-      properties:
-        enabled: { type: boolean }
-    MemberBulletinAccess:
-      type: object
-      additionalProperties: false
-      required: [canRead, publicEnabled, policyVersion]
-      properties:
-        canRead: { type: boolean }
-        publicEnabled: { type: boolean }
-        policyVersion: { type: integer, format: int64, minimum: 1 }
-    BulletinAccessStatus:
-      type: string
-      enum: [enabled, disabling, disabled, enabling, failed]
     OperationsStatus: { type: string, enum: [active, paused, archived] }
     OperationsVisibility: { type: string, enum: [public, internal] }
     MeetingSchedule:
@@ -4046,7 +3669,6 @@ components:
         subtitle: { type: string }
         pdfAssetId: { type: string }
         pdfFileName: { type: string }
-        publicGrantId: { type: string }
         status: { $ref: '#/components/schemas/BulletinVersionStatus' }
         workflowStatus: { type: string }
         workflowError: { type: string }
@@ -4082,28 +3704,21 @@ components:
         snapshot: { $ref: '#/components/schemas/BulletinIssue' }
         createdBy: { type: string }
         createdAt: { type: string, format: date-time }
-    PublicBulletin:
+    ProtectedBulletin:
       type: object
-      required: [issueDate, locale, title, subtitle, downloadUrl, downloadFileName, publishedAt, version]
+      additionalProperties: false
+      required: [issueId, issueDate, series, locale, title, subtitle, downloadName, publishedAt, version]
       properties:
+        issueId: { type: string, format: uuid }
         issueDate: { type: string, format: date }
         issueNumber: { type: integer, minimum: 1 }
+        series: { type: string, pattern: '^[a-z][a-z0-9_-]{0,49}$' }
         locale: { $ref: '#/components/schemas/BulletinEdition' }
         title: { type: string }
         subtitle: { type: string }
-        downloadUrl: { type: string }
-        downloadFileName: { type: string }
+        downloadName: { type: string }
         publishedAt: { type: string, format: date-time }
         version: { type: integer, format: int64 }
-    PublicBulletinIssue:
-      type: object
-      required: [issueDate, versions]
-      properties:
-        issueDate: { type: string, format: date }
-        issueNumber: { type: integer, minimum: 1 }
-        versions:
-          type: array
-          items: { $ref: '#/components/schemas/PublicBulletin' }
     Workflow:
       type: object
       required: [id, status, aggregateVersion, createdAt]
@@ -4227,7 +3842,7 @@ components:
         notifySubscribers:
           type: boolean
           default: false
-          description: Queue one Web Push campaign after the bulletin is publicly available. Ignored by unpublish operations.
+          description: Queue one member-only Web Push campaign after the protected bulletin is published. Ignored by unpublish operations.
     HomePageContentV1:
       type: object
       additionalProperties: false
@@ -4942,18 +4557,18 @@ components:
         data: { type: array, items: { $ref: '#/components/schemas/BulletinRevision' } }
         meta: { type: object, additionalProperties: true }
         error: { type: ['null'] }
-    PublicBulletinEnvelope:
+    ProtectedBulletinEnvelope:
       type: object
       required: [data, meta]
       properties:
-        data: { $ref: '#/components/schemas/PublicBulletin' }
+        data: { $ref: '#/components/schemas/ProtectedBulletin' }
         meta: { type: object, additionalProperties: true }
         error: { type: ['null'] }
-    PublicBulletinListEnvelope:
+    ProtectedBulletinListEnvelope:
       type: object
       required: [data, meta]
       properties:
-        data: { type: array, items: { $ref: '#/components/schemas/PublicBulletinIssue' } }
+        data: { type: array, items: { $ref: '#/components/schemas/ProtectedBulletin' } }
         meta: { $ref: '#/components/schemas/PageMeta' }
         error: { type: ['null'] }
     CreatedUploadEnvelope:

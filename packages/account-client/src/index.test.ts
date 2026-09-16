@@ -15,11 +15,13 @@ describe('account session client', () => {
   it('loads the cookie-backed session without calling refresh', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({
       authenticated: true,
-      user: {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null, permissions: ['*']}
+      user: {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null},
+      permissions: ['*'],
+      permission_availability: {status: 'available'}
     }));
     const client = createAccountSessionClient({fetcher});
 
-    await expect(client.getSession()).resolves.toMatchObject({authenticated: true, user: {permissions: ['*']}});
+    await expect(client.getSession()).resolves.toMatchObject({authenticated: true, permissions: ['*']});
     expect(fetcher).toHaveBeenCalledOnce();
     expect(fetcher).toHaveBeenCalledWith('/api/account/v1/session', expect.objectContaining({
       cache: 'no-store',
@@ -78,7 +80,8 @@ describe('account session client', () => {
     const client = createAccountSessionClient({
       fetcher: vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({
         authenticated: true,
-        user: {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null}
+        user: {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null},
+        permission_availability: {status: 'available'}
       }))
     });
 
@@ -89,7 +92,8 @@ describe('account session client', () => {
     const client = createAccountSessionClient({
       fetcher: vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({
         authenticated: true,
-        user: {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null, admin_access: true}
+        user: {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null, admin_access: true},
+        permission_availability: {status: 'available'}
       }))
     });
 
@@ -102,9 +106,11 @@ describe('account auth lifecycle helpers', () => {
     await expect(resolveAccountAuth({
       getSession: async () => ({
         authenticated: true,
-        user: {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null, permissions: ['*']}
+        user: {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null},
+        permissions: ['*'],
+        permission_availability: {status: 'available'}
       })
-    })).resolves.toMatchObject({status: 'authenticated', user: {id: 'u1'}});
+    })).resolves.toMatchObject({status: 'authenticated', session: {user: {id: 'u1'}}});
 
     await expect(resolveAccountAuth({
       getSession: async () => ({authenticated: false})
@@ -176,14 +182,18 @@ describe('account auth lifecycle helpers', () => {
 describe('generic permission session contract', () => {
   it.each([[], ['cms:read'], ['*']].map(permissions => ({permissions})))('accepts permissions without application flags: %j', async ({permissions}) => {
     const client = createAccountSessionClient({fetcher: async () => jsonResponse({authenticated: true,
-      user: {id: 'u1', email: 'a@example.test', display_name: 'A', avatar_url: null, permissions}
+      user: {id: 'u1', email: 'a@example.test', display_name: 'A', avatar_url: null},
+      permissions,
+      permission_availability: {status: 'available'}
     })});
-    await expect(client.getSession()).resolves.toMatchObject({user: {permissions}});
+    await expect(client.getSession()).resolves.toMatchObject({permissions});
   });
 
   it.each([null, 'cms:read', [true], ['cms:read', 42]].map(permissions => ({permissions})))('rejects malformed permissions despite legacy access: %j', async ({permissions}) => {
     const client = createAccountSessionClient({fetcher: async () => jsonResponse({authenticated: true,
-      user: {id: 'u1', email: 'a@example.test', display_name: 'A', avatar_url: null, admin_access: true, permissions}
+      user: {id: 'u1', email: 'a@example.test', display_name: 'A', avatar_url: null, admin_access: true},
+      permissions,
+      permission_availability: {status: 'available'}
     })});
     await expect(client.getSession()).rejects.toMatchObject({code: 'INVALID_RESPONSE'});
   });
