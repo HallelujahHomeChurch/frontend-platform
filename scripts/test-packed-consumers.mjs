@@ -51,7 +51,8 @@ try {
       'react-dom': '19.2.7',
       vite: '8.1.4'
     },
-    devDependencies: {}
+    devDependencies: {},
+    pnpm: {overrides: packageDependencies}
   }, null, 2));
   write(resolve(vite, 'index.html'), '<main id="root"></main><script type="module" src="/src/main.tsx"></script>');
   write(resolve(vite, 'vite.config.ts'), "import react from '@vitejs/plugin-react';\nimport {defineConfig} from 'vite';\nexport default defineConfig({plugins: [react()]});\n");
@@ -107,7 +108,7 @@ createRoot(document.getElementById('root')!).render(<><Button>Smoke</Button><Con
       '@types/react-dom': '19.2.3',
       typescript: '6.0.3'
     },
-    pnpm: {onlyBuiltDependencies: ['sharp']}
+    pnpm: {onlyBuiltDependencies: ['sharp'], overrides: packageDependencies}
   }, null, 2));
   write(resolve(next, 'app/layout.tsx'), `import '@hallelujahhomechurch/ui/styles.css';
 export default function Layout({children}: {children: React.ReactNode}) {
