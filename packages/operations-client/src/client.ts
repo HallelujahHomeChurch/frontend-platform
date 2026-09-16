@@ -47,7 +47,7 @@ export function createOperationsClient(options: {
     raw,
     getMyAccess(signal?: AbortSignal): Promise<OperationsAccessSnapshot> {
       // Gateway derives X-HHC-Scopes from the verified token; browsers must not synthesize it.
-      return unwrap(raw.GET('/api/operations/me/access', {signal, cache: 'no-store'} as never));
+      return unwrap(raw.GET('/api/operations/me/access', {signal, cache: 'no-store'}));
     }
   };
 }

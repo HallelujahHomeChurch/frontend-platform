@@ -56,7 +56,7 @@ paths:
       x-hhc-visibility: admin
       x-hhc-required-permission: memberships:read
       security: [{ gatewayPrincipal: [] }]
-      responses: { '200': { description: Organization units }, '403': { description: Permission denied } }
+      responses: { '200': { description: Organization units, content: { application/json: { schema: { $ref: '#/components/schemas/OrgUnitList' } } } }, '403': { description: Permission denied } }
     post:
       tags: [Operations]
       operationId: createAdminOrgUnit
@@ -66,7 +66,7 @@ paths:
       security: [{ gatewayPrincipal: [] }]
       parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/OrgUnitInput' } } } }
-      responses: { '201': { description: Organization unit created }, '403': { description: Permission denied } }
+      responses: { '201': { description: Organization unit created, content: { application/json: { schema: { $ref: '#/components/schemas/OrgUnit' } } } }, '403': { description: Permission denied } }
   /api/admin/operations/church-units/{id}:
     get:
       tags: [Operations]
@@ -76,7 +76,7 @@ paths:
       x-hhc-required-permission: memberships:read
       security: [{ gatewayPrincipal: [] }]
       parameters: [{ $ref: '#/components/parameters/ID' }]
-      responses: { '200': { description: Organization unit }, '403': { description: Permission denied }, '404': { description: Not found } }
+      responses: { '200': { description: Organization unit, content: { application/json: { schema: { $ref: '#/components/schemas/OrgUnit' } } } }, '403': { description: Permission denied }, '404': { description: Not found } }
     put:
       tags: [Operations]
       operationId: updateAdminOrgUnit
@@ -86,7 +86,7 @@ paths:
       security: [{ gatewayPrincipal: [] }]
       parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/IfMatch' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/OrgUnitInput' } } } }
-      responses: { '200': { description: Organization unit }, '403': { description: Permission denied }, '412': { description: Version mismatch } }
+      responses: { '200': { description: Organization unit, content: { application/json: { schema: { $ref: '#/components/schemas/OrgUnit' } } } }, '403': { description: Permission denied }, '412': { description: Version mismatch } }
   /api/admin/operations/church-units/{id}/{action}:
     post:
       tags: [Operations]
@@ -96,7 +96,7 @@ paths:
       x-hhc-required-permission: memberships:manage
       security: [{ gatewayPrincipal: [] }]
       parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/StatusAction' }, { $ref: '#/components/parameters/IfMatch' }]
-      responses: { '200': { description: Organization unit }, '403': { description: Permission denied }, '412': { description: Version mismatch } }
+      responses: { '200': { description: Organization unit, content: { application/json: { schema: { $ref: '#/components/schemas/OrgUnit' } } } }, '403': { description: Permission denied }, '412': { description: Version mismatch } }
   /api/admin/operations/resources:
     get:
       tags: [Operations]
@@ -105,7 +105,7 @@ paths:
       x-hhc-visibility: admin
       x-hhc-required-permission: operations:resources:read
       security: [{ gatewayPrincipal: [] }]
-      responses: { '200': { description: Scoped resources }, '503': { description: Authorization unavailable } }
+      responses: { '200': { description: Scoped resources, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceList' } } } }, '503': { description: Authorization unavailable } }
     post:
       tags: [Operations]
       operationId: createAdminResource
@@ -115,7 +115,7 @@ paths:
       security: [{ gatewayPrincipal: [] }]
       parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceInput' } } } }
-      responses: { '201': { description: Resource created }, '403': { description: Scope denied }, '503': { description: Authorization unavailable } }
+      responses: { '201': { description: Resource created, content: { application/json: { schema: { $ref: '#/components/schemas/Resource' } } } }, '403': { description: Scope denied }, '503': { description: Authorization unavailable } }
   /api/admin/operations/resources/{id}:
     get:
       tags: [Operations]
@@ -125,7 +125,7 @@ paths:
       x-hhc-required-permission: operations:resources:read
       security: [{ gatewayPrincipal: [] }]
       parameters: [{ $ref: '#/components/parameters/ID' }]
-      responses: { '200': { description: Resource }, '403': { description: Scope denied }, '404': { description: Not found }, '503': { description: Authorization unavailable } }
+      responses: { '200': { description: Resource, content: { application/json: { schema: { $ref: '#/components/schemas/Resource' } } } }, '403': { description: Scope denied }, '404': { description: Not found }, '503': { description: Authorization unavailable } }
     put:
       tags: [Operations]
       operationId: updateAdminResource
@@ -135,7 +135,7 @@ paths:
       security: [{ gatewayPrincipal: [] }]
       parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/IfMatch' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceInput' } } } }
-      responses: { '200': { description: Resource }, '403': { description: Scope denied }, '412': { description: Version mismatch }, '503': { description: Authorization unavailable } }
+      responses: { '200': { description: Resource, content: { application/json: { schema: { $ref: '#/components/schemas/Resource' } } } }, '403': { description: Scope denied }, '412': { description: Version mismatch }, '503': { description: Authorization unavailable } }
   /api/admin/operations/resources/{id}/{action}:
     post:
       tags: [Operations]
@@ -145,7 +145,7 @@ paths:
       x-hhc-required-permission: operations:resources:write
       security: [{ gatewayPrincipal: [] }]
       parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/StatusAction' }, { $ref: '#/components/parameters/IfMatch' }]
-      responses: { '200': { description: Resource }, '403': { description: Scope denied }, '412': { description: Version mismatch }, '503': { description: Authorization unavailable } }
+      responses: { '200': { description: Resource, content: { application/json: { schema: { $ref: '#/components/schemas/Resource' } } } }, '403': { description: Scope denied }, '412': { description: Version mismatch }, '503': { description: Authorization unavailable } }
   /api/admin/operations/meetings:
     get:
       tags: [Operations]
@@ -154,7 +154,7 @@ paths:
       x-hhc-visibility: admin
       x-hhc-required-permission: operations:meetings:read
       security: [{ gatewayPrincipal: [] }]
-      responses: { '200': { description: Scoped meetings }, '503': { description: Authorization unavailable } }
+      responses: { '200': { description: Scoped meetings, content: { application/json: { schema: { $ref: '#/components/schemas/MeetingList' } } } }, '503': { description: Authorization unavailable } }
     post:
       tags: [Operations]
       operationId: createAdminMeeting
@@ -164,7 +164,7 @@ paths:
       security: [{ gatewayPrincipal: [] }]
       parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/MeetingInput' } } } }
-      responses: { '201': { description: Meeting created }, '403': { description: Scope denied }, '503': { description: Authorization unavailable } }
+      responses: { '201': { description: Meeting created, content: { application/json: { schema: { $ref: '#/components/schemas/Meeting' } } } }, '403': { description: Scope denied }, '503': { description: Authorization unavailable } }
   /api/admin/operations/meetings/{id}:
     get:
       tags: [Operations]
@@ -174,7 +174,7 @@ paths:
       x-hhc-required-permission: operations:meetings:read
       security: [{ gatewayPrincipal: [] }]
       parameters: [{ $ref: '#/components/parameters/ID' }]
-      responses: { '200': { description: Meeting detail }, '403': { description: Scope denied }, '404': { description: Not found }, '503': { description: Authorization unavailable } }
+      responses: { '200': { description: Meeting detail, content: { application/json: { schema: { $ref: '#/components/schemas/MeetingDetail' } } } }, '403': { description: Scope denied }, '404': { description: Not found }, '503': { description: Authorization unavailable } }
     put:
       tags: [Operations]
       operationId: updateAdminMeeting
@@ -184,7 +184,7 @@ paths:
       security: [{ gatewayPrincipal: [] }]
       parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/IfMatch' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/MeetingInput' } } } }
-      responses: { '200': { description: Meeting }, '403': { description: Scope denied }, '412': { description: Version mismatch }, '503': { description: Authorization unavailable } }
+      responses: { '200': { description: Meeting, content: { application/json: { schema: { $ref: '#/components/schemas/Meeting' } } } }, '403': { description: Scope denied }, '412': { description: Version mismatch }, '503': { description: Authorization unavailable } }
   /api/admin/operations/meetings/{id}/{action}:
     post:
       tags: [Operations]
@@ -194,7 +194,7 @@ paths:
       x-hhc-required-permission: operations:meetings:write
       security: [{ gatewayPrincipal: [] }]
       parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/StatusAction' }, { $ref: '#/components/parameters/IfMatch' }]
-      responses: { '200': { description: Meeting }, '403': { description: Scope denied }, '412': { description: Version mismatch }, '503': { description: Authorization unavailable } }
+      responses: { '200': { description: Meeting, content: { application/json: { schema: { $ref: '#/components/schemas/Meeting' } } } }, '403': { description: Scope denied }, '412': { description: Version mismatch }, '503': { description: Authorization unavailable } }
   /api/admin/operations/meetings/{id}/overrides/{date}:
     put:
       tags: [Operations]
@@ -205,7 +205,7 @@ paths:
       security: [{ gatewayPrincipal: [] }]
       parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/OccurrenceDate' }, { $ref: '#/components/parameters/IfMatch' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/OccurrenceOverrideInput' } } } }
-      responses: { '200': { description: Meeting override }, '403': { description: Scope denied }, '412': { description: Version mismatch }, '503': { description: Authorization unavailable } }
+      responses: { '200': { description: Meeting override, content: { application/json: { schema: { $ref: '#/components/schemas/OccurrenceOverride' } } } }, '403': { description: Scope denied }, '412': { description: Version mismatch }, '503': { description: Authorization unavailable } }
     delete:
       tags: [Operations]
       operationId: deleteAdminMeetingOverride
@@ -214,7 +214,7 @@ paths:
       x-hhc-required-permission: operations:meetings:write
       security: [{ gatewayPrincipal: [] }]
       parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/OccurrenceDate' }, { $ref: '#/components/parameters/IfMatch' }]
-      responses: { '200': { description: Meeting }, '403': { description: Scope denied }, '412': { description: Version mismatch }, '503': { description: Authorization unavailable } }
+      responses: { '200': { description: Meeting, content: { application/json: { schema: { $ref: '#/components/schemas/Meeting' } } } }, '403': { description: Scope denied }, '412': { description: Version mismatch }, '503': { description: Authorization unavailable } }
   /api/admin/operations/meetings/{id}/collections:
     put:
       tags: [Operations]
@@ -225,7 +225,7 @@ paths:
       security: [{ gatewayPrincipal: [] }]
       parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/IfMatch' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CollectionBindingInput' } } } }
-      responses: { '200': { description: Meeting }, '403': { description: Scope denied }, '412': { description: Version mismatch }, '503': { description: Authorization unavailable } }
+      responses: { '200': { description: Meeting, content: { application/json: { schema: { $ref: '#/components/schemas/Meeting' } } } }, '403': { description: Scope denied }, '412': { description: Version mismatch }, '503': { description: Authorization unavailable } }
   /priv/operations/org-units:
     get:
       tags: [Operations]
@@ -636,7 +636,6 @@ paths:
       summary: Get the authenticated subject's presentation-safe Operations access facts
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
-      parameters: [{ $ref: '#/components/parameters/Scopes' }]
       responses:
         '200':
           description: Presentation-safe Operations access snapshot
@@ -651,7 +650,6 @@ paths:
       summary: List resources available to the qualified member
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
-      parameters: [{ $ref: '#/components/parameters/Scopes' }]
       responses: { '200': { description: Eligible resources, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/ReservableResource' } } } } }, '400': { description: Malformed identity }, '401': { description: Missing identity } }
   /api/operations/me/resources/{resourceKey}/availability:
     get:
@@ -660,7 +658,7 @@ paths:
       summary: Get privacy-safe merged Resource availability
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
-      parameters: [{ name: resourceKey, in: path, required: true, schema: { type: string } }, { name: from, in: query, required: true, schema: { type: string, format: date-time } }, { name: to, in: query, required: true, schema: { type: string, format: date-time } }, { $ref: '#/components/parameters/Scopes' }]
+      parameters: [{ name: resourceKey, in: path, required: true, schema: { type: string } }, { name: from, in: query, required: true, schema: { type: string, format: date-time } }, { name: to, in: query, required: true, schema: { type: string, format: date-time } }]
       responses: { '200': { description: Privacy-safe merged busy intervals, content: { application/json: { schema: { $ref: '#/components/schemas/Availability' } } } }, '400': { description: Invalid range }, '401': { description: Missing identity }, '404': { description: Resource unavailable to subject } }
   /api/operations/me/resource-reservations:
     get:
@@ -669,7 +667,6 @@ paths:
       summary: List the authenticated member's reservations
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
-      parameters: [{ $ref: '#/components/parameters/Scopes' }]
       responses: { '200': { description: Own reservations, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/ResourceReservation' } } } } } }
     post:
       tags: [Operations]
@@ -677,7 +674,7 @@ paths:
       summary: Request one Resource for a half-open interval
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
-      parameters: [{ $ref: '#/components/parameters/Scopes' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceReservationInput' } } } }
       responses: { '201': { description: Requested reservation, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceReservation' } } } }, '400': { description: Invalid request }, '403': { description: "Qualification, membership, or DSR restriction denies processing" }, '409': { description: Idempotency conflict } }
   /api/operations/me/resource-reservations/{reservationId}:
@@ -687,7 +684,7 @@ paths:
       summary: Get one reservation owned by the authenticated member
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
-      parameters: [{ name: reservationId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/Scopes' }]
+      parameters: [{ name: reservationId, in: path, required: true, schema: { type: string, format: uuid } }]
       responses: { '200': { description: Own reservation, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceReservation' } } } }, '404': { description: Not found } }
   /api/operations/me/resource-reservations/{reservationId}/cancel:
     post:
@@ -696,7 +693,7 @@ paths:
       summary: Cancel an owned requested or approved reservation
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
-      parameters: [{ name: reservationId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/Scopes' }, { $ref: '#/components/parameters/IfMatch' }]
+      parameters: [{ name: reservationId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/IfMatch' }]
       responses: { '200': { description: Cancelled reservation, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceReservation' } } } }, '400': { description: Invalid terminal transition }, '404': { description: Not found }, '412': { description: Version mismatch } }
   /api/admin/operations/resources/{resourceId}/reservation-settings:
     get:
@@ -706,7 +703,7 @@ paths:
       x-hhc-visibility: admin
       x-hhc-required-permission: operations:resources:read
       security: [{ gatewayPrincipal: [] }]
-      parameters: [{ name: resourceId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/Scopes' }]
+      parameters: [{ name: resourceId, in: path, required: true, schema: { type: string, format: uuid } }]
       responses: { '200': { description: Reservation settings, content: { application/json: { schema: { $ref: '#/components/schemas/ReservationSettings' } } } }, '404': { description: Not found or unauthorized scope } }
     put:
       tags: [Operations]
@@ -715,7 +712,7 @@ paths:
       x-hhc-visibility: admin
       x-hhc-required-permission: operations:resources:write
       security: [{ gatewayPrincipal: [] }]
-      parameters: [{ name: resourceId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/Scopes' }, { $ref: '#/components/parameters/IfMatch' }]
+      parameters: [{ name: resourceId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/IfMatch' }]
       requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: false, required: [enabled], properties: { enabled: { type: boolean } } } } } }
       responses: { '200': { description: Reservation settings, content: { application/json: { schema: { $ref: '#/components/schemas/ReservationSettings' } } } }, '400': { description: Invalid or same-state update }, '404': { description: Not found or unauthorized scope }, '412': { description: Version mismatch } }
   /api/admin/operations/resource-reservations:
@@ -726,7 +723,7 @@ paths:
       x-hhc-visibility: admin
       x-hhc-required-permission: operations:reservations:read
       security: [{ gatewayPrincipal: [] }]
-      parameters: [{ name: resourceId, in: query, schema: { type: string, format: uuid } }, { name: status, in: query, schema: { $ref: '#/components/schemas/ReservationStatus' } }, { $ref: '#/components/parameters/Scopes' }]
+      parameters: [{ name: resourceId, in: query, schema: { type: string, format: uuid } }, { name: status, in: query, schema: { $ref: '#/components/schemas/ReservationStatus' } }]
       responses: { '200': { description: Scope-filtered reservations, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/ResourceReservation' } } } } } }
   /api/admin/operations/resource-reservations/{reservationId}:
     get:
@@ -736,7 +733,7 @@ paths:
       x-hhc-visibility: admin
       x-hhc-required-permission: operations:reservations:read
       security: [{ gatewayPrincipal: [] }]
-      parameters: [{ name: reservationId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/Scopes' }]
+      parameters: [{ name: reservationId, in: path, required: true, schema: { type: string, format: uuid } }]
       responses: { '200': { description: Reservation, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceReservation' } } } }, '404': { description: Not found or unauthorized scope } }
   /api/admin/operations/resource-reservations/{reservationId}/approve:
     post:
@@ -746,7 +743,7 @@ paths:
       x-hhc-visibility: admin
       x-hhc-required-permission: operations:reservations:approve
       security: [{ gatewayPrincipal: [] }]
-      parameters: [{ name: reservationId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/Scopes' }, { $ref: '#/components/parameters/IfMatch' }]
+      parameters: [{ name: reservationId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/IfMatch' }]
       responses: { '200': { description: Reservation, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceReservation' } } } }, '400': { description: Invalid terminal transition }, '404': { description: Not found or unauthorized scope }, '409': { description: resource_time_conflict }, '412': { description: version_mismatch } }
   /api/admin/operations/resource-reservations/{reservationId}/reject:
     post:
@@ -756,7 +753,7 @@ paths:
       x-hhc-visibility: admin
       x-hhc-required-permission: operations:reservations:approve
       security: [{ gatewayPrincipal: [] }]
-      parameters: [{ name: reservationId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/Scopes' }, { $ref: '#/components/parameters/IfMatch' }]
+      parameters: [{ name: reservationId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/IfMatch' }]
       responses: { '200': { description: Reservation, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceReservation' } } } }, '400': { description: Invalid terminal transition }, '404': { description: Not found or unauthorized scope }, '409': { description: resource_time_conflict }, '412': { description: version_mismatch } }
   /api/admin/operations/resource-reservations/{reservationId}/cancel:
     post:
@@ -766,7 +763,7 @@ paths:
       x-hhc-visibility: admin
       x-hhc-required-permission: operations:reservations:approve
       security: [{ gatewayPrincipal: [] }]
-      parameters: [{ name: reservationId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/Scopes' }, { $ref: '#/components/parameters/IfMatch' }]
+      parameters: [{ name: reservationId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/IfMatch' }]
       responses: { '200': { description: Reservation, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceReservation' } } } }, '400': { description: Invalid terminal transition }, '404': { description: Not found or unauthorized scope }, '409': { description: resource_time_conflict }, '412': { description: version_mismatch } }
   /api/admin/operations/resource-maintenance-blocks:
     get:
@@ -776,7 +773,7 @@ paths:
       x-hhc-visibility: admin
       x-hhc-required-permission: operations:resources:read
       security: [{ gatewayPrincipal: [] }]
-      parameters: [{ name: resourceId, in: query, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/Scopes' }]
+      parameters: [{ name: resourceId, in: query, schema: { type: string, format: uuid } }]
       responses: { '200': { description: Scope-filtered maintenance blocks, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/ResourceMaintenanceBlock' } } } } } }
     post:
       tags: [Operations]
@@ -785,7 +782,7 @@ paths:
       x-hhc-visibility: admin
       x-hhc-required-permission: operations:resources:write
       security: [{ gatewayPrincipal: [] }]
-      parameters: [{ $ref: '#/components/parameters/Scopes' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceMaintenanceInput' } } } }
       responses: { '201': { description: Maintenance block, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceMaintenanceBlock' } } } }, '409': { description: resource_time_conflict } }
   /api/admin/operations/resource-maintenance-blocks/{blockId}:
@@ -796,7 +793,7 @@ paths:
       x-hhc-visibility: admin
       x-hhc-required-permission: operations:resources:read
       security: [{ gatewayPrincipal: [] }]
-      parameters: [{ name: blockId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/Scopes' }]
+      parameters: [{ name: blockId, in: path, required: true, schema: { type: string, format: uuid } }]
       responses: { '200': { description: Maintenance block, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceMaintenanceBlock' } } } }, '404': { description: Not found or unauthorized scope } }
     put:
       tags: [Operations]
@@ -805,7 +802,7 @@ paths:
       x-hhc-visibility: admin
       x-hhc-required-permission: operations:resources:write
       security: [{ gatewayPrincipal: [] }]
-      parameters: [{ name: blockId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/Scopes' }, { $ref: '#/components/parameters/IfMatch' }]
+      parameters: [{ name: blockId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/IfMatch' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceMaintenanceInput' } } } }
       responses: { '200': { description: Maintenance block, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceMaintenanceBlock' } } } }, '409': { description: resource_time_conflict }, '412': { description: version_mismatch } }
   /api/admin/operations/resource-maintenance-blocks/{blockId}/cancel:
@@ -816,7 +813,7 @@ paths:
       x-hhc-visibility: admin
       x-hhc-required-permission: operations:resources:write
       security: [{ gatewayPrincipal: [] }]
-      parameters: [{ name: blockId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/Scopes' }, { $ref: '#/components/parameters/IfMatch' }]
+      parameters: [{ name: blockId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/IfMatch' }]
       responses: { '200': { description: Cancelled maintenance block, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceMaintenanceBlock' } } } }, '400': { description: Immutable terminal state }, '412': { description: version_mismatch } }
   /priv/operations/dsr/exports:
     post:
@@ -894,7 +891,6 @@ components:
     Limit: { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
     IdempotencyKey: { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 1, maxLength: 200 } }
     IfMatch: { name: If-Match, in: header, required: true, schema: { type: string, pattern: '^"[1-9][0-9]*"$' } }
-    Scopes: { name: X-HHC-Scopes, in: header, required: true, schema: { type: string }, description: Gateway-verified opaque space-delimited Account scopes; an empty value is authenticated with no staff permissions. }
   schemas:
     OperationStatus:
       type: string
@@ -927,6 +923,9 @@ components:
         parentId: { type: string, format: uuid }
         status: { $ref: '#/components/schemas/OperationStatus' }
         version: { type: integer, minimum: 1 }
+    OrgUnitList:
+      type: array
+      items: { $ref: '#/components/schemas/OrgUnit' }
     ResourceInput:
       type: object
       additionalProperties: false
@@ -956,6 +955,9 @@ components:
         reservationEnabled: { type: boolean }
         status: { $ref: '#/components/schemas/OperationStatus' }
         version: { type: integer, minimum: 1 }
+    ResourceList:
+      type: array
+      items: { $ref: '#/components/schemas/Resource' }
     Schedule:
       type: object
       additionalProperties: false
@@ -995,7 +997,34 @@ components:
         visibility: { $ref: '#/components/schemas/Visibility' }
         status: { $ref: '#/components/schemas/OperationStatus' }
         version: { type: integer, minimum: 1 }
-        nextOccurrence: { type: object }
+        nextOccurrence: { $ref: '#/components/schemas/Occurrence' }
+    Occurrence:
+      type: object
+      required: [meetingName, occurrenceDate, timezone, occurrenceId, meetingId, meetingKey, churchUnitId, venueResourceId, startsAt, endsAt, status, version]
+      properties:
+        meetingName: { type: string }
+        occurrenceDate: { type: string, format: date }
+        timezone: { type: string }
+        occurrenceId: { type: string }
+        meetingId: { type: string, format: uuid }
+        meetingKey: { type: string }
+        churchUnitId: { type: string, format: uuid }
+        venueResourceId: { type: string, format: uuid }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        status: { type: string, enum: [scheduled, cancelled] }
+        version: { type: integer, minimum: 1 }
+    MeetingList:
+      type: array
+      items: { $ref: '#/components/schemas/Meeting' }
+    MeetingDetail:
+      allOf:
+        - { $ref: '#/components/schemas/Meeting' }
+        - type: object
+          required: [overrides, collectionIds]
+          properties:
+            overrides: { type: array, items: { $ref: '#/components/schemas/OccurrenceOverride' } }
+            collectionIds: { type: array, items: { type: string } }
     OccurrenceOverrideInput:
       type: object
       additionalProperties: false

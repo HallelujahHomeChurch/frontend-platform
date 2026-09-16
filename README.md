@@ -6,6 +6,7 @@ Shared, versioned frontend packages for HHC web applications:
 - `@hallelujahhomechurch/preferences`
 - `@hallelujahhomechurch/account-client`
 - `@hallelujahhomechurch/hhc-web-client`
+- `@hallelujahhomechurch/operations-client`
 
 Packages are published to GitHub Packages from version tags.
 
