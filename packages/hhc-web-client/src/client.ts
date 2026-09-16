@@ -13,9 +13,6 @@ export type BulletinLocale = BulletinEdition
 export type ContentTranslationTargetLocale = components['schemas']['ContentTranslationTargetLocale']
 export type BulletinTranslationTargetEdition = components['schemas']['BulletinTranslationTargetEdition']
 export type BulletinStatus = components['schemas']['BulletinStatus']
-export type BulletinAccessStatus = components['schemas']['BulletinAccessStatus']
-export type PublicBulletinAccess = components['schemas']['PublicBulletinAccess']
-export type MemberBulletinAccess = components['schemas']['MemberBulletinAccess']
 export type BulletinWatermarkLookup = components['schemas']['BulletinWatermarkLookupResult']
 export type BulletinWatermarkVersion = components['schemas']['BulletinWatermarkVersion']
 export type BulletinWatermarkInvestigationInput = components['schemas']['BulletinWatermarkInvestigationInput']
@@ -26,9 +23,7 @@ export type BulletinWatermarkInvestigationPage = {
   items: BulletinWatermarkInvestigationRow[]
   nextCursor?: string
 }
-export type BulletinAccess = components['schemas']['BulletinAccess']
-export type PublicBulletin = components['schemas']['PublicBulletin']
-export type PublicBulletinIssue = components['schemas']['PublicBulletinIssue']
+export type ProtectedBulletin = components['schemas']['ProtectedBulletin']
 export type BulletinIssue = components['schemas']['BulletinIssue']
 export type BulletinNotificationStatus = BulletinIssue['notificationStatus']
 export type BulletinVersion = components['schemas']['BulletinVersion']
@@ -164,29 +159,19 @@ export function createHhcWebClient(options: {
   }
 
   return {
-    async getBulletinAccess(signal?: AbortSignal) {
-      return (await unwrap(client.GET('/bulletin-access', { signal, cache: 'no-store' }))).data
-    },
-    async getMemberBulletinAccess(signal?: AbortSignal) {
-      return (await unwrap(client.GET('/member/bulletin-access', { signal, cache: 'no-store' }))).data
-    },
-    async listMemberBulletins(params: { page?: number; pageSize?: number; signal?: AbortSignal } = {}) {
+    async listProtectedBulletins(params: { locale: BulletinEdition; series?: string; issueNumber?: number; page?: number; pageSize?: number; signal?: AbortSignal }) {
       const envelope = await unwrap(client.GET('/member/bulletins', {
-        params: { query: { page: params.page, pageSize: params.pageSize } }, signal: params.signal,
+        params: { query: { locale: params.locale, series: params.series, issueNumber: params.issueNumber, page: params.page, pageSize: params.pageSize } }, signal: params.signal, cache: 'no-store',
       }))
       return { data: envelope.data, meta: envelope.meta }
     },
-    async getLatestMemberBulletin(locale: BulletinEdition, signal?: AbortSignal) {
-      return (await unwrap(client.GET('/member/bulletins/latest', { params: { query: { locale } }, signal }))).data
+    async getLatestProtectedBulletin(locale: BulletinEdition, series = 'general', signal?: AbortSignal) {
+      return (await unwrap(client.GET('/member/bulletins/latest', { params: { query: { locale, series } }, signal, cache: 'no-store' }))).data
     },
-    async getMemberBulletinByNumber(issueNumber: number, locale: BulletinEdition, signal?: AbortSignal) {
-      return (await unwrap(client.GET('/member/bulletins/by-number/{issueNumber}', { params: { path: { issueNumber }, query: { locale } }, signal }))).data
-    },
-    async getMemberBulletinByDate(issueDate: string, locale: BulletinEdition, signal?: AbortSignal) {
-      return (await unwrap(client.GET('/member/bulletins/{issueDate}', { params: { path: { issueDate }, query: { locale } }, signal }))).data
-    },
-    async getAdminBulletinAccess(signal?: AbortSignal) {
-      return (await unwrap(client.GET('/admin/bulletin-access', { signal }))).data
+    async getProtectedBulletinVersion(issueID: string, locale: BulletinEdition, series = 'general', signal?: AbortSignal) {
+      return (await unwrap(client.GET('/member/bulletins/{issueID}/versions/{locale}', {
+        params: {path: {issueID, locale}, query: {series}}, signal, cache: 'no-store',
+      }))).data
     },
     async listBulletinWatermarkVersions(issueId: string, signal?: AbortSignal) {
       return (await unwrap(client.GET('/admin/bulletins/{issueId}/watermark-versions', {
@@ -220,22 +205,6 @@ export function createHhcWebClient(options: {
     },
     async lookupBulletinWatermark(code: string, signal?: AbortSignal) {
       return (await unwrap(client.POST('/admin/bulletins/watermark-lookups', {body: {code}, signal, cache: 'no-store'}))).data
-    },
-    async activateBulletinMembership(version: number, idempotencyKey: string, signal?: AbortSignal) {
-      return (await unwrap(client.POST('/admin/bulletin-access/membership', {
-        params: {header: {'If-Match': `"${version}"`, 'Idempotency-Key': idempotencyKey}}, signal, cache: 'no-store',
-      }))).data
-    },
-    async setBulletinAccess(enabled: boolean, version: number, idempotencyKey: string, signal?: AbortSignal) {
-      return (await unwrap(client.PUT('/admin/bulletin-access', {
-        params: { header: { 'If-Match': `"${version}"`, 'Idempotency-Key': idempotencyKey } },
-        body: { enabled }, signal,
-      }))).data
-    },
-    async retryBulletinAccess(version: number, idempotencyKey: string, signal?: AbortSignal) {
-      return (await unwrap(client.POST('/admin/bulletin-access/retry', {
-        params: { header: { 'If-Match': `"${version}"`, 'Idempotency-Key': idempotencyKey } }, signal,
-      }))).data
     },
     async listPublicMeetings(signal?: AbortSignal) {
       return (await unwrap(client.GET('/meetings', { signal }))).data

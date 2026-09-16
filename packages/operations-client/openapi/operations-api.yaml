@@ -13,6 +13,219 @@ servers:
   - url: /
     description: Direct service probe base.
 paths:
+  /api/meetings:
+    get:
+      tags: [Operations]
+      operationId: listPublicMeetings
+      summary: List active public meetings
+      x-hhc-visibility: public
+      security: []
+      responses: { '200': { description: Public meetings }, '400': { description: Protected identity header rejected } }
+  /api/meetings/{meetingKey}:
+    get:
+      tags: [Operations]
+      operationId: getPublicMeeting
+      summary: Get an active public meeting
+      x-hhc-visibility: public
+      security: []
+      parameters: [{ name: meetingKey, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { description: Public meeting }, '404': { description: Meeting not found } }
+  /api/meeting-occurrences:
+    get:
+      tags: [Operations]
+      operationId: listPublicMeetingOccurrences
+      summary: List public meeting occurrences within a bounded window
+      x-hhc-visibility: public
+      security: []
+      parameters: [{ name: from, in: query, schema: { type: string, format: date-time } }, { name: to, in: query, schema: { type: string, format: date-time } }]
+      responses: { '200': { description: Public meeting occurrences }, '400': { description: Invalid window } }
+  /api/meeting-sync-windows:
+    get:
+      tags: [Operations]
+      operationId: listAuthenticatedMeetingSyncWindows
+      summary: List media sync windows for an authenticated account
+      x-hhc-visibility: authenticated
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ name: from, in: query, schema: { type: string, format: date-time } }, { name: to, in: query, schema: { type: string, format: date-time } }]
+      responses: { '200': { description: Meeting sync windows }, '401': { description: Authentication required } }
+  /api/admin/operations/church-units:
+    get:
+      tags: [Operations]
+      operationId: listAdminOrgUnits
+      summary: List organization units
+      x-hhc-visibility: admin
+      x-hhc-required-permission: memberships:read
+      security: [{ gatewayPrincipal: [] }]
+      responses: { '200': { description: Organization units }, '403': { description: Permission denied } }
+    post:
+      tags: [Operations]
+      operationId: createAdminOrgUnit
+      summary: Create an organization unit
+      x-hhc-visibility: admin
+      x-hhc-required-permission: memberships:manage
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/OrgUnitInput' } } } }
+      responses: { '201': { description: Organization unit created }, '403': { description: Permission denied } }
+  /api/admin/operations/church-units/{id}:
+    get:
+      tags: [Operations]
+      operationId: getAdminOrgUnit
+      summary: Get an organization unit
+      x-hhc-visibility: admin
+      x-hhc-required-permission: memberships:read
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ID' }]
+      responses: { '200': { description: Organization unit }, '403': { description: Permission denied }, '404': { description: Not found } }
+    put:
+      tags: [Operations]
+      operationId: updateAdminOrgUnit
+      summary: Update an organization unit
+      x-hhc-visibility: admin
+      x-hhc-required-permission: memberships:manage
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/IfMatch' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/OrgUnitInput' } } } }
+      responses: { '200': { description: Organization unit }, '403': { description: Permission denied }, '412': { description: Version mismatch } }
+  /api/admin/operations/church-units/{id}/{action}:
+    post:
+      tags: [Operations]
+      operationId: transitionAdminOrgUnitStatus
+      summary: Change an organization unit status
+      x-hhc-visibility: admin
+      x-hhc-required-permission: memberships:manage
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/StatusAction' }, { $ref: '#/components/parameters/IfMatch' }]
+      responses: { '200': { description: Organization unit }, '403': { description: Permission denied }, '412': { description: Version mismatch } }
+  /api/admin/operations/resources:
+    get:
+      tags: [Operations]
+      operationId: listAdminResources
+      summary: List resources in the caller effective scope
+      x-hhc-visibility: admin
+      x-hhc-required-permission: operations:resources:read
+      security: [{ gatewayPrincipal: [] }]
+      responses: { '200': { description: Scoped resources }, '503': { description: Authorization unavailable } }
+    post:
+      tags: [Operations]
+      operationId: createAdminResource
+      summary: Create a resource in an authorized organization unit
+      x-hhc-visibility: admin
+      x-hhc-required-permission: operations:resources:write
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceInput' } } } }
+      responses: { '201': { description: Resource created }, '403': { description: Scope denied }, '503': { description: Authorization unavailable } }
+  /api/admin/operations/resources/{id}:
+    get:
+      tags: [Operations]
+      operationId: getAdminResource
+      summary: Get a resource in the caller effective scope
+      x-hhc-visibility: admin
+      x-hhc-required-permission: operations:resources:read
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ID' }]
+      responses: { '200': { description: Resource }, '403': { description: Scope denied }, '404': { description: Not found }, '503': { description: Authorization unavailable } }
+    put:
+      tags: [Operations]
+      operationId: updateAdminResource
+      summary: Update a resource in authorized organization units
+      x-hhc-visibility: admin
+      x-hhc-required-permission: operations:resources:write
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/IfMatch' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceInput' } } } }
+      responses: { '200': { description: Resource }, '403': { description: Scope denied }, '412': { description: Version mismatch }, '503': { description: Authorization unavailable } }
+  /api/admin/operations/resources/{id}/{action}:
+    post:
+      tags: [Operations]
+      operationId: transitionAdminResourceStatus
+      summary: Change a resource status
+      x-hhc-visibility: admin
+      x-hhc-required-permission: operations:resources:write
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/StatusAction' }, { $ref: '#/components/parameters/IfMatch' }]
+      responses: { '200': { description: Resource }, '403': { description: Scope denied }, '412': { description: Version mismatch }, '503': { description: Authorization unavailable } }
+  /api/admin/operations/meetings:
+    get:
+      tags: [Operations]
+      operationId: listAdminMeetings
+      summary: List meetings in the caller effective scope
+      x-hhc-visibility: admin
+      x-hhc-required-permission: operations:meetings:read
+      security: [{ gatewayPrincipal: [] }]
+      responses: { '200': { description: Scoped meetings }, '503': { description: Authorization unavailable } }
+    post:
+      tags: [Operations]
+      operationId: createAdminMeeting
+      summary: Create a meeting in an authorized organization unit
+      x-hhc-visibility: admin
+      x-hhc-required-permission: operations:meetings:write
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/MeetingInput' } } } }
+      responses: { '201': { description: Meeting created }, '403': { description: Scope denied }, '503': { description: Authorization unavailable } }
+  /api/admin/operations/meetings/{id}:
+    get:
+      tags: [Operations]
+      operationId: getAdminMeeting
+      summary: Get a meeting in the caller effective scope
+      x-hhc-visibility: admin
+      x-hhc-required-permission: operations:meetings:read
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ID' }]
+      responses: { '200': { description: Meeting detail }, '403': { description: Scope denied }, '404': { description: Not found }, '503': { description: Authorization unavailable } }
+    put:
+      tags: [Operations]
+      operationId: updateAdminMeeting
+      summary: Update a meeting in authorized organization units
+      x-hhc-visibility: admin
+      x-hhc-required-permission: operations:meetings:write
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/IfMatch' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/MeetingInput' } } } }
+      responses: { '200': { description: Meeting }, '403': { description: Scope denied }, '412': { description: Version mismatch }, '503': { description: Authorization unavailable } }
+  /api/admin/operations/meetings/{id}/{action}:
+    post:
+      tags: [Operations]
+      operationId: transitionAdminMeetingStatus
+      summary: Change a meeting status
+      x-hhc-visibility: admin
+      x-hhc-required-permission: operations:meetings:write
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/StatusAction' }, { $ref: '#/components/parameters/IfMatch' }]
+      responses: { '200': { description: Meeting }, '403': { description: Scope denied }, '412': { description: Version mismatch }, '503': { description: Authorization unavailable } }
+  /api/admin/operations/meetings/{id}/overrides/{date}:
+    put:
+      tags: [Operations]
+      operationId: putAdminMeetingOverride
+      summary: Put a meeting occurrence override
+      x-hhc-visibility: admin
+      x-hhc-required-permission: operations:meetings:write
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/OccurrenceDate' }, { $ref: '#/components/parameters/IfMatch' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/OccurrenceOverrideInput' } } } }
+      responses: { '200': { description: Meeting override }, '403': { description: Scope denied }, '412': { description: Version mismatch }, '503': { description: Authorization unavailable } }
+    delete:
+      tags: [Operations]
+      operationId: deleteAdminMeetingOverride
+      summary: Delete a meeting occurrence override
+      x-hhc-visibility: admin
+      x-hhc-required-permission: operations:meetings:write
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/OccurrenceDate' }, { $ref: '#/components/parameters/IfMatch' }]
+      responses: { '200': { description: Meeting }, '403': { description: Scope denied }, '412': { description: Version mismatch }, '503': { description: Authorization unavailable } }
+  /api/admin/operations/meetings/{id}/collections:
+    put:
+      tags: [Operations]
+      operationId: replaceAdminMeetingCollections
+      summary: Replace a meeting collection binding set
+      x-hhc-visibility: admin
+      x-hhc-required-permission: operations:meetings:write
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/IfMatch' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CollectionBindingInput' } } } }
+      responses: { '200': { description: Meeting }, '403': { description: Scope denied }, '412': { description: Version mismatch }, '503': { description: Authorization unavailable } }
   /priv/operations/org-units:
     get:
       tags: [Operations]
@@ -401,7 +614,7 @@ paths:
       operationId: checkEntitlements
       summary: Resolve exact member entitlement decisions for an allowlisted service
       x-hhc-visibility: private
-      x-hhc-callers: [hhc-web-api]
+      x-hhc-callers: [hhc-web-api, engagement-api]
       security: [{ daprCallerAppID: [] }]
       requestBody:
         required: true
