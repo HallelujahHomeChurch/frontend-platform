@@ -1,28 +1,49 @@
 import {describe, expect, it} from 'vitest';
-import {adminCapabilities, canAccessAdmin, hasAdminCapability} from './admin-access';
-import {hasPermission} from './index';
+import {
+  adminDestinations,
+  authorizedAdminDestinations,
+  canAccessAdmin,
+  findAdminDestination,
+  firstAuthorizedAdminDestination,
+  permissionCompatibilityMap,
+  staffPermissionCatalog
+} from './admin-access';
 
-describe('Admin access policy', () => {
-  it.each(['dsr:read', 'dsr:manage', 'cms:read', 'users:manage', '*'])('admits an accessible module: %s', permission => {
-    expect(canAccessAdmin([permission])).toBe(true);
+describe('Admin destination projection', () => {
+  it('keeps the compatibility map explicitly empty', () => {
+    expect(permissionCompatibilityMap).toEqual({});
   });
-  it.each([[], ['presenter:cloud:manage'], ['presenter:cloud:use'], ['cms:write']])('denies grants with no readable Admin module: %j', (...permissions) => {
-    expect(canAccessAdmin(permissions)).toBe(false);
+
+  it('exposes only bulletin navigation to a bulletin viewer', () => {
+    expect(authorizedAdminDestinations(['cms:bulletins:read']).map(({id}) => id))
+      .toEqual(['bulletins']);
+    expect(canAccessAdmin(['cms:bulletins:read'])).toBe(true);
   });
-  it('derives entry from the same capabilities used for pages', () => {
-    for (const capability of adminCapabilities) {
-      expect(hasAdminCapability([capability], capability)).toBe(true);
-      expect(canAccessAdmin([capability])).toBe(true);
+
+  it('does not accept removed broad or legacy permissions', () => {
+    for (const permission of [
+      'cms:read',
+      'cms:write',
+      'cms:publish',
+      'media-sync:manage',
+      'bulletin:read',
+      'bulletin:trace',
+      'line:main:function:download_weekly_paper:execute'
+    ]) {
+      expect(authorizedAdminDestinations([permission])).toEqual([]);
     }
   });
-  it('keeps legacy aliases outside the generic predicate', () => {
-    expect(hasPermission(['cms:read'], 'campaigns:read')).toBe(false);
-    expect(hasAdminCapability(['cms:read'], 'campaigns:read')).toBe(true);
-    expect(hasAdminCapability(['dsr:manage'], 'dsr:read')).toBe(true);
-    expect(hasAdminCapability(['media-sync:manage'], 'presenter:line:manage')).toBe(true);
-    expect(canAccessAdmin(['presenter:line:manage'])).toBe(true);
-    expect(hasPermission(['*'], '')).toBe(false);
-    expect(hasPermission(['cms:*'], 'cms:read')).toBe(false);
-    expect(hasAdminCapability(['presenter:cloud:use'], 'cms:read')).toBe(false);
+
+  it('uses exact canonical read permissions and star', () => {
+    expect(firstAuthorizedAdminDestination(['cms:news:read'])?.id).toBe('news');
+    expect(authorizedAdminDestinations(['*'])).toEqual(adminDestinations);
+    expect(findAdminDestination('unknown')).toBeUndefined();
+    expect(canAccessAdmin([])).toBe(false);
+  });
+
+  it('contains the frozen permission catalog without duplicate codes', () => {
+    expect(new Set(staffPermissionCatalog).size).toBe(staffPermissionCatalog.length);
+    expect(staffPermissionCatalog).toContain('cms:pages:read');
+    expect(staffPermissionCatalog).not.toContain('cms:read');
   });
 });

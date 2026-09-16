@@ -1,7 +1,7 @@
 {
   "name": "@hallelujahhomechurch/account-client",
-  "version": "0.8.4",
-  "license": "UNLICENSED",
+  "version": "1.0.0",
+  "license": "MIT",
   "type": "module",
   "files": [
     "dist"
@@ -10,6 +10,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./admin-access": {
+      "types": "./dist/admin-access.d.ts",
+      "import": "./dist/admin-access.js"
     }
   },
   "repository": {

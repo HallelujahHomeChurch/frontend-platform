@@ -1,0 +1,1242 @@
+openapi: 3.1.0
+info:
+  title: HHC Operations API
+  version: 0.1.0
+  description: Church operations service for the organization kernel, membership, qualification, entitlements, and scoped responsibilities.
+tags:
+  - name: Operations
+    description: Church operations records and service probes.
+x-hhc-service: operations-api
+x-hhc-owner: HHC Platform
+x-hhc-repository: HallelujahHomeChurch/operations-api
+servers:
+  - url: /
+    description: Direct service probe base.
+paths:
+  /priv/operations/org-units:
+    get:
+      tags: [Operations]
+      operationId: listOrgUnits
+      summary: List organization units for an allowlisted service caller
+      x-hhc-visibility: private
+      x-hhc-callers: [hhc-web-api]
+      security: [{ daprCallerAppID: [] }]
+      responses:
+        '200': { description: Organization units }
+        '401': { description: Missing caller identity }
+        '403': { description: Caller is not allowlisted }
+    post:
+      tags: [Operations]
+      operationId: createOrgUnit
+      summary: Create an organization unit
+      x-hhc-visibility: private
+      x-hhc-callers: [hhc-web-api]
+      security: [{ daprCallerAppID: [], gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ActorUserID' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/OrgUnitInput' } } } }
+      responses: { '200': { description: Organization unit, content: { application/json: { schema: { $ref: '#/components/schemas/OrgUnit' } } } }, '400': { description: Invalid mutation }, '409': { description: Conflict } }
+  /priv/operations/org-units/{id}:
+    get:
+      tags: [Operations]
+      operationId: getOrgUnit
+      summary: Get an organization unit for an allowlisted service caller
+      x-hhc-visibility: private
+      x-hhc-callers: [hhc-web-api]
+      security: [{ daprCallerAppID: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200': { description: Organization unit }
+        '404': { description: Organization unit not found }
+    put:
+      tags: [Operations]
+      operationId: updateOrgUnit
+      summary: Update an organization unit
+      x-hhc-visibility: private
+      x-hhc-callers: [hhc-web-api]
+      security: [{ daprCallerAppID: [], gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/ActorUserID' }, { $ref: '#/components/parameters/IfMatch' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/OrgUnitInput' } } } }
+      responses: { '200': { description: Organization unit, content: { application/json: { schema: { $ref: '#/components/schemas/OrgUnit' } } } }, '400': { description: Invalid mutation }, '412': { description: Version mismatch } }
+  /priv/operations/org-units/{id}/{action}:
+    post:
+      tags: [Operations]
+      operationId: transitionOrgUnitStatus
+      summary: Change an organization unit status
+      x-hhc-visibility: private
+      x-hhc-callers: [hhc-web-api]
+      security: [{ daprCallerAppID: [], gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/StatusAction' }, { $ref: '#/components/parameters/ActorUserID' }, { $ref: '#/components/parameters/IfMatch' }]
+      responses: { '200': { description: Organization unit, content: { application/json: { schema: { $ref: '#/components/schemas/OrgUnit' } } } }, '400': { description: Invalid or same-state transition }, '412': { description: Version mismatch } }
+  /priv/operations/meetings:
+    get:
+      tags: [Operations]
+      operationId: listMeetings
+      summary: List operational meetings for an allowlisted service caller
+      x-hhc-visibility: private
+      x-hhc-callers: [hhc-web-api]
+      security: [{ daprCallerAppID: [] }]
+      responses:
+        '200': { description: Meetings }
+    post:
+      tags: [Operations]
+      operationId: createMeeting
+      summary: Create a meeting kernel record
+      x-hhc-visibility: private
+      x-hhc-callers: [hhc-web-api]
+      security: [{ daprCallerAppID: [], gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ActorUserID' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/MeetingInput' } } } }
+      responses: { '200': { description: Meeting, content: { application/json: { schema: { $ref: '#/components/schemas/Meeting' } } } }, '400': { description: Invalid mutation }, '409': { description: Conflict } }
+  /priv/operations/resources:
+    get:
+      tags: [Operations]
+      operationId: listResources
+      summary: List resources for an allowlisted service caller
+      x-hhc-visibility: private
+      x-hhc-callers: [hhc-web-api]
+      security: [{ daprCallerAppID: [] }]
+      responses: { '200': { description: Resources } }
+    post:
+      tags: [Operations]
+      operationId: createResource
+      summary: Create a resource kernel record
+      x-hhc-visibility: private
+      x-hhc-callers: [hhc-web-api]
+      security: [{ daprCallerAppID: [], gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ActorUserID' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceInput' } } } }
+      responses: { '200': { description: Resource, content: { application/json: { schema: { $ref: '#/components/schemas/Resource' } } } }, '400': { description: Invalid mutation }, '409': { description: Conflict } }
+  /priv/operations/resources/{id}:
+    get:
+      tags: [Operations]
+      operationId: getResource
+      summary: Get a resource
+      x-hhc-visibility: private
+      x-hhc-callers: [hhc-web-api]
+      security: [{ daprCallerAppID: [] }]
+      parameters: [{ $ref: '#/components/parameters/ID' }]
+      responses: { '200': { description: Resource }, '404': { description: Resource not found } }
+    put:
+      tags: [Operations]
+      operationId: updateResource
+      summary: Update a resource
+      x-hhc-visibility: private
+      x-hhc-callers: [hhc-web-api]
+      security: [{ daprCallerAppID: [], gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/ActorUserID' }, { $ref: '#/components/parameters/IfMatch' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceInput' } } } }
+      responses: { '200': { description: Resource, content: { application/json: { schema: { $ref: '#/components/schemas/Resource' } } } }, '400': { description: Invalid mutation }, '412': { description: Version mismatch } }
+  /priv/operations/resources/{id}/{action}:
+    post:
+      tags: [Operations]
+      operationId: transitionResourceStatus
+      summary: Change a resource status
+      x-hhc-visibility: private
+      x-hhc-callers: [hhc-web-api]
+      security: [{ daprCallerAppID: [], gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/StatusAction' }, { $ref: '#/components/parameters/ActorUserID' }, { $ref: '#/components/parameters/IfMatch' }]
+      responses: { '200': { description: Resource, content: { application/json: { schema: { $ref: '#/components/schemas/Resource' } } } }, '400': { description: Invalid or same-state transition }, '412': { description: Version mismatch } }
+  /priv/operations/meetings/{id}:
+    get:
+      tags: [Operations]
+      operationId: getMeeting
+      summary: Get a meeting with overrides and collection bindings
+      x-hhc-visibility: private
+      x-hhc-callers: [hhc-web-api]
+      security: [{ daprCallerAppID: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Meeting detail } }
+    put:
+      tags: [Operations]
+      operationId: updateMeeting
+      summary: Update a meeting
+      x-hhc-visibility: private
+      x-hhc-callers: [hhc-web-api]
+      security: [{ daprCallerAppID: [], gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/ActorUserID' }, { $ref: '#/components/parameters/IfMatch' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/MeetingInput' } } } }
+      responses: { '200': { description: Meeting, content: { application/json: { schema: { $ref: '#/components/schemas/Meeting' } } } }, '400': { description: Invalid mutation }, '412': { description: Version mismatch } }
+  /priv/operations/meetings/{id}/{action}:
+    post:
+      tags: [Operations]
+      operationId: transitionMeetingStatus
+      summary: Change a meeting status
+      x-hhc-visibility: private
+      x-hhc-callers: [hhc-web-api]
+      security: [{ daprCallerAppID: [], gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/StatusAction' }, { $ref: '#/components/parameters/ActorUserID' }, { $ref: '#/components/parameters/IfMatch' }]
+      responses: { '200': { description: Meeting, content: { application/json: { schema: { $ref: '#/components/schemas/Meeting' } } } }, '400': { description: Invalid or same-state transition }, '412': { description: Version mismatch } }
+  /priv/operations/meetings/{id}/overrides/{date}:
+    put:
+      tags: [Operations]
+      operationId: putMeetingOverride
+      summary: Put a meeting occurrence override
+      x-hhc-visibility: private
+      x-hhc-callers: [hhc-web-api]
+      security: [{ daprCallerAppID: [], gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/OccurrenceDate' }, { $ref: '#/components/parameters/ActorUserID' }, { $ref: '#/components/parameters/IfMatch' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/OccurrenceOverrideInput' } } } }
+      responses: { '200': { description: Occurrence override, content: { application/json: { schema: { $ref: '#/components/schemas/OccurrenceOverride' } } } }, '400': { description: Invalid mutation }, '412': { description: Version mismatch } }
+    delete:
+      tags: [Operations]
+      operationId: deleteMeetingOverride
+      summary: Delete a meeting occurrence override
+      x-hhc-visibility: private
+      x-hhc-callers: [hhc-web-api]
+      security: [{ daprCallerAppID: [], gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/OccurrenceDate' }, { $ref: '#/components/parameters/ActorUserID' }, { $ref: '#/components/parameters/IfMatch' }]
+      responses: { '200': { description: Meeting, content: { application/json: { schema: { $ref: '#/components/schemas/Meeting' } } } }, '400': { description: Invalid mutation }, '404': { description: Override not found }, '412': { description: Version mismatch } }
+  /priv/operations/meetings/{id}/collections:
+    put:
+      tags: [Operations]
+      operationId: replaceMeetingCollections
+      summary: Replace meeting collection bindings
+      x-hhc-visibility: private
+      x-hhc-callers: [hhc-web-api]
+      security: [{ daprCallerAppID: [], gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/ActorUserID' }, { $ref: '#/components/parameters/IfMatch' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CollectionBindingInput' } } } }
+      responses: { '200': { description: Meeting, content: { application/json: { schema: { $ref: '#/components/schemas/Meeting' } } } }, '400': { description: Invalid mutation }, '412': { description: Version mismatch } }
+  /priv/operations/occurrences:
+    get:
+      tags: [Operations]
+      operationId: listOccurrences
+      summary: Resolve meeting occurrences in a bounded range
+      x-hhc-visibility: private
+      x-hhc-callers: [hhc-web-api]
+      security: [{ daprCallerAppID: [] }]
+      responses: { '200': { description: Occurrences } }
+  /priv/operations/sync-windows:
+    get:
+      tags: [Operations]
+      operationId: listSyncWindows
+      summary: List collection-bound media sync windows
+      x-hhc-visibility: private
+      x-hhc-callers: [hhc-web-api]
+      security: [{ daprCallerAppID: [] }]
+      responses: { '200': { description: Sync windows } }
+  /api/admin/operations/memberships:
+    get:
+      tags: [Operations]
+      operationId: listMemberships
+      summary: List organization memberships
+      x-hhc-visibility: admin
+      x-hhc-required-permission: memberships:read
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/UserID' }, { $ref: '#/components/parameters/OrgUnitID' }, { $ref: '#/components/parameters/Status' }, { $ref: '#/components/parameters/EffectiveAt' }, { $ref: '#/components/parameters/Limit' }]
+      responses:
+        '200':
+          description: Memberships
+          content: { application/json: { schema: { $ref: '#/components/schemas/MembershipList' } } }
+        '401': { description: Authentication required }
+        '403': { description: Permission required }
+    post:
+      tags: [Operations]
+      operationId: createMembership
+      summary: Approve an organization membership
+      x-hhc-visibility: admin
+      x-hhc-required-permission: memberships:manage
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MembershipInput' }
+      responses:
+        '200':
+          description: Membership
+          content: { application/json: { schema: { $ref: '#/components/schemas/Membership' } } }
+        '409': { description: Conflict }
+  /api/admin/operations/memberships/{id}/{action}:
+    post:
+      tags: [Operations]
+      operationId: transitionMembership
+      summary: Transition a membership lifecycle
+      x-hhc-visibility: admin
+      x-hhc-required-permission: memberships:manage
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ID' }, { name: action, in: path, required: true, schema: { type: string, enum: [approve, suspend, depart, reactivate] } }, { $ref: '#/components/parameters/IfMatch' }]
+      responses:
+        '200':
+          description: Membership
+          content: { application/json: { schema: { $ref: '#/components/schemas/Membership' } } }
+        '412': { description: Version mismatch }
+  /api/admin/operations/membership-qualifications:
+    get:
+      tags: [Operations]
+      operationId: listMembershipQualifications
+      summary: List membership qualifications
+      x-hhc-visibility: admin
+      x-hhc-required-permission: memberships:read
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/UserID' }, { $ref: '#/components/parameters/Status' }, { $ref: '#/components/parameters/EffectiveAt' }, { $ref: '#/components/parameters/Limit' }]
+      responses:
+        '200':
+          description: Qualifications
+          content: { application/json: { schema: { $ref: '#/components/schemas/QualificationList' } } }
+    post:
+      tags: [Operations]
+      operationId: createMembershipQualification
+      summary: Create a pending membership qualification
+      x-hhc-visibility: admin
+      x-hhc-required-permission: memberships:manage
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/QualificationInput' }
+      responses:
+        '200':
+          description: Qualification
+          content: { application/json: { schema: { $ref: '#/components/schemas/Qualification' } } }
+  /api/admin/operations/membership-qualifications/{id}/{action}:
+    post:
+      tags: [Operations]
+      operationId: transitionMembershipQualification
+      summary: Transition a qualification lifecycle
+      x-hhc-visibility: admin
+      x-hhc-required-permission: memberships:manage
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ID' }, { name: action, in: path, required: true, schema: { type: string, enum: [approve, suspend, revoke, expire] } }, { $ref: '#/components/parameters/IfMatch' }]
+      responses:
+        '200':
+          description: Qualification
+          content: { application/json: { schema: { $ref: '#/components/schemas/Qualification' } } }
+        '412': { description: Version mismatch }
+  /api/admin/operations/entitlement-assignments:
+    get:
+      tags: [Operations]
+      operationId: listEntitlementAssignments
+      summary: List member entitlement assignments
+      x-hhc-visibility: admin
+      x-hhc-required-permission: memberships:read
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ name: subjectId, in: query, schema: { type: string } }, { name: entitlementCode, in: query, schema: { type: string } }, { $ref: '#/components/parameters/Status' }, { $ref: '#/components/parameters/EffectiveAt' }, { $ref: '#/components/parameters/Limit' }]
+      responses:
+        '200':
+          description: Entitlement assignments
+          content: { application/json: { schema: { $ref: '#/components/schemas/EntitlementList' } } }
+    post:
+      tags: [Operations]
+      operationId: createEntitlementAssignment
+      summary: Grant a compiled member entitlement
+      x-hhc-visibility: admin
+      x-hhc-required-permission: memberships:manage
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EntitlementInput' }
+      responses:
+        '200':
+          description: Entitlement assignment
+          content: { application/json: { schema: { $ref: '#/components/schemas/Entitlement' } } }
+  /api/admin/operations/entitlement-assignments/{id}/revoke:
+    post:
+      tags: [Operations]
+      operationId: revokeEntitlementAssignment
+      summary: Revoke a member entitlement assignment
+      x-hhc-visibility: admin
+      x-hhc-required-permission: memberships:manage
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/IfMatch' }]
+      responses:
+        '200':
+          description: Entitlement assignment
+          content: { application/json: { schema: { $ref: '#/components/schemas/Entitlement' } } }
+        '412': { description: Version mismatch }
+  /api/admin/operations/org-role-assignments:
+    get:
+      tags: [Operations]
+      operationId: listOrgRoleAssignments
+      summary: List scoped organization responsibilities
+      x-hhc-visibility: admin
+      x-hhc-required-permission: memberships:read
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/UserID' }, { $ref: '#/components/parameters/OrgUnitID' }, { name: role, in: query, schema: { type: string } }, { $ref: '#/components/parameters/Status' }, { $ref: '#/components/parameters/EffectiveAt' }, { $ref: '#/components/parameters/Limit' }]
+      responses:
+        '200':
+          description: Organization role assignments
+          content: { application/json: { schema: { $ref: '#/components/schemas/OrgRoleList' } } }
+    post:
+      tags: [Operations]
+      operationId: createOrgRoleAssignment
+      summary: Grant a scoped organization responsibility
+      x-hhc-visibility: admin
+      x-hhc-required-permission: memberships:manage
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OrgRoleInput' }
+      responses:
+        '200':
+          description: Organization role assignment
+          content: { application/json: { schema: { $ref: '#/components/schemas/OrgRole' } } }
+        '409': { description: Idempotency conflict }
+  /api/admin/operations/org-role-assignments/{assignmentId}/revoke:
+    post:
+      tags: [Operations]
+      operationId: revokeOrgRoleAssignment
+      summary: Revoke a scoped organization responsibility
+      x-hhc-visibility: admin
+      x-hhc-required-permission: memberships:manage
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ name: assignmentId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/IfMatch' }]
+      responses:
+        '200':
+          description: Organization role assignment
+          content: { application/json: { schema: { $ref: '#/components/schemas/OrgRole' } } }
+        '412': { description: Version mismatch }
+  /priv/operations/entitlement-checks:
+    post:
+      tags: [Operations]
+      operationId: checkEntitlements
+      summary: Resolve exact member entitlement decisions for an allowlisted service
+      x-hhc-visibility: private
+      x-hhc-callers: [hhc-web-api]
+      security: [{ daprCallerAppID: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EntitlementCheckRequest' }
+      responses:
+        '200':
+          description: Ordered entitlement decisions
+          content: { application/json: { schema: { $ref: '#/components/schemas/EntitlementCheckResponse' } } }
+        '400': { description: Invalid subject or entitlement code list }
+        '401': { description: Missing caller identity }
+        '403': { description: Caller is not allowlisted }
+        '503': { description: Authorization facts are unavailable }
+  /api/operations/me/access:
+    get:
+      tags: [Operations]
+      operationId: getMyOperationsAccess
+      summary: Get the authenticated subject's presentation-safe Operations access facts
+      x-hhc-visibility: authenticated
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/Scopes' }]
+      responses:
+        '200':
+          description: Presentation-safe Operations access snapshot
+          content: { application/json: { schema: { $ref: '#/components/schemas/AccessSnapshot' } } }
+        '400': { description: Malformed or duplicate trusted identity headers }
+        '401': { description: Missing trusted identity }
+        '503': { description: Authorization facts are unavailable }
+  /api/operations/me/resources:
+    get:
+      tags: [Operations]
+      operationId: listMyReservableResources
+      summary: List resources available to the qualified member
+      x-hhc-visibility: authenticated
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/Scopes' }]
+      responses: { '200': { description: Eligible resources, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/ReservableResource' } } } } }, '400': { description: Malformed identity }, '401': { description: Missing identity } }
+  /api/operations/me/resources/{resourceKey}/availability:
+    get:
+      tags: [Operations]
+      operationId: getMyResourceAvailability
+      summary: Get privacy-safe merged Resource availability
+      x-hhc-visibility: authenticated
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ name: resourceKey, in: path, required: true, schema: { type: string } }, { name: from, in: query, required: true, schema: { type: string, format: date-time } }, { name: to, in: query, required: true, schema: { type: string, format: date-time } }, { $ref: '#/components/parameters/Scopes' }]
+      responses: { '200': { description: Privacy-safe merged busy intervals, content: { application/json: { schema: { $ref: '#/components/schemas/Availability' } } } }, '400': { description: Invalid range }, '401': { description: Missing identity }, '404': { description: Resource unavailable to subject } }
+  /api/operations/me/resource-reservations:
+    get:
+      tags: [Operations]
+      operationId: listMyResourceReservations
+      summary: List the authenticated member's reservations
+      x-hhc-visibility: authenticated
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/Scopes' }]
+      responses: { '200': { description: Own reservations, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/ResourceReservation' } } } } } }
+    post:
+      tags: [Operations]
+      operationId: createMyResourceReservation
+      summary: Request one Resource for a half-open interval
+      x-hhc-visibility: authenticated
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/Scopes' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceReservationInput' } } } }
+      responses: { '201': { description: Requested reservation, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceReservation' } } } }, '400': { description: Invalid request }, '403': { description: "Qualification, membership, or DSR restriction denies processing" }, '409': { description: Idempotency conflict } }
+  /api/operations/me/resource-reservations/{reservationId}:
+    get:
+      tags: [Operations]
+      operationId: getMyResourceReservation
+      summary: Get one reservation owned by the authenticated member
+      x-hhc-visibility: authenticated
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ name: reservationId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/Scopes' }]
+      responses: { '200': { description: Own reservation, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceReservation' } } } }, '404': { description: Not found } }
+  /api/operations/me/resource-reservations/{reservationId}/cancel:
+    post:
+      tags: [Operations]
+      operationId: cancelMyResourceReservation
+      summary: Cancel an owned requested or approved reservation
+      x-hhc-visibility: authenticated
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ name: reservationId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/Scopes' }, { $ref: '#/components/parameters/IfMatch' }]
+      responses: { '200': { description: Cancelled reservation, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceReservation' } } } }, '400': { description: Invalid terminal transition }, '404': { description: Not found }, '412': { description: Version mismatch } }
+  /api/admin/operations/resources/{resourceId}/reservation-settings:
+    get:
+      tags: [Operations]
+      operationId: getResourceReservationSettings
+      summary: Get reservation settings for an authorized Resource scope
+      x-hhc-visibility: admin
+      x-hhc-required-permission: operations:resources:read
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ name: resourceId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/Scopes' }]
+      responses: { '200': { description: Reservation settings, content: { application/json: { schema: { $ref: '#/components/schemas/ReservationSettings' } } } }, '404': { description: Not found or unauthorized scope } }
+    put:
+      tags: [Operations]
+      operationId: updateResourceReservationSettings
+      summary: Update reservation settings for an authorized Resource scope
+      x-hhc-visibility: admin
+      x-hhc-required-permission: operations:resources:write
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ name: resourceId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/Scopes' }, { $ref: '#/components/parameters/IfMatch' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: false, required: [enabled], properties: { enabled: { type: boolean } } } } } }
+      responses: { '200': { description: Reservation settings, content: { application/json: { schema: { $ref: '#/components/schemas/ReservationSettings' } } } }, '400': { description: Invalid or same-state update }, '404': { description: Not found or unauthorized scope }, '412': { description: Version mismatch } }
+  /api/admin/operations/resource-reservations:
+    get:
+      tags: [Operations]
+      operationId: listResourceReservations
+      summary: List reservations in authorized organization scopes
+      x-hhc-visibility: admin
+      x-hhc-required-permission: operations:reservations:read
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ name: resourceId, in: query, schema: { type: string, format: uuid } }, { name: status, in: query, schema: { $ref: '#/components/schemas/ReservationStatus' } }, { $ref: '#/components/parameters/Scopes' }]
+      responses: { '200': { description: Scope-filtered reservations, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/ResourceReservation' } } } } } }
+  /api/admin/operations/resource-reservations/{reservationId}:
+    get:
+      tags: [Operations]
+      operationId: getAdminResourceReservation
+      summary: Get a reservation in an authorized organization scope
+      x-hhc-visibility: admin
+      x-hhc-required-permission: operations:reservations:read
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ name: reservationId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/Scopes' }]
+      responses: { '200': { description: Reservation, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceReservation' } } } }, '404': { description: Not found or unauthorized scope } }
+  /api/admin/operations/resource-reservations/{reservationId}/approve:
+    post:
+      tags: [Operations]
+      operationId: approveAdminResourceReservation
+      summary: Approve a reservation
+      x-hhc-visibility: admin
+      x-hhc-required-permission: operations:reservations:approve
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ name: reservationId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/Scopes' }, { $ref: '#/components/parameters/IfMatch' }]
+      responses: { '200': { description: Reservation, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceReservation' } } } }, '400': { description: Invalid terminal transition }, '404': { description: Not found or unauthorized scope }, '409': { description: resource_time_conflict }, '412': { description: version_mismatch } }
+  /api/admin/operations/resource-reservations/{reservationId}/reject:
+    post:
+      tags: [Operations]
+      operationId: rejectAdminResourceReservation
+      summary: Reject a reservation
+      x-hhc-visibility: admin
+      x-hhc-required-permission: operations:reservations:approve
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ name: reservationId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/Scopes' }, { $ref: '#/components/parameters/IfMatch' }]
+      responses: { '200': { description: Reservation, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceReservation' } } } }, '400': { description: Invalid terminal transition }, '404': { description: Not found or unauthorized scope }, '409': { description: resource_time_conflict }, '412': { description: version_mismatch } }
+  /api/admin/operations/resource-reservations/{reservationId}/cancel:
+    post:
+      tags: [Operations]
+      operationId: cancelAdminResourceReservation
+      summary: Cancel a reservation
+      x-hhc-visibility: admin
+      x-hhc-required-permission: operations:reservations:approve
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ name: reservationId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/Scopes' }, { $ref: '#/components/parameters/IfMatch' }]
+      responses: { '200': { description: Reservation, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceReservation' } } } }, '400': { description: Invalid terminal transition }, '404': { description: Not found or unauthorized scope }, '409': { description: resource_time_conflict }, '412': { description: version_mismatch } }
+  /api/admin/operations/resource-maintenance-blocks:
+    get:
+      tags: [Operations]
+      operationId: listResourceMaintenanceBlocks
+      summary: List maintenance blocks in authorized Resource scopes
+      x-hhc-visibility: admin
+      x-hhc-required-permission: operations:resources:read
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ name: resourceId, in: query, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/Scopes' }]
+      responses: { '200': { description: Scope-filtered maintenance blocks, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/ResourceMaintenanceBlock' } } } } } }
+    post:
+      tags: [Operations]
+      operationId: createResourceMaintenanceBlock
+      summary: Create a maintenance block in an authorized Resource scope
+      x-hhc-visibility: admin
+      x-hhc-required-permission: operations:resources:write
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/Scopes' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceMaintenanceInput' } } } }
+      responses: { '201': { description: Maintenance block, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceMaintenanceBlock' } } } }, '409': { description: resource_time_conflict } }
+  /api/admin/operations/resource-maintenance-blocks/{blockId}:
+    get:
+      tags: [Operations]
+      operationId: getResourceMaintenanceBlock
+      summary: Get a maintenance block in an authorized Resource scope
+      x-hhc-visibility: admin
+      x-hhc-required-permission: operations:resources:read
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ name: blockId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/Scopes' }]
+      responses: { '200': { description: Maintenance block, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceMaintenanceBlock' } } } }, '404': { description: Not found or unauthorized scope } }
+    put:
+      tags: [Operations]
+      operationId: updateResourceMaintenanceBlock
+      summary: Update a maintenance block in an authorized Resource scope
+      x-hhc-visibility: admin
+      x-hhc-required-permission: operations:resources:write
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ name: blockId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/Scopes' }, { $ref: '#/components/parameters/IfMatch' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceMaintenanceInput' } } } }
+      responses: { '200': { description: Maintenance block, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceMaintenanceBlock' } } } }, '409': { description: resource_time_conflict }, '412': { description: version_mismatch } }
+  /api/admin/operations/resource-maintenance-blocks/{blockId}/cancel:
+    post:
+      tags: [Operations]
+      operationId: cancelResourceMaintenanceBlock
+      summary: Cancel a maintenance block in an authorized Resource scope
+      x-hhc-visibility: admin
+      x-hhc-required-permission: operations:resources:write
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ name: blockId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/Scopes' }, { $ref: '#/components/parameters/IfMatch' }]
+      responses: { '200': { description: Cancelled maintenance block, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceMaintenanceBlock' } } } }, '400': { description: Immutable terminal state }, '412': { description: version_mismatch } }
+  /priv/operations/dsr/exports:
+    post:
+      tags: [Operations]
+      operationId: exportOperationsDSR
+      summary: Export member-owned Operations data for the Account privacy orchestrator
+      x-hhc-visibility: private
+      x-hhc-callers: [account-api]
+      security: [{ daprCallerAppID: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/DSRExportRequest' } } } }
+      responses:
+        '200': { description: Operations-owned export page, content: { application/json: { schema: { $ref: '#/components/schemas/DSRExportEnvelope' } } } }
+        '400': { description: "Invalid request, subject, cursor, or limit" }
+        '401': { description: Missing caller identity }
+        '403': { description: Caller is not Account API }
+        '500': { description: Internal owner failure, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /priv/operations/dsr/actions:
+    post:
+      tags: [Operations]
+      operationId: applyOperationsDSR
+      summary: Restrict or erase member-owned Operations data for the Account privacy orchestrator
+      x-hhc-visibility: private
+      x-hhc-callers: [account-api]
+      security: [{ daprCallerAppID: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/DSRActionRequest' } } } }
+      responses:
+        '200': { description: Idempotent owner action result, content: { application/json: { schema: { $ref: '#/components/schemas/DSRActionEnvelope' } } } }
+        '400': { description: Invalid request or idempotency-key reuse }
+        '401': { description: Missing caller identity }
+        '403': { description: Caller is not Account API }
+        '500': { description: Internal owner failure, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /health:
+    get:
+      tags: [Operations]
+      operationId: getHealth
+      summary: Get process health
+      x-hhc-visibility: operations
+      x-hhc-callers: []
+      security: []
+      servers: [{ url: / }]
+      responses:
+        '200':
+          description: Process is healthy.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Health' }
+        '400': { $ref: '#/components/responses/ProtectedHeaderRejected' }
+  /ready:
+    get:
+      tags: [Operations]
+      operationId: getReady
+      summary: Get dependency readiness
+      x-hhc-visibility: operations
+      x-hhc-callers: []
+      security: []
+      servers: [{ url: / }]
+      responses:
+        '200':
+          description: PostgreSQL is reachable.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ready' }
+        '400': { $ref: '#/components/responses/ProtectedHeaderRejected' }
+        '503': { $ref: '#/components/responses/NotReady' }
+components:
+  parameters:
+    ID: { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    ActorUserID: { name: X-HHC-User-ID, in: header, required: true, schema: { type: string, format: uuid, pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[47][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' } }
+    StatusAction: { name: action, in: path, required: true, schema: { type: string, enum: [pause, resume, restore, archive] } }
+    OccurrenceDate: { name: date, in: path, required: true, schema: { type: string, format: date } }
+    UserID: { name: userId, in: query, schema: { type: string, format: uuid } }
+    OrgUnitID: { name: orgUnitId, in: query, schema: { type: string, format: uuid } }
+    Status: { name: status, in: query, schema: { type: string } }
+    EffectiveAt: { name: effectiveAt, in: query, schema: { type: string, format: date-time } }
+    Limit: { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+    IdempotencyKey: { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 1, maxLength: 200 } }
+    IfMatch: { name: If-Match, in: header, required: true, schema: { type: string, pattern: '^"[1-9][0-9]*"$' } }
+    Scopes: { name: X-HHC-Scopes, in: header, required: true, schema: { type: string }, description: Gateway-verified opaque space-delimited Account scopes; an empty value is authenticated with no staff permissions. }
+  schemas:
+    OperationStatus:
+      type: string
+      enum: [active, paused, archived]
+    OrgUnitKind:
+      type: string
+      enum: [organization, congregation, family, small_group]
+    Visibility:
+      type: string
+      enum: [public, internal]
+    OrgUnitInput:
+      type: object
+      additionalProperties: false
+      required: [key, kind, name]
+      properties:
+        key: { type: string }
+        kind: { $ref: '#/components/schemas/OrgUnitKind' }
+        name: { type: string }
+        description: { type: string }
+        parentId: { type: string, format: uuid }
+    OrgUnit:
+      type: object
+      required: [id, key, kind, name, status, version]
+      properties:
+        id: { type: string, format: uuid }
+        key: { type: string }
+        kind: { $ref: '#/components/schemas/OrgUnitKind' }
+        name: { type: string }
+        description: { type: string }
+        parentId: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/OperationStatus' }
+        version: { type: integer, minimum: 1 }
+    ResourceInput:
+      type: object
+      additionalProperties: false
+      required: [key, name, kind, churchUnitId, timezone, visibility]
+      properties:
+        key: { type: string }
+        name: { type: string }
+        description: { type: string }
+        kind: { type: string, const: venue }
+        churchUnitId: { type: string, format: uuid }
+        locationContentId: { type: string, format: uuid }
+        timezone: { type: string }
+        visibility: { $ref: '#/components/schemas/Visibility' }
+    Resource:
+      type: object
+      required: [id, key, name, kind, churchUnitId, timezone, visibility, reservationEnabled, status, version]
+      properties:
+        id: { type: string, format: uuid }
+        key: { type: string }
+        name: { type: string }
+        description: { type: string }
+        kind: { type: string, const: venue }
+        churchUnitId: { type: string, format: uuid }
+        locationContentId: { type: string, format: uuid }
+        timezone: { type: string }
+        visibility: { $ref: '#/components/schemas/Visibility' }
+        reservationEnabled: { type: boolean }
+        status: { $ref: '#/components/schemas/OperationStatus' }
+        version: { type: integer, minimum: 1 }
+    Schedule:
+      type: object
+      additionalProperties: false
+      required: [type]
+      properties:
+        type: { type: string, enum: [weekly, once] }
+        daysOfWeek: { type: array, items: { type: integer, minimum: 0, maximum: 6 } }
+        startTime: { type: string, pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$' }
+        startsAt: { type: string, format: date-time }
+    MeetingInput:
+      type: object
+      additionalProperties: false
+      required: [key, name, churchUnitId, venueResourceId, timezone, schedule, durationMinutes, visibility]
+      properties:
+        key: { type: string }
+        name: { type: string }
+        description: { type: string }
+        churchUnitId: { type: string, format: uuid }
+        venueResourceId: { type: string, format: uuid }
+        timezone: { type: string }
+        schedule: { $ref: '#/components/schemas/Schedule' }
+        durationMinutes: { type: integer, minimum: 1, maximum: 1440 }
+        visibility: { $ref: '#/components/schemas/Visibility' }
+    Meeting:
+      type: object
+      required: [id, key, name, churchUnitId, venueResourceId, timezone, schedule, durationMinutes, visibility, status, version]
+      properties:
+        id: { type: string, format: uuid }
+        key: { type: string }
+        name: { type: string }
+        description: { type: string }
+        churchUnitId: { type: string, format: uuid }
+        venueResourceId: { type: string, format: uuid }
+        timezone: { type: string }
+        schedule: { $ref: '#/components/schemas/Schedule' }
+        durationMinutes: { type: integer, minimum: 1, maximum: 1440 }
+        visibility: { $ref: '#/components/schemas/Visibility' }
+        status: { $ref: '#/components/schemas/OperationStatus' }
+        version: { type: integer, minimum: 1 }
+        nextOccurrence: { type: object }
+    OccurrenceOverrideInput:
+      type: object
+      additionalProperties: false
+      required: [cancelled]
+      properties:
+        cancelled: { type: boolean }
+        startsAt: { type: string, format: date-time }
+        durationMinutes: { type: integer, minimum: 1, maximum: 1440 }
+        venueResourceId: { type: string, format: uuid }
+        reason: { type: string, maxLength: 500 }
+    OccurrenceOverride:
+      type: object
+      required: [meetingId, occurrenceDate, cancelled, version]
+      properties:
+        meetingId: { type: string, format: uuid }
+        occurrenceDate: { type: string, format: date }
+        cancelled: { type: boolean }
+        startsAt: { type: string, format: date-time }
+        durationMinutes: { type: integer, minimum: 1, maximum: 1440 }
+        venueResourceId: { type: string, format: uuid }
+        reason: { type: string, maxLength: 500 }
+        version: { type: integer, minimum: 1 }
+    CollectionBindingInput:
+      type: object
+      additionalProperties: false
+      required: [collectionIds]
+      properties:
+        collectionIds: { type: array, items: { type: string, minLength: 1, maxLength: 200 } }
+    MembershipStatus:
+      type: string
+      enum: [pending, active, suspended, left, rejected]
+    QualificationStatus:
+      type: string
+      enum: [pending, active, suspended, revoked, expired]
+    AssignmentStatus:
+      type: string
+      enum: [active, suspended, revoked, expired]
+    OrgRoleName:
+      type: string
+      enum: [pastor, family_leader, small_group_leader, meeting_manager, resource_manager, reservation_approver]
+    EntitlementCode:
+      type: string
+      enum: [bulletin.general.zh-Hant.access, bulletin.general.zh-Hans.access, bulletin.general.en.access]
+    MembershipInput:
+      type: object
+      additionalProperties: false
+      required: [userId, orgUnitId, status, validFrom]
+      properties:
+        userId: { type: string, format: uuid }
+        orgUnitId: { type: string, format: uuid }
+        status: { type: string, const: active }
+        isPrimary: { type: boolean, default: false }
+        validFrom: { type: string, format: date-time }
+        validTo: { type: string, format: date-time }
+    Membership:
+      type: object
+      additionalProperties: false
+      required: [id, userId, orgUnitId, status, isPrimary, validFrom, createdAt, updatedAt, version]
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        orgUnitId: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/MembershipStatus' }
+        isPrimary: { type: boolean }
+        validFrom: { type: string, format: date-time }
+        validTo: { type: string, format: date-time }
+        approvedBy: { type: string, format: uuid }
+        approvedAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        version: { type: integer, minimum: 1 }
+    QualificationInput:
+      type: object
+      additionalProperties: false
+      required: [userId, status, validFrom]
+      properties:
+        userId: { type: string, format: uuid }
+        status: { type: string, const: pending }
+        validFrom: { type: string, format: date-time }
+        validTo: { type: string, format: date-time }
+        reasonCode: { type: string, maxLength: 100 }
+    Qualification:
+      type: object
+      additionalProperties: false
+      required: [id, userId, status, validFrom, createdAt, updatedAt, version]
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/QualificationStatus' }
+        validFrom: { type: string, format: date-time }
+        validTo: { type: string, format: date-time }
+        reasonCode: { type: string, maxLength: 100 }
+        approvedBy: { type: string, format: uuid }
+        approvedAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        version: { type: integer, minimum: 1 }
+    EntitlementInput:
+      type: object
+      additionalProperties: false
+      required: [subjectType, subjectId, entitlementCode, source, validFrom]
+      properties:
+        subjectType: { type: string, enum: [user, org_members, qualification_bundle] }
+        subjectId: { type: string }
+        entitlementCode: { $ref: '#/components/schemas/EntitlementCode' }
+        source: { type: string, enum: [manual_assignment, organization_assignment, event_registration, qualification_bundle] }
+        validFrom: { type: string, format: date-time }
+        validTo: { type: string, format: date-time }
+      oneOf:
+        - properties:
+            subjectType: { type: string, const: user }
+            subjectId: { type: string, format: uuid }
+            source: { type: string, enum: [manual_assignment, event_registration] }
+        - properties:
+            subjectType: { type: string, const: org_members }
+            subjectId: { type: string, format: uuid }
+            source: { type: string, const: organization_assignment }
+        - properties:
+            subjectType: { type: string, const: qualification_bundle }
+            subjectId: { type: string, const: active_members, description: Compiled built-in bundle for subjects with an active membership qualification. }
+            source: { type: string, const: qualification_bundle }
+    Entitlement:
+      type: object
+      additionalProperties: false
+      required: [id, subjectType, subjectId, entitlementCode, source, status, validFrom, assignedBy, assignedAt, version]
+      properties:
+        id: { type: string, format: uuid }
+        subjectType: { type: string, enum: [user, org_members, qualification_bundle] }
+        subjectId: { type: string }
+        entitlementCode: { $ref: '#/components/schemas/EntitlementCode' }
+        source: { type: string, enum: [manual_assignment, organization_assignment, event_registration, qualification_bundle] }
+        status: { $ref: '#/components/schemas/AssignmentStatus' }
+        validFrom: { type: string, format: date-time }
+        validTo: { type: string, format: date-time }
+        assignedBy: { type: string, format: uuid }
+        assignedAt: { type: string, format: date-time }
+        revokedBy: { type: string, format: uuid }
+        revokedAt: { type: string, format: date-time }
+        version: { type: integer, minimum: 1 }
+      oneOf:
+        - properties:
+            subjectType: { type: string, const: user }
+            subjectId: { type: string, format: uuid }
+            source: { type: string, enum: [manual_assignment, event_registration] }
+        - properties:
+            subjectType: { type: string, const: org_members }
+            subjectId: { type: string, format: uuid }
+            source: { type: string, const: organization_assignment }
+        - properties:
+            subjectType: { type: string, const: qualification_bundle }
+            subjectId: { type: string, const: active_members, description: Compiled built-in bundle for subjects with an active membership qualification. }
+            source: { type: string, const: qualification_bundle }
+    OrgRoleInput:
+      type: object
+      additionalProperties: false
+      required: [userId, orgUnitId, role, validFrom]
+      properties:
+        userId: { type: string, format: uuid }
+        orgUnitId: { type: string, format: uuid }
+        role: { $ref: '#/components/schemas/OrgRoleName' }
+        validFrom: { type: string, format: date-time }
+        validTo: { type: string, format: date-time }
+    OrgRole:
+      type: object
+      additionalProperties: false
+      required: [id, userId, orgUnitId, role, status, validFrom, assignedBy, assignedAt, version]
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        orgUnitId: { type: string, format: uuid }
+        role: { $ref: '#/components/schemas/OrgRoleName' }
+        status: { type: string, enum: [active, revoked] }
+        validFrom: { type: string, format: date-time }
+        validTo: { type: string, format: date-time }
+        assignedBy: { type: string, format: uuid }
+        assignedAt: { type: string, format: date-time }
+        revokedBy: { type: string, format: uuid }
+        revokedAt: { type: string, format: date-time }
+        version: { type: integer, minimum: 1 }
+    MembershipList:
+      type: array
+      items: { $ref: '#/components/schemas/Membership' }
+    QualificationList:
+      type: array
+      items: { $ref: '#/components/schemas/Qualification' }
+    EntitlementList:
+      type: array
+      items: { $ref: '#/components/schemas/Entitlement' }
+    OrgRoleList:
+      type: array
+      items: { $ref: '#/components/schemas/OrgRole' }
+    EntitlementCheckRequest:
+      type: object
+      additionalProperties: false
+      required: [subjectId, entitlementCodes]
+      properties:
+        subjectId: { type: string, format: uuid }
+        entitlementCodes:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items: { type: string, pattern: '^[a-z][A-Za-z0-9.-]{0,99}$' }
+    EntitlementDecision:
+      type: object
+      additionalProperties: false
+      required: [entitlementCode, decision, reason, version]
+      properties:
+        entitlementCode: { type: string }
+        decision: { type: string, enum: [allow, deny] }
+        reason: { type: string, enum: [allowed, membership_required, membership_suspended, entitlement_required] }
+        version: { type: string, pattern: '^[0-9a-f]{64}$' }
+    EntitlementCheckResponse:
+      type: object
+      additionalProperties: false
+      required: [decisions]
+      properties:
+        decisions:
+          type: array
+          items: { $ref: '#/components/schemas/EntitlementDecision' }
+    OrgUnitSummary:
+      type: object
+      additionalProperties: false
+      required: [id, kind, name]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { $ref: '#/components/schemas/OrgUnitKind' }
+        name: { type: string }
+    MembershipSummary:
+      type: object
+      additionalProperties: false
+      required: [membershipId, orgUnit, isPrimary, validFrom]
+      properties:
+        membershipId: { type: string, format: uuid }
+        orgUnit: { $ref: '#/components/schemas/OrgUnitSummary' }
+        isPrimary: { type: boolean }
+        validFrom: { type: string, format: date-time }
+        validTo: { type: string, format: date-time }
+    OrgRoleSummary:
+      type: object
+      additionalProperties: false
+      required: [assignmentId, role, orgUnit, validFrom]
+      properties:
+        assignmentId: { type: string, format: uuid }
+        role: { $ref: '#/components/schemas/OrgRoleName' }
+        orgUnit: { $ref: '#/components/schemas/OrgUnitSummary' }
+        validFrom: { type: string, format: date-time }
+        validTo: { type: string, format: date-time }
+    QualificationSummary:
+      type: object
+      additionalProperties: false
+      required: [qualificationId, validFrom]
+      properties:
+        qualificationId: { type: string, format: uuid }
+        validFrom: { type: string, format: date-time }
+        validTo: { type: string, format: date-time }
+    EntitlementSummary:
+      type: object
+      additionalProperties: false
+      required: [assignmentId, entitlementCode, validFrom]
+      properties:
+        assignmentId: { type: string, format: uuid }
+        entitlementCode: { type: string }
+        validFrom: { type: string, format: date-time }
+        validTo: { type: string, format: date-time }
+    AccessSnapshot:
+      type: object
+      additionalProperties: false
+      required: [memberships, orgRoles, qualifications, entitlements, version]
+      properties:
+        memberships: { type: array, items: { $ref: '#/components/schemas/MembershipSummary' } }
+        orgRoles: { type: array, items: { $ref: '#/components/schemas/OrgRoleSummary' } }
+        qualifications: { type: array, items: { $ref: '#/components/schemas/QualificationSummary' } }
+        entitlements: { type: array, items: { $ref: '#/components/schemas/EntitlementSummary' } }
+        version: { type: string, pattern: '^[0-9a-f]{64}$' }
+    DSRExportRequest:
+      type: object
+      additionalProperties: false
+      required: [requestId, userId]
+      properties:
+        requestId: { type: string, format: uuid, pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[47][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' }
+        userId: { type: string, format: uuid, pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[47][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' }
+        cursor: { type: string, maxLength: 1024 }
+        limit: { type: integer, minimum: 0, maximum: 100 }
+    DSRActionRequest:
+      type: object
+      additionalProperties: false
+      required: [requestId, userId, action, idempotencyKey]
+      properties:
+        requestId: { type: string, format: uuid, pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[47][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' }
+        userId: { type: string, format: uuid, pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[47][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' }
+        action: { type: string, enum: [restrict_processing, erase] }
+        idempotencyKey: { type: string, minLength: 1, maxLength: 200 }
+    DSRException:
+      type: object
+      additionalProperties: false
+      required: [code]
+      properties:
+        code: { type: string, enum: [audit_retained, central_audit_outbox_retained, shared_operations_retained, relationship_attribution_retained, reservation_history_retained, reservation_attribution_retained, processing_restriction_retained, dsr_action_result_retained] }
+        count: { type: integer, format: int64, minimum: 0 }
+    DSRExportRecord:
+      type: object
+      additionalProperties: false
+      required: [recordType, recordKey, data]
+      properties:
+        recordType: { type: string, enum: [org_membership, org_role_assignment, membership_qualification, entitlement_assignment, resource_reservation] }
+        recordKey: { type: string, format: uuid }
+        data: { type: object, additionalProperties: true }
+    DSRExportPage:
+      type: object
+      additionalProperties: false
+      required: [records, recordCount, exceptions]
+      properties:
+        records: { type: array, items: { $ref: '#/components/schemas/DSRExportRecord' } }
+        nextCursor: { type: string }
+        recordCount: { type: integer, minimum: 0 }
+        exceptions: { type: array, items: { $ref: '#/components/schemas/DSRException' } }
+    DSRExportEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties: { data: { $ref: '#/components/schemas/DSRExportPage' } }
+    DSRActionResult:
+      type: object
+      additionalProperties: false
+      required: [owner, action, status, recordCount, reasonCodes]
+      properties:
+        owner: { type: string, const: operations-api }
+        action: { type: string, enum: [restrict_processing, erase] }
+        status: { type: string, const: completed }
+        recordCount: { type: integer, format: int64, minimum: 0 }
+        reasonCodes: { type: array, items: { type: string, enum: [audit_retained, shared_operations_retained, reservation_history_retained, reservation_attribution_retained, processing_restriction_retained] } }
+    DSRActionEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties: { data: { $ref: '#/components/schemas/DSRActionResult' } }
+    ReservationStatus:
+      type: string
+      enum: [requested, approved, rejected, cancelled]
+    ReservableResource:
+      type: object
+      additionalProperties: false
+      required: [id, key, name, timezone]
+      properties:
+        id: { type: string, format: uuid }
+        key: { type: string }
+        name: { type: string }
+        timezone: { type: string }
+    BusyInterval:
+      type: object
+      additionalProperties: false
+      required: [startsAt, endsAt]
+      properties:
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+    Availability:
+      type: object
+      additionalProperties: false
+      required: [busyIntervals]
+      properties: { busyIntervals: { type: array, items: { $ref: '#/components/schemas/BusyInterval' } } }
+    ResourceReservationInput:
+      type: object
+      additionalProperties: false
+      required: [resourceId, purpose, startsAt, endsAt]
+      properties:
+        resourceId: { type: string, format: uuid }
+        purpose: { type: string, minLength: 1, maxLength: 1000 }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time, description: Exclusive end; the interval is half-open and may not exceed 366 days. }
+    ResourceReservation:
+      type: object
+      additionalProperties: false
+      required: [id, resourceId, requesterUserId, purpose, startsAt, endsAt, status, createdAt, updatedAt, version]
+      properties:
+        id: { type: string, format: uuid }
+        resourceId: { type: string, format: uuid }
+        requesterUserId: { type: string, format: uuid }
+        purpose: { type: string }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        status: { $ref: '#/components/schemas/ReservationStatus' }
+        decidedBy: { type: string, format: uuid }
+        decidedAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        version: { type: integer, format: int64, minimum: 1 }
+    ReservationSettings:
+      type: object
+      additionalProperties: false
+      required: [resourceId, enabled, version]
+      properties:
+        resourceId: { type: string, format: uuid }
+        enabled: { type: boolean }
+        version: { type: integer, format: int64, minimum: 1 }
+    ResourceMaintenanceInput:
+      type: object
+      additionalProperties: false
+      required: [resourceId, reason, startsAt, endsAt]
+      properties:
+        resourceId: { type: string, format: uuid }
+        reason: { type: string, minLength: 1, maxLength: 1000 }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time, description: Exclusive end; the interval is half-open and may not exceed 366 days. }
+    ResourceMaintenanceBlock:
+      type: object
+      additionalProperties: false
+      required: [id, resourceId, reason, startsAt, endsAt, status, createdBy, createdAt, updatedAt, version]
+      properties:
+        id: { type: string, format: uuid }
+        resourceId: { type: string, format: uuid }
+        reason: { type: string }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        status: { type: string, enum: [active, cancelled] }
+        createdBy: { type: string, format: uuid }
+        cancelledBy: { type: string, format: uuid }
+        cancelledAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        version: { type: integer, format: int64, minimum: 1 }
+    Health:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, const: healthy }
+    Ready:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, const: ready }
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+  securitySchemes:
+    daprCallerAppID:
+      type: apiKey
+      in: header
+      name: Dapr-Caller-App-Id
+      description: Dapr API token required for private Operations service calls.
+    gatewayPrincipal:
+      type: apiKey
+      in: header
+      name: X-HHC-User-ID
+      description: Trusted canonical Account subject injected by the Gateway or propagated by an allowlisted internal caller.
+  responses:
+    ProtectedHeaderRejected:
+      description: A gateway-protected identity header is invalid on a public route.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotReady:
+      description: PostgreSQL is unavailable.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }

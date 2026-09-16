@@ -1,5 +1,4 @@
 export * from './oauth.js';
-export * from './admin-access.js';
 export * from './session-client.js';
 export * from './browser-runtime.js';
 export * from './conformance.js';
