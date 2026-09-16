@@ -90,6 +90,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/operations/options/{domain}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List scoped reference data needed by one Operations domain
+         * @description The server authorizes every returned organization unit with the exact read action selected by domain.
+         */
+        get: operations["getAdminOperationOptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/operations/church-units/{id}": {
         parameters: {
             query?: never;
@@ -1041,6 +1061,10 @@ export interface components {
             version: number;
         };
         ResourceList: components["schemas"]["Resource"][];
+        OperationOptions: {
+            orgUnits: components["schemas"]["OrgUnitList"];
+            resources: components["schemas"]["ResourceList"];
+        };
         Schedule: {
             /** @enum {string} */
             type: "weekly" | "once";
@@ -1768,6 +1792,42 @@ export interface operations {
             };
             /** @description Permission denied */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getAdminOperationOptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                domain: "meetings" | "resources" | "reservations";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Scoped reference options */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationOptions"];
+                };
+            };
+            /** @description Permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authorization unavailable */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -1,6 +1,6 @@
 {
   "name": "@hallelujahhomechurch/operations-client",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "license": "UNLICENSED",
   "type": "module",
   "files": ["dist"],
