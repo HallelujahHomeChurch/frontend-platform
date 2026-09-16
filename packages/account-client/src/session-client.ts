@@ -27,6 +27,26 @@ export interface AccountSessionReader {
   getSession(): Promise<AccountSession>;
 }
 
+export type PermissionAvailability =
+  | {status: 'available'}
+  | {
+      status: 'unavailable';
+      code: 'permission_unavailable';
+      requestId?: string;
+      retryAt?: number;
+    };
+
+export interface AccountIdentitySession {
+  user: AccountSessionUser;
+  permissions: readonly string[];
+  permissionAvailability: PermissionAvailability;
+}
+
+export type AccountAuthResult =
+  | {status: 'authenticated'; session: AccountIdentitySession}
+  | {status: 'anonymous'}
+  | {status: 'unavailable'; error: unknown};
+
 export interface AccountSessionClientOptions {
   baseUrl?: string;
   fetcher?: typeof fetch;
@@ -151,6 +171,34 @@ export function createAccountSessionClient({
 }
 
 export type AccountSessionClient = ReturnType<typeof createAccountSessionClient>;
+
+export async function resolveAccountAuth(client: AccountSessionReader): Promise<AccountAuthResult> {
+  try {
+    const session = await client.getSession();
+    return session.authenticated
+      ? {
+          status: 'authenticated',
+          session: {
+            user: session.user,
+            permissions: session.permissions,
+            permissionAvailability: session.permission_availability.status === 'available'
+              ? {status: 'available'}
+              : {
+                  status: 'unavailable',
+                  code: 'permission_unavailable',
+                  requestId: session.permission_availability.request_id,
+                  retryAt: session.permission_availability.retry_at
+                }
+          }
+        }
+      : {status: 'anonymous'};
+  } catch (error) {
+    if (error instanceof AccountSessionError && (error.status === 400 || error.status === 401)) {
+      return {status: 'anonymous'};
+    }
+    return {status: 'unavailable', error};
+  }
+}
 
 async function readJson(response: Response, currentTime: number): Promise<unknown> {
   const contentType = response.headers.get('content-type') ?? '';

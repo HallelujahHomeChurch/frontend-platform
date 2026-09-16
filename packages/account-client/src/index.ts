@@ -1,8 +1,9 @@
 export * from './oauth.js';
 export * from './admin-access.js';
 export * from './session-client.js';
+export * from './browser-runtime.js';
+export * from './conformance.js';
 
-import {AccountSessionError, type AccountSessionReader, type AccountSessionUser} from './session-client.js';
 
 export function hasPermission(permissions: readonly string[], required: string): boolean {
   return required.length > 0 && (permissions.includes('*') || permissions.includes(required));
@@ -10,54 +11,6 @@ export function hasPermission(permissions: readonly string[], required: string):
 
 export function isPermissionList(value: unknown): value is string[] {
   return Array.isArray(value) && value.every(permission => typeof permission === 'string' && permission.length > 0);
-}
-
-export type PermissionAvailability =
-  | {status: 'available'}
-  | {
-      status: 'unavailable';
-      code: 'permission_unavailable';
-      requestId?: string;
-      retryAt?: number;
-    };
-
-export interface AccountIdentitySession {
-  user: AccountSessionUser;
-  permissions: readonly string[];
-  permissionAvailability: PermissionAvailability;
-}
-
-export type AccountAuthResult =
-  | {status: 'authenticated'; session: AccountIdentitySession}
-  | {status: 'anonymous'}
-  | {status: 'unavailable'; error: unknown};
-
-export async function resolveAccountAuth(client: AccountSessionReader): Promise<AccountAuthResult> {
-  try {
-    const session = await client.getSession();
-    return session.authenticated
-      ? {
-          status: 'authenticated',
-          session: {
-            user: session.user,
-            permissions: session.permissions,
-            permissionAvailability: session.permission_availability.status === 'available'
-              ? {status: 'available'}
-              : {
-                  status: 'unavailable',
-                  code: 'permission_unavailable',
-                  requestId: session.permission_availability.request_id,
-                  retryAt: session.permission_availability.retry_at
-                }
-          }
-        }
-      : {status: 'anonymous'};
-  } catch (error) {
-    if (error instanceof AccountSessionError && (error.status === 400 || error.status === 401)) {
-      return {status: 'anonymous'};
-    }
-    return {status: 'unavailable', error};
-  }
 }
 
 export interface RefreshLockManager {
