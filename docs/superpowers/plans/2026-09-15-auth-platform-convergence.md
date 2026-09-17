@@ -266,7 +266,8 @@ git commit -m "feat: add shared browser authentication runtime"
 - Create: `packages/account-client/LICENSE`
 
 **Interfaces:**
-- Produces: exact coordinated breaking workspace package version `1.0.0`;
+- Produces: exact final coordinated workspace package version `1.0.4`, from
+  immutable tag `v1.0.4` at `7c6de6c409518ab5966f71cb0ce96f43bb58cc5e`;
   superseded exports and permission aliases are absent.
 - Produces: package-level `MIT` for `account-client`; other licenses remain.
 - Integrates: Unified authorization Frontend Task 1, including final Admin
@@ -286,10 +287,10 @@ Run `pnpm check:packages`, `pnpm pack:packages`, and `pnpm test:consumers`.
 
 - [ ] **Step 3: Set version and metadata**
 
-Set all aligned workspace packages to `1.0.0`. If fresh `origin/main` has
-already reached or passed that version, stop and update the complete contract
-ledger before editing manifests; do not choose an ad hoc replacement. Change
-only account-client's package license to `MIT` and ship
+Set all aligned workspace packages to the final exact `1.0.4`. Earlier
+planned `1.0.0` is superseded by the recorded immutable tag above; consumers
+must not choose an ad hoc replacement. Change only account-client's package
+license to `MIT` and ship
 `packages/account-client/LICENSE` in the artifact.
 Remove old runtime exports and the `legacyPermissions` map. Export domain
 capabilities from an AuthZ-specific subpath that AuthN modules cannot import.
