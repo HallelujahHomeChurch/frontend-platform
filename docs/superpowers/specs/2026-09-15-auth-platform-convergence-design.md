@@ -95,6 +95,9 @@ export type AccountAuthEvent = {
 };
 
 export type BrowserOAuthConfig = {
+  // Required when the relying application's origin is not the Account host.
+  // The same base is used for authorization-code exchange.
+  authorizeBaseUrl?: string;
   clientId: string;
   redirectUri: string;
   scope: string;

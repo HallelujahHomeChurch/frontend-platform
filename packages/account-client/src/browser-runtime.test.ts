@@ -156,6 +156,30 @@ describe('browser account auth runtime', () => {
     expect(events).toContainEqual(expect.objectContaining({stage: 'access_token', outcome: 'succeeded'}));
   });
 
+  it('uses the configured Account authorization server for a hosted sign-in', async () => {
+    const assign = vi.fn();
+    vi.stubGlobal('location', {href: 'https://www.alive.org.tw/zh-Hant', assign});
+    const runtime = createBrowserAccountAuthRuntime({
+      client: client(),
+      storage: storage(),
+      oauth: {
+        authorizeBaseUrl: 'https://account.alive.org.tw/api/account/v1',
+        clientId: 'www-web',
+        redirectUri: 'https://www.alive.org.tw/oauth/callback',
+        scope: 'openid profile email'
+      }
+    });
+
+    await runtime.beginSignIn('/zh-Hant');
+
+    const destination = new URL(assign.mock.calls[0][0]);
+    expect(destination.origin).toBe('https://account.alive.org.tw');
+    expect(destination.pathname).toBe('/api/account/v1/oauth/authorize');
+    expect(destination.searchParams.get('client_id')).toBe('www-web');
+    expect(destination.searchParams.get('redirect_uri')).toBe('https://www.alive.org.tw/oauth/callback');
+    vi.unstubAllGlobals();
+  });
+
   it('completes an exact hosted callback and clears the transaction', async () => {
     const runtimeStorage = storage();
     const transaction = await createOAuthTransaction('/content', {
@@ -179,6 +203,7 @@ describe('browser account auth runtime', () => {
       now: () => 1_000,
       storage: runtimeStorage,
       oauth: {
+        authorizeBaseUrl: 'https://account.alive.org.tw/api/account/v1',
         clientId: 'admin-web',
         redirectUri: 'https://admin.alive.org.tw/oauth/callback',
         scope: 'openid profile email'
@@ -187,6 +212,7 @@ describe('browser account auth runtime', () => {
 
     await expect(runtime.completeSignIn()).resolves.toMatchObject({status: 'authenticated'});
     await expect(runtime.getAccessToken()).resolves.toBe('callback-access');
+    expect(fetch).toHaveBeenCalledWith('https://account.alive.org.tw/api/account/v1/oauth/token', expect.anything());
     expect(runtimeStorage.getItem('hhc:oauth:admin-web')).toBeNull();
     vi.unstubAllGlobals();
   });

@@ -1,6 +1,6 @@
 {
   "name": "hhc-frontend-platform",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "license": "UNLICENSED",
   "packageManager": "pnpm@10.12.1",
@@ -10,6 +10,7 @@
   "scripts": {
     "build": "pnpm -r --if-present build",
     "lint": "pnpm -r --if-present lint",
+    "pretest": "pnpm --filter @hallelujahhomechurch/account-client build",
     "test": "pnpm -r --if-present test:run",
     "check:packages": "pnpm --filter @hallelujahhomechurch/hhc-web-client exec tsc -p tsconfig.locale-contract.json && node scripts/check-package-contracts.mjs",
     "pack:packages": "node scripts/pack-packages.mjs",
