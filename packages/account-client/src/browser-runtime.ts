@@ -30,6 +30,8 @@ export type AccountAuthEvent = {
 };
 
 export type BrowserOAuthConfig = {
+  /** Account authorization-server API base. Defaults to the callback origin. */
+  authorizeBaseUrl?: string;
   clientId: string;
   redirectUri: string;
   scope: string;
@@ -238,7 +240,7 @@ export function createBrowserAccountAuthRuntime({
         storageKey,
         transactionOptions: {now}
       });
-      const authorizeBaseUrl = new URL('/api/account/v1', location.href).toString();
+      const authorizeBaseUrl = oauthAuthorizeBaseUrl(oauth, location.href);
       location.assign(buildAuthorizeUrl({authorizeBaseUrl, ...oauth}, transaction).toString());
     },
     async completeSignIn(callbackUrl) {
@@ -259,7 +261,7 @@ export function createBrowserAccountAuthRuntime({
         if (!code || !validateOAuthState(transaction, callbackState)) {
           throw new AccountSessionError(400, 'OAUTH_CALLBACK_INVALID');
         }
-        const authorizeBaseUrl = new URL('/api/account/v1', redirect).toString();
+        const authorizeBaseUrl = oauthAuthorizeBaseUrl(oauth, redirect.href);
         const response = await exchangeAuthorizationCode({authorizeBaseUrl, ...oauth}, transaction, code);
         if (typeof response.expires_in === 'number') {
           install({accessToken: response.access_token, expiresIn: response.expires_in}, generation);
@@ -296,4 +298,8 @@ function browserStorage(): RuntimeStorage | undefined {
 
 function oauthStorageKey(clientId: string): string {
   return `hhc:oauth:${clientId}`;
+}
+
+function oauthAuthorizeBaseUrl(oauth: BrowserOAuthConfig, base: string): string {
+  return new URL(oauth.authorizeBaseUrl ?? '/api/account/v1', base).toString();
 }
