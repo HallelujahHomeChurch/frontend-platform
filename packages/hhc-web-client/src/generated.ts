@@ -247,23 +247,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/meeting-sync-windows": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List redacted meeting media sync windows */
-        get: operations["listMeetingSyncWindows"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/admin/operations/church-units": {
         parameters: {
             query?: never;
@@ -504,23 +487,6 @@ export interface paths {
         };
         /** Resolve published bulletin locale entitlements for delivery */
         get: operations["getPrivateBulletinNotificationPolicy"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/priv/meeting-sync-windows": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List internal meeting media sync windows */
-        get: operations["listPrivateMeetingSyncWindows"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1899,12 +1865,6 @@ export interface components {
             /** Format: int64 */
             version: number;
         };
-        MediaSyncWindow: {
-            /** Format: date-time */
-            startsAt: string;
-            /** Format: date-time */
-            endsAt: string;
-        };
         MeetingCollectionBindings: {
             collectionIds: string[];
         };
@@ -1923,9 +1883,6 @@ export interface components {
         };
         PublicMeetingOccurrenceListEnvelope: {
             data: components["schemas"]["PublicMeetingOccurrence"][];
-        };
-        MediaSyncWindowListEnvelope: {
-            data: components["schemas"]["MediaSyncWindow"][];
         };
         MeetingOccurrenceListEnvelope: {
             data: components["schemas"]["MeetingOccurrence"][];
@@ -3186,16 +3143,6 @@ export interface components {
             };
             content?: never;
         };
-        /** @description Redacted media sync windows. */
-        MediaSyncWindowList: {
-            headers: {
-                "Cache-Control"?: "private, no-store";
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["MediaSyncWindowListEnvelope"];
-            };
-        };
         /** @description Internal meeting occurrences without collection bindings. */
         MeetingOccurrenceList: {
             headers: {
@@ -4035,27 +3982,6 @@ export interface operations {
             500: components["responses"]["Error"];
         };
     };
-    listMeetingSyncWindows: {
-        parameters: {
-            query?: {
-                /** @description Inclusive range start; defaults to now. */
-                from?: components["parameters"]["RangeFrom"];
-                /** @description Exclusive range end; defaults to 30 days after from and cannot exceed 90 days. */
-                to?: components["parameters"]["RangeTo"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: components["responses"]["MediaSyncWindowList"];
-            400: components["responses"]["Error"];
-            401: components["responses"]["AdminUnauthorized"];
-            403: components["responses"]["AdminForbidden"];
-            500: components["responses"]["Error"];
-        };
-    };
     listChurchUnits: {
         parameters: {
             query?: {
@@ -4478,26 +4404,6 @@ export interface operations {
             401: components["responses"]["AdminUnauthorized"];
             404: components["responses"]["Error"];
             503: components["responses"]["Error"];
-        };
-    };
-    listPrivateMeetingSyncWindows: {
-        parameters: {
-            query?: {
-                /** @description Inclusive range start; defaults to now. */
-                from?: components["parameters"]["RangeFrom"];
-                /** @description Exclusive range end; defaults to 30 days after from and cannot exceed 90 days. */
-                to?: components["parameters"]["RangeTo"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: components["responses"]["MediaSyncWindowList"];
-            400: components["responses"]["Error"];
-            401: components["responses"]["AdminUnauthorized"];
-            500: components["responses"]["Error"];
         };
     };
     listCampaigns: {
