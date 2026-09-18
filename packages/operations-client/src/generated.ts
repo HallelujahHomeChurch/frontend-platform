@@ -1090,6 +1090,27 @@ export interface components {
             /** Format: date-time */
             startsAt?: string;
         };
+        PublicOccurrence: {
+            occurrenceId: string;
+            meetingKey: string;
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string;
+            /** @enum {string} */
+            status: "scheduled" | "cancelled";
+        };
+        PublicOccurrenceList: components["schemas"]["PublicOccurrence"][];
+        PublicMeeting: {
+            key: string;
+            name: string;
+            description?: string;
+            timezone: string;
+            schedule: components["schemas"]["Schedule"];
+            durationMinutes: number;
+            nextOccurrence?: components["schemas"]["PublicOccurrence"];
+        };
+        PublicMeetingList: components["schemas"]["PublicMeeting"][];
         MeetingInput: {
             key: string;
             name: string;
@@ -1669,7 +1690,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PublicMeetingList"];
+                };
             };
             /** @description Protected identity header rejected */
             400: {
@@ -1696,7 +1719,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PublicMeeting"];
+                };
             };
             /** @description Meeting not found */
             404: {
@@ -1724,7 +1749,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PublicOccurrenceList"];
+                };
             };
             /** @description Invalid window */
             400: {
