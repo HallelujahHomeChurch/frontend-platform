@@ -20,7 +20,7 @@ paths:
       summary: List active public meetings
       x-hhc-visibility: public
       security: []
-      responses: { '200': { description: Public meetings }, '400': { description: Protected identity header rejected } }
+      responses: { '200': { description: Public meetings, content: { application/json: { schema: { $ref: '#/components/schemas/PublicMeetingList' } } } }, '400': { description: Protected identity header rejected } }
   /api/meetings/{meetingKey}:
     get:
       tags: [Operations]
@@ -29,7 +29,7 @@ paths:
       x-hhc-visibility: public
       security: []
       parameters: [{ name: meetingKey, in: path, required: true, schema: { type: string } }]
-      responses: { '200': { description: Public meeting }, '404': { description: Meeting not found } }
+      responses: { '200': { description: Public meeting, content: { application/json: { schema: { $ref: '#/components/schemas/PublicMeeting' } } } }, '404': { description: Meeting not found } }
   /api/meeting-occurrences:
     get:
       tags: [Operations]
@@ -38,7 +38,7 @@ paths:
       x-hhc-visibility: public
       security: []
       parameters: [{ name: from, in: query, schema: { type: string, format: date-time } }, { name: to, in: query, schema: { type: string, format: date-time } }]
-      responses: { '200': { description: Public meeting occurrences }, '400': { description: Invalid window } }
+      responses: { '200': { description: Public meeting occurrences, content: { application/json: { schema: { $ref: '#/components/schemas/PublicOccurrenceList' } } } }, '400': { description: Invalid window } }
   /api/meeting-sync-windows:
     get:
       tags: [Operations]
@@ -1010,6 +1010,34 @@ components:
         daysOfWeek: { type: array, items: { type: integer, minimum: 0, maximum: 6 } }
         startTime: { type: string, pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$' }
         startsAt: { type: string, format: date-time }
+    PublicOccurrence:
+      type: object
+      additionalProperties: false
+      required: [occurrenceId, meetingKey, startsAt, endsAt, status]
+      properties:
+        occurrenceId: { type: string }
+        meetingKey: { type: string }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        status: { type: string, enum: [scheduled, cancelled] }
+    PublicOccurrenceList:
+      type: array
+      items: { $ref: '#/components/schemas/PublicOccurrence' }
+    PublicMeeting:
+      type: object
+      additionalProperties: false
+      required: [key, name, timezone, schedule, durationMinutes]
+      properties:
+        key: { type: string }
+        name: { type: string }
+        description: { type: string }
+        timezone: { type: string }
+        schedule: { $ref: '#/components/schemas/Schedule' }
+        durationMinutes: { type: integer, minimum: 1, maximum: 1440 }
+        nextOccurrence: { $ref: '#/components/schemas/PublicOccurrence' }
+    PublicMeetingList:
+      type: array
+      items: { $ref: '#/components/schemas/PublicMeeting' }
     MeetingInput:
       type: object
       additionalProperties: false
