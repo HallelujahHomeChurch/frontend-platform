@@ -53,7 +53,7 @@ export interface BrowserAccountAuthRuntime {
   start(): Promise<AccountAuthState>;
   getSnapshot(): AccountAuthState;
   subscribe(listener: () => void): () => void;
-  beginSignIn(returnTo?: string): Promise<void>;
+  beginSignIn(returnTo?: string, options?: {prompt?: 'none'}): Promise<void>;
   completeSignIn(callbackUrl?: string): Promise<AccountAuthState>;
   revalidate(): Promise<AccountAuthState>;
   getAccessToken(): Promise<string | null>;
@@ -231,7 +231,7 @@ export function createBrowserAccountAuthRuntime({
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
-    async beginSignIn(returnTo = '/') {
+    async beginSignIn(returnTo = '/', options?: {prompt?: 'none'}) {
       if (!oauth || !storage || typeof location === 'undefined') {
         throw new Error('Browser OAuth is not configured');
       }
@@ -243,7 +243,7 @@ export function createBrowserAccountAuthRuntime({
         transactionOptions: {now}
       });
       const authorizeBaseUrl = oauthAuthorizeBaseUrl(oauth, location.href);
-      location.assign(buildAuthorizeUrl({authorizeBaseUrl, ...oauth}, transaction).toString());
+      location.assign(buildAuthorizeUrl({authorizeBaseUrl, ...oauth}, transaction, options).toString());
     },
     async completeSignIn(callbackUrl) {
       if (!oauth || !storage || typeof location === 'undefined') {
