@@ -443,6 +443,16 @@ paths:
       x-hhc-callers: [hhc-web-api]
       security: [{ daprCallerAppID: [] }]
       responses: { '200': { description: Occurrences } }
+  /priv/operations/meeting-occurrences:
+    get:
+      tags: [Operations]
+      operationId: listLineMeetingOccurrences
+      summary: List private meeting occurrences for the LINE schedule reader
+      x-hhc-visibility: private
+      x-hhc-callers: [hhc-line-function-bot]
+      security: [{ daprCallerAppID: [] }]
+      parameters: [{ name: from, in: query, schema: { type: string, format: date-time } }, { name: to, in: query, schema: { type: string, format: date-time } }]
+      responses: { '200': { description: Occurrences envelope }, '400': { description: Invalid window }, '401': { description: Missing trusted caller }, '403': { description: Caller is not the LINE bot } }
   /priv/operations/sync-windows:
     get:
       tags: [Operations]
@@ -450,8 +460,9 @@ paths:
       summary: List collection-bound media sync windows
       x-hhc-visibility: private
       x-hhc-callers: [hhc-web-api]
-      security: [{ daprCallerAppID: [] }]
-      responses: { '200': { description: Sync windows } }
+      x-hhc-workload-principals: [asset-scan-warmer, hhc-line-function-bot]
+      security: [{ daprCallerAppID: [] }, { workloadPrincipal: [] }]
+      responses: { '200': { description: Sync windows, content: { application/json: { schema: { $ref: '#/components/schemas/MediaSyncWindowsEnvelope' } } } }, '401': { description: Missing trusted caller or workload identity } }
   /api/admin/operations/memberships:
     get:
       tags: [Operations]
@@ -1049,6 +1060,19 @@ components:
     MeetingList:
       type: array
       items: { $ref: '#/components/schemas/Meeting' }
+    MediaSyncWindow:
+      type: object
+      additionalProperties: false
+      required: [startsAt, endsAt]
+      properties:
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+    MediaSyncWindowsEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/MediaSyncWindow' } }
     MeetingDetail:
       allOf:
         - { $ref: '#/components/schemas/Meeting' }
@@ -1498,6 +1522,11 @@ components:
       in: header
       name: Dapr-Caller-App-Id
       description: Dapr API token required for private Operations service calls.
+    workloadPrincipal:
+      type: apiKey
+      in: header
+      name: X-MS-CLIENT-PRINCIPAL
+      description: Injected by Azure Container Apps after exact workload identity validation.
     gatewayPrincipal:
       type: apiKey
       in: header

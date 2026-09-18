@@ -497,6 +497,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/priv/operations/meeting-occurrences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List private meeting occurrences for the LINE schedule reader */
+        get: operations["listLineMeetingOccurrences"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/priv/operations/sync-windows": {
         parameters: {
             query?: never;
@@ -1126,6 +1143,15 @@ export interface components {
             version: number;
         };
         MeetingList: components["schemas"]["Meeting"][];
+        MediaSyncWindow: {
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string;
+        };
+        MediaSyncWindowsEnvelope: {
+            data: components["schemas"]["MediaSyncWindow"][];
+        };
         MeetingDetail: components["schemas"]["Meeting"] & {
             overrides: components["schemas"]["OccurrenceOverride"][];
             collectionIds: string[];
@@ -3177,6 +3203,48 @@ export interface operations {
             };
         };
     };
+    listLineMeetingOccurrences: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Occurrences envelope */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid window */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing trusted caller */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Caller is not the LINE bot */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     listSyncWindows: {
         parameters: {
             query?: never;
@@ -3188,6 +3256,15 @@ export interface operations {
         responses: {
             /** @description Sync windows */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaSyncWindowsEnvelope"];
+                };
+            };
+            /** @description Missing trusted caller or workload identity */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

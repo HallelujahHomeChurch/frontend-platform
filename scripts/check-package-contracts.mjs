@@ -44,6 +44,13 @@ for (const file of ['index.ts', 'session-client.ts', 'browser-runtime.ts', 'oaut
   assert.doesNotMatch(source, /admin-access|operations-client/, `${file}: AuthN must not import domain AuthZ`)
 }
 
+const adminAccess = await readFile(new URL('account-client/src/admin-access.ts', packageRoot), 'utf8')
+assert.doesNotMatch(adminAccess, /cms:(?:read|write|publish)(?!:)/, 'Admin AuthZ must not accept broad CMS permissions')
+
+const websiteOpenAPI = await readFile(new URL('hhc-web-client/openapi/hhc-web-api.yaml', packageRoot), 'utf8')
+assert.doesNotMatch(websiteOpenAPI, /cms:(?:read|write|publish)(?!:)/, 'Website contract must not accept broad CMS permissions')
+assert.doesNotMatch(websiteOpenAPI, /\/admin\/operations|\/priv\/meeting-occurrences|^  \/meetings:/m, 'Website contract must not retain Operations routes')
+
 console.log(`Package contracts pass (${packageDirs.length} packages checked).`)
 
 function collectExportTargets(value) {
