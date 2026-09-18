@@ -217,6 +217,42 @@ describe('browser account auth runtime', () => {
     vi.unstubAllGlobals();
   });
 
+  it('uses a product-local endpoint for a hosted authorization code exchange', async () => {
+    const runtimeStorage = storage();
+    const transaction = await createOAuthTransaction('/content', {
+      randomBytes: () => new Uint8Array(32).fill(7),
+      now: () => 1_000
+    });
+    saveOAuthTransaction(transaction, {
+      storage: runtimeStorage,
+      storageKey: 'hhc:oauth:admin-web'
+    });
+    vi.stubGlobal('location', {
+      href: `https://admin.alive.org.tw/oauth/callback?code=code-1&state=${transaction.state}`,
+      assign: vi.fn()
+    });
+    vi.stubGlobal('fetch', vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
+      access_token: 'callback-access',
+      expires_in: 900
+    }), {headers: {'content-type': 'application/json'}})));
+    const runtime = createBrowserAccountAuthRuntime({
+      client: client(),
+      now: () => 1_000,
+      storage: runtimeStorage,
+      oauth: {
+        authorizeBaseUrl: 'https://account.alive.org.tw/api/account/v1',
+        tokenBaseUrl: '/api/account/v1',
+        clientId: 'admin-web',
+        redirectUri: 'https://admin.alive.org.tw/oauth/callback',
+        scope: 'openid profile email'
+      }
+    });
+
+    await expect(runtime.completeSignIn()).resolves.toMatchObject({status: 'authenticated'});
+    expect(fetch).toHaveBeenCalledWith('https://admin.alive.org.tw/api/account/v1/oauth/token', expect.anything());
+    vi.unstubAllGlobals();
+  });
+
   it('rejects a callback on another path without exchanging a code', async () => {
     const runtimeStorage = storage();
     vi.stubGlobal('location', {
