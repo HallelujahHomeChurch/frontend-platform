@@ -32,6 +32,8 @@ export type AccountAuthEvent = {
 export type BrowserOAuthConfig = {
   /** Account authorization-server API base. Defaults to the callback origin. */
   authorizeBaseUrl?: string;
+  /** Product-local token exchange API base. Defaults to the authorization server. */
+  tokenBaseUrl?: string;
   clientId: string;
   redirectUri: string;
   scope: string;
@@ -261,8 +263,8 @@ export function createBrowserAccountAuthRuntime({
         if (!code || !validateOAuthState(transaction, callbackState)) {
           throw new AccountSessionError(400, 'OAUTH_CALLBACK_INVALID');
         }
-        const authorizeBaseUrl = oauthAuthorizeBaseUrl(oauth, redirect.href);
-        const response = await exchangeAuthorizationCode({authorizeBaseUrl, ...oauth}, transaction, code);
+        const tokenBaseUrl = oauthTokenBaseUrl(oauth, redirect.href);
+        const response = await exchangeAuthorizationCode({...oauth, authorizeBaseUrl: tokenBaseUrl}, transaction, code);
         if (typeof response.expires_in === 'number') {
           install({accessToken: response.access_token, expiresIn: response.expires_in}, generation);
         }
@@ -302,4 +304,8 @@ function oauthStorageKey(clientId: string): string {
 
 function oauthAuthorizeBaseUrl(oauth: BrowserOAuthConfig, base: string): string {
   return new URL(oauth.authorizeBaseUrl ?? '/api/account/v1', base).toString();
+}
+
+function oauthTokenBaseUrl(oauth: BrowserOAuthConfig, base: string): string {
+  return new URL(oauth.tokenBaseUrl ?? oauth.authorizeBaseUrl ?? '/api/account/v1', base).toString();
 }
