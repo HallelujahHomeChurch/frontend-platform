@@ -180,6 +180,26 @@ describe('browser account auth runtime', () => {
     vi.unstubAllGlobals();
   });
 
+  it('forwards prompt=none for a silent hosted sign-in', async () => {
+    const assign = vi.fn();
+    vi.stubGlobal('location', {href: 'https://www.alive.org.tw/zh-Hant', assign});
+    const runtime = createBrowserAccountAuthRuntime({
+      client: client(),
+      storage: storage(),
+      oauth: {
+        authorizeBaseUrl: 'https://account.alive.org.tw/api/account/v1',
+        clientId: 'www-web',
+        redirectUri: 'https://www.alive.org.tw/oauth/callback',
+        scope: 'openid profile email'
+      }
+    });
+
+    await runtime.beginSignIn('/zh-Hant', {prompt: 'none'});
+
+    expect(new URL(assign.mock.calls[0][0]).searchParams.get('prompt')).toBe('none');
+    vi.unstubAllGlobals();
+  });
+
   it('completes an exact hosted callback and clears the transaction', async () => {
     const runtimeStorage = storage();
     const transaction = await createOAuthTransaction('/content', {
