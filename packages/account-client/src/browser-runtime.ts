@@ -269,6 +269,7 @@ export function createBrowserAccountAuthRuntime({
           install({accessToken: response.access_token, expiresIn: response.expires_in}, generation);
         }
         emit('callback', 'succeeded');
+        if (revalidationInFlight) await revalidationInFlight;
         return revalidate();
       } catch (error) {
         emit('callback', 'rejected', error);
