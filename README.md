@@ -30,9 +30,14 @@ Consumers install exact package versions from GitHub Packages. Local development
 requires a GitHub token with `read:packages`; GitHub Actions uses its repository
 `GITHUB_TOKEN`.
 
-## Unified auth contract 1.0.9
+## Unified auth and Operations contract 1.0.10
 
 Authenticated sessions carry top-level opaque `permissions: string[]`; an empty
 list remains authenticated. Product-neutral AuthN exposes only exact-match plus
 wildcard `hasPermission()`. Admin destinations and Operations scoped roles live
 in AuthZ modules, with no broad CMS compatibility aliases.
+
+The Operations contract uses stable Account-bound members, one active church,
+multiple family/small-group/fellowship affiliations, scoped responsibilities,
+and direct bulletin entitlements. Qualification and validity-window fields are
+not part of the contract.

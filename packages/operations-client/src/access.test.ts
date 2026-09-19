@@ -3,7 +3,6 @@ import {resolveAdminAccess} from './access';
 
 const snapshot = {
   memberships: [],
-  qualifications: [],
   entitlements: [],
   version: 'a'.repeat(64),
   orgRoles: []
@@ -18,8 +17,7 @@ describe('shared Admin access projection', () => {
         orgRoles: [{
           assignmentId: 'a1',
           role: 'meeting_manager',
-          orgUnit: {id: 'o1', kind: 'family', name: 'Family'},
-          validFrom: '2026-09-16T00:00:00Z'
+          orgUnit: {id: 'o1', kind: 'family', name: 'Family'}
         }]
       }
     })).toMatchObject({
@@ -36,8 +34,7 @@ describe('shared Admin access projection', () => {
         orgRoles: [{
           assignmentId: 'a1',
           role: 'small_group_leader',
-          orgUnit: {id: 'o1', kind: 'small_group', name: 'Group'},
-          validFrom: '2026-09-16T00:00:00Z'
+          orgUnit: {id: 'o1', kind: 'small_group', name: 'Group'}
         }]
       }
     })).toEqual({status: 'available', destinations: []});
@@ -60,8 +57,7 @@ describe('shared Admin access projection', () => {
         orgRoles: [{
           assignmentId: 'a1',
           role: 'future_role' as never,
-          orgUnit: {id: 'o1', kind: 'family' as const, name: 'Family'},
-          validFrom: '2026-09-16T00:00:00Z'
+          orgUnit: {id: 'o1', kind: 'family' as const, name: 'Family'}
         }]
       }
     };
