@@ -9,7 +9,7 @@ describe('Operations client authentication', () => {
   it('refreshes once after 401 and retries the original request once', async () => {
     const fetcher = vi.fn<typeof fetch>()
       .mockResolvedValueOnce(json({}, 401))
-      .mockResolvedValueOnce(json({memberships: [], orgRoles: [], qualifications: [], entitlements: [], version: 'a'.repeat(64)}));
+      .mockResolvedValueOnce(json({memberships: [], orgRoles: [], entitlements: [], version: 'a'.repeat(64)}));
     const refresh = vi.fn(async () => 'new-token');
     const client = createOperationsClient({
       baseUrl: '/api/operations',
@@ -42,7 +42,7 @@ describe('Operations client authentication', () => {
   });
 
   it('uses the contract path without sending trusted Gateway headers', async () => {
-    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(json({memberships: [], orgRoles: [], qualifications: [], entitlements: [], version: 'a'.repeat(64)}));
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(json({memberships: [], orgRoles: [], entitlements: [], version: 'a'.repeat(64)}));
     const client = createOperationsClient({
       baseUrl: '',
       getAccessToken: async () => 'token',

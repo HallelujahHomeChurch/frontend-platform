@@ -72,7 +72,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/operations/church-units": {
+    "/api/admin/operations/org-units": {
         parameters: {
             query?: never;
             header?: never;
@@ -84,6 +84,23 @@ export interface paths {
         put?: never;
         /** Create an organization unit */
         post: operations["createAdminOrgUnit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/operations/org-units/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Atomically create multiple organization units */
+        post: operations["createAdminOrgUnitBatch"];
         delete?: never;
         options?: never;
         head?: never;
@@ -110,7 +127,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/operations/church-units/{id}": {
+    "/api/admin/operations/org-units/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -122,13 +139,48 @@ export interface paths {
         /** Update an organization unit */
         put: operations["updateAdminOrgUnit"];
         post?: never;
+        /** Permanently delete a never-used organization unit */
+        delete: operations["deleteUnusedAdminOrgUnit"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/operations/org-units/{id}/dependencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preview organization unit archive and delete dependencies */
+        get: operations["getAdminOrgUnitDependencies"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/admin/operations/church-units/{id}/{action}": {
+    "/api/admin/operations/org-units/{id}/member-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search only the membership candidates allowed for this organization unit */
+        get: operations["listAdminOrgUnitMemberCandidates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/operations/org-units/{id}/{action}": {
         parameters: {
             query?: never;
             header?: never;
@@ -531,25 +583,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/operations/memberships": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List organization memberships */
-        get: operations["listMemberships"];
-        put?: never;
-        /** Approve an organization membership */
-        post: operations["createMembership"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/operations/memberships/{id}/{action}": {
+    "/api/admin/operations/account-resolutions": {
         parameters: {
             query?: never;
             header?: never;
@@ -558,33 +592,49 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Transition a membership lifecycle */
-        post: operations["transitionMembership"];
+        /** Resolve one existing active HHC Account by exact canonical email */
+        post: operations["resolveMembershipAccount"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/admin/operations/membership-qualifications": {
+    "/api/admin/operations/members": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List membership qualifications */
-        get: operations["listMembershipQualifications"];
+        /** List Members in the caller's route scope */
+        get: operations["listMembers"];
         put?: never;
-        /** Create a pending membership qualification */
-        post: operations["createMembershipQualification"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/admin/operations/membership-qualifications/{id}/{action}": {
+    "/api/admin/operations/members/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get one Member visible to the caller */
+        get: operations["getMember"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/operations/members/batch": {
         parameters: {
             query?: never;
             header?: never;
@@ -593,8 +643,147 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Transition a qualification lifecycle */
-        post: operations["transitionMembershipQualification"];
+        /** Create multiple Members with row-level partial success */
+        post: operations["createMemberBatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/operations/membership-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List pending requests created within one managed organization unit */
+        get: operations["listScopedMembershipRequests"];
+        put?: never;
+        /** Submit a pending church membership request from a managed lower scope */
+        post: operations["createMembershipRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/operations/church-memberships": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List church membership lifecycles */
+        get: operations["listChurchMemberships"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/operations/church-memberships/{id}/{action}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve, reject, end, or requester-cancel a church membership */
+        post: operations["transitionChurchMembership"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/operations/membership-transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List church transfer requests */
+        get: operations["listMembershipTransfers"];
+        put?: never;
+        /** Start a dual-approval church transfer */
+        post: operations["createMembershipTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/operations/membership-transfers/{id}/{action}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve, reject, cancel, or directly complete a church transfer */
+        post: operations["transitionMembershipTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/operations/org-memberships": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List current organization affiliations */
+        get: operations["listOrgMemberships"];
+        put?: never;
+        /** Add an immediate organization affiliation */
+        post: operations["createOrgMembership"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/operations/org-memberships/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove an affiliation with explicit child resolutions */
+        delete: operations["removeOrgMembership"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/operations/org-memberships/{id}/dependencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preview child affiliations before removal */
+        get: operations["getOrgMembershipDependencies"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -611,7 +800,7 @@ export interface paths {
         /** List member entitlement assignments */
         get: operations["listEntitlementAssignments"];
         put?: never;
-        /** Grant a compiled member entitlement */
+        /** Grant a direct member entitlement */
         post: operations["createEntitlementAssignment"];
         delete?: never;
         options?: never;
@@ -619,7 +808,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/operations/entitlement-assignments/{id}/revoke": {
+    "/api/admin/operations/entitlement-assignments/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -628,9 +817,9 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        post?: never;
         /** Revoke a member entitlement assignment */
-        post: operations["revokeEntitlementAssignment"];
-        delete?: never;
+        delete: operations["revokeEntitlementAssignment"];
         options?: never;
         head?: never;
         patch?: never;
@@ -654,7 +843,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/operations/org-role-assignments/{assignmentId}/revoke": {
+    "/api/admin/operations/org-role-assignments/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -663,9 +852,9 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        post?: never;
         /** Revoke a scoped organization responsibility */
-        post: operations["revokeOrgRoleAssignment"];
-        delete?: never;
+        delete: operations["revokeOrgRoleAssignment"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1022,11 +1211,10 @@ export interface components {
         /** @enum {string} */
         OperationStatus: "active" | "paused" | "archived";
         /** @enum {string} */
-        OrgUnitKind: "organization" | "congregation" | "family" | "small_group";
+        OrgUnitKind: "church" | "family" | "small_group" | "fellowship";
         /** @enum {string} */
         Visibility: "public" | "internal";
         OrgUnitInput: {
-            key: string;
             kind: components["schemas"]["OrgUnitKind"];
             name: string;
             description?: string;
@@ -1036,7 +1224,6 @@ export interface components {
         OrgUnit: {
             /** Format: uuid */
             id: string;
-            key: string;
             kind: components["schemas"]["OrgUnitKind"];
             name: string;
             description?: string;
@@ -1046,6 +1233,36 @@ export interface components {
             version: number;
         };
         OrgUnitList: components["schemas"]["OrgUnit"][];
+        OrgUnitBatchItem: {
+            kind: components["schemas"]["OrgUnitKind"];
+            name: string;
+            description?: string;
+            /** Format: uuid */
+            parentId?: string;
+            parentIndex?: number;
+        };
+        OrgUnitBatchInput: {
+            items: components["schemas"]["OrgUnitBatchItem"][];
+        };
+        DependencyCount: {
+            active: number;
+            total: number;
+        };
+        OrgUnitDependencies: {
+            children: components["schemas"]["DependencyCount"];
+            churchMemberships: components["schemas"]["DependencyCount"];
+            affiliations: components["schemas"]["DependencyCount"];
+            responsibilities: components["schemas"]["DependencyCount"];
+            meetings: components["schemas"]["DependencyCount"];
+            resources: components["schemas"]["DependencyCount"];
+            transfers: components["schemas"]["DependencyCount"];
+            canArchive: boolean;
+            canDelete: boolean;
+        };
+        DeleteConfirmation: {
+            /** Format: uuid */
+            confirmId: string;
+        };
         ResourceInput: {
             key: string;
             name: string;
@@ -1204,134 +1421,149 @@ export interface components {
             collectionIds: string[];
         };
         /** @enum {string} */
-        MembershipStatus: "pending" | "active" | "suspended" | "left" | "rejected";
+        MembershipStatus: "pending" | "active" | "ended" | "rejected";
         /** @enum {string} */
-        QualificationStatus: "pending" | "active" | "suspended" | "revoked" | "expired";
+        AssignmentStatus: "active" | "revoked";
         /** @enum {string} */
-        AssignmentStatus: "active" | "suspended" | "revoked" | "expired";
-        /** @enum {string} */
-        OrgRoleName: "pastor" | "family_leader" | "small_group_leader" | "meeting_manager" | "resource_manager" | "reservation_approver";
+        OrgRoleName: "pastor" | "church_membership_manager" | "family_leader" | "small_group_leader" | "fellowship_leader" | "meeting_manager" | "resource_manager" | "reservation_approver";
         /** @enum {string} */
         EntitlementCode: "bulletin.general.zh-Hant.access" | "bulletin.general.zh-Hans.access" | "bulletin.general.en.access";
-        MembershipInput: {
+        AccountResolutionInput: {
+            /** Format: email */
+            email: string;
             /** Format: uuid */
-            userId: string;
-            /** Format: uuid */
-            orgUnitId: string;
-            /** @constant */
-            status: "active";
-            /** @default false */
-            isPrimary: boolean;
-            /** Format: date-time */
-            validFrom: string;
-            /** Format: date-time */
-            validTo?: string;
+            churchOrgUnitId: string;
         };
-        Membership: {
+        AccountReference: {
+            /** Format: uuid */
+            accountUserId: string;
+            /** Format: email */
+            email: string;
+            displayName: string;
+        };
+        Member: {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
-            userId: string;
+            accountUserId: string;
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        MemberView: components["schemas"]["Member"] & {
+            account?: components["schemas"]["AccountReference"] | null;
+        };
+        MemberViewList: components["schemas"]["MemberView"][];
+        MemberCreateInput: {
+            /** Format: email */
+            email: string;
+            initialOrgUnitIds?: string[];
+        };
+        MembershipRequestInput: {
+            /** Format: email */
+            email: string;
             /** Format: uuid */
-            orgUnitId: string;
+            churchOrgUnitId: string;
+            /** Format: uuid */
+            requestedOrgUnitId: string;
+        };
+        MemberBatchInput: {
+            /** Format: uuid */
+            churchOrgUnitId: string;
+            members: components["schemas"]["MemberCreateInput"][];
+        };
+        MemberBatchResult: {
+            index: number;
+            /** @enum {string} */
+            status: "completed" | "failed";
+            member?: components["schemas"]["Member"];
+            churchMembership?: components["schemas"]["ChurchMembership"];
+            /** @enum {string} */
+            error?: "account_not_found" | "invalid_email" | "conflict" | "not_found" | "out_of_scope" | "invalid_request";
+        };
+        ChurchMembership: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            memberId: string;
+            /** Format: uuid */
+            churchOrgUnitId: string;
             status: components["schemas"]["MembershipStatus"];
-            isPrimary: boolean;
-            /** Format: date-time */
-            validFrom: string;
-            /** Format: date-time */
-            validTo?: string;
             /** Format: uuid */
-            approvedBy?: string;
+            requestedOrgUnitId?: string;
+            /** Format: uuid */
+            requestedBy: string;
+            /** Format: uuid */
+            decidedBy?: string;
             /** Format: date-time */
-            approvedAt?: string;
+            decidedAt?: string;
+            /** Format: uuid */
+            endedBy?: string;
+            /** Format: date-time */
+            endedAt?: string;
+            version: number;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
-            version: number;
         };
-        QualificationInput: {
+        ChurchMembershipList: components["schemas"]["ChurchMembership"][];
+        OrgMembershipInput: {
             /** Format: uuid */
-            userId: string;
-            /** @constant */
-            status: "pending";
-            /** Format: date-time */
-            validFrom: string;
-            /** Format: date-time */
-            validTo?: string;
-            reasonCode?: string;
+            memberId: string;
+            /** Format: uuid */
+            orgUnitId: string;
         };
-        Qualification: {
+        OrgMembership: {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
-            userId: string;
-            status: components["schemas"]["QualificationStatus"];
-            /** Format: date-time */
-            validFrom: string;
-            /** Format: date-time */
-            validTo?: string;
-            reasonCode?: string;
+            memberId: string;
             /** Format: uuid */
-            approvedBy?: string;
+            orgUnitId: string;
+            /** Format: uuid */
+            addedBy: string;
             /** Format: date-time */
-            approvedAt?: string;
+            addedAt: string;
+            /** Format: uuid */
+            removedBy?: string;
             /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
+            removedAt?: string;
             version: number;
+        };
+        ChildMembershipResolution: {
+            /** Format: uuid */
+            membershipId: string;
+            /** @enum {string} */
+            action: "remove" | "move";
+            /** Format: uuid */
+            targetOrgUnitId?: string;
+        };
+        OrgMembershipRemovalInput: {
+            children?: components["schemas"]["ChildMembershipResolution"][];
+        };
+        OrgMembershipDependencies: {
+            childMemberships: components["schemas"]["OrgMembership"][];
+            canRemove: boolean;
         };
         EntitlementInput: {
-            /** @enum {string} */
-            subjectType: "user" | "org_members" | "qualification_bundle";
-            subjectId: string;
+            /** Format: uuid */
+            memberId: string;
             entitlementCode: components["schemas"]["EntitlementCode"];
             /** @enum {string} */
-            source: "manual_assignment" | "organization_assignment" | "event_registration" | "qualification_bundle";
-            /** Format: date-time */
-            validFrom: string;
-            /** Format: date-time */
-            validTo?: string;
-        } & ({
-            /** @constant */
-            subjectType?: "user";
-            /** Format: uuid */
-            subjectId?: string;
-            /** @enum {string} */
-            source?: "manual_assignment" | "event_registration";
-        } | {
-            /** @constant */
-            subjectType?: "org_members";
-            /** Format: uuid */
-            subjectId?: string;
-            /** @constant */
-            source?: "organization_assignment";
-        } | {
-            /** @constant */
-            subjectType?: "qualification_bundle";
-            /**
-             * @description Compiled built-in bundle for subjects with an active membership qualification.
-             * @constant
-             */
-            subjectId?: "active_members";
-            /** @constant */
-            source?: "qualification_bundle";
-        });
+            source: "manual_assignment" | "event_registration";
+        };
         Entitlement: {
             /** Format: uuid */
             id: string;
-            /** @enum {string} */
-            subjectType: "user" | "org_members" | "qualification_bundle";
-            subjectId: string;
+            /** Format: uuid */
+            memberId: string;
             entitlementCode: components["schemas"]["EntitlementCode"];
             /** @enum {string} */
-            source: "manual_assignment" | "organization_assignment" | "event_registration" | "qualification_bundle";
+            source: "manual_assignment" | "event_registration";
             status: components["schemas"]["AssignmentStatus"];
-            /** Format: date-time */
-            validFrom: string;
-            /** Format: date-time */
-            validTo?: string;
             /** Format: uuid */
             assignedBy: string;
             /** Format: date-time */
@@ -1341,56 +1573,24 @@ export interface components {
             /** Format: date-time */
             revokedAt?: string;
             version: number;
-        } & ({
-            /** @constant */
-            subjectType?: "user";
-            /** Format: uuid */
-            subjectId?: string;
-            /** @enum {string} */
-            source?: "manual_assignment" | "event_registration";
-        } | {
-            /** @constant */
-            subjectType?: "org_members";
-            /** Format: uuid */
-            subjectId?: string;
-            /** @constant */
-            source?: "organization_assignment";
-        } | {
-            /** @constant */
-            subjectType?: "qualification_bundle";
-            /**
-             * @description Compiled built-in bundle for subjects with an active membership qualification.
-             * @constant
-             */
-            subjectId?: "active_members";
-            /** @constant */
-            source?: "qualification_bundle";
-        });
+        };
         OrgRoleInput: {
             /** Format: uuid */
-            userId: string;
+            memberId: string;
             /** Format: uuid */
             orgUnitId: string;
             role: components["schemas"]["OrgRoleName"];
-            /** Format: date-time */
-            validFrom: string;
-            /** Format: date-time */
-            validTo?: string;
         };
         OrgRole: {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
-            userId: string;
+            memberId: string;
             /** Format: uuid */
             orgUnitId: string;
             role: components["schemas"]["OrgRoleName"];
             /** @enum {string} */
             status: "active" | "revoked";
-            /** Format: date-time */
-            validFrom: string;
-            /** Format: date-time */
-            validTo?: string;
             /** Format: uuid */
             assignedBy: string;
             /** Format: date-time */
@@ -1401,8 +1601,49 @@ export interface components {
             revokedAt?: string;
             version: number;
         };
-        MembershipList: components["schemas"]["Membership"][];
-        QualificationList: components["schemas"]["Qualification"][];
+        MembershipTransferInput: {
+            /** Format: uuid */
+            memberId: string;
+            /** Format: uuid */
+            targetChurchOrgUnitId: string;
+            initialOrgUnitIds?: string[];
+            reason?: string;
+        };
+        MembershipTransfer: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            memberId: string;
+            /** Format: uuid */
+            sourceChurchOrgUnitId: string;
+            /** Format: uuid */
+            targetChurchOrgUnitId: string;
+            /** @enum {string} */
+            status: "pending_source_approval" | "pending_target_approval" | "completed" | "rejected" | "cancelled";
+            reason?: string;
+            initialOrgUnitIds?: string[];
+            /** Format: uuid */
+            initiatedBy: string;
+            /** Format: uuid */
+            sourceApprovedBy?: string;
+            /** Format: date-time */
+            sourceApprovedAt?: string;
+            /** Format: uuid */
+            targetApprovedBy?: string;
+            /** Format: date-time */
+            targetApprovedAt?: string;
+            /** Format: uuid */
+            completedBy?: string;
+            /** Format: date-time */
+            completedAt?: string;
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        MembershipTransferList: components["schemas"]["MembershipTransfer"][];
+        OrgMembershipList: components["schemas"]["OrgMembership"][];
         EntitlementList: components["schemas"]["Entitlement"][];
         OrgRoleList: components["schemas"]["OrgRole"][];
         EntitlementCheckRequest: {
@@ -1415,7 +1656,7 @@ export interface components {
             /** @enum {string} */
             decision: "allow" | "deny";
             /** @enum {string} */
-            reason: "allowed" | "membership_required" | "membership_suspended" | "entitlement_required";
+            reason: "allowed" | "membership_required" | "entitlement_required";
             version: string;
         };
         EntitlementCheckResponse: {
@@ -1431,43 +1672,29 @@ export interface components {
             /** Format: uuid */
             membershipId: string;
             orgUnit: components["schemas"]["OrgUnitSummary"];
-            isPrimary: boolean;
-            /** Format: date-time */
-            validFrom: string;
-            /** Format: date-time */
-            validTo?: string;
+        };
+        ChurchMembershipSummary: {
+            /** Format: uuid */
+            membershipId: string;
+            church: components["schemas"]["OrgUnitSummary"];
         };
         OrgRoleSummary: {
             /** Format: uuid */
             assignmentId: string;
             role: components["schemas"]["OrgRoleName"];
             orgUnit: components["schemas"]["OrgUnitSummary"];
-            /** Format: date-time */
-            validFrom: string;
-            /** Format: date-time */
-            validTo?: string;
-        };
-        QualificationSummary: {
-            /** Format: uuid */
-            qualificationId: string;
-            /** Format: date-time */
-            validFrom: string;
-            /** Format: date-time */
-            validTo?: string;
         };
         EntitlementSummary: {
             /** Format: uuid */
             assignmentId: string;
             entitlementCode: string;
-            /** Format: date-time */
-            validFrom: string;
-            /** Format: date-time */
-            validTo?: string;
         };
         AccessSnapshot: {
+            /** Format: uuid */
+            memberId?: string;
+            churchMembership?: components["schemas"]["ChurchMembershipSummary"];
             memberships: components["schemas"]["MembershipSummary"][];
             orgRoles: components["schemas"]["OrgRoleSummary"][];
-            qualifications: components["schemas"]["QualificationSummary"][];
             entitlements: components["schemas"]["EntitlementSummary"][];
             version: string;
         };
@@ -1496,7 +1723,7 @@ export interface components {
         };
         DSRExportRecord: {
             /** @enum {string} */
-            recordType: "org_membership" | "org_role_assignment" | "membership_qualification" | "entitlement_assignment" | "resource_reservation";
+            recordType: "member" | "church_membership" | "org_membership" | "org_role_assignment" | "membership_transfer" | "entitlement_assignment" | "resource_reservation";
             /** Format: uuid */
             recordKey: string;
             data: {
@@ -1661,10 +1888,8 @@ export interface components {
         ActorUserID: string;
         StatusAction: "pause" | "resume" | "restore" | "archive";
         OccurrenceDate: string;
-        UserID: string;
         OrgUnitID: string;
         Status: string;
-        EffectiveAt: string;
         IncludeArchived: boolean;
         Limit: number;
         IdempotencyKey: string;
@@ -1852,6 +2077,53 @@ export interface operations {
             };
         };
     };
+    createAdminOrgUnitBatch: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrgUnitBatchInput"];
+            };
+        };
+        responses: {
+            /** @description Organization units created atomically */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgUnitList"];
+                };
+            };
+            /** @description Invalid row or parent reference */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Duplicate sibling or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     getAdminOperationOptions: {
         parameters: {
             query?: never;
@@ -1959,6 +2231,128 @@ export interface operations {
             };
             /** @description Version mismatch */
             412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    deleteUnusedAdminOrgUnit: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteConfirmation"];
+            };
+        };
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unit has historical dependencies */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Version mismatch */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getAdminOrgUnitDependencies: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Dependency preview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgUnitDependencies"];
+                };
+            };
+            /** @description Scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listAdminOrgUnitMemberCandidates: {
+        parameters: {
+            query?: {
+                q?: string;
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Scoped candidates */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberViewList"];
+                };
+            };
+            /** @description Scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Account labels unavailable */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3299,13 +3693,53 @@ export interface operations {
             };
         };
     };
-    listMemberships: {
+    resolveMembershipAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountResolutionInput"];
+            };
+        };
+        responses: {
+            /** @description Minimal Account reference */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountReference"];
+                };
+            };
+            /** @description Unknown or inactive Account */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Account lookup unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listMembers: {
         parameters: {
             query?: {
-                userId?: components["parameters"]["UserID"];
+                accountUserId?: string;
+                memberId?: string;
+                churchId?: string;
                 orgUnitId?: components["parameters"]["OrgUnitID"];
                 status?: components["parameters"]["Status"];
-                effectiveAt?: components["parameters"]["EffectiveAt"];
+                q?: string;
                 limit?: components["parameters"]["Limit"];
             };
             header?: never;
@@ -3314,13 +3748,364 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Memberships */
+            /** @description Scoped Member rows */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MembershipList"];
+                    "application/json": components["schemas"]["MemberViewList"];
+                };
+            };
+            /** @description Scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Account labels unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Member */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberView"];
+                };
+            };
+            /** @description Scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    createMemberBatch: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberBatchInput"];
+            };
+        };
+        responses: {
+            /** @description Row-addressable results */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberBatchResult"][];
+                };
+            };
+            /** @description Scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Account lookup unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listScopedMembershipRequests: {
+        parameters: {
+            query?: {
+                orgUnitId?: components["parameters"]["OrgUnitID"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pending requests */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChurchMembershipList"];
+                };
+            };
+            /** @description Scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    createMembershipRequest: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MembershipRequestInput"];
+            };
+        };
+        responses: {
+            /** @description Row result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberBatchResult"][];
+                };
+            };
+            /** @description Scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listChurchMemberships: {
+        parameters: {
+            query?: {
+                memberId?: string;
+                churchId?: string;
+                status?: components["parameters"]["Status"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Church memberships */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChurchMembershipList"];
+                };
+            };
+            /** @description Scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    transitionChurchMembership: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                id: components["parameters"]["ID"];
+                action: "approve" | "reject" | "end" | "cancel";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Church membership */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChurchMembership"];
+                };
+            };
+            /** @description Scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Version mismatch */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listMembershipTransfers: {
+        parameters: {
+            query?: {
+                memberId?: string;
+                churchId?: string;
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Transfers */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipTransferList"];
+                };
+            };
+            /** @description Scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    createMembershipTransfer: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MembershipTransferInput"];
+            };
+        };
+        responses: {
+            /** @description Transfer */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipTransfer"];
+                };
+            };
+            /** @description Transfer already in progress */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    transitionMembershipTransfer: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                id: components["parameters"]["ID"];
+                action: "approve-source" | "approve-target" | "reject" | "cancel" | "complete";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Transfer */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipTransfer"];
+                };
+            };
+            /** @description Scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Version mismatch */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listOrgMemberships: {
+        parameters: {
+            query?: {
+                memberId?: string;
+                orgUnitId?: components["parameters"]["OrgUnitID"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current affiliations */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgMembershipList"];
                 };
             };
             /** @description Authentication required */
@@ -3339,7 +4124,7 @@ export interface operations {
             };
         };
     };
-    createMembership: {
+    createOrgMembership: {
         parameters: {
             query?: never;
             header: {
@@ -3350,17 +4135,17 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["MembershipInput"];
+                "application/json": components["schemas"]["OrgMembershipInput"];
             };
         };
         responses: {
-            /** @description Membership */
+            /** @description Organization affiliation */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Membership"];
+                    "application/json": components["schemas"]["OrgMembership"];
                 };
             };
             /** @description Conflict */
@@ -3372,7 +4157,7 @@ export interface operations {
             };
         };
     };
-    transitionMembership: {
+    removeOrgMembership: {
         parameters: {
             query?: never;
             header: {
@@ -3380,20 +4165,30 @@ export interface operations {
             };
             path: {
                 id: components["parameters"]["ID"];
-                action: "approve" | "suspend" | "depart" | "reactivate";
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrgMembershipRemovalInput"];
+            };
+        };
         responses: {
-            /** @description Membership */
+            /** @description Removed affiliation */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Membership"];
+                    "application/json": components["schemas"]["OrgMembership"];
                 };
+            };
+            /** @description Child affiliations require explicit resolution */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Version mismatch */
             412: {
@@ -3404,82 +4199,35 @@ export interface operations {
             };
         };
     };
-    listMembershipQualifications: {
+    getOrgMembershipDependencies: {
         parameters: {
-            query?: {
-                userId?: components["parameters"]["UserID"];
-                status?: components["parameters"]["Status"];
-                effectiveAt?: components["parameters"]["EffectiveAt"];
-                limit?: components["parameters"]["Limit"];
-            };
+            query?: never;
             header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Qualifications */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["QualificationList"];
-                };
-            };
-        };
-    };
-    createMembershipQualification: {
-        parameters: {
-            query?: never;
-            header: {
-                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["QualificationInput"];
-            };
-        };
-        responses: {
-            /** @description Qualification */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Qualification"];
-                };
-            };
-        };
-    };
-    transitionMembershipQualification: {
-        parameters: {
-            query?: never;
-            header: {
-                "If-Match": components["parameters"]["IfMatch"];
-            };
             path: {
                 id: components["parameters"]["ID"];
-                action: "approve" | "suspend" | "revoke" | "expire";
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Qualification */
+            /** @description Child affiliation preview */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Qualification"];
+                    "application/json": components["schemas"]["OrgMembershipDependencies"];
                 };
             };
-            /** @description Version mismatch */
-            412: {
+            /** @description Scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3490,10 +4238,9 @@ export interface operations {
     listEntitlementAssignments: {
         parameters: {
             query?: {
-                subjectId?: string;
+                memberId?: string;
                 entitlementCode?: string;
                 status?: components["parameters"]["Status"];
-                effectiveAt?: components["parameters"]["EffectiveAt"];
                 limit?: components["parameters"]["Limit"];
             };
             header?: never;
@@ -3573,11 +4320,10 @@ export interface operations {
     listOrgRoleAssignments: {
         parameters: {
             query?: {
-                userId?: components["parameters"]["UserID"];
+                memberId?: string;
                 orgUnitId?: components["parameters"]["OrgUnitID"];
-                role?: string;
+                role?: components["schemas"]["OrgRoleName"];
                 status?: components["parameters"]["Status"];
-                effectiveAt?: components["parameters"]["EffectiveAt"];
                 limit?: components["parameters"]["Limit"];
             };
             header?: never;
@@ -3637,7 +4383,7 @@ export interface operations {
                 "If-Match": components["parameters"]["IfMatch"];
             };
             path: {
-                assignmentId: string;
+                id: components["parameters"]["ID"];
             };
             cookie?: never;
         };
@@ -3885,7 +4631,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Qualification, membership, or DSR restriction denies processing */
+            /** @description Active church membership or DSR restriction denies processing */
             403: {
                 headers: {
                     [name: string]: unknown;
