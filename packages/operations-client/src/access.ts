@@ -18,6 +18,10 @@ export type ResolvedAdminAccess =
   | {status: 'available'; destinations: AdminDestination[]};
 
 const scopedDestinationByRole = {
+  church_membership_manager: 'memberships',
+  family_leader: 'memberships',
+  small_group_leader: 'memberships',
+  fellowship_leader: 'memberships',
   meeting_manager: 'meetings',
   resource_manager: 'resources',
   reservation_approver: 'reservations'

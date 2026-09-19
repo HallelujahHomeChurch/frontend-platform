@@ -26,7 +26,7 @@ describe('shared Admin access projection', () => {
     });
   });
 
-  it('never turns pastoral roles into Operations or global destinations', () => {
+  it('maps scoped membership leaders only to membership management', () => {
     expect(resolveAdminAccess([], {
       status: 'available',
       snapshot: {
@@ -35,6 +35,23 @@ describe('shared Admin access projection', () => {
           assignmentId: 'a1',
           role: 'small_group_leader',
           orgUnit: {id: 'o1', kind: 'small_group', name: 'Group'}
+        }]
+      }
+    })).toMatchObject({
+      status: 'available',
+      destinations: [{id: 'memberships'}]
+    });
+  });
+
+  it('never turns pastoral roles into Operations or global destinations', () => {
+    expect(resolveAdminAccess([], {
+      status: 'available',
+      snapshot: {
+        ...snapshot,
+        orgRoles: [{
+          assignmentId: 'a1',
+          role: 'pastor',
+          orgUnit: {id: 'o1', kind: 'church', name: 'Church'}
         }]
       }
     })).toEqual({status: 'available', destinations: []});
