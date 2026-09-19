@@ -30,7 +30,7 @@ Consumers install exact package versions from GitHub Packages. Local development
 requires a GitHub token with `read:packages`; GitHub Actions uses its repository
 `GITHUB_TOKEN`.
 
-## Unified auth contract 1.0.8
+## Unified auth contract 1.0.9
 
 Authenticated sessions carry top-level opaque `permissions: string[]`; an empty
 list remains authenticated. Product-neutral AuthN exposes only exact-match plus
