@@ -541,6 +541,22 @@ describe('hhc web client', () => {
     })
   })
 
+  it('loads a protected Statement image preview as a blob', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(new Uint8Array([1, 2, 3]), {
+      status: 200,
+      headers: { 'Content-Type': 'image/webp', 'Cache-Control': 'private, no-store' },
+    }))
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
+
+    const preview = await client.previewStatementInlineImage('news-1', 'asset-1')
+
+    expect(preview).toBeInstanceOf(Blob)
+    const request = fetcher.mock.calls[0]![0] as Request
+    expect(request.url).toBe('http://localhost/api/admin/content/news/news-1/assets/asset-1/preview')
+    expect(request.headers.get('Authorization')).toBe('Bearer token')
+    expect(request.cache).toBe('no-store')
+  })
+
   it('forwards cancellation to bulletin upload requests', async () => {
     const fetcher = vi.fn<typeof fetch>()
       .mockResolvedValueOnce(new Response(JSON.stringify({

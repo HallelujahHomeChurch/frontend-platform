@@ -37,6 +37,10 @@ export type PublicationContentModule = components['schemas']['PublicationContent
 export type CreatableContentModule = components['schemas']['CreatableContentModule']
 export type ContentStatus = components['schemas']['ContentStatus']
 export type ContentItem = components['schemas']['ContentItem']
+export type RichDocumentDraft = components['schemas']['RichDocumentDraft']
+export type RichDocumentPublic = components['schemas']['RichDocumentPublic']
+export type RichInlineNode = components['schemas']['RichInlineNode']
+export type ContentTranslationPreview = components['schemas']['ContentTranslationPreview']
 export type PageGroupManifest = components['schemas']['PageGroupManifest']
 export type ContentWriteInput = components['schemas']['ContentWriteInput']
 export type LocationWriteInput = {
@@ -380,6 +384,11 @@ export function createHhcWebClient(options: {
     },
     async getNewsCoverStatus(contentId: string, assetId: string, signal?: AbortSignal) {
       return (await unwrap(client.GET('/admin/content/news/{contentId}/assets/{assetId}', { params: { path: { contentId, assetId } }, signal }))).data
+    },
+    async previewStatementInlineImage(contentId: string, assetId: string, signal?: AbortSignal) {
+      return unwrap(client.GET('/admin/content/news/{contentId}/assets/{assetId}/preview', {
+        params: { path: { contentId, assetId } }, signal, parseAs: 'blob', cache: 'no-store',
+      }))
     },
     async retryNewsCoverScan(contentId: string, assetId: string) {
       return (await unwrap(client.POST('/admin/content/news/{contentId}/assets/{assetId}/scan/retry', { params: { path: { contentId, assetId } } }))).data

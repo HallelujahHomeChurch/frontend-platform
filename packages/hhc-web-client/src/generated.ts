@@ -1118,6 +1118,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/content/news/{contentId}/assets/{assetId}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preview a clean Statement inline image */
+        get: operations["previewStatementInlineImage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/content/news/{contentId}/assets/{assetId}/scan/retry": {
         parameters: {
             query?: never;
@@ -1803,7 +1820,7 @@ export interface components {
              * @default detail
              * @enum {string}
              */
-            usage: "detail" | "home";
+            usage: "detail" | "home" | "inline";
             fileName: string;
             /** @enum {string} */
             mimeType: "image/jpeg" | "image/png" | "image/webp";
@@ -2019,6 +2036,121 @@ export interface components {
             /** Format: date-time */
             publishedAt: string;
         };
+        /** @enum {string} */
+        RichTextMark: "strong" | "emphasis";
+        RichTextNode: {
+            /** @constant */
+            type: "text";
+            text: string;
+            marks?: components["schemas"]["RichTextMark"][];
+        };
+        RichLineBreakNode: {
+            /** @constant */
+            type: "lineBreak";
+        };
+        RichLinkNode: {
+            /** @constant */
+            type: "link";
+            href: string;
+            title?: string;
+            content: components["schemas"]["RichTextNode"][];
+        };
+        RichInlineNode: components["schemas"]["RichTextNode"] | components["schemas"]["RichLineBreakNode"] | components["schemas"]["RichLinkNode"];
+        RichParagraphBlock: {
+            id: string;
+            /** @constant */
+            type: "paragraph";
+            /**
+             * @default start
+             * @enum {string}
+             */
+            alignment: "start" | "center" | "end";
+            content: components["schemas"]["RichInlineNode"][];
+        };
+        RichHeadingBlock: {
+            id: string;
+            /** @constant */
+            type: "heading";
+            /** @enum {integer} */
+            level: 2 | 3;
+            /**
+             * @default start
+             * @enum {string}
+             */
+            alignment: "start" | "center" | "end";
+            content: components["schemas"]["RichInlineNode"][];
+        };
+        RichQuoteBlock: {
+            id: string;
+            /** @constant */
+            type: "quote";
+            content: components["schemas"]["RichInlineNode"][];
+            source?: components["schemas"]["RichInlineNode"][];
+        };
+        RichListItem: {
+            content: components["schemas"]["RichInlineNode"][];
+        };
+        RichListBlock: {
+            id: string;
+            /** @constant */
+            type: "list";
+            ordered: boolean;
+            items: components["schemas"]["RichListItem"][];
+        };
+        RichImageAlt: {
+            /** @constant */
+            mode: "text";
+            text: string;
+        } | {
+            /** @constant */
+            mode: "decorative";
+        };
+        RichImageDraftBlock: {
+            id: string;
+            /** @constant */
+            type: "image";
+            assetId: string;
+            /**
+             * @default full
+             * @enum {string}
+             */
+            size: "small" | "medium" | "full";
+            /**
+             * @default center
+             * @enum {string}
+             */
+            alignment: "start" | "center" | "end";
+            alt: components["schemas"]["RichImageAlt"];
+            caption?: components["schemas"]["RichInlineNode"][];
+        };
+        RichImagePublicBlock: {
+            id: string;
+            /** @constant */
+            type: "image";
+            url: string;
+            /**
+             * @default full
+             * @enum {string}
+             */
+            size: "small" | "medium" | "full";
+            /**
+             * @default center
+             * @enum {string}
+             */
+            alignment: "start" | "center" | "end";
+            alt: components["schemas"]["RichImageAlt"];
+            caption?: components["schemas"]["RichInlineNode"][];
+        };
+        RichDocumentDraft: {
+            /** @constant */
+            schemaVersion: 1;
+            blocks: (components["schemas"]["RichParagraphBlock"] | components["schemas"]["RichHeadingBlock"] | components["schemas"]["RichQuoteBlock"] | components["schemas"]["RichListBlock"] | components["schemas"]["RichImageDraftBlock"])[];
+        };
+        RichDocumentPublic: {
+            /** @constant */
+            schemaVersion: 1;
+            blocks: (components["schemas"]["RichParagraphBlock"] | components["schemas"]["RichHeadingBlock"] | components["schemas"]["RichQuoteBlock"] | components["schemas"]["RichListBlock"] | components["schemas"]["RichImagePublicBlock"])[];
+        };
         ContentWriteTranslation: {
             locale: components["schemas"]["ContentLocale"];
             title?: string;
@@ -2027,7 +2159,9 @@ export interface components {
             body?: string;
             dateLabel?: string;
             imageAlt?: string;
-            bodyJson?: components["schemas"]["PageWriteContent"];
+            /** @description Statement translation source fingerprint returned by a structured translation preview. */
+            translatedFromSourceHash?: string;
+            bodyJson?: components["schemas"]["PageWriteContent"] | components["schemas"]["RichDocumentDraft"];
         };
         ContentTranslation: {
             locale: components["schemas"]["ContentLocale"];
@@ -2038,10 +2172,16 @@ export interface components {
              * @enum {string}
              */
             readonly summaryStatus?: "pending" | "ready" | "failed";
+            translatedFromSourceHash?: string;
+            /**
+             * @description Statement translations only.
+             * @enum {string}
+             */
+            readonly translationSourceStatus?: "manual" | "current" | "stale";
             body?: string;
             dateLabel?: string;
             imageAlt?: string;
-            bodyJson?: components["schemas"]["PageWriteContent"];
+            bodyJson?: components["schemas"]["PageWriteContent"] | components["schemas"]["RichDocumentDraft"];
         };
         TranslationPreviewInput: {
             /** @constant */
@@ -2059,6 +2199,8 @@ export interface components {
              * @description Integer seconds until this resource target may be translated again.
              */
             retryAfterSeconds: number;
+            bodyJson?: components["schemas"]["RichDocumentDraft"];
+            sourceHash?: string;
             translation: components["schemas"]["NewsTranslationPreview"] | components["schemas"]["HistoryTranslationPreview"] | components["schemas"]["VideoTranslationPreview"];
         };
         BulletinTranslationPreview: {
@@ -2241,6 +2383,7 @@ export interface components {
             availableLocales: components["schemas"]["ContentLocale"][];
             summary?: string;
             body?: string;
+            bodyJson?: components["schemas"]["RichDocumentPublic"];
             dateLabel?: string;
             /** Format: date */
             displayDate?: string;
@@ -4878,6 +5021,43 @@ export interface operations {
             };
             401: components["responses"]["AdminUnauthorized"];
             403: components["responses"]["AdminForbidden"];
+        };
+    };
+    previewStatementInlineImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contentId: components["parameters"]["ContentID"];
+                assetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Private no-store image bytes */
+            200: {
+                headers: {
+                    "Cache-Control"?: "private, no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                    "image/png": string;
+                    "image/webp": string;
+                };
+            };
+            /** @description Partial image bytes */
+            206: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
         };
     };
     retryNewsCoverScan: {
