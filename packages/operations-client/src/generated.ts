@@ -180,6 +180,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/operations/org-units/{id}/account-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search active HHC Accounts for admission to this unit */
+        get: operations["listOrgUnitAccountCandidates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/operations/org-units/{id}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List active members directly in the current unit */
+        get: operations["listCurrentOrgUnitMembers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/operations/org-units/{id}/members/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Admit multiple Accounts directly to the target unit */
+        post: operations["admitOrgUnitMembersBatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/operations/org-units/{id}/{action}": {
         parameters: {
             query?: never;
@@ -1474,6 +1525,26 @@ export interface components {
             churchOrgUnitId: string;
             members: components["schemas"]["MemberCreateInput"][];
         };
+        UnitMemberBatchInput: {
+            accountUserIds: string[];
+        };
+        JoinCandidate: {
+            account: components["schemas"]["AccountReference"];
+            /** Format: uuid */
+            memberId?: string;
+            /** @enum {string} */
+            state: "available" | "already_joined" | "transfer_required";
+        };
+        JoinCandidatePage: {
+            items: components["schemas"]["JoinCandidate"][];
+            page: number;
+            nextPage?: number;
+        };
+        UnitMemberPage: {
+            items: components["schemas"]["MemberView"][];
+            page: number;
+            nextPage?: number;
+        };
         MemberBatchResult: {
             index: number;
             /** @enum {string} */
@@ -2352,6 +2423,127 @@ export interface operations {
                 content?: never;
             };
             /** @description Account labels unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listOrgUnitAccountCandidates: {
+        parameters: {
+            query: {
+                q: string;
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Account candidates with current membership state */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JoinCandidatePage"];
+                };
+            };
+            /** @description Scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Account directory unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listCurrentOrgUnitMembers: {
+        parameters: {
+            query?: {
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current-unit member page */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitMemberPage"];
+                };
+            };
+            /** @description Scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Account labels unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    admitOrgUnitMembersBatch: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnitMemberBatchInput"];
+            };
+        };
+        responses: {
+            /** @description Row-addressable admission results */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberBatchResult"][];
+                };
+            };
+            /** @description Scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Account directory unavailable */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -3740,6 +3932,7 @@ export interface operations {
                 orgUnitId?: components["parameters"]["OrgUnitID"];
                 status?: components["parameters"]["Status"];
                 q?: string;
+                page?: number;
                 limit?: components["parameters"]["Limit"];
             };
             header?: never;
