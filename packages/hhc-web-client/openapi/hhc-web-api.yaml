@@ -3381,6 +3381,8 @@ components:
         type: { type: string, const: text }
         text: { type: string }
         marks: { type: array, uniqueItems: true, items: { $ref: '#/components/schemas/RichTextMark' } }
+        color: { type: string, pattern: '^#[0-9A-F]{6}$' }
+        highlight: { type: string, pattern: '^#[0-9A-F]{6}$' }
     RichLineBreakNode:
       type: object
       additionalProperties: false

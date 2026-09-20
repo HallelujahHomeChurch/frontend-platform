@@ -2043,6 +2043,8 @@ export interface components {
             type: "text";
             text: string;
             marks?: components["schemas"]["RichTextMark"][];
+            color?: string;
+            highlight?: string;
         };
         RichLineBreakNode: {
             /** @constant */
