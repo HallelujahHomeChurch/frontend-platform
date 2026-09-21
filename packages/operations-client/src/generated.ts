@@ -204,7 +204,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List active members directly in the current unit */
+        /** List active members whose deepest affiliation is the current unit */
         get: operations["listCurrentOrgUnitMembers"];
         put?: never;
         post?: never;
@@ -1268,6 +1268,8 @@ export interface components {
         OrgUnitInput: {
             kind: components["schemas"]["OrgUnitKind"];
             name: string;
+            /** Format: email */
+            email?: string;
             description?: string;
             /** Format: uuid */
             parentId?: string;
@@ -1277,6 +1279,8 @@ export interface components {
             id: string;
             kind: components["schemas"]["OrgUnitKind"];
             name: string;
+            /** Format: email */
+            email?: string;
             description?: string;
             /** Format: uuid */
             parentId?: string;
@@ -1287,6 +1291,8 @@ export interface components {
         OrgUnitBatchItem: {
             kind: components["schemas"]["OrgUnitKind"];
             name: string;
+            /** Format: email */
+            email?: string;
             description?: string;
             /** Format: uuid */
             parentId?: string;
@@ -2474,6 +2480,7 @@ export interface operations {
     listCurrentOrgUnitMembers: {
         parameters: {
             query?: {
+                q?: string;
                 page?: number;
                 limit?: number;
             };
@@ -2496,6 +2503,13 @@ export interface operations {
             };
             /** @description Scope denied */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Account search is too broad */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

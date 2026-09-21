@@ -168,15 +168,16 @@ paths:
     get:
       tags: [Operations]
       operationId: listCurrentOrgUnitMembers
-      summary: List active members directly in the current unit
+      summary: List active members whose deepest affiliation is the current unit
       x-hhc-visibility: admin
       x-hhc-authorization: Global member read or scoped responsibility for the target unit
       security: [{ gatewayPrincipal: [] }]
       parameters:
         - { $ref: '#/components/parameters/ID' }
+        - { name: q, in: query, schema: { type: string, minLength: 2, maxLength: 200 } }
         - { name: page, in: query, schema: { type: integer, minimum: 1, maximum: 10000, default: 1 } }
         - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 50 } }
-      responses: { '200': { description: Current-unit member page, content: { application/json: { schema: { $ref: '#/components/schemas/UnitMemberPage' } } } }, '403': { description: Scope denied }, '503': { description: Account labels unavailable } }
+      responses: { '200': { description: Current-unit member page, content: { application/json: { schema: { $ref: '#/components/schemas/UnitMemberPage' } } } }, '403': { description: Scope denied }, '422': { description: Account search is too broad }, '503': { description: Account labels unavailable } }
   /api/admin/operations/org-units/{id}/members/batch:
     post:
       tags: [Operations]
@@ -1108,6 +1109,7 @@ components:
       properties:
         kind: { $ref: '#/components/schemas/OrgUnitKind' }
         name: { type: string }
+        email: { type: string, format: email, maxLength: 254 }
         description: { type: string }
         parentId: { type: string, format: uuid }
     OrgUnit:
@@ -1118,6 +1120,7 @@ components:
         id: { type: string, format: uuid }
         kind: { $ref: '#/components/schemas/OrgUnitKind' }
         name: { type: string }
+        email: { type: string, format: email, maxLength: 254 }
         description: { type: string }
         parentId: { type: string, format: uuid }
         status: { $ref: '#/components/schemas/OperationStatus' }
@@ -1132,6 +1135,7 @@ components:
       properties:
         kind: { $ref: '#/components/schemas/OrgUnitKind' }
         name: { type: string }
+        email: { type: string, format: email, maxLength: 254 }
         description: { type: string }
         parentId: { type: string, format: uuid }
         parentIndex: { type: integer, minimum: 0 }
