@@ -3,6 +3,7 @@ import {resolveAdminAccess} from './access';
 
 const snapshot = {
   memberships: [],
+  responsibilities: [],
   entitlements: [],
   version: 'a'.repeat(64),
   orgRoles: []
@@ -26,14 +27,13 @@ describe('shared Admin access projection', () => {
     });
   });
 
-  it('maps scoped membership leaders only to membership management', () => {
+  it('maps unit responsibilities only to membership management', () => {
     expect(resolveAdminAccess([], {
       status: 'available',
       snapshot: {
         ...snapshot,
-        orgRoles: [{
-          assignmentId: 'a1',
-          role: 'small_group_leader',
+        responsibilities: [{
+          responsibilityId: 'r1',
           orgUnit: {id: 'o1', kind: 'small_group', name: 'Group'}
         }]
       }
@@ -43,18 +43,15 @@ describe('shared Admin access projection', () => {
     });
   });
 
-  it('never turns pastoral roles into Operations or global destinations', () => {
+  it('keeps responsibilities and operational grants separate', () => {
     expect(resolveAdminAccess([], {
       status: 'available',
       snapshot: {
         ...snapshot,
-        orgRoles: [{
-          assignmentId: 'a1',
-          role: 'pastor',
-          orgUnit: {id: 'o1', kind: 'church', name: 'Church'}
-        }]
+        responsibilities: [{responsibilityId: 'r1', orgUnit: {id: 'o1', kind: 'family', name: 'Family'}}],
+        orgRoles: [{assignmentId: 'g1', role: 'meeting_manager', orgUnit: {id: 'o1', kind: 'family', name: 'Family'}}]
       }
-    })).toEqual({status: 'available', destinations: []});
+    })).toMatchObject({status: 'available', destinations: [{id: 'memberships'}, {id: 'meetings'}]});
   });
 
   it('fails only scoped discovery closed when Operations is unavailable', () => {

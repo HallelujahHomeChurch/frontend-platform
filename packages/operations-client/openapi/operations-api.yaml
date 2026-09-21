@@ -626,11 +626,11 @@ paths:
     post:
       tags: [Operations]
       operationId: transitionChurchMembership
-      summary: Approve, reject, end, or requester-cancel a church membership
+      summary: Approve, reject, or requester-cancel a church membership
       x-hhc-visibility: admin
       x-hhc-authorization: Target-church authority; cancel is limited to the original scoped requester
       security: [{ gatewayPrincipal: [] }]
-      parameters: [{ $ref: '#/components/parameters/ID' }, { name: action, in: path, required: true, schema: { type: string, enum: [approve, reject, end, cancel] } }, { $ref: '#/components/parameters/IfMatch' }]
+      parameters: [{ $ref: '#/components/parameters/ID' }, { name: action, in: path, required: true, schema: { type: string, enum: [approve, reject, cancel] } }, { $ref: '#/components/parameters/IfMatch' }]
       responses: { '200': { description: Church membership, content: { application/json: { schema: { $ref: '#/components/schemas/ChurchMembership' } } } }, '403': { description: Scope denied }, '412': { description: Version mismatch } }
   /api/admin/operations/membership-transfers:
     get:
@@ -699,7 +699,7 @@ paths:
     delete:
       tags: [Operations]
       operationId: removeOrgMembership
-      summary: Remove an affiliation with explicit child resolutions
+      summary: Remove a direct affiliation or explicitly end membership with the final binding
       x-hhc-visibility: admin
       x-hhc-required-permission: memberships:manage
       security: [{ gatewayPrincipal: [] }]
@@ -709,18 +709,49 @@ paths:
         '200':
           description: Removed affiliation
           content: { application/json: { schema: { $ref: '#/components/schemas/OrgMembership' } } }
-        '409': { description: Child affiliations require explicit resolution }
+        '409':
+          description: Final binding requires explicit membership end intent
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [error, error_code, message]
+                properties:
+                  error: { type: string, const: conflict }
+                  error_code: { type: string, const: last_binding_requires_membership_end }
+                  message: { type: string }
         '412': { description: Version mismatch }
-  /api/admin/operations/org-memberships/{id}/dependencies:
+  /api/admin/operations/unit-responsibilities:
     get:
       tags: [Operations]
-      operationId: getOrgMembershipDependencies
-      summary: Preview child affiliations before removal
+      operationId: listUnitResponsibilities
+      summary: List title-free organization unit responsibilities
       x-hhc-visibility: admin
-      x-hhc-authorization: Global or scoped roster authority for the affiliation unit
+      x-hhc-required-permission: memberships:read
       security: [{ gatewayPrincipal: [] }]
-      parameters: [{ $ref: '#/components/parameters/ID' }]
-      responses: { '200': { description: Child affiliation preview, content: { application/json: { schema: { $ref: '#/components/schemas/OrgMembershipDependencies' } } } }, '403': { description: Scope denied }, '404': { description: Not found } }
+      parameters: [{ name: memberId, in: query, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/OrgUnitID' }, { $ref: '#/components/parameters/Status' }, { $ref: '#/components/parameters/Limit' }]
+      responses: { '200': { description: Unit responsibilities, content: { application/json: { schema: { $ref: '#/components/schemas/UnitResponsibilityList' } } } }, '403': { description: Scope denied } }
+    post:
+      tags: [Operations]
+      operationId: createUnitResponsibility
+      summary: Assign responsibility for an organization unit
+      x-hhc-visibility: admin
+      x-hhc-required-permission: memberships:manage
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/UnitResponsibilityInput' } } } }
+      responses: { '200': { description: Unit responsibility, content: { application/json: { schema: { $ref: '#/components/schemas/UnitResponsibility' } } } }, '403': { description: Scope denied }, '409': { description: Duplicate or conflicting assignment } }
+  /api/admin/operations/unit-responsibilities/{id}:
+    delete:
+      tags: [Operations]
+      operationId: revokeUnitResponsibility
+      summary: Revoke responsibility for an organization unit
+      x-hhc-visibility: admin
+      x-hhc-required-permission: memberships:manage
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/IfMatch' }]
+      responses: { '200': { description: Revoked unit responsibility, content: { application/json: { schema: { $ref: '#/components/schemas/UnitResponsibility' } } } }, '403': { description: Scope denied }, '412': { description: Version mismatch } }
   /api/admin/operations/entitlement-assignments:
     get:
       tags: [Operations]
@@ -1155,12 +1186,13 @@ components:
     OrgUnitDependencies:
       type: object
       additionalProperties: false
-      required: [children, churchMemberships, affiliations, responsibilities, meetings, resources, transfers, canArchive, canDelete]
+      required: [children, churchMemberships, affiliations, responsibilities, scopedGrants, meetings, resources, transfers, canArchive, canDelete]
       properties:
         children: { $ref: '#/components/schemas/DependencyCount' }
         churchMemberships: { $ref: '#/components/schemas/DependencyCount' }
         affiliations: { $ref: '#/components/schemas/DependencyCount' }
         responsibilities: { $ref: '#/components/schemas/DependencyCount' }
+        scopedGrants: { $ref: '#/components/schemas/DependencyCount' }
         meetings: { $ref: '#/components/schemas/DependencyCount' }
         resources: { $ref: '#/components/schemas/DependencyCount' }
         transfers: { $ref: '#/components/schemas/DependencyCount' }
@@ -1355,7 +1387,7 @@ components:
       enum: [active, revoked]
     OrgRoleName:
       type: string
-      enum: [pastor, church_membership_manager, family_leader, small_group_leader, fellowship_leader, meeting_manager, resource_manager, reservation_approver]
+      enum: [church_membership_manager, meeting_manager, resource_manager, reservation_approver]
     EntitlementCode:
       type: string
       enum: [bulletin.general.zh-Hant.access, bulletin.general.zh-Hans.access, bulletin.general.en.access]
@@ -1499,26 +1531,11 @@ components:
         removedBy: { type: string, format: uuid }
         removedAt: { type: string, format: date-time }
         version: { type: integer, minimum: 1 }
-    ChildMembershipResolution:
-      type: object
-      additionalProperties: false
-      required: [membershipId, action]
-      properties:
-        membershipId: { type: string, format: uuid }
-        action: { type: string, enum: [remove, move] }
-        targetOrgUnitId: { type: string, format: uuid }
     OrgMembershipRemovalInput:
       type: object
       additionalProperties: false
       properties:
-        children: { type: array, uniqueItems: true, items: { $ref: '#/components/schemas/ChildMembershipResolution' } }
-    OrgMembershipDependencies:
-      type: object
-      additionalProperties: false
-      required: [childMemberships, canRemove]
-      properties:
-        childMemberships: { type: array, items: { $ref: '#/components/schemas/OrgMembership' } }
-        canRemove: { type: boolean }
+        endChurchMembership: { type: boolean }
     EntitlementInput:
       type: object
       additionalProperties: false
@@ -1565,6 +1582,27 @@ components:
         revokedBy: { type: string, format: uuid }
         revokedAt: { type: string, format: date-time }
         version: { type: integer, minimum: 1 }
+    UnitResponsibilityInput:
+      type: object
+      additionalProperties: false
+      required: [memberId, orgUnitId]
+      properties:
+        memberId: { type: string, format: uuid }
+        orgUnitId: { type: string, format: uuid }
+    UnitResponsibility:
+      type: object
+      additionalProperties: false
+      required: [id, memberId, orgUnitId, status, assignedBy, assignedAt, version]
+      properties:
+        id: { type: string, format: uuid }
+        memberId: { type: string, format: uuid }
+        orgUnitId: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/AssignmentStatus' }
+        assignedBy: { type: string, format: uuid }
+        assignedAt: { type: string, format: date-time }
+        revokedBy: { type: string, format: uuid }
+        revokedAt: { type: string, format: date-time }
+        version: { type: integer, minimum: 1 }
     MembershipTransferInput:
       type: object
       additionalProperties: false
@@ -1602,6 +1640,9 @@ components:
     OrgMembershipList:
       type: array
       items: { $ref: '#/components/schemas/OrgMembership' }
+    UnitResponsibilityList:
+      type: array
+      items: { $ref: '#/components/schemas/UnitResponsibility' }
     EntitlementList:
       type: array
       items: { $ref: '#/components/schemas/Entitlement' }
@@ -1666,6 +1707,13 @@ components:
         assignmentId: { type: string, format: uuid }
         role: { $ref: '#/components/schemas/OrgRoleName' }
         orgUnit: { $ref: '#/components/schemas/OrgUnitSummary' }
+    UnitResponsibilitySummary:
+      type: object
+      additionalProperties: false
+      required: [responsibilityId, orgUnit]
+      properties:
+        responsibilityId: { type: string, format: uuid }
+        orgUnit: { $ref: '#/components/schemas/OrgUnitSummary' }
     EntitlementSummary:
       type: object
       additionalProperties: false
@@ -1676,12 +1724,13 @@ components:
     AccessSnapshot:
       type: object
       additionalProperties: false
-      required: [memberships, orgRoles, entitlements, version]
+      required: [memberships, orgRoles, responsibilities, entitlements, version]
       properties:
         memberId: { type: string, format: uuid }
         churchMembership: { $ref: '#/components/schemas/ChurchMembershipSummary' }
         memberships: { type: array, items: { $ref: '#/components/schemas/MembershipSummary' } }
         orgRoles: { type: array, items: { $ref: '#/components/schemas/OrgRoleSummary' } }
+        responsibilities: { type: array, items: { $ref: '#/components/schemas/UnitResponsibilitySummary' } }
         entitlements: { type: array, items: { $ref: '#/components/schemas/EntitlementSummary' } }
         version: { type: string, pattern: '^[0-9a-f]{64}$' }
     DSRExportRequest:
@@ -1714,7 +1763,7 @@ components:
       additionalProperties: false
       required: [recordType, recordKey, data]
       properties:
-        recordType: { type: string, enum: [member, church_membership, org_membership, org_role_assignment, membership_transfer, entitlement_assignment, resource_reservation] }
+        recordType: { type: string, enum: [member, church_membership, org_membership, org_role_assignment, unit_responsibility, membership_transfer, entitlement_assignment, resource_reservation] }
         recordKey: { type: string, format: uuid }
         data: { type: object, additionalProperties: true }
     DSRExportPage:
