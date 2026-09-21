@@ -77,6 +77,30 @@ describe('hhc web client', () => {
     expect(version!.url).toBe('http://localhost/api/member/bulletins/issue-1/versions/zh-Hant?series=general')
   })
 
+  it('creates and reads one resumable bulletin download job', async () => {
+    const job = { id: '8cb10669-c926-4284-b32e-413f80727b15', operationProgress: { status: 'queued', stage: 'queued', percent: 5, updatedAt: '2026-09-21T00:00:00Z', retryAfterMs: 2000 }, createdAt: '2026-09-21T00:00:00Z', expiresAt: '2026-09-22T00:00:00Z' }
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({ data: job, meta: {}, error: null }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'member-token', fetcher })
+    const controller = new AbortController()
+    const issueId = 'a6f164fa-75a0-4692-a752-44db739cba8d'
+    const key = 'bf143142-a28c-4bf1-9099-e6b57e136ba8'
+
+    await client.createBulletinDownloadJob(issueId, 'zh-Hant', 'general', key, controller.signal)
+    await client.getBulletinDownloadJob(job.id, 'zh-Hant', 'general', controller.signal)
+
+    const [create, status] = fetcher.mock.calls.map(call => call[0] as Request)
+    expect(fetcher).toHaveBeenCalledTimes(2)
+    expect(create!.method).toBe('POST')
+    expect(create!.url).toBe('http://localhost/api/member/bulletin-download-jobs?series=general&locale=zh-Hant')
+    expect(create!.headers.get('Idempotency-Key')).toBe(key)
+    await expect(create!.json()).resolves.toEqual({ issueId })
+    expect(status!.method).toBe('GET')
+    expect(status!.url).toBe(`http://localhost/api/member/bulletin-download-jobs/${job.id}?series=general&locale=zh-Hant`)
+    controller.abort()
+    expect(create!.signal.aborted).toBe(true)
+    expect(status!.signal.aborted).toBe(true)
+  })
+
   it('exposes public news SEO metadata', () => {
     const news: PublicContentItem = {
       id: 'news-1',
