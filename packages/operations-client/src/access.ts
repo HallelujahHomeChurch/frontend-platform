@@ -19,9 +19,6 @@ export type ResolvedAdminAccess =
 
 const scopedDestinationByRole = {
   church_membership_manager: 'memberships',
-  family_leader: 'memberships',
-  small_group_leader: 'memberships',
-  fellowship_leader: 'memberships',
   meeting_manager: 'meetings',
   resource_manager: 'resources',
   reservation_approver: 'reservations'
@@ -38,6 +35,13 @@ export function resolveAdminAccess(
 
   const destinations = [...global];
   const seen = new Set(destinations.map(({id}) => id));
+  if (operations.snapshot.responsibilities.length > 0 && !seen.has('memberships')) {
+    const destination = findAdminDestination('memberships');
+    if (destination) {
+      destinations.push(destination);
+      seen.add('memberships');
+    }
+  }
   for (const {role} of operations.snapshot.orgRoles) {
     const id = scopedDestinationByRole[role as keyof typeof scopedDestinationByRole];
     if (!id || seen.has(id)) continue;

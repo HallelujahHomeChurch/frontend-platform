@@ -746,7 +746,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Approve, reject, end, or requester-cancel a church membership */
+        /** Approve, reject, or requester-cancel a church membership */
         post: operations["transitionChurchMembership"];
         delete?: never;
         options?: never;
@@ -817,25 +817,43 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Remove an affiliation with explicit child resolutions */
+        /** Remove a direct affiliation or explicitly end membership with the final binding */
         delete: operations["removeOrgMembership"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/admin/operations/org-memberships/{id}/dependencies": {
+    "/api/admin/operations/unit-responsibilities": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Preview child affiliations before removal */
-        get: operations["getOrgMembershipDependencies"];
+        /** List title-free organization unit responsibilities */
+        get: operations["listUnitResponsibilities"];
+        put?: never;
+        /** Assign responsibility for an organization unit */
+        post: operations["createUnitResponsibility"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/operations/unit-responsibilities/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        /** Revoke responsibility for an organization unit */
+        delete: operations["revokeUnitResponsibility"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1310,6 +1328,7 @@ export interface components {
             churchMemberships: components["schemas"]["DependencyCount"];
             affiliations: components["schemas"]["DependencyCount"];
             responsibilities: components["schemas"]["DependencyCount"];
+            scopedGrants: components["schemas"]["DependencyCount"];
             meetings: components["schemas"]["DependencyCount"];
             resources: components["schemas"]["DependencyCount"];
             transfers: components["schemas"]["DependencyCount"];
@@ -1482,7 +1501,7 @@ export interface components {
         /** @enum {string} */
         AssignmentStatus: "active" | "revoked";
         /** @enum {string} */
-        OrgRoleName: "pastor" | "church_membership_manager" | "family_leader" | "small_group_leader" | "fellowship_leader" | "meeting_manager" | "resource_manager" | "reservation_approver";
+        OrgRoleName: "church_membership_manager" | "meeting_manager" | "resource_manager" | "reservation_approver";
         /** @enum {string} */
         EntitlementCode: "bulletin.general.zh-Hant.access" | "bulletin.general.zh-Hans.access" | "bulletin.general.en.access";
         AccountResolutionInput: {
@@ -1610,20 +1629,8 @@ export interface components {
             removedAt?: string;
             version: number;
         };
-        ChildMembershipResolution: {
-            /** Format: uuid */
-            membershipId: string;
-            /** @enum {string} */
-            action: "remove" | "move";
-            /** Format: uuid */
-            targetOrgUnitId?: string;
-        };
         OrgMembershipRemovalInput: {
-            children?: components["schemas"]["ChildMembershipResolution"][];
-        };
-        OrgMembershipDependencies: {
-            childMemberships: components["schemas"]["OrgMembership"][];
-            canRemove: boolean;
+            endChurchMembership?: boolean;
         };
         EntitlementInput: {
             /** Format: uuid */
@@ -1678,6 +1685,30 @@ export interface components {
             revokedAt?: string;
             version: number;
         };
+        UnitResponsibilityInput: {
+            /** Format: uuid */
+            memberId: string;
+            /** Format: uuid */
+            orgUnitId: string;
+        };
+        UnitResponsibility: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            memberId: string;
+            /** Format: uuid */
+            orgUnitId: string;
+            status: components["schemas"]["AssignmentStatus"];
+            /** Format: uuid */
+            assignedBy: string;
+            /** Format: date-time */
+            assignedAt: string;
+            /** Format: uuid */
+            revokedBy?: string;
+            /** Format: date-time */
+            revokedAt?: string;
+            version: number;
+        };
         MembershipTransferInput: {
             /** Format: uuid */
             memberId: string;
@@ -1721,6 +1752,7 @@ export interface components {
         };
         MembershipTransferList: components["schemas"]["MembershipTransfer"][];
         OrgMembershipList: components["schemas"]["OrgMembership"][];
+        UnitResponsibilityList: components["schemas"]["UnitResponsibility"][];
         EntitlementList: components["schemas"]["Entitlement"][];
         OrgRoleList: components["schemas"]["OrgRole"][];
         EntitlementCheckRequest: {
@@ -1761,6 +1793,11 @@ export interface components {
             role: components["schemas"]["OrgRoleName"];
             orgUnit: components["schemas"]["OrgUnitSummary"];
         };
+        UnitResponsibilitySummary: {
+            /** Format: uuid */
+            responsibilityId: string;
+            orgUnit: components["schemas"]["OrgUnitSummary"];
+        };
         EntitlementSummary: {
             /** Format: uuid */
             assignmentId: string;
@@ -1772,6 +1809,7 @@ export interface components {
             churchMembership?: components["schemas"]["ChurchMembershipSummary"];
             memberships: components["schemas"]["MembershipSummary"][];
             orgRoles: components["schemas"]["OrgRoleSummary"][];
+            responsibilities: components["schemas"]["UnitResponsibilitySummary"][];
             entitlements: components["schemas"]["EntitlementSummary"][];
             version: string;
         };
@@ -1800,7 +1838,7 @@ export interface components {
         };
         DSRExportRecord: {
             /** @enum {string} */
-            recordType: "member" | "church_membership" | "org_membership" | "org_role_assignment" | "membership_transfer" | "entitlement_assignment" | "resource_reservation";
+            recordType: "member" | "church_membership" | "org_membership" | "org_role_assignment" | "unit_responsibility" | "membership_transfer" | "entitlement_assignment" | "resource_reservation";
             /** Format: uuid */
             recordKey: string;
             data: {
@@ -4159,7 +4197,7 @@ export interface operations {
             };
             path: {
                 id: components["parameters"]["ID"];
-                action: "approve" | "reject" | "end" | "cancel";
+                action: "approve" | "reject" | "cancel";
             };
             cookie?: never;
         };
@@ -4390,12 +4428,20 @@ export interface operations {
                     "application/json": components["schemas"]["OrgMembership"];
                 };
             };
-            /** @description Child affiliations require explicit resolution */
+            /** @description Final binding requires explicit membership end intent */
             409: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        /** @constant */
+                        error: "conflict";
+                        /** @constant */
+                        error_code: "last_binding_requires_membership_end";
+                        message: string;
+                    };
+                };
             };
             /** @description Version mismatch */
             412: {
@@ -4406,24 +4452,27 @@ export interface operations {
             };
         };
     };
-    getOrgMembershipDependencies: {
+    listUnitResponsibilities: {
         parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
+            query?: {
+                memberId?: string;
+                orgUnitId?: components["parameters"]["OrgUnitID"];
+                status?: components["parameters"]["Status"];
+                limit?: components["parameters"]["Limit"];
             };
+            header?: never;
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Child affiliation preview */
+            /** @description Unit responsibilities */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OrgMembershipDependencies"];
+                    "application/json": components["schemas"]["UnitResponsibilityList"];
                 };
             };
             /** @description Scope denied */
@@ -4433,8 +4482,79 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Not found */
-            404: {
+        };
+    };
+    createUnitResponsibility: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnitResponsibilityInput"];
+            };
+        };
+        responses: {
+            /** @description Unit responsibility */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitResponsibility"];
+                };
+            };
+            /** @description Scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Duplicate or conflicting assignment */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    revokeUnitResponsibility: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Revoked unit responsibility */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitResponsibility"];
+                };
+            };
+            /** @description Scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Version mismatch */
+            412: {
                 headers: {
                     [name: string]: unknown;
                 };

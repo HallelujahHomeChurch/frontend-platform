@@ -9,7 +9,7 @@ describe('Operations client authentication', () => {
   it('refreshes once after 401 and retries the original request once', async () => {
     const fetcher = vi.fn<typeof fetch>()
       .mockResolvedValueOnce(json({}, 401))
-      .mockResolvedValueOnce(json({memberships: [], orgRoles: [], entitlements: [], version: 'a'.repeat(64)}));
+      .mockResolvedValueOnce(json({memberships: [], orgRoles: [], responsibilities: [], entitlements: [], version: 'a'.repeat(64)}));
     const refresh = vi.fn(async () => 'new-token');
     const client = createOperationsClient({
       baseUrl: '/api/operations',
@@ -41,8 +41,18 @@ describe('Operations client authentication', () => {
     expect(fetcher).toHaveBeenCalledOnce();
   });
 
+  it('preserves the final-binding conflict code without refreshing', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(json({error: 'conflict', error_code: 'last_binding_requires_membership_end', message: 'Removing the final binding ends church membership'}, 409));
+    const refresh = vi.fn(async () => 'new-token');
+    const client = createOperationsClient({baseUrl: '/api/operations', getAccessToken: async () => 'old-token', refreshAfterUnauthorized: refresh, fetcher});
+
+    await expect(client.getMyAccess()).rejects.toMatchObject({status: 409, code: 'last_binding_requires_membership_end'});
+    expect(refresh).not.toHaveBeenCalled();
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
+
   it('uses the contract path without sending trusted Gateway headers', async () => {
-    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(json({memberships: [], orgRoles: [], entitlements: [], version: 'a'.repeat(64)}));
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(json({memberships: [], orgRoles: [], responsibilities: [], entitlements: [], version: 'a'.repeat(64)}));
     const client = createOperationsClient({
       baseUrl: '',
       getAccessToken: async () => 'token',
