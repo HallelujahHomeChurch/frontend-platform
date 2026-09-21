@@ -377,6 +377,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/member/bulletin-download-jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start or reuse preparation of an entitled private bulletin PDF */
+        post: operations["createBulletinDownloadJob"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/bulletin-download-jobs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read owner-scoped bulletin preparation progress after reauthorization */
+        get: operations["getBulletinDownloadJob"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/bulletin-download-jobs/{id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download an owner-scoped ready private bulletin PDF after reauthorization */
+        get: operations["downloadPreparedBulletin"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/member/bulletins": {
         parameters: {
             query?: never;
@@ -1740,6 +1791,19 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        BulletinDownloadJobInput: {
+            /** Format: uuid */
+            issueId: string;
+        };
+        BulletinDownloadJob: {
+            /** Format: uuid */
+            id: string;
+            operationProgress: components["schemas"]["OperationProgress"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
         ProtectedBulletin: {
             /** Format: uuid */
             issueId: string;
@@ -2310,9 +2374,22 @@ export interface components {
             /** @description Locales omitted from translations are preserved unless they are named here for explicit deletion. */
             deleteLocales?: components["schemas"]["ContentLocale"][];
         };
+        OperationProgress: {
+            /** @enum {string} */
+            status: "queued" | "running" | "ready" | "failed";
+            stage: string;
+            percent: number;
+            completed?: number;
+            total?: number;
+            errorCode?: string;
+            /** Format: date-time */
+            updatedAt: string;
+            retryAfterMs: number;
+        };
         ContentItem: components["schemas"]["ContentWriteFields"] & {
             /** Format: date-time */
             serverNow?: string;
+            operationProgress?: components["schemas"]["OperationProgress"];
             /** Format: date-time */
             publishedPopupStartsAt?: string | null;
             /** Format: date-time */
@@ -2580,6 +2657,13 @@ export interface components {
             meta: components["schemas"]["PageMeta"];
             error?: null;
         };
+        BulletinDownloadJobEnvelope: {
+            data: components["schemas"]["BulletinDownloadJob"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
+        };
         CreatedUploadEnvelope: {
             data: components["schemas"]["CreatedUpload"];
             meta: {
@@ -2823,6 +2907,25 @@ export interface components {
             };
             content: {
                 "application/json": components["schemas"]["ErrorEnvelope"];
+            };
+        };
+        /** @description Current durable bulletin preparation state. */
+        BulletinDownloadJob: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["BulletinDownloadJobEnvelope"];
+            };
+        };
+        /** @description Bulletin preparation is queued or running. */
+        BulletinDownloadJobPending: {
+            headers: {
+                "Retry-After"?: number;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["BulletinDownloadJobEnvelope"];
             };
         };
         /** @description Standard API error envelope */
@@ -3815,6 +3918,84 @@ export interface operations {
             502: components["responses"]["TranslationProviderError"];
             503: components["responses"]["TranslationDisabled"];
             504: components["responses"]["TranslationTimeout"];
+        };
+    };
+    createBulletinDownloadJob: {
+        parameters: {
+            query?: {
+                series?: components["parameters"]["BulletinSeries"];
+                locale?: components["parameters"]["BulletinLocale"];
+            };
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulletinDownloadJobInput"];
+            };
+        };
+        responses: {
+            200: components["responses"]["BulletinDownloadJob"];
+            202: components["responses"]["BulletinDownloadJobPending"];
+            401: components["responses"]["AdminUnauthorized"];
+            404: components["responses"]["ProtectedBulletinNotFound"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getBulletinDownloadJob: {
+        parameters: {
+            query?: {
+                series?: components["parameters"]["BulletinSeries"];
+                locale?: components["parameters"]["BulletinLocale"];
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["BulletinDownloadJob"];
+            202: components["responses"]["BulletinDownloadJobPending"];
+            401: components["responses"]["AdminUnauthorized"];
+            404: components["responses"]["ProtectedBulletinNotFound"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    downloadPreparedBulletin: {
+        parameters: {
+            query?: {
+                series?: components["parameters"]["BulletinSeries"];
+                locale?: components["parameters"]["BulletinLocale"];
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Prepared private bulletin PDF */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            404: components["responses"]["ProtectedBulletinNotFound"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
         };
     };
     listProtectedBulletins: {

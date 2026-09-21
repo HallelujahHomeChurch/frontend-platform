@@ -24,6 +24,8 @@ export type BulletinWatermarkInvestigationPage = {
   nextCursor?: string
 }
 export type ProtectedBulletin = components['schemas']['ProtectedBulletin']
+export type OperationProgress = components['schemas']['OperationProgress']
+export type BulletinDownloadJob = components['schemas']['BulletinDownloadJob']
 export type BulletinIssue = components['schemas']['BulletinIssue']
 export type BulletinNotificationStatus = BulletinIssue['notificationStatus']
 export type BulletinVersion = components['schemas']['BulletinVersion']
@@ -160,6 +162,16 @@ export function createHhcWebClient(options: {
     async getProtectedBulletinVersion(issueID: string, locale: BulletinEdition, series = 'general', signal?: AbortSignal) {
       return (await unwrap(client.GET('/member/bulletins/{issueID}/versions/{locale}', {
         params: {path: {issueID, locale}, query: {series}}, signal, cache: 'no-store',
+      }))).data
+    },
+    async createBulletinDownloadJob(issueId: string, locale: BulletinEdition, series: string, idempotencyKey: string, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/member/bulletin-download-jobs', {
+        params: { query: { series, locale }, header: { 'Idempotency-Key': idempotencyKey } }, body: { issueId }, signal, cache: 'no-store',
+      }))).data
+    },
+    async getBulletinDownloadJob(id: string, locale: BulletinEdition, series: string, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/member/bulletin-download-jobs/{id}', {
+        params: { path: { id }, query: { series, locale } }, signal, cache: 'no-store',
       }))).data
     },
     async listBulletinWatermarkVersions(issueId: string, signal?: AbortSignal) {
