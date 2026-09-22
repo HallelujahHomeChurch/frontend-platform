@@ -108,6 +108,25 @@ paths:
         '422': { $ref: '#/components/responses/Error' }
         '503': { $ref: '#/components/responses/Error' }
   /admin/bulletin-watermark-investigations:
+    get:
+      operationId: listGlobalBulletinWatermarkInvestigations
+      summary: List retained bulletin investigations across issues
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:bulletins:investigate]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+      - { name: cursor, in: query, schema: { type: string, format: uuid } }
+      - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+      responses:
+        '200': { description: Global investigation history, content: { application/json: { schema: { $ref: '#/components/schemas/BulletinWatermarkInvestigationGlobalPageEnvelope' } } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '422': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
     post:
       operationId: createBulletinWatermarkInvestigation
       summary: Queue a private document investigation
@@ -163,7 +182,7 @@ paths:
                 files:
                   type: array
                   minItems: 1
-                  maxItems: 10
+                  maxItems: 5
                   items: { type: string, format: binary }
                   description: PNG, JPEG, or PDF files totaling at most 10 MiB.
   /admin/bulletin-watermark-investigations/{id}:
@@ -2343,12 +2362,9 @@ components:
     BulletinWatermarkInvestigationInput:
       type: object
       additionalProperties: false
-      required:
-      - issueId
-      - locale
+      required: [issueId]
       properties:
         issueId: { type: string, format: uuid }
-        locale: { type: string, enum: [zh-Hant, zh-Hans, en] }
     BulletinWatermarkInvestigation:
       type: object
       additionalProperties: false
@@ -2380,6 +2396,12 @@ components:
           - conflict
         errorCode:
           type: string
+        reasonCode:
+          type: string
+          pattern: '^[a-z_]{1,80}$'
+        matchMethod:
+          type: string
+          enum: [output_sha256, payload, candidate]
         createdAt:
           type: string
           format: date-time
@@ -2439,15 +2461,62 @@ components:
       required: [id, locale, revision, status, createdAt, submittedBy]
       properties:
         id: { type: string, format: uuid }
+        requestedIssue: { $ref: '#/components/schemas/BulletinWatermarkInvestigationIssue' }
+        actualIssue: { $ref: '#/components/schemas/BulletinWatermarkInvestigationIssue' }
+        resolvedLocale: { type: string }
+        resolvedRevision: { type: integer, minimum: 1 }
         locale: { type: string }
         revision: { type: integer, minimum: 1 }
         status: { type: string, enum: [queued, running, completed, failed, expired] }
         result: { type: string, enum: [matched, inconclusive, conflict] }
+        reasonCode: { type: string, pattern: '^[a-z_]{1,80}$' }
         errorCode: { type: string }
+        matchMethod: { type: string, enum: [output_sha256, payload, candidate] }
         createdAt: { type: string, format: date-time }
         issuedAt: { type: string, format: date-time }
         submittedBy: { $ref: '#/components/schemas/BulletinTraceIdentity' }
         matchedAccount: { $ref: '#/components/schemas/BulletinTraceIdentity' }
+    BulletinWatermarkInvestigationIssue:
+      type: object
+      additionalProperties: false
+      required: [issueId, issueDate]
+      properties:
+        issueId: { type: string, format: uuid }
+        issueNumber: { type: integer, minimum: 1 }
+        issueDate: { type: string, format: date }
+    BulletinWatermarkInvestigationGlobalRow:
+      type: object
+      additionalProperties: false
+      required: [id, requestedIssue, resolvedLocale, resolvedRevision, status, createdAt, submittedBy]
+      properties:
+        id: { type: string, format: uuid }
+        requestedIssue: { $ref: '#/components/schemas/BulletinWatermarkInvestigationIssue' }
+        actualIssue: { $ref: '#/components/schemas/BulletinWatermarkInvestigationIssue' }
+        resolvedLocale: { type: string }
+        resolvedRevision: { type: integer, minimum: 1 }
+        status: { type: string, enum: [queued, running, completed, failed, expired] }
+        result: { type: string, enum: [matched, inconclusive, conflict] }
+        reasonCode: { type: string, pattern: '^[a-z_]{1,80}$' }
+        matchMethod: { type: string, enum: [output_sha256, payload, candidate] }
+        createdAt: { type: string, format: date-time }
+        issuedAt: { type: string, format: date-time }
+        submittedBy: { $ref: '#/components/schemas/BulletinTraceIdentity' }
+        matchedAccount: { $ref: '#/components/schemas/BulletinTraceIdentity' }
+    BulletinWatermarkInvestigationGlobalPageEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [items]
+          properties:
+            items: { type: array, items: { $ref: '#/components/schemas/BulletinWatermarkInvestigationGlobalRow' } }
+        meta:
+          type: object
+          properties: { nextCursor: { type: string, format: uuid } }
+        error: { type: [object, 'null'] }
     BulletinWatermarkInvestigationPageEnvelope:
       type: object
       additionalProperties: false

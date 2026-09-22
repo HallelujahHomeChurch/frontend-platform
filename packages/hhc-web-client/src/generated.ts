@@ -62,7 +62,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List retained bulletin investigations across issues */
+        get: operations["listGlobalBulletinWatermarkInvestigations"];
         put?: never;
         /** Queue a private document investigation */
         post: operations["createBulletinWatermarkInvestigation"];
@@ -1332,8 +1333,6 @@ export interface components {
         BulletinWatermarkInvestigationInput: {
             /** Format: uuid */
             issueId: string;
-            /** @enum {string} */
-            locale: "zh-Hant" | "zh-Hans" | "en";
         };
         BulletinWatermarkInvestigation: {
             /** Format: uuid */
@@ -1344,6 +1343,9 @@ export interface components {
             /** @enum {string} */
             result?: "matched" | "inconclusive" | "conflict";
             errorCode?: string;
+            reasonCode?: string;
+            /** @enum {string} */
+            matchMethod?: "output_sha256" | "payload" | "candidate";
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -1375,19 +1377,64 @@ export interface components {
         BulletinWatermarkInvestigationRow: {
             /** Format: uuid */
             id: string;
+            requestedIssue?: components["schemas"]["BulletinWatermarkInvestigationIssue"];
+            actualIssue?: components["schemas"]["BulletinWatermarkInvestigationIssue"];
+            resolvedLocale?: string;
+            resolvedRevision?: number;
             locale: string;
             revision: number;
             /** @enum {string} */
             status: "queued" | "running" | "completed" | "failed" | "expired";
             /** @enum {string} */
             result?: "matched" | "inconclusive" | "conflict";
+            reasonCode?: string;
             errorCode?: string;
+            /** @enum {string} */
+            matchMethod?: "output_sha256" | "payload" | "candidate";
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
             issuedAt?: string;
             submittedBy: components["schemas"]["BulletinTraceIdentity"];
             matchedAccount?: components["schemas"]["BulletinTraceIdentity"];
+        };
+        BulletinWatermarkInvestigationIssue: {
+            /** Format: uuid */
+            issueId: string;
+            issueNumber?: number;
+            /** Format: date */
+            issueDate: string;
+        };
+        BulletinWatermarkInvestigationGlobalRow: {
+            /** Format: uuid */
+            id: string;
+            requestedIssue: components["schemas"]["BulletinWatermarkInvestigationIssue"];
+            actualIssue?: components["schemas"]["BulletinWatermarkInvestigationIssue"];
+            resolvedLocale: string;
+            resolvedRevision: number;
+            /** @enum {string} */
+            status: "queued" | "running" | "completed" | "failed" | "expired";
+            /** @enum {string} */
+            result?: "matched" | "inconclusive" | "conflict";
+            reasonCode?: string;
+            /** @enum {string} */
+            matchMethod?: "output_sha256" | "payload" | "candidate";
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            issuedAt?: string;
+            submittedBy: components["schemas"]["BulletinTraceIdentity"];
+            matchedAccount?: components["schemas"]["BulletinTraceIdentity"];
+        };
+        BulletinWatermarkInvestigationGlobalPageEnvelope: {
+            data: {
+                items: components["schemas"]["BulletinWatermarkInvestigationGlobalRow"][];
+            };
+            meta?: {
+                /** Format: uuid */
+                nextCursor?: string;
+            };
+            error?: Record<string, never> | null;
         };
         BulletinWatermarkInvestigationPageEnvelope: {
             data: {
@@ -3360,6 +3407,33 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BulletinWatermarkInvestigationPageEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            422: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listGlobalBulletinWatermarkInvestigations: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Global investigation history */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulletinWatermarkInvestigationGlobalPageEnvelope"];
                 };
             };
             401: components["responses"]["AdminUnauthorized"];

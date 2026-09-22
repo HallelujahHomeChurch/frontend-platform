@@ -18,9 +18,14 @@ export type BulletinWatermarkVersion = components['schemas']['BulletinWatermarkV
 export type BulletinWatermarkInvestigationInput = components['schemas']['BulletinWatermarkInvestigationInput']
 export type BulletinWatermarkInvestigation = components['schemas']['BulletinWatermarkInvestigation']
 export type BulletinTraceIdentity = components['schemas']['BulletinTraceIdentity']
-export type BulletinWatermarkInvestigationRow = components['schemas']['BulletinWatermarkInvestigationRow']
+export type BulletinWatermarkInvestigationRow = components['schemas']['BulletinWatermarkInvestigationGlobalRow']
 export type BulletinWatermarkInvestigationPage = {
   items: BulletinWatermarkInvestigationRow[]
+  nextCursor?: string
+}
+export type BulletinWatermarkIssueInvestigationRow = components['schemas']['BulletinWatermarkInvestigationRow']
+export type BulletinWatermarkIssueInvestigationPage = {
+  items: BulletinWatermarkIssueInvestigationRow[]
   nextCursor?: string
 }
 export type ProtectedBulletin = components['schemas']['ProtectedBulletin']
@@ -179,7 +184,13 @@ export function createHhcWebClient(options: {
         params: {path: {issueId}}, signal, cache: 'no-store',
       }))).data.versions
     },
-    async listBulletinWatermarkInvestigations(issueId: string, params: {cursor?: string; limit?: number; signal?: AbortSignal} = {}): Promise<BulletinWatermarkInvestigationPage> {
+    async listBulletinWatermarkInvestigations(params: {cursor?: string; limit?: number; signal?: AbortSignal} = {}): Promise<BulletinWatermarkInvestigationPage> {
+      const envelope = await unwrap(client.GET('/admin/bulletin-watermark-investigations', {
+        params: {query: {cursor: params.cursor, limit: params.limit}}, signal: params.signal, cache: 'no-store',
+      }))
+      return {items: envelope.data.items, nextCursor: envelope.meta?.nextCursor}
+    },
+    async listIssueBulletinWatermarkInvestigations(issueId: string, params: {cursor?: string; limit?: number; signal?: AbortSignal} = {}): Promise<BulletinWatermarkIssueInvestigationPage> {
       const envelope = await unwrap(client.GET('/admin/bulletins/{issueId}/watermark-investigations', {
         params: {path: {issueId}, query: {cursor: params.cursor, limit: params.limit}}, signal: params.signal, cache: 'no-store',
       }))
