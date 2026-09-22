@@ -531,41 +531,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/admin/content/news/{contentId}/statement-notifications": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** listStatementNotifications */
-        get: operations["listStatementNotifications"];
-        put?: never;
-        /** requestStatementNotification */
-        post: operations["requestStatementNotification"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/content/news/{contentId}/statement-notifications/preview": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** previewStatementNotification */
-        post: operations["previewStatementNotification"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/news": {
         parameters: {
             query?: never;
@@ -1812,12 +1777,6 @@ export interface components {
             /** Format: date */
             issueDate: string;
             status: components["schemas"]["BulletinStatus"];
-            /** @enum {string} */
-            notificationStatus: "not_requested" | "pending" | "queued" | "failed" | "skipped";
-            /** Format: date-time */
-            notificationQueuedAt?: string;
-            /** @enum {string} */
-            notificationErrorCode?: "NOTIFICATION_QUEUE_FAILED";
             /** Format: int64 */
             version: number;
             createdBy: string;
@@ -2850,61 +2809,8 @@ export interface components {
             subject: string;
             body: string;
         };
-        StatementNotificationSendRequest: components["schemas"]["StatementNotificationRequest"] & {
-            /** Format: int64 */
-            publishedVersion: number;
-        };
-        StatementNotificationBatch: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            contentId: string;
-            /** Format: int64 */
-            publishedVersion: number;
-            /** Format: uuid */
-            requestId: string;
-            /** @enum {string} */
-            channel: "email" | "web_push";
-            /** Format: uuid */
-            campaignId?: string;
-            /** @enum {string} */
-            status: "pending" | "queued" | "cancelled" | "failed";
-            subject: string;
-            body: string;
-            href: string;
-            /** Format: date-time */
-            cancelledAt?: string | null;
-            /** Format: date-time */
-            createdAt: string;
-            campaign?: {
-                [key: string]: unknown;
-            };
-        };
-        StatementNotificationPreview: {
-            subject: string;
-            body: string;
-            href: string;
-            channels: ("email" | "web_push")[];
-            eligibleCounts: {
-                [key: string]: number;
-            };
-        };
         ActiveStatementEnvelope: {
             data: components["schemas"]["ActiveStatement"];
-            meta: {
-                [key: string]: unknown;
-            };
-            error?: null;
-        };
-        StatementNotificationListEnvelope: {
-            data: components["schemas"]["StatementNotificationBatch"][];
-            meta: {
-                [key: string]: unknown;
-            };
-            error?: null;
-        };
-        StatementNotificationPreviewEnvelope: {
-            data: components["schemas"]["StatementNotificationPreview"];
             meta: {
                 [key: string]: unknown;
             };
@@ -3749,7 +3655,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Campaign draft deleted */
+            /** @description Campaign deleted */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -4228,91 +4134,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ContentItemEnvelope"];
-                };
-            };
-            401: components["responses"]["AdminUnauthorized"];
-            403: components["responses"]["AdminForbidden"];
-            409: components["responses"]["Error"];
-        };
-    };
-    listStatementNotifications: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                contentId: components["parameters"]["ContentID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Statement operation result */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StatementNotificationListEnvelope"];
-                };
-            };
-            401: components["responses"]["AdminUnauthorized"];
-            403: components["responses"]["AdminForbidden"];
-            409: components["responses"]["Error"];
-        };
-    };
-    requestStatementNotification: {
-        parameters: {
-            query?: never;
-            header: {
-                "If-Match": components["parameters"]["IfMatch"];
-            };
-            path: {
-                contentId: components["parameters"]["ContentID"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StatementNotificationSendRequest"];
-            };
-        };
-        responses: {
-            /** @description Statement operation result */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StatementNotificationListEnvelope"];
-                };
-            };
-            401: components["responses"]["AdminUnauthorized"];
-            403: components["responses"]["AdminForbidden"];
-            409: components["responses"]["Error"];
-        };
-    };
-    previewStatementNotification: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                contentId: components["parameters"]["ContentID"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StatementNotificationRequest"];
-            };
-        };
-        responses: {
-            /** @description Statement operation result */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StatementNotificationPreviewEnvelope"];
                 };
             };
             401: components["responses"]["AdminUnauthorized"];

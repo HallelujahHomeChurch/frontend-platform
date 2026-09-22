@@ -462,7 +462,7 @@ paths:
       servers: [{ url: https://admin.alive.org.tw/api }]
       x-required-scopes: [campaigns:write]
       responses:
-        '204': { description: Campaign draft deleted }
+        '204': { description: Campaign deleted }
         '400': { $ref: '#/components/responses/EngagementError' }
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
         '403': { $ref: '#/components/responses/AdminForbidden' }
@@ -862,79 +862,6 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ContentItemEnvelope' }
-        '401': { $ref: '#/components/responses/AdminUnauthorized' }
-        '403': { $ref: '#/components/responses/AdminForbidden' }
-        '409': { $ref: '#/components/responses/Error' }
-  /admin/content/news/{contentId}/statement-notifications:
-    get:
-      operationId: listStatementNotifications
-      summary: listStatementNotifications
-      tags: [Admin]
-      x-hhc-visibility: admin
-      x-hhc-callers: [api-gateway]
-      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
-      servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: [cms:news:read]
-      parameters:
-        - $ref: '#/components/parameters/ContentID'
-      responses:
-        '200':
-          description: Statement operation result
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/StatementNotificationListEnvelope' }
-        '401': { $ref: '#/components/responses/AdminUnauthorized' }
-        '403': { $ref: '#/components/responses/AdminForbidden' }
-        '409': { $ref: '#/components/responses/Error' }
-    post:
-      operationId: requestStatementNotification
-      summary: requestStatementNotification
-      tags: [Admin]
-      x-hhc-visibility: admin
-      x-hhc-callers: [api-gateway]
-      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
-      servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: [cms:news:read, campaigns:send]
-      parameters:
-        - $ref: '#/components/parameters/ContentID'
-        - $ref: '#/components/parameters/IfMatch'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/StatementNotificationSendRequest' }
-      responses:
-        '202':
-          description: Statement operation result
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/StatementNotificationListEnvelope' }
-        '401': { $ref: '#/components/responses/AdminUnauthorized' }
-        '403': { $ref: '#/components/responses/AdminForbidden' }
-        '409': { $ref: '#/components/responses/Error' }
-  /admin/content/news/{contentId}/statement-notifications/preview:
-    post:
-      operationId: previewStatementNotification
-      summary: previewStatementNotification
-      tags: [Admin]
-      x-hhc-visibility: admin
-      x-hhc-callers: [api-gateway]
-      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
-      servers: [{ url: https://admin.alive.org.tw/api }]
-      x-required-scopes: [cms:news:read, campaigns:send]
-      parameters:
-        - $ref: '#/components/parameters/ContentID'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/StatementNotificationRequest' }
-      responses:
-        '200':
-          description: Statement operation result
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/StatementNotificationPreviewEnvelope' }
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
         '403': { $ref: '#/components/responses/AdminForbidden' }
         '409': { $ref: '#/components/responses/Error' }
@@ -3110,15 +3037,12 @@ components:
         updatedAt: { type: string, format: date-time }
     BulletinIssue:
       type: object
-      required: [id, issueDate, status, notificationStatus, version, createdBy, updatedBy, createdAt, updatedAt, versions]
+      required: [id, issueDate, status, version, createdBy, updatedBy, createdAt, updatedAt, versions]
       properties:
         id: { type: string, format: uuid }
         issueNumber: { type: integer, minimum: 1 }
         issueDate: { type: string, format: date }
         status: { $ref: '#/components/schemas/BulletinStatus' }
-        notificationStatus: { type: string, enum: [not_requested, pending, queued, failed, skipped] }
-        notificationQueuedAt: { type: string, format: date-time }
-        notificationErrorCode: { type: string, enum: [NOTIFICATION_QUEUE_FAILED] }
         version: { type: integer, format: int64 }
         createdBy: { type: string }
         updatedBy: { type: string }
@@ -4346,57 +4270,10 @@ components:
         channels: { type: array, minItems: 1, maxItems: 2, uniqueItems: true, items: { type: string, enum: [email, web_push] } }
         subject: { type: string, minLength: 1, maxLength: 200 }
         body: { type: string, minLength: 1, maxLength: 20000 }
-    StatementNotificationSendRequest:
-      allOf:
-        - $ref: '#/components/schemas/StatementNotificationRequest'
-        - type: object
-          required: [publishedVersion]
-          properties:
-            publishedVersion: { type: integer, format: int64 }
-    StatementNotificationBatch:
-      type: object
-      required: [id, contentId, publishedVersion, requestId, channel, status, subject, body, href, createdAt]
-      properties:
-        id: { type: string, format: uuid }
-        contentId: { type: string, format: uuid }
-        publishedVersion: { type: integer, format: int64 }
-        requestId: { type: string, format: uuid }
-        channel: { type: string, enum: [email, web_push] }
-        campaignId: { type: string, format: uuid }
-        status: { type: string, enum: [pending, queued, cancelled, failed] }
-        subject: { type: string }
-        body: { type: string }
-        href: { type: string }
-        cancelledAt: { type: [string, 'null'], format: date-time }
-        createdAt: { type: string, format: date-time }
-        campaign: { type: object, additionalProperties: true }
-    StatementNotificationPreview:
-      type: object
-      required: [subject, body, href, channels, eligibleCounts]
-      properties:
-        subject: { type: string }
-        body: { type: string }
-        href: { type: string }
-        channels: { type: array, items: { type: string, enum: [email, web_push] } }
-        eligibleCounts: { type: object, additionalProperties: { type: integer, format: int64 } }
     ActiveStatementEnvelope:
       type: object
       required: [data, meta]
       properties:
         data: { $ref: '#/components/schemas/ActiveStatement' }
-        meta: { type: object, additionalProperties: true }
-        error: { type: ['null'] }
-    StatementNotificationListEnvelope:
-      type: object
-      required: [data, meta]
-      properties:
-        data: { type: array, items: { $ref: '#/components/schemas/StatementNotificationBatch' } }
-        meta: { type: object, additionalProperties: true }
-        error: { type: ['null'] }
-    StatementNotificationPreviewEnvelope:
-      type: object
-      required: [data, meta]
-      properties:
-        data: { $ref: '#/components/schemas/StatementNotificationPreview' }
         meta: { type: object, additionalProperties: true }
         error: { type: ['null'] }
