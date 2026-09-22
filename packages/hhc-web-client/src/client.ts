@@ -184,13 +184,13 @@ export function createHhcWebClient(options: {
         params: {path: {issueId}}, signal, cache: 'no-store',
       }))).data.versions
     },
-    async listBulletinWatermarkInvestigations(params: {cursor?: string; limit?: number; signal?: AbortSignal} = {}): Promise<BulletinWatermarkInvestigationPage> {
+    async listAllBulletinWatermarkInvestigations(params: {cursor?: string; limit?: number; signal?: AbortSignal} = {}): Promise<BulletinWatermarkInvestigationPage> {
       const envelope = await unwrap(client.GET('/admin/bulletin-watermark-investigations', {
         params: {query: {cursor: params.cursor, limit: params.limit}}, signal: params.signal, cache: 'no-store',
       }))
       return {items: envelope.data.items, nextCursor: envelope.meta?.nextCursor}
     },
-    async listIssueBulletinWatermarkInvestigations(issueId: string, params: {cursor?: string; limit?: number; signal?: AbortSignal} = {}): Promise<BulletinWatermarkIssueInvestigationPage> {
+    async listBulletinWatermarkInvestigations(issueId: string, params: {cursor?: string; limit?: number; signal?: AbortSignal} = {}): Promise<BulletinWatermarkIssueInvestigationPage> {
       const envelope = await unwrap(client.GET('/admin/bulletins/{issueId}/watermark-investigations', {
         params: {path: {issueId}, query: {cursor: params.cursor, limit: params.limit}}, signal: params.signal, cache: 'no-store',
       }))

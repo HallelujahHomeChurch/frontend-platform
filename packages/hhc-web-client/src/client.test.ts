@@ -47,7 +47,7 @@ describe('hhc web client', () => {
     const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'trace-token', fetcher})
     const controller = new AbortController()
 
-    await expect(client.listBulletinWatermarkInvestigations({cursor: 'cursor-1', limit: 25, signal: controller.signal})).resolves.toEqual({items: [row], nextCursor: 'next-1'})
+    await expect(client.listAllBulletinWatermarkInvestigations({cursor: 'cursor-1', limit: 25, signal: controller.signal})).resolves.toEqual({items: [row], nextCursor: 'next-1'})
 
     const request = fetcher.mock.calls[0]![0] as Request
     expect(request.url).toBe('http://localhost/api/admin/bulletin-watermark-investigations?cursor=cursor-1&limit=25')
@@ -57,11 +57,11 @@ describe('hhc web client', () => {
     expect(request.signal.aborted).toBe(true)
   })
 
-  it('keeps the issue-scoped investigation history compatibility method', async () => {
+  it('keeps the existing issue-scoped investigation history method', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({data: {items: []}, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}}))
     const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'trace-token', fetcher})
 
-    await expect(client.listIssueBulletinWatermarkInvestigations('issue-1', {limit: 10})).resolves.toEqual({items: [], nextCursor: undefined})
+    await expect(client.listBulletinWatermarkInvestigations('issue-1', {limit: 10})).resolves.toEqual({items: [], nextCursor: undefined})
 
     const request = fetcher.mock.calls[0]![0] as Request
     expect(request.url).toBe('http://localhost/api/admin/bulletins/issue-1/watermark-investigations?limit=10')
