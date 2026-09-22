@@ -11,13 +11,18 @@ import type {
 } from './client'
 
 describe('hhc web client', () => {
-  it('uploads private documents for one bulletin locale and reads its creator-owned job', async () => {
-    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({data: {id: 'job-1', versions: []}}), {headers: {'Content-Type': 'application/json'}}))
+  it('uploads one-to-five private documents for an issue and reads its creator-owned job', async () => {
+    const response = (data: unknown) => new Response(JSON.stringify({data, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}})
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(response({versions: []}))
+      .mockResolvedValueOnce(response({id: 'job-1'}))
+      .mockResolvedValueOnce(response({id: 'job-1'}))
     const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'trace-token', fetcher})
-    const input = {issueId: 'issue-1', locale: 'zh-Hant' as const}
+    const input = {issueId: 'issue-1'}
+    const files = Array.from({length: 5}, (_, index) => new Blob([`file-${index}`], {type: index === 4 ? 'application/pdf' : 'image/png'}))
     const controller = new AbortController()
     await client.listBulletinWatermarkVersions('issue-1', controller.signal)
-    await client.createBulletinWatermarkInvestigation(input, [new Blob(['pixels'], {type: 'image/png'}), new Blob(['pdf'], {type: 'application/pdf'})], 'request-key', controller.signal)
+    await expect(client.createBulletinWatermarkInvestigation(input, files, 'request-key', controller.signal)).resolves.toEqual({id: 'job-1'})
     await client.getBulletinWatermarkInvestigation('job-1', controller.signal)
     const requests = fetcher.mock.calls.map(call => call[0] as Request)
     expect(requests[0]!.url).toBe('http://localhost/api/admin/bulletins/issue-1/watermark-versions')
@@ -25,7 +30,8 @@ describe('hhc web client', () => {
     expect(requests[1]!.headers.get('Content-Type')).toMatch(/^multipart\/form-data; boundary=/)
     const body = await requests[1]!.formData()
     expect(JSON.parse(body.get('metadata') as string)).toEqual(input)
-    await expect(Promise.all(body.getAll('files').map(file => (file as Blob).text()))).resolves.toEqual(['pixels', 'pdf'])
+    expect(body.getAll('files')).toHaveLength(5)
+    await expect(Promise.all(body.getAll('files').map(file => (file as Blob).text()))).resolves.toEqual(['file-0', 'file-1', 'file-2', 'file-3', 'file-4'])
     expect(requests[2]!.url).toBe('http://localhost/api/admin/bulletin-watermark-investigations/job-1')
     for (const request of requests) {
       expect(request.headers.get('Authorization')).toBe('Bearer trace-token')
@@ -35,20 +41,30 @@ describe('hhc web client', () => {
     expect(requests.every(request => request.signal.aborted)).toBe(true)
   })
 
-  it('lists issue-scoped bulletin investigation history', async () => {
-    const row = {id: 'job-1', locale: 'zh-Hant', revision: 3, status: 'completed', result: 'matched', createdAt: '2026-09-13T00:00:00Z', submittedBy: {id: 'actor-1', available: true, displayName: 'Admin', email: 'admin@example.com'}, matchedAccount: {id: 'user-1', available: true, displayName: 'Member', email: 'member@example.com', canNavigate: true}}
+  it('lists global bulletin investigation history with requested and actual issues', async () => {
+    const row = {id: 'job-1', requestedIssue: {issueId: 'issue-1738', issueNumber: 1738, issueDate: '2026-09-13'}, actualIssue: {issueId: 'issue-1737', issueNumber: 1737, issueDate: '2026-09-06'}, resolvedLocale: 'zh-Hant', resolvedRevision: 3, status: 'completed', result: 'matched', matchMethod: 'output_sha256', reasonCode: 'exact_output_sha256', createdAt: '2026-09-13T00:00:00Z', submittedBy: {id: 'actor-1', available: true, displayName: 'Admin', email: 'admin@example.com'}, matchedAccount: {id: 'user-1', available: true, displayName: 'Member', email: 'member@example.com', canNavigate: true}}
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({data: {items: [row]}, meta: {nextCursor: 'next-1'}, error: null}), {headers: {'Content-Type': 'application/json'}}))
     const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'trace-token', fetcher})
     const controller = new AbortController()
 
-    await expect(client.listBulletinWatermarkInvestigations('issue-1', {cursor: 'cursor-1', limit: 25, signal: controller.signal})).resolves.toEqual({items: [row], nextCursor: 'next-1'})
+    await expect(client.listAllBulletinWatermarkInvestigations({cursor: 'cursor-1', limit: 25, signal: controller.signal})).resolves.toEqual({items: [row], nextCursor: 'next-1'})
 
     const request = fetcher.mock.calls[0]![0] as Request
-    expect(request.url).toBe('http://localhost/api/admin/bulletins/issue-1/watermark-investigations?cursor=cursor-1&limit=25')
+    expect(request.url).toBe('http://localhost/api/admin/bulletin-watermark-investigations?cursor=cursor-1&limit=25')
     expect(request.headers.get('Authorization')).toBe('Bearer trace-token')
     expect(request.cache).toBe('no-store')
     controller.abort()
     expect(request.signal.aborted).toBe(true)
+  })
+
+  it('keeps the existing issue-scoped investigation history method', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({data: {items: []}, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}}))
+    const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'trace-token', fetcher})
+
+    await expect(client.listBulletinWatermarkInvestigations('issue-1', {limit: 10})).resolves.toEqual({items: [], nextCursor: undefined})
+
+    const request = fetcher.mock.calls[0]![0] as Request
+    expect(request.url).toBe('http://localhost/api/admin/bulletins/issue-1/watermark-investigations?limit=10')
   })
 
   it('posts trace lookup privately', async () => {

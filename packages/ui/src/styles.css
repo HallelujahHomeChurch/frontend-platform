@@ -187,6 +187,18 @@
   .hhc-searchable-select__option-description { color: var(--hhc-text-muted); font-size: .8125rem; }
   .hhc-searchable-select__state { padding: 14px 12px; color: var(--hhc-text-muted); text-align: center; }
 
+  .hhc-file-upload { display: grid; min-width: 0; gap: 8px; color: var(--hhc-text); }
+  .hhc-file-upload__description, .hhc-file-upload__drop-copy, .hhc-file-upload__meta { color: var(--hhc-text-muted); font-size: .875rem; }
+  .hhc-file-upload__dropzone { display: flex; min-height: 112px; box-sizing: border-box; align-items: center; justify-content: center; gap: 10px; border: 1px dashed var(--hhc-border); border-radius: var(--hhc-radius-md); padding: 20px; background: var(--hhc-surface); }
+  .hhc-file-upload__dropzone[data-dragging] { border-color: var(--hhc-primary); background: var(--hhc-primary-soft); }
+  .hhc-file-upload__dropzone[data-disabled] { opacity: .55; }
+  .hhc-file-upload__list { display: grid; min-width: 0; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .hhc-file-upload__item { display: grid; min-width: 0; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; border: 1px solid var(--hhc-border); border-radius: var(--hhc-radius-md); padding: 8px 10px 8px 12px; background: var(--hhc-surface); }
+  .hhc-file-upload__file { display: grid; min-width: 0; gap: 2px; }
+  .hhc-file-upload__name { overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+  .hhc-file-upload__item-error, .hhc-file-upload__error { color: var(--hhc-danger); font-size: .875rem; }
+  .hhc-file-upload__item .hhc-icon-button svg { width: 17px; height: 17px; }
+
   .hhc-expandable-search { position: relative; width: 40px; height: 40px; overflow: hidden; border: 1px solid var(--hhc-border); border-radius: 999px; background: var(--hhc-surface); transition: width 180ms ease; }
   .hhc-expandable-search[data-expanded='true'] { width: min(280px, 70vw); }
   .hhc-expandable-search__field { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
@@ -311,5 +323,8 @@
     .hhc-card__header, .hhc-card__content { padding: 16px; }
     .hhc-card__header + .hhc-card__content { padding-top: 0; }
     .hhc-card__content--flush { padding: 0; }
+    .hhc-file-upload__dropzone { min-width: 0; flex-direction: column; }
+    .hhc-file-upload__dropzone .hhc-button { width: 100%; min-width: 0; max-width: 100%; padding-inline: 10px; white-space: normal; }
+    .hhc-dialog__footer { flex-wrap: wrap; }
   }
 }

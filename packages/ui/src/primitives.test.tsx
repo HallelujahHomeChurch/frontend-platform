@@ -18,6 +18,7 @@ import {
   EmptyState,
   ExpandableSearchField,
   Field,
+  FileUploadField,
   IconButton,
   Menu,
   Modal,
@@ -31,6 +32,16 @@ import {
   ToastProvider,
   useToast
 } from './index';
+
+const uploadLabels = {
+  add: 'Add files',
+  drop: 'or drop them here',
+  selectedFiles: 'Selected files',
+  tooManyFiles: 'Too many files',
+  totalSizeExceeded: 'Files are too large',
+  filesAdded: (count: number) => `Added ${count} files`,
+  fileRemoved: (name: string) => `Removed ${name}`
+};
 
 describe('HHC UI primitives', () => {
   afterEach(() => vi.useRealTimers());
@@ -90,7 +101,7 @@ describe('HHC UI primitives', () => {
   });
 
   it('keeps regular card content padded and flush content opt-in', () => {
-    render(
+    const {rerender} = render(
       <>
         <Card><Card.Content>Regular</Card.Content></Card>
         <Card><Card.Content isFlush>Table</Card.Content></Card>
@@ -429,6 +440,171 @@ describe('HHC UI primitives', () => {
     expect(screen.getByText('Selected')).toBeInTheDocument();
     expect(screen.getByText('Users')).toBeInTheDocument();
     expect(screen.getByText('Roles')).toBeInTheDocument();
+  });
+
+  it('supports flat searchable select results and a controlled selection label', async () => {
+    const user = userEvent.setup();
+    render(
+      <SearchableSelect
+        label="Bulletin issue"
+        placeholder="Choose an issue"
+        selectedKey="1738"
+        selectedLabel="Issue 1738"
+        inputValue=""
+        items={[
+          {id: '1738', label: 'Issue 1738'},
+          {id: '1737', label: 'Issue 1737'}
+        ]}
+        emptyText="No results"
+        loadingText="Loading"
+        onInputChange={() => undefined}
+        onSelectionChange={() => undefined}
+      />
+    );
+
+    const trigger = screen.getByRole('button', {name: /Bulletin issue/});
+    expect(trigger).toHaveTextContent('Issue 1738');
+    await user.click(trigger);
+    expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual(['Issue 1738', 'Issue 1737']);
+    expect(screen.queryByText('Selected')).not.toBeInTheDocument();
+    expect(screen.getByRole('option', {name: 'Issue 1738'})).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('supports optional custom searchable select sections', async () => {
+    const user = userEvent.setup();
+    render(
+      <SearchableSelect
+        label="Bulletin issue"
+        inputValue=""
+        items={[
+          {id: '1738', label: 'Issue 1738', section: 'recent'},
+          {id: '1737', label: 'Issue 1737', section: 'archive'}
+        ]}
+        emptyText="No results"
+        loadingText="Loading"
+        sectionLabels={{recent: 'Recent', archive: 'Archive'}}
+        onInputChange={() => undefined}
+        onSelectionChange={() => undefined}
+      />
+    );
+
+    await user.click(screen.getByRole('button', {name: /Bulletin issue/}));
+    expect(screen.getByText('Recent')).toBeInTheDocument();
+    expect(screen.getByText('Archive')).toBeInTheDocument();
+  });
+
+  it('opens the native file picker by click or keyboard and adds selected files once', async () => {
+    const user = userEvent.setup();
+    const onFilesAdded = vi.fn();
+    const inputClick = vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(() => undefined);
+    render(
+      <FileUploadField
+        label="Files"
+        description="PDF or image"
+        accept="application/pdf,image/*"
+        items={[]}
+        labels={uploadLabels}
+        removeLabel={(item) => `Remove ${item.name}`}
+        onFilesAdded={onFilesAdded}
+        onRemove={() => undefined}
+      />
+    );
+
+    const add = screen.getByRole('button', {name: 'Add files'});
+    await user.click(add);
+    add.focus();
+    await user.keyboard('{Enter}');
+    expect(inputClick).toHaveBeenCalledTimes(2);
+
+    const input = screen.getByLabelText('Files', {selector: 'input'});
+    const file = new File(['bulletin'], 'bulletin.pdf', {type: 'application/pdf'});
+    fireEvent.change(input, {target: {files: [file]}});
+    expect(onFilesAdded).toHaveBeenCalledTimes(1);
+    expect(onFilesAdded).toHaveBeenCalledWith([file]);
+    expect(input).toHaveAttribute('accept', 'application/pdf,image/*');
+    inputClick.mockRestore();
+  });
+
+  it('accepts a drop once and rejects batches beyond count or total size limits', () => {
+    const onFilesAdded = vi.fn();
+    const {rerender} = render(
+      <FileUploadField
+        label="Files"
+        items={[]}
+        maxFiles={1}
+        labels={uploadLabels}
+        removeLabel={(item) => `Remove ${item.name}`}
+        onFilesAdded={onFilesAdded}
+        onRemove={() => undefined}
+      />
+    );
+    const first = new File(['one'], 'one.png', {type: 'image/png'});
+    const second = new File(['two'], 'two.png', {type: 'image/png'});
+
+    fireEvent.drop(screen.getByTestId('file-upload-dropzone'), {dataTransfer: {files: [first, second]}});
+    expect(onFilesAdded).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toHaveTextContent('Too many files');
+
+    rerender(
+      <FileUploadField
+        label="Files"
+        items={[]}
+        maxFiles={2}
+        maxTotalBytes={4}
+        labels={uploadLabels}
+        removeLabel={(item) => `Remove ${item.name}`}
+        onFilesAdded={onFilesAdded}
+        onRemove={() => undefined}
+      />
+    );
+    fireEvent.drop(screen.getByTestId('file-upload-dropzone'), {dataTransfer: {files: [first, second]}});
+    expect(onFilesAdded).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toHaveTextContent('Files are too large');
+
+    fireEvent.drop(screen.getByTestId('file-upload-dropzone'), {dataTransfer: {files: [first]}});
+    expect(onFilesAdded).toHaveBeenCalledTimes(1);
+    expect(onFilesAdded).toHaveBeenCalledWith([first]);
+  });
+
+  it('renders removable files, errors, disabled state, announcements, and bounded long names', async () => {
+    const user = userEvent.setup();
+    const onRemove = vi.fn();
+    const item = {id: 'one', name: 'a-very-long-bulletin-file-name-that-must-not-overflow-the-dialog.pdf', size: 1024, type: 'application/pdf', error: 'Unreadable file'};
+    const {rerender} = render(
+      <FileUploadField
+        label="Files"
+        items={[item]}
+        isDisabled
+        error="Upload failed"
+        labels={uploadLabels}
+        removeLabel={(value) => `Remove ${value.name}`}
+        onFilesAdded={() => undefined}
+        onRemove={onRemove}
+      />
+    );
+
+    expect(screen.getByRole('button', {name: 'Add files'})).toBeDisabled();
+    expect(screen.getByText(item.name)).toHaveClass('hhc-file-upload__name');
+    expect(screen.getByText('Unreadable file')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('Upload failed');
+    expect(screen.getByRole('button', {name: `Remove ${item.name}`})).toBeDisabled();
+
+    const styles = readFileSync('src/styles.css', 'utf8');
+    expect(styles).toMatch(/\.hhc-file-upload__name[^}]*overflow:\s*hidden[^}]*text-overflow:\s*ellipsis/s);
+
+    rerender(
+      <FileUploadField
+        label="Files"
+        items={[item]}
+        labels={uploadLabels}
+        removeLabel={(value) => `Remove ${value.name}`}
+        onFilesAdded={() => undefined}
+        onRemove={onRemove}
+      />
+    );
+    await user.click(screen.getByRole('button', {name: `Remove ${item.name}`}));
+    expect(onRemove).toHaveBeenCalledWith('one');
+    expect(screen.getByRole('status')).toHaveTextContent(`Removed ${item.name}`);
   });
 
   it('keeps search inside the open selector and clears it after selection or Escape', async () => {

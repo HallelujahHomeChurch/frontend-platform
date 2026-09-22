@@ -27,6 +27,7 @@ export const adminDestinations = [
   {id: 'page-settings', path: '/content/pages', permission: 'cms:pages:read'},
   {id: 'news', path: '/content/news', permission: 'cms:news:read'},
   {id: 'bulletins', path: '/content/bulletins', permission: 'cms:bulletins:read'},
+  {id: 'bulletin-investigations', path: '/content/bulletins/investigations', permission: 'cms:bulletins:investigate'},
   {id: 'campaigns', path: '/campaigns', permission: 'campaigns:read'},
   {id: 'meetings', path: '/operations/meetings', permission: 'operations:meetings:read'},
   {id: 'resources', path: '/operations/resources', permission: 'operations:resources:read'},
