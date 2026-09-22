@@ -703,8 +703,11 @@ paths:
       x-hhc-visibility: admin
       x-hhc-required-permission: memberships:manage
       security: [{ gatewayPrincipal: [] }]
-      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/IfMatch' }]
-      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/OrgMembershipRemovalInput' } } } }
+      parameters:
+        - { $ref: '#/components/parameters/ID' }
+        - { $ref: '#/components/parameters/IfMatch' }
+        - { name: endChurchMembership, in: query, required: true, schema: { type: boolean } }
+      requestBody: { required: false, content: { application/json: { schema: { $ref: '#/components/schemas/OrgMembershipRemovalInput' } } } }
       responses:
         '200':
           description: Removed affiliation

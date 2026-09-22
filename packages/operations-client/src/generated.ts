@@ -4404,7 +4404,9 @@ export interface operations {
     };
     removeOrgMembership: {
         parameters: {
-            query?: never;
+            query: {
+                endChurchMembership: boolean;
+            };
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
             };
@@ -4413,7 +4415,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
                 "application/json": components["schemas"]["OrgMembershipRemovalInput"];
             };
