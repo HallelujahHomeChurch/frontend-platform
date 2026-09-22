@@ -410,7 +410,7 @@ describe('hhc web client', () => {
 
   it('forwards the bulletin subscriber notification choice', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
-      data: { id: 'issue-1', issueDate: '2026-07-31', status: 'publishing', notificationStatus: 'not_requested', version: 3, versions: [], createdBy: 'admin', updatedBy: 'admin', createdAt: '2026-07-31T00:00:00Z', updatedAt: '2026-07-31T00:00:00Z' },
+      data: { id: 'issue-1', issueDate: '2026-07-31', status: 'publishing', version: 3, versions: [], createdBy: 'admin', updatedBy: 'admin', createdAt: '2026-07-31T00:00:00Z', updatedAt: '2026-07-31T00:00:00Z' },
       meta: {},
       error: null,
     }), { status: 202, headers: { 'Content-Type': 'application/json' } }))
@@ -752,20 +752,19 @@ describe('hhc web client', () => {
 })
 
 describe('statement contracts', () => {
-  it('does not cache active periods and retains request identity on notification retries', async () => {
-    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({data: [], meta: {}})))
+  it('does not cache active periods and sends the notification command only with publish', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({data: {id: 'content-1'}, meta: {}}), {headers: {'Content-Type': 'application/json'}}))
     const client = createHhcWebClient({baseUrl: 'https://www.alive.org.tw/api', getAccessToken: () => null, fetcher})
     await client.getActiveStatement('ja')
     const active = fetcher.mock.calls[0]![0] as Request
     expect(active.url).toBe('https://www.alive.org.tw/api/statements/active?locale=ja')
     expect(active.cache).toBe('no-store')
     const input = {requestId: 'request-1', channels: ['email', 'web_push'] as ('email' | 'web_push')[], subject: '聲明', body: '原文'}
-    await client.requestStatementNotification('content-1', 4, 3, input)
-    await client.requestStatementNotification('content-1', 4, 3, input)
-    for (const call of fetcher.mock.calls.slice(1)) {
-      const request = call[0] as Request
-      expect(request.headers.get('If-Match')).toBe('"4"')
-      expect(await request.json()).toEqual({...input, publishedVersion: 3})
-    }
+    await client.publishContent('news', 'content-1', 4, input)
+    expect(fetcher).toHaveBeenCalledTimes(2)
+    const request = fetcher.mock.calls[1]![0] as Request
+    expect(request.url).toBe('https://www.alive.org.tw/api/admin/content/news/content-1/publish')
+    expect(request.headers.get('If-Match')).toBe('"4"')
+    expect(await request.json()).toEqual({statementNotification: input})
   })
 })

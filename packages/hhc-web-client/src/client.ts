@@ -4,8 +4,6 @@ import type { components, paths } from './generated.js'
 
 export type ActiveStatement = components['schemas']['ActiveStatement']
 export type StatementNotificationRequest = components['schemas']['StatementNotificationRequest']
-export type StatementNotificationBatch = components['schemas']['StatementNotificationBatch']
-export type StatementNotificationPreview = components['schemas']['StatementNotificationPreview']
 export type ContentLocale = components['schemas']['ContentLocale']
 export type BulletinEdition = components['schemas']['BulletinEdition']
 /** @deprecated Use BulletinEdition. */
@@ -32,7 +30,6 @@ export type ProtectedBulletin = components['schemas']['ProtectedBulletin']
 export type OperationProgress = components['schemas']['OperationProgress']
 export type BulletinDownloadJob = components['schemas']['BulletinDownloadJob']
 export type BulletinIssue = components['schemas']['BulletinIssue']
-export type BulletinNotificationStatus = BulletinIssue['notificationStatus']
 export type BulletinVersion = components['schemas']['BulletinVersion']
 export type BulletinRevision = components['schemas']['BulletinRevision']
 export type PageMeta = components['schemas']['PageMeta']
@@ -313,15 +310,6 @@ export function createHhcWebClient(options: {
     },
     async endStatementPopup(contentId: string, version: number) {
       return (await unwrap(client.POST('/admin/content/news/{contentId}/statement-popup/end', { params: { path: { contentId }, header: { 'If-Match': `"${version}"` } } }))).data
-    },
-    async listStatementNotifications(contentId: string) {
-      return (await unwrap(client.GET('/admin/content/news/{contentId}/statement-notifications', { params: { path: { contentId } } }))).data
-    },
-    async previewStatementNotification(contentId: string, input: StatementNotificationRequest) {
-      return (await unwrap(client.POST('/admin/content/news/{contentId}/statement-notifications/preview', { params: { path: { contentId } }, body: input }))).data
-    },
-    async requestStatementNotification(contentId: string, version: number, publishedVersion: number, input: StatementNotificationRequest) {
-      return (await unwrap(client.POST('/admin/content/news/{contentId}/statement-notifications', { params: { path: { contentId }, header: { 'If-Match': `"${version}"` } }, body: { ...input, publishedVersion } }))).data
     },
     async listContent(module: ContentModule, params: {
       kind?: 'general' | 'statement'
