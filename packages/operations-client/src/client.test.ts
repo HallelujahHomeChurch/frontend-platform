@@ -51,6 +51,19 @@ describe('Operations client authentication', () => {
     expect(fetcher).toHaveBeenCalledOnce();
   });
 
+  it('sends final-binding intent in the DELETE query string', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(json({id: 'binding-1', version: 2}));
+    const client = createOperationsClient({baseUrl: '', getAccessToken: async () => 'token', refreshAfterUnauthorized: async () => null, fetcher});
+
+    await client.raw.DELETE('/api/admin/operations/org-memberships/{id}', {
+      params: {path: {id: 'binding-1'}, header: {'If-Match': '"1"'}, query: {endChurchMembership: true}}
+    });
+
+    const request = fetcher.mock.calls[0]?.[0] as Request;
+    expect(request.url).toBe('http://localhost/api/admin/operations/org-memberships/binding-1?endChurchMembership=true');
+    expect(await request.clone().text()).toBe('');
+  });
+
   it('uses the contract path without sending trusted Gateway headers', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(json({memberships: [], orgRoles: [], responsibilities: [], entitlements: [], version: 'a'.repeat(64)}));
     const client = createOperationsClient({
