@@ -20,6 +20,13 @@ describe('Admin destination projection', () => {
     expect(canAccessAdmin(['cms:bulletins:read'])).toBe(true);
   });
 
+  it('allows an investigator into only the investigation workspace', () => {
+    expect(authorizedAdminDestinations(['cms:bulletins:investigate'])).toEqual([
+      {id: 'bulletin-investigations', path: '/content/bulletins/investigations', permission: 'cms:bulletins:investigate'}
+    ]);
+    expect(canAccessAdmin(['cms:bulletins:investigate'])).toBe(true);
+  });
+
   it('does not accept removed broad or legacy permissions', () => {
     for (const permission of [
       'cms:read',
