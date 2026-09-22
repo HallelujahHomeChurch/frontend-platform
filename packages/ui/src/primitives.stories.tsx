@@ -12,7 +12,9 @@ import {
   EmptyState,
   ExpandableSearchField,
   Field,
+  FileUploadField,
   IconButton,
+  Modal,
   OTP,
   Pagination,
   PaginationBar,
@@ -91,6 +93,71 @@ function SearchableSelectExample() {
 }
 
 export const SearchableSelection: Story = {render: () => <SearchableSelectExample />};
+
+const uploadLabels = {
+  add: 'Add files',
+  drop: 'or drop them here',
+  selectedFiles: 'Selected files',
+  tooManyFiles: 'Choose no more than five files',
+  totalSizeExceeded: 'The files exceed the total size limit',
+  filesAdded: (count: number) => `Added ${count} files`,
+  fileRemoved: (name: string) => `Removed ${name}`
+};
+
+const uploadItems = Array.from({length: 5}, (_, index) => ({
+  id: String(index),
+  name: `bulletin-${1738 - index}.pdf`,
+  size: (index + 1) * 1024,
+  type: 'application/pdf'
+}));
+
+function FileUploadExample({initialItems = [], error, isDisabled = false}: {initialItems?: typeof uploadItems; error?: string; isDisabled?: boolean}) {
+  const [items, setItems] = useState(initialItems);
+  return (
+    <div style={{width: '100%', maxWidth: 520}}>
+      <FileUploadField
+        label="Bulletin files"
+        description="Choose PDF or image files. Up to five files."
+        accept="application/pdf,image/*"
+        items={items}
+        maxFiles={5}
+        isDisabled={isDisabled}
+        error={error}
+        labels={uploadLabels}
+        removeLabel={(item) => `Remove ${item.name}`}
+        onFilesAdded={(files) => setItems((current) => [...current, ...files.map((file, index) => ({id: `${file.name}-${file.size}-${index}`, name: file.name, size: file.size, type: file.type}))])}
+        onRemove={(id) => setItems((current) => current.filter((item) => item.id !== id))}
+      />
+    </div>
+  );
+}
+
+export const FileUploadEmpty: Story = {render: () => <FileUploadExample />};
+export const FileUploadDragOver: Story = {
+  render: () => <FileUploadExample />,
+  play: ({canvasElement}) => canvasElement.querySelector('[data-testid="file-upload-dropzone"]')?.dispatchEvent(new Event('dragenter', {bubbles: true, cancelable: true}))
+};
+export const FileUploadSelected: Story = {render: () => <FileUploadExample initialItems={uploadItems.slice(0, 2)} />};
+export const FileUploadError: Story = {render: () => <FileUploadExample error="The files could not be added." />};
+export const FileUploadDisabled: Story = {render: () => <FileUploadExample initialItems={uploadItems.slice(0, 1)} isDisabled />};
+export const FileUploadFiveFiles: Story = {render: () => <FileUploadExample initialItems={uploadItems} />};
+export const FileUploadLongName: Story = {render: () => <FileUploadExample initialItems={[{...uploadItems[0], name: 'a-very-long-bulletin-file-name-that-stays-inside-a-narrow-dialog-without-horizontal-overflow.pdf'}]} />};
+export const FileUploadModalResponsive: Story = {
+  parameters: {layout: 'fullscreen'},
+  render: () => (
+    <Modal isOpen onOpenChange={() => undefined}>
+      <Modal.Backdrop>
+        <Modal.Container>
+          <Modal.Dialog>
+            <Modal.Header><Modal.Heading>Upload bulletin files</Modal.Heading></Modal.Header>
+            <Modal.Body><FileUploadExample initialItems={uploadItems.slice(0, 2)} /></Modal.Body>
+            <Modal.Footer><Button variant="secondary">Cancel</Button><Button>Confirm</Button></Modal.Footer>
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal.Backdrop>
+    </Modal>
+  )
+};
 
 export const CardVariants: Story = {
   render: () => (
