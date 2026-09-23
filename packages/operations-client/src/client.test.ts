@@ -79,4 +79,36 @@ describe('Operations client authentication', () => {
     expect(request.url).toBe('http://localhost/api/operations/me/access');
     expect(request.headers.has('x-hhc-scopes')).toBe(false);
   });
+
+  it('keeps member list sorting and church projection fields in the generated contract', async () => {
+    const member = {
+      id: 'member-1', accountUserId: 'account-1', churchOrgUnitId: 'church-1',
+      churchStatus: 'active' as const, churchName: 'HHC', version: 1,
+      createdAt: '2026-09-23T00:00:00Z', updatedAt: '2026-09-23T00:00:00Z'
+    };
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(json([member]));
+    const client = createOperationsClient({baseUrl: '', getAccessToken: async () => 'token', refreshAfterUnauthorized: async () => null, fetcher});
+
+    const result = await client.raw.GET('/api/admin/operations/members', {
+      params: {query: {sort: 'church', direction: 'desc', page: 2, limit: 50}}
+    });
+
+    expect(result.data?.[0]).toMatchObject({churchOrgUnitId: 'church-1', churchStatus: 'active', churchName: 'HHC'});
+    const request = fetcher.mock.calls[0]?.[0] as Request;
+    expect(request.url).toBe('http://localhost/api/admin/operations/members?sort=church&direction=desc&page=2&limit=50');
+  });
+
+  it('keeps the bounded effective-member verification endpoint in the generated contract', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(json({accountUserIds: ['account-1']}));
+    const client = createOperationsClient({baseUrl: '', getAccessToken: async () => 'token', refreshAfterUnauthorized: async () => null, fetcher});
+
+    const result = await client.raw.POST('/api/admin/operations/members/effective-verification', {
+      body: {accountUserIds: ['account-1', 'account-2']}
+    });
+
+    expect(result.data).toEqual({accountUserIds: ['account-1']});
+    const request = fetcher.mock.calls[0]?.[0] as Request;
+    expect(request.url).toBe('http://localhost/api/admin/operations/members/effective-verification');
+    expect(await request.clone().json()).toEqual({accountUserIds: ['account-1', 'account-2']});
+  });
 });
