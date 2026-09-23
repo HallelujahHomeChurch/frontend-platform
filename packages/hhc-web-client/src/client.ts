@@ -181,9 +181,9 @@ export function createHhcWebClient(options: {
         params: {path: {issueId}}, signal, cache: 'no-store',
       }))).data.versions
     },
-    async listAllBulletinWatermarkInvestigations(params: {cursor?: string; limit?: number; signal?: AbortSignal} = {}): Promise<BulletinWatermarkInvestigationPage> {
+    async listAllBulletinWatermarkInvestigations(params: {cursor?: string; limit?: number; sort?: 'submitted' | 'requested' | 'actual' | 'status' | 'operator' | 'account' | 'issued'; direction?: 'asc' | 'desc'; signal?: AbortSignal} = {}): Promise<BulletinWatermarkInvestigationPage> {
       const envelope = await unwrap(client.GET('/admin/bulletin-watermark-investigations', {
-        params: {query: {cursor: params.cursor, limit: params.limit}}, signal: params.signal, cache: 'no-store',
+        params: {query: {cursor: params.cursor, limit: params.limit, sort: params.sort, direction: params.direction}}, signal: params.signal, cache: 'no-store',
       }))
       return {items: envelope.data.items, nextCursor: envelope.meta?.nextCursor}
     },

@@ -3326,6 +3326,8 @@ export interface operations {
             query?: {
                 cursor?: string;
                 limit?: number;
+                sort?: "submitted" | "requested" | "actual" | "status" | "operator" | "account" | "issued";
+                direction?: "asc" | "desc";
             };
             header?: never;
             path?: never;
