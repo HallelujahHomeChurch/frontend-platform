@@ -27,6 +27,7 @@ import {
   SearchableSelect,
   Select,
   Skeleton,
+  SortableColumnHeader,
   StatusBadge,
   Switch,
   ToastProvider,
@@ -45,6 +46,23 @@ const uploadLabels = {
 
 describe('HHC UI primitives', () => {
   afterEach(() => vi.useRealTimers());
+
+  it('renders an accessible sortable table header', async () => {
+    const user = userEvent.setup();
+    const onSort = vi.fn();
+    const {rerender} = render(<table><thead><tr><SortableColumnHeader direction="asc" onSort={onSort}>Name</SortableColumnHeader></tr></thead></table>);
+
+    const header = screen.getByRole('columnheader', {name: 'Name'});
+    const button = screen.getByRole('button', {name: 'Name'});
+    expect(header).toHaveAttribute('aria-sort', 'ascending');
+    expect(button).toHaveClass('hhc-sortable-column-header__button');
+    await user.click(button);
+    await user.keyboard('{Enter}');
+    expect(onSort).toHaveBeenCalledTimes(2);
+
+    rerender(<table><thead><tr><SortableColumnHeader direction="desc" onSort={onSort}>Name</SortableColumnHeader></tr></thead></table>);
+    expect(screen.getByRole('columnheader', {name: 'Name'})).toHaveAttribute('aria-sort', 'descending');
+  });
 
   it('renders the shared branded loading screen with accessible status semantics', () => {
     const {rerender} = render(<BrandLoadingScreen label="正在載入" className="consumer-loading" />);

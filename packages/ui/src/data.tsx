@@ -166,6 +166,19 @@ export function DataTableFrame({children, footer, className}: {children: ReactNo
   return <section className={['hhc-data-table-frame', className].filter(Boolean).join(' ')}><div className="hhc-data-table-frame__body" tabIndex={0}>{children}</div>{footer}</section>;
 }
 
+export type SortDirection = 'asc' | 'desc';
+
+export function SortableColumnHeader({children, direction, onSort, className}: {children: ReactNode; direction?: SortDirection; onSort: () => void; className?: string}) {
+  return (
+    <th className={className} aria-sort={direction === 'asc' ? 'ascending' : direction === 'desc' ? 'descending' : 'none'}>
+      <button className="hhc-sortable-column-header__button" type="button" onClick={onSort}>
+        <span>{children}</span>
+        <span aria-hidden="true">{direction === 'asc' ? '↑' : direction === 'desc' ? '↓' : '↕'}</span>
+      </button>
+    </th>
+  );
+}
+
 export interface PaginationBarProps extends PaginationProps {
   countLabel: ReactNode;
   children?: ReactNode;
