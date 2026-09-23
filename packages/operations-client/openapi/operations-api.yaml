@@ -177,8 +177,8 @@ paths:
         - { name: q, in: query, schema: { type: string, minLength: 2, maxLength: 200 } }
         - { name: page, in: query, schema: { type: integer, minimum: 1, maximum: 10000, default: 1 } }
         - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 50 } }
-        - { name: sort, in: query, schema: { type: string, enum: [displayName, email, created] } }
-        - { name: direction, in: query, schema: { type: string, enum: [asc, desc] } }
+        - { name: sort, in: query, description: Sort field; direction is required when sort is set., schema: { type: string, enum: [displayName, email, created] } }
+        - { name: direction, in: query, description: Sort direction; sort is required when direction is set., schema: { type: string, enum: [asc, desc] } }
       responses: { '200': { description: Current-unit member page, content: { application/json: { schema: { $ref: '#/components/schemas/UnitMemberPage' } } } }, '403': { description: Scope denied }, '422': { description: Account search is too broad }, '503': { description: Account labels unavailable } }
   /api/admin/operations/org-units/{id}/members/batch:
     post:
@@ -582,8 +582,8 @@ paths:
         - { name: q, in: query, schema: { type: string, maxLength: 200 } }
         - { name: page, in: query, schema: { type: integer, minimum: 1, maximum: 10000, default: 1 } }
         - { $ref: '#/components/parameters/Limit' }
-        - { name: sort, in: query, schema: { type: string, enum: [displayName, email, church, status, created] } }
-        - { name: direction, in: query, schema: { type: string, enum: [asc, desc] } }
+        - { name: sort, in: query, description: Sort field; direction is required when sort is set., schema: { type: string, enum: [displayName, email, church, status, created] } }
+        - { name: direction, in: query, description: Sort direction; sort is required when direction is set., schema: { type: string, enum: [asc, desc] } }
       responses: { '200': { description: Scoped Member rows, content: { application/json: { schema: { $ref: '#/components/schemas/MemberViewList' } } } }, '403': { description: Scope denied }, '503': { description: Account labels unavailable } }
   /api/admin/operations/members/{id}:
     get:

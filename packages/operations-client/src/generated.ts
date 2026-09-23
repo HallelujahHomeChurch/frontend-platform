@@ -2581,7 +2581,9 @@ export interface operations {
                 q?: string;
                 page?: number;
                 limit?: number;
+                /** @description Sort field; direction is required when sort is set. */
                 sort?: "displayName" | "email" | "created";
+                /** @description Sort direction; sort is required when direction is set. */
                 direction?: "asc" | "desc";
             };
             header?: never;
@@ -4086,7 +4088,9 @@ export interface operations {
                 q?: string;
                 page?: number;
                 limit?: components["parameters"]["Limit"];
+                /** @description Sort field; direction is required when sort is set. */
                 sort?: "displayName" | "email" | "church" | "status" | "created";
+                /** @description Sort direction; sort is required when direction is set. */
                 direction?: "asc" | "desc";
             };
             header?: never;
