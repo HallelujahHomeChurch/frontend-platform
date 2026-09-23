@@ -1200,6 +1200,12 @@ describe('HHC UI primitives', () => {
     expect(styles).toMatch(/prefers-reduced-motion:\s*reduce[\s\S]*\.hhc-select__popover[^}]*transition:\s*none/s);
   });
 
+  it('keeps every ordinary Select popover viewport-bounded and scrollable', () => {
+    const styles = readFileSync('src/styles.css', 'utf8');
+
+    expect(styles).toMatch(/\.hhc-select__popover[^}]*max-height:\s*min\(360px, calc\(100dvh - 24px\)\)[^}]*overflow:\s*auto[^}]*overscroll-behavior:\s*contain/s);
+  });
+
   it('renders one email identity line when the display name is empty', async () => {
     const user = userEvent.setup();
     render(<AccountMenu user={{name: '', email: 'ada@example.com'}} labels={{menu: 'Account menu', greeting: 'Legacy greeting', signOut: 'Sign out'}} onSignOut={() => undefined} />);

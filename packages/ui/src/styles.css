@@ -120,6 +120,7 @@
   .hhc-popover, .hhc-modal { border: 1px solid var(--hhc-border); border-radius: var(--hhc-radius-md); color: var(--hhc-text); background: var(--hhc-surface-raised); box-shadow: var(--hhc-shadow-raised); }
   .hhc-menu__popover, .hhc-select__popover { opacity: 1; transform: translateY(0); transition: opacity 120ms ease, transform 120ms ease; }
   .hhc-menu__popover[data-entering], .hhc-menu__popover[data-exiting], .hhc-select__popover[data-entering], .hhc-select__popover[data-exiting] { opacity: 0; transform: translateY(-4px); }
+  .hhc-select__popover { max-height: min(360px, calc(100dvh - 24px)); overflow: auto; overscroll-behavior: contain; }
   .hhc-card { overflow: hidden; border: 1px solid var(--hhc-border); border-radius: var(--hhc-radius-md); color: var(--hhc-text); background: var(--hhc-surface); }
   .hhc-card__header { display: flex; align-items: start; justify-content: space-between; gap: 16px; padding: 20px; }
   .hhc-card__header + .hhc-card__content { padding-top: 0; }
