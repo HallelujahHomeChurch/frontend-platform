@@ -231,6 +231,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/operations/members/effective-verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Return current effective member IDs from a bounded Account page */
+        post: operations["listEffectiveVerifiedMemberAccountIDs"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/operations/org-units/{id}/{action}": {
         parameters: {
             query?: never;
@@ -1205,6 +1222,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/priv/operations/account-cleanup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Remove Account-linked Operations data for manual Account deletion */
+        post: operations["cleanupOperationsAccountData"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/priv/operations/dsr/exports": {
         parameters: {
             query?: never;
@@ -1522,6 +1556,10 @@ export interface components {
             id: string;
             /** Format: uuid */
             accountUserId: string;
+            /** Format: uuid */
+            churchOrgUnitId?: string;
+            churchStatus?: components["schemas"]["MembershipStatus"];
+            churchName?: string;
             version: number;
             /** Format: date-time */
             createdAt: string;
@@ -1551,6 +1589,9 @@ export interface components {
             members: components["schemas"]["MemberCreateInput"][];
         };
         UnitMemberBatchInput: {
+            accountUserIds: string[];
+        };
+        AccountIDBatch: {
             accountUserIds: string[];
         };
         JoinCandidate: {
@@ -1813,6 +1854,23 @@ export interface components {
             entitlements: components["schemas"]["EntitlementSummary"][];
             version: string;
         };
+        AccountCleanupRequest: {
+            /** Format: uuid */
+            userId: string;
+            idempotencyKey: string;
+        };
+        AccountCleanupResult: {
+            /** @constant */
+            owner: "operations-api";
+            /** @enum {string} */
+            status: "pending" | "completed";
+            recordCount: number;
+            remainingCount: number;
+            reasonCodes: string[];
+        };
+        AccountCleanupEnvelope: {
+            data: components["schemas"]["AccountCleanupResult"];
+        };
         DSRExportRequest: {
             /** Format: uuid */
             requestId: string;
@@ -1859,10 +1917,12 @@ export interface components {
             owner: "operations-api";
             /** @enum {string} */
             action: "restrict_processing" | "erase";
-            /** @constant */
-            status: "completed";
+            /** @enum {string} */
+            status: "pending" | "completed";
             /** Format: int64 */
             recordCount: number;
+            /** Format: int64 */
+            remainingCount: number;
             reasonCodes: ("audit_retained" | "shared_operations_retained" | "reservation_history_retained" | "reservation_attribution_retained" | "processing_restriction_retained")[];
         };
         DSRActionEnvelope: {
@@ -2477,8 +2537,8 @@ export interface operations {
     };
     listOrgUnitAccountCandidates: {
         parameters: {
-            query: {
-                q: string;
+            query?: {
+                q?: string;
                 page?: number;
                 limit?: number;
             };
@@ -2521,6 +2581,8 @@ export interface operations {
                 q?: string;
                 page?: number;
                 limit?: number;
+                sort?: "displayName" | "email" | "created";
+                direction?: "asc" | "desc";
             };
             header?: never;
             path: {
@@ -2597,6 +2659,44 @@ export interface operations {
             };
             /** @description Account directory unavailable */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listEffectiveVerifiedMemberAccountIDs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountIDBatch"];
+            };
+        };
+        responses: {
+            /** @description Effective member Account IDs */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountIDBatch"];
+                };
+            };
+            /** @description Invalid or oversized Account ID batch */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3986,6 +4086,8 @@ export interface operations {
                 q?: string;
                 page?: number;
                 limit?: components["parameters"]["Limit"];
+                sort?: "displayName" | "email" | "church" | "status" | "created";
+                direction?: "asc" | "desc";
             };
             header?: never;
             path?: never;
@@ -5499,6 +5601,60 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    cleanupOperationsAccountData: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountCleanupRequest"];
+            };
+        };
+        responses: {
+            /** @description Retry-safe cleanup result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountCleanupEnvelope"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing caller identity */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Caller is not Account API */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Internal owner failure */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
             };
         };
     };

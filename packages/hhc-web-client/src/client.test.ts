@@ -67,6 +67,16 @@ describe('hhc web client', () => {
     expect(request.url).toBe('http://localhost/api/admin/bulletins/issue-1/watermark-investigations?limit=10')
   })
 
+  it('serializes global investigation ordering', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({data: {items: []}, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}}))
+    const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'trace-token', fetcher})
+
+    await client.listAllBulletinWatermarkInvestigations({limit: 20, sort: 'operator', direction: 'asc'})
+
+    const request = fetcher.mock.calls[0]![0] as Request
+    expect(request.url).toBe('http://localhost/api/admin/bulletin-watermark-investigations?limit=20&sort=operator&direction=asc')
+  })
+
   it('posts trace lookup privately', async () => {
     const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({data: {}, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}}))
     const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'trace-token', fetcher})
@@ -141,11 +151,11 @@ describe('hhc web client', () => {
     }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
     const client = createHhcWebClient({ baseUrl: 'https://www.alive.org.tw/api', getAccessToken: () => 'token', fetcher })
 
-    const response = await client.listAdminBulletins({ page: 2, pageSize: 50, status: 'published' })
+    const response = await client.listAdminBulletins({ page: 2, pageSize: 50, status: 'published', sort: 'title', direction: 'asc' })
 
     expect(response.meta).toEqual({ page: 2, pageSize: 50, total: 0 })
     const request = fetcher.mock.calls[0]?.[0] as Request
-    expect(request.url).toBe('https://www.alive.org.tw/api/admin/bulletins?page=2&pageSize=50&status=published')
+    expect(request.url).toBe('https://www.alive.org.tw/api/admin/bulletins?page=2&pageSize=50&status=published&sort=title&direction=asc')
     expect(request.headers.get('Authorization')).toBe('Bearer token')
   })
 

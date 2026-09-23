@@ -3326,6 +3326,8 @@ export interface operations {
             query?: {
                 cursor?: string;
                 limit?: number;
+                sort?: "submitted" | "requested" | "actual" | "status" | "operator" | "account" | "issued";
+                direction?: "asc" | "desc";
             };
             header?: never;
             path?: never;
@@ -4413,6 +4415,8 @@ export interface operations {
                 pageSize?: components["parameters"]["PageSize"];
                 status?: components["schemas"]["BulletinStatus"];
                 q?: string;
+                sort?: "issueNumber" | "date" | "title" | "languages" | "status" | "updated";
+                direction?: "asc" | "desc";
             };
             header?: never;
             path?: never;
@@ -4802,7 +4806,7 @@ export interface operations {
                 pageSize?: components["parameters"]["PageSize"];
                 q?: string;
                 status?: components["schemas"]["ContentStatus"];
-                sort?: "updatedAt" | "displayDate" | "eventDate";
+                sort?: "updatedAt" | "displayDate" | "eventDate" | "title" | "languages" | "status" | "youtubeVideoId" | "homeEligible";
                 direction?: "asc" | "desc";
             };
             header?: never;

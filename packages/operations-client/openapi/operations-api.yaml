@@ -160,7 +160,7 @@ paths:
       security: [{ gatewayPrincipal: [] }]
       parameters:
         - { $ref: '#/components/parameters/ID' }
-        - { name: q, in: query, required: true, schema: { type: string, minLength: 2, maxLength: 200 } }
+        - { name: q, in: query, schema: { type: string, minLength: 2, maxLength: 200 } }
         - { name: page, in: query, schema: { type: integer, minimum: 1, maximum: 10000, default: 1 } }
         - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 20 } }
       responses: { '200': { description: Account candidates with current membership state, content: { application/json: { schema: { $ref: '#/components/schemas/JoinCandidatePage' } } } }, '403': { description: Scope denied }, '503': { description: Account directory unavailable } }
@@ -177,6 +177,8 @@ paths:
         - { name: q, in: query, schema: { type: string, minLength: 2, maxLength: 200 } }
         - { name: page, in: query, schema: { type: integer, minimum: 1, maximum: 10000, default: 1 } }
         - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 50 } }
+        - { name: sort, in: query, schema: { type: string, enum: [displayName, email, created] } }
+        - { name: direction, in: query, schema: { type: string, enum: [asc, desc] } }
       responses: { '200': { description: Current-unit member page, content: { application/json: { schema: { $ref: '#/components/schemas/UnitMemberPage' } } } }, '403': { description: Scope denied }, '422': { description: Account search is too broad }, '503': { description: Account labels unavailable } }
   /api/admin/operations/org-units/{id}/members/batch:
     post:
@@ -189,6 +191,16 @@ paths:
       parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/UnitMemberBatchInput' } } } }
       responses: { '200': { description: Row-addressable admission results, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/MemberBatchResult' } } } } }, '403': { description: Scope denied }, '503': { description: Account directory unavailable } }
+  /api/admin/operations/members/effective-verification:
+    post:
+      tags: [Operations]
+      operationId: listEffectiveVerifiedMemberAccountIDs
+      summary: Return current effective member IDs from a bounded Account page
+      x-hhc-visibility: admin
+      x-hhc-required-permission: memberships:read
+      security: [{ gatewayPrincipal: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/AccountIDBatch' } } } }
+      responses: { '200': { description: Effective member Account IDs, content: { application/json: { schema: { $ref: '#/components/schemas/AccountIDBatch' } } } }, '400': { description: Invalid or oversized Account ID batch }, '403': { description: Permission denied } }
   /api/admin/operations/org-units/{id}/{action}:
     post:
       tags: [Operations]
@@ -570,6 +582,8 @@ paths:
         - { name: q, in: query, schema: { type: string, maxLength: 200 } }
         - { name: page, in: query, schema: { type: integer, minimum: 1, maximum: 10000, default: 1 } }
         - { $ref: '#/components/parameters/Limit' }
+        - { name: sort, in: query, schema: { type: string, enum: [displayName, email, church, status, created] } }
+        - { name: direction, in: query, schema: { type: string, enum: [asc, desc] } }
       responses: { '200': { description: Scoped Member rows, content: { application/json: { schema: { $ref: '#/components/schemas/MemberViewList' } } } }, '403': { description: Scope denied }, '503': { description: Account labels unavailable } }
   /api/admin/operations/members/{id}:
     get:
@@ -1051,6 +1065,21 @@ paths:
       security: [{ gatewayPrincipal: [] }]
       parameters: [{ name: blockId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/IfMatch' }]
       responses: { '200': { description: Cancelled maintenance block, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceMaintenanceBlock' } } } }, '400': { description: Immutable terminal state }, '412': { description: version_mismatch } }
+  /priv/operations/account-cleanup:
+    post:
+      tags: [Operations]
+      operationId: cleanupOperationsAccountData
+      summary: Remove Account-linked Operations data for manual Account deletion
+      x-hhc-visibility: private
+      x-hhc-callers: [account-api]
+      security: [{ daprCallerAppID: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/AccountCleanupRequest' } } } }
+      responses:
+        '200': { description: Retry-safe cleanup result, content: { application/json: { schema: { $ref: '#/components/schemas/AccountCleanupEnvelope' } } } }
+        '400': { description: Invalid request }
+        '401': { description: Missing caller identity }
+        '403': { description: Caller is not Account API }
+        '500': { description: Internal owner failure, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
   /priv/operations/dsr/exports:
     post:
       tags: [Operations]
@@ -1416,6 +1445,9 @@ components:
       properties:
         id: { type: string, format: uuid }
         accountUserId: { type: string, format: uuid }
+        churchOrgUnitId: { type: string, format: uuid }
+        churchStatus: { $ref: '#/components/schemas/MembershipStatus' }
+        churchName: { type: string }
         version: { type: integer, minimum: 1 }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
@@ -1454,6 +1486,12 @@ components:
         churchOrgUnitId: { type: string, format: uuid }
         members: { type: array, minItems: 1, maxItems: 50, items: { $ref: '#/components/schemas/MemberCreateInput' } }
     UnitMemberBatchInput:
+      type: object
+      additionalProperties: false
+      required: [accountUserIds]
+      properties:
+        accountUserIds: { type: array, minItems: 1, maxItems: 50, uniqueItems: true, items: { type: string, format: uuid } }
+    AccountIDBatch:
       type: object
       additionalProperties: false
       required: [accountUserIds]
@@ -1736,6 +1774,28 @@ components:
         responsibilities: { type: array, items: { $ref: '#/components/schemas/UnitResponsibilitySummary' } }
         entitlements: { type: array, items: { $ref: '#/components/schemas/EntitlementSummary' } }
         version: { type: string, pattern: '^[0-9a-f]{64}$' }
+    AccountCleanupRequest:
+      type: object
+      additionalProperties: false
+      required: [userId, idempotencyKey]
+      properties:
+        userId: { type: string, format: uuid }
+        idempotencyKey: { type: string, minLength: 1, maxLength: 200 }
+    AccountCleanupResult:
+      type: object
+      additionalProperties: false
+      required: [owner, status, recordCount, remainingCount, reasonCodes]
+      properties:
+        owner: { type: string, const: operations-api }
+        status: { type: string, enum: [pending, completed] }
+        recordCount: { type: integer, minimum: 0 }
+        remainingCount: { type: integer, minimum: 0 }
+        reasonCodes: { type: array, items: { type: string } }
+    AccountCleanupEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties: { data: { $ref: '#/components/schemas/AccountCleanupResult' } }
     DSRExportRequest:
       type: object
       additionalProperties: false
@@ -1786,12 +1846,13 @@ components:
     DSRActionResult:
       type: object
       additionalProperties: false
-      required: [owner, action, status, recordCount, reasonCodes]
+      required: [owner, action, status, recordCount, remainingCount, reasonCodes]
       properties:
         owner: { type: string, const: operations-api }
         action: { type: string, enum: [restrict_processing, erase] }
-        status: { type: string, const: completed }
+        status: { type: string, enum: [pending, completed] }
         recordCount: { type: integer, format: int64, minimum: 0 }
+        remainingCount: { type: integer, format: int64, minimum: 0 }
         reasonCodes: { type: array, items: { type: string, enum: [audit_retained, shared_operations_retained, reservation_history_retained, reservation_attribution_retained, processing_restriction_retained] } }
     DSRActionEnvelope:
       type: object

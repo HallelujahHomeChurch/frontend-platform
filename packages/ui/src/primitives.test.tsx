@@ -27,6 +27,7 @@ import {
   SearchableSelect,
   Select,
   Skeleton,
+  SortableColumnHeader,
   StatusBadge,
   Switch,
   ToastProvider,
@@ -45,6 +46,23 @@ const uploadLabels = {
 
 describe('HHC UI primitives', () => {
   afterEach(() => vi.useRealTimers());
+
+  it('renders an accessible sortable table header', async () => {
+    const user = userEvent.setup();
+    const onSort = vi.fn();
+    const {rerender} = render(<table><thead><tr><SortableColumnHeader direction="asc" onSort={onSort}>Name</SortableColumnHeader></tr></thead></table>);
+
+    const header = screen.getByRole('columnheader', {name: 'Name'});
+    const button = screen.getByRole('button', {name: 'Name'});
+    expect(header).toHaveAttribute('aria-sort', 'ascending');
+    expect(button).toHaveClass('hhc-sortable-column-header__button');
+    await user.click(button);
+    await user.keyboard('{Enter}');
+    expect(onSort).toHaveBeenCalledTimes(2);
+
+    rerender(<table><thead><tr><SortableColumnHeader direction="desc" onSort={onSort}>Name</SortableColumnHeader></tr></thead></table>);
+    expect(screen.getByRole('columnheader', {name: 'Name'})).toHaveAttribute('aria-sort', 'descending');
+  });
 
   it('renders the shared branded loading screen with accessible status semantics', () => {
     const {rerender} = render(<BrandLoadingScreen label="正在載入" className="consumer-loading" />);
@@ -1180,6 +1198,12 @@ describe('HHC UI primitives', () => {
     expect(styles).toMatch(/\.hhc-select__popover[^}]*transition:\s*opacity 120ms ease, transform 120ms ease/s);
     expect(styles).toMatch(/\.hhc-select__popover\[data-entering\][^}]*opacity:\s*0[^}]*transform:\s*translateY\(-4px\)/s);
     expect(styles).toMatch(/prefers-reduced-motion:\s*reduce[\s\S]*\.hhc-select__popover[^}]*transition:\s*none/s);
+  });
+
+  it('keeps every ordinary Select popover viewport-bounded and scrollable', () => {
+    const styles = readFileSync('src/styles.css', 'utf8');
+
+    expect(styles).toMatch(/\.hhc-select__popover[^}]*max-height:\s*min\(360px, calc\(100dvh - 24px\)\)[^}]*overflow:\s*auto[^}]*overscroll-behavior:\s*contain/s);
   });
 
   it('renders one email identity line when the display name is empty', async () => {

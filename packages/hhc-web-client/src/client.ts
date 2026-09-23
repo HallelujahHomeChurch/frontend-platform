@@ -181,9 +181,9 @@ export function createHhcWebClient(options: {
         params: {path: {issueId}}, signal, cache: 'no-store',
       }))).data.versions
     },
-    async listAllBulletinWatermarkInvestigations(params: {cursor?: string; limit?: number; signal?: AbortSignal} = {}): Promise<BulletinWatermarkInvestigationPage> {
+    async listAllBulletinWatermarkInvestigations(params: {cursor?: string; limit?: number; sort?: 'submitted' | 'requested' | 'actual' | 'status' | 'operator' | 'account' | 'issued'; direction?: 'asc' | 'desc'; signal?: AbortSignal} = {}): Promise<BulletinWatermarkInvestigationPage> {
       const envelope = await unwrap(client.GET('/admin/bulletin-watermark-investigations', {
-        params: {query: {cursor: params.cursor, limit: params.limit}}, signal: params.signal, cache: 'no-store',
+        params: {query: {cursor: params.cursor, limit: params.limit, sort: params.sort, direction: params.direction}}, signal: params.signal, cache: 'no-store',
       }))
       return {items: envelope.data.items, nextCursor: envelope.meta?.nextCursor}
     },
@@ -215,9 +215,9 @@ export function createHhcWebClient(options: {
     async lookupBulletinWatermark(code: string, signal?: AbortSignal) {
       return (await unwrap(client.POST('/admin/bulletins/watermark-lookups', {body: {code}, signal, cache: 'no-store'}))).data
     },
-    async listAdminBulletins(params: { page?: number; pageSize?: number; status?: BulletinStatus; query?: string; signal?: AbortSignal } = {}) {
+    async listAdminBulletins(params: { page?: number; pageSize?: number; status?: BulletinStatus; query?: string; sort?: 'issueNumber' | 'date' | 'title' | 'languages' | 'status' | 'updated'; direction?: 'asc' | 'desc'; signal?: AbortSignal } = {}) {
       const envelope = await unwrap(client.GET('/admin/bulletins', {
-        params: { query: { page: params.page, pageSize: params.pageSize, status: params.status, q: params.query } },
+        params: { query: { page: params.page, pageSize: params.pageSize, status: params.status, q: params.query, sort: params.sort, direction: params.direction } },
         signal: params.signal,
       }))
       return { data: envelope.data, meta: envelope.meta }
@@ -317,7 +317,7 @@ export function createHhcWebClient(options: {
       pageSize?: number
       query?: string
       status?: ContentStatus
-      sort?: 'updatedAt' | 'displayDate' | 'eventDate'
+      sort?: 'updatedAt' | 'displayDate' | 'eventDate' | 'title' | 'languages' | 'status' | 'youtubeVideoId' | 'homeEligible'
       direction?: 'asc' | 'desc'
       signal?: AbortSignal
     } = {}) {
