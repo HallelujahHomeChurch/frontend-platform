@@ -141,11 +141,11 @@ describe('hhc web client', () => {
     }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
     const client = createHhcWebClient({ baseUrl: 'https://www.alive.org.tw/api', getAccessToken: () => 'token', fetcher })
 
-    const response = await client.listAdminBulletins({ page: 2, pageSize: 50, status: 'published' })
+    const response = await client.listAdminBulletins({ page: 2, pageSize: 50, status: 'published', sort: 'title', direction: 'asc' })
 
     expect(response.meta).toEqual({ page: 2, pageSize: 50, total: 0 })
     const request = fetcher.mock.calls[0]?.[0] as Request
-    expect(request.url).toBe('https://www.alive.org.tw/api/admin/bulletins?page=2&pageSize=50&status=published')
+    expect(request.url).toBe('https://www.alive.org.tw/api/admin/bulletins?page=2&pageSize=50&status=published&sort=title&direction=asc')
     expect(request.headers.get('Authorization')).toBe('Bearer token')
   })
 
