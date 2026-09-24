@@ -281,6 +281,36 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BulletinWatermarkDSRActionInput'
+  /priv/account-cleanup:
+    post:
+      operationId: cleanupDeletedAccountWebsiteData
+      summary: Remove website data for manual Account deletion
+      description: Deletes account-attributed watermark records without creating or advancing a DSR request.
+      tags: [Private]
+      x-hhc-visibility: private
+      x-hhc-callers: [account-api]
+      x-hhc-required-headers:
+      - Dapr-Caller-App-Id
+      - dapr-api-token
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [] }]
+      servers: [{ url: / }]
+      responses:
+        '401': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+        '200':
+          description: Manual account cleanup result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulletinWatermarkAccountCleanupEnvelope'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulletinWatermarkAccountCleanupInput'
   /health:
     get:
       operationId: getHealth
@@ -801,7 +831,7 @@ paths:
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       parameters:
         - { name: issueID, in: path, required: true, schema: { type: string, format: uuid } }
-        - { name: locale, in: path, required: true, schema: { $ref: '#/components/schemas/BulletinEdition' } }
+        - { name: locale, in: path, required: true, schema: { $ref: '#/components/schemas/BulletinLocale' } }
         - $ref: '#/components/parameters/BulletinSeries'
       responses:
         '200': { $ref: '#/components/responses/ProtectedBulletin' }
@@ -819,7 +849,7 @@ paths:
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       parameters:
         - { name: issueID, in: path, required: true, schema: { type: string, format: uuid } }
-        - { name: locale, in: path, required: true, schema: { $ref: '#/components/schemas/BulletinEdition' } }
+        - { name: locale, in: path, required: true, schema: { $ref: '#/components/schemas/BulletinLocale' } }
         - $ref: '#/components/parameters/BulletinSeries'
         - { name: Range, in: header, schema: { type: string } }
         - { name: If-Range, in: header, schema: { type: string } }
@@ -1240,7 +1270,8 @@ paths:
       x-required-scopes: [cms:bulletins:write]
       parameters:
         - $ref: '#/components/parameters/IssueID'
-        - { name: locale, in: path, required: true, schema: { $ref: '#/components/schemas/BulletinEdition' } }
+        - { name: locale, in: path, required: true, schema: { $ref: '#/components/schemas/BulletinLocale' } }
+        - $ref: '#/components/parameters/BulletinSeries'
         - $ref: '#/components/parameters/IfMatch'
       requestBody:
         required: true
@@ -1264,7 +1295,8 @@ paths:
       x-required-scopes: [cms:bulletins:write]
       parameters:
         - $ref: '#/components/parameters/IssueID'
-        - { name: locale, in: path, required: true, schema: { $ref: '#/components/schemas/BulletinEdition' } }
+        - { name: locale, in: path, required: true, schema: { $ref: '#/components/schemas/BulletinLocale' } }
+        - $ref: '#/components/parameters/BulletinSeries'
         - $ref: '#/components/parameters/IfMatch'
       responses:
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
@@ -1383,6 +1415,70 @@ paths:
         '403': { $ref: '#/components/responses/AdminForbidden' }
         '200': { $ref: '#/components/responses/BulletinIssue' }
         '412': { $ref: '#/components/responses/Error' }
+  /admin/bulletins/{issueId}/notification-preview:
+    get:
+      operationId: previewBulletinNotification
+      summary: Preview canonical Email and Web Push copy for one published bulletin series
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes: [cms:bulletins:read]
+      parameters:
+        - $ref: '#/components/parameters/IssueID'
+        - $ref: '#/components/parameters/BulletinSeries'
+      responses:
+        '200': { description: Canonical locked weekly notification preview, content: { application/json: { schema: { $ref: '#/components/schemas/BulletinNotificationPreviewEnvelope' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/bulletins/{issueId}/notifications:
+    post:
+      operationId: submitBulletinNotification
+      summary: Durably submit canonical Email and Web Push notifications for one published bulletin series
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes: [cms:bulletins:read, campaigns:write, campaigns:send]
+      parameters:
+        - $ref: '#/components/parameters/IssueID'
+        - $ref: '#/components/parameters/BulletinSeries'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody: { required: false, content: { application/json: { schema: { type: object, additionalProperties: false } } } }
+      responses:
+        '202': { description: Durable notification submission accepted, content: { application/json: { schema: { $ref: '#/components/schemas/BulletinNotificationSubmissionEnvelope' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/campaign-submissions:
+    post:
+      operationId: submitCustomNotifications
+      summary: Atomically submit one or two custom notification channels
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes: [campaigns:write, campaigns:send]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CustomNotificationSubmission' } } } }
+      responses:
+        '202': { description: Atomic notification submission accepted }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '413': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
   /admin/bulletins/{issueId}/revisions:
     get:
       operationId: listBulletinRevisions
@@ -1938,8 +2034,8 @@ components:
       description: Sanitized Account scopes injected by api-gateway and enforced per operation.
   parameters:
     ContentLocale: { name: locale, in: query, schema: { $ref: '#/components/schemas/ContentLocale' } }
-    BulletinLocale: { name: locale, in: query, schema: { $ref: '#/components/schemas/BulletinEdition' } }
-    BulletinSeries: { name: series, in: query, schema: { type: string, pattern: '^[a-z][a-z0-9_-]{0,49}$', default: general } }
+    BulletinLocale: { name: locale, in: query, schema: { $ref: '#/components/schemas/BulletinLocale' } }
+    BulletinSeries: { name: series, in: query, schema: { $ref: '#/components/schemas/BulletinSeries', default: general } }
     Page: { name: page, in: query, schema: { type: integer, minimum: 1, maximum: 10000, default: 1 } }
     PageSize: { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
     PerPage: { name: perPage, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
@@ -2202,6 +2298,7 @@ components:
       additionalProperties: false
       required:
       - issueId
+      - series
       - locale
       - revision
       - sourceAssetId
@@ -2212,6 +2309,7 @@ components:
         issueId:
           type: string
           format: uuid
+        series: { $ref: '#/components/schemas/BulletinSeries' }
         locale:
           type: string
           minLength: 1
@@ -2235,6 +2333,7 @@ components:
       additionalProperties: false
       required:
       - issueId
+      - series
       - locale
       - revision
       - sourceAssetId
@@ -2246,6 +2345,7 @@ components:
         issueId:
           type: string
           format: uuid
+        series: { $ref: '#/components/schemas/BulletinSeries' }
         locale:
           type: string
           minLength: 1
@@ -2300,6 +2400,7 @@ components:
       required: [issueId]
       properties:
         issueId: { type: string, format: uuid }
+        series: { $ref: '#/components/schemas/BulletinSeries', default: general }
     BulletinWatermarkInvestigation:
       type: object
       additionalProperties: false
@@ -2654,6 +2755,18 @@ components:
           type: string
           minLength: 1
           maxLength: 200
+    BulletinWatermarkAccountCleanupInput:
+      type: object
+      additionalProperties: false
+      required:
+      - userId
+      - idempotencyKey
+      properties:
+        userId: *id001
+        idempotencyKey:
+          type: string
+          minLength: 1
+          maxLength: 200
     BulletinWatermarkDSRExportEnvelope:
       type: object
       additionalProperties: false
@@ -2714,6 +2827,7 @@ components:
           - action
           - status
           - recordCount
+          - remainingCount
           - reasonCodes
           properties:
             owner:
@@ -2726,8 +2840,42 @@ components:
               - restrict_processing
             status:
               type: string
-              const: completed
+              enum: [pending, completed]
             recordCount: *id005
+            remainingCount: *id005
+            reasonCodes:
+              type: array
+              items: *id002
+        meta:
+          type: object
+        error:
+          type:
+          - object
+          - 'null'
+    BulletinWatermarkAccountCleanupEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+      - data
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+          - owner
+          - status
+          - recordCount
+          - remainingCount
+          - reasonCodes
+          properties:
+            owner:
+              type: string
+              const: website_watermark
+            status:
+              type: string
+              enum: [pending, completed]
+            recordCount: *id005
+            remainingCount: *id005
             reasonCodes:
               type: array
               items: *id002
@@ -2978,7 +3126,10 @@ components:
       type: string
       enum: [zh-Hant, zh-Hans, en, ja, ko]
       default: zh-Hant
-    BulletinEdition:
+    BulletinSeries:
+      type: string
+      enum: [general, children]
+    BulletinLocale:
       type: string
       enum: [zh-Hant, zh-Hans, en]
       default: zh-Hant
@@ -3027,11 +3178,12 @@ components:
         message: { type: string }
     BulletinVersion:
       type: object
-      required: [id, issueId, locale, title, subtitle, pdfAssetId, pdfFileName, status, version, createdAt, updatedAt]
+      required: [id, issueId, series, locale, title, subtitle, pdfAssetId, pdfFileName, status, version, createdAt, updatedAt]
       properties:
         id: { type: string, format: uuid }
         issueId: { type: string, format: uuid }
-        locale: { $ref: '#/components/schemas/BulletinEdition' }
+        series: { $ref: '#/components/schemas/BulletinSeries' }
+        locale: { $ref: '#/components/schemas/BulletinLocale' }
         title: { type: string }
         subtitle: { type: string }
         pdfAssetId: { type: string }
@@ -3091,8 +3243,8 @@ components:
         issueId: { type: string, format: uuid }
         issueDate: { type: string, format: date }
         issueNumber: { type: integer, minimum: 1 }
-        series: { type: string, pattern: '^[a-z][a-z0-9_-]{0,49}$' }
-        locale: { $ref: '#/components/schemas/BulletinEdition' }
+        series: { $ref: '#/components/schemas/BulletinSeries' }
+        locale: { $ref: '#/components/schemas/BulletinLocale' }
         title: { type: string }
         subtitle: { type: string }
         downloadName: { type: string }
@@ -3144,7 +3296,8 @@ components:
       additionalProperties: false
       required: [locale, fileName, mimeType, sizeBytes]
       properties:
-        locale: { $ref: '#/components/schemas/BulletinEdition' }
+        series: { $ref: '#/components/schemas/BulletinSeries', default: general }
+        locale: { $ref: '#/components/schemas/BulletinLocale' }
         fileName: { type: string, minLength: 1 }
         mimeType: { type: string, const: application/pdf }
         sizeBytes: { type: integer, format: int64, minimum: 1, maximum: 20971520 }
@@ -3160,7 +3313,8 @@ components:
       additionalProperties: false
       required: [locale, title, subtitle, fileName, mimeType, sizeBytes, checksumSha256]
       properties:
-        locale: { $ref: '#/components/schemas/BulletinEdition' }
+        series: { $ref: '#/components/schemas/BulletinSeries', default: general }
+        locale: { $ref: '#/components/schemas/BulletinLocale' }
         title: { type: string, minLength: 1 }
         subtitle: { type: string, maxLength: 300 }
         fileName: { type: string, minLength: 1 }
@@ -3217,11 +3371,59 @@ components:
       additionalProperties: false
       required: [locale]
       properties:
-        locale: { $ref: '#/components/schemas/BulletinEdition' }
+        series: { $ref: '#/components/schemas/BulletinSeries', default: general }
+        locale: { $ref: '#/components/schemas/BulletinLocale' }
         notifySubscribers:
           type: boolean
           default: false
-          description: Queue one member-only Web Push campaign after the protected bulletin is published. Ignored by unpublish operations.
+          description: Queue one member-only Email and Web Push notification pair for the first notification-enabled publication in this series. Ignored by unpublish operations.
+    NotificationCommand:
+      type: object
+      additionalProperties: false
+      required: [channel, audienceType, translations]
+      properties:
+        channel: { type: string, enum: [email, web_push] }
+        audienceType: { type: string, enum: [newsletter, all, role, users, bulletin_members] }
+        roleId: { type: string, format: uuid }
+        userIds: { type: array, minItems: 1, maxItems: 500, uniqueItems: true, items: { type: string, format: uuid } }
+        translations: { type: object, minProperties: 1, additionalProperties: { $ref: '#/components/schemas/CampaignTranslation' } }
+        requiredEntitlements: { type: object, additionalProperties: { type: string } }
+    CustomNotificationSubmission:
+      type: object
+      additionalProperties: false
+      required: [name, notifications]
+      properties:
+        name: { type: string, minLength: 1 }
+        notifications: { type: array, minItems: 1, maxItems: 2, items: { $ref: '#/components/schemas/CustomNotificationCommand' } }
+    CustomNotificationCommand:
+      type: object
+      additionalProperties: false
+      required: [channel, audienceType, translations]
+      properties:
+        channel: { type: string, enum: [email, web_push] }
+        audienceType: { type: string, enum: [newsletter, all, role, users] }
+        roleId: { type: string, format: uuid }
+        userIds: { type: array, minItems: 1, maxItems: 500, uniqueItems: true, items: { type: string, format: uuid } }
+        translations: { type: object, minProperties: 1, additionalProperties: { $ref: '#/components/schemas/CampaignTranslation' } }
+    BulletinNotificationPreview:
+      type: object
+      additionalProperties: false
+      required: [name, series, notifications, hasPreviousNotification]
+      properties:
+        name: { type: string }
+        series: { $ref: '#/components/schemas/BulletinSeries' }
+        notifications: { type: array, minItems: 2, maxItems: 2, items: { $ref: '#/components/schemas/NotificationCommand' } }
+        hasPreviousNotification: { type: boolean }
+        latestGeneration: { type: integer, minimum: 0 }
+        latestAt: { type: string, format: date-time }
+    BulletinNotificationSubmission:
+      type: object
+      additionalProperties: false
+      required: [issueId, series, notificationGeneration]
+      properties:
+        issueId: { type: string, format: uuid }
+        series: { $ref: '#/components/schemas/BulletinSeries' }
+        notificationGeneration: { type: integer, minimum: 0 }
     HomePageContentV1:
       type: object
       additionalProperties: false
@@ -4091,6 +4293,20 @@ components:
       required: [data, meta]
       properties:
         data: { $ref: '#/components/schemas/BulletinIssue' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: ['null'] }
+    BulletinNotificationPreviewEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/BulletinNotificationPreview' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: ['null'] }
+    BulletinNotificationSubmissionEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/BulletinNotificationSubmission' }
         meta: { type: object, additionalProperties: true }
         error: { type: ['null'] }
     BulletinListEnvelope:

@@ -127,6 +127,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/priv/account-cleanup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Remove website data for manual Account deletion
+         * @description Deletes account-attributed watermark records without creating or advancing a DSR request.
+         */
+        post: operations["cleanupDeletedAccountWebsiteData"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -916,6 +936,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/bulletins/{issueId}/notification-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preview canonical Email and Web Push copy for one published bulletin series */
+        get: operations["previewBulletinNotification"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Durably submit canonical Email and Web Push notifications for one published bulletin series */
+        post: operations["submitBulletinNotification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/campaign-submissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Atomically submit one or two custom notification channels */
+        post: operations["submitCustomNotifications"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/bulletins/{issueId}/revisions": {
         parameters: {
             query?: never;
@@ -1267,6 +1338,7 @@ export interface components {
         BulletinWatermarkCandidateScope: {
             /** Format: uuid */
             issueId: string;
+            series: components["schemas"]["BulletinSeries"];
             locale: string;
             revision: number;
             /** Format: uuid */
@@ -1278,6 +1350,7 @@ export interface components {
         BulletinWatermarkVersion: {
             /** Format: uuid */
             issueId: string;
+            series: components["schemas"]["BulletinSeries"];
             locale: string;
             revision: number;
             /** Format: uuid */
@@ -1298,6 +1371,8 @@ export interface components {
         BulletinWatermarkInvestigationInput: {
             /** Format: uuid */
             issueId: string;
+            /** @default general */
+            series: components["schemas"]["BulletinSeries"];
         };
         BulletinWatermarkInvestigation: {
             /** Format: uuid */
@@ -1496,6 +1571,11 @@ export interface components {
             action: "erase" | "restrict_processing";
             idempotencyKey: string;
         };
+        BulletinWatermarkAccountCleanupInput: {
+            /** Format: uuid */
+            userId: string;
+            idempotencyKey: string;
+        };
         BulletinWatermarkDSRExportEnvelope: {
             data: {
                 records: {
@@ -1518,9 +1598,23 @@ export interface components {
                 owner: "website_watermark";
                 /** @enum {string} */
                 action: "erase" | "restrict_processing";
-                /** @constant */
-                status: "completed";
+                /** @enum {string} */
+                status: "pending" | "completed";
                 recordCount: number;
+                remainingCount: number;
+                reasonCodes: string[];
+            };
+            meta?: Record<string, never>;
+            error?: Record<string, never> | null;
+        };
+        BulletinWatermarkAccountCleanupEnvelope: {
+            data: {
+                /** @constant */
+                owner: "website_watermark";
+                /** @enum {string} */
+                status: "pending" | "completed";
+                recordCount: number;
+                remainingCount: number;
                 reasonCodes: string[];
             };
             meta?: Record<string, never>;
@@ -1713,11 +1807,13 @@ export interface components {
          * @enum {string}
          */
         ContentLocale: "zh-Hant" | "zh-Hans" | "en" | "ja" | "ko";
+        /** @enum {string} */
+        BulletinSeries: "general" | "children";
         /**
          * @default zh-Hant
          * @enum {string}
          */
-        BulletinEdition: "zh-Hant" | "zh-Hans" | "en";
+        BulletinLocale: "zh-Hant" | "zh-Hans" | "en";
         /** @enum {string} */
         ContentTranslationTargetLocale: "zh-Hans" | "en" | "ja" | "ko";
         /** @enum {string} */
@@ -1753,7 +1849,8 @@ export interface components {
             id: string;
             /** Format: uuid */
             issueId: string;
-            locale: components["schemas"]["BulletinEdition"];
+            series: components["schemas"]["BulletinSeries"];
+            locale: components["schemas"]["BulletinLocale"];
             title: string;
             subtitle: string;
             pdfAssetId: string;
@@ -1816,8 +1913,8 @@ export interface components {
             /** Format: date */
             issueDate: string;
             issueNumber?: number;
-            series: string;
-            locale: components["schemas"]["BulletinEdition"];
+            series: components["schemas"]["BulletinSeries"];
+            locale: components["schemas"]["BulletinLocale"];
             title: string;
             subtitle: string;
             downloadName: string;
@@ -1863,7 +1960,9 @@ export interface components {
             issueDate: string;
         };
         CreateBulletinUploadInput: {
-            locale: components["schemas"]["BulletinEdition"];
+            /** @default general */
+            series: components["schemas"]["BulletinSeries"];
+            locale: components["schemas"]["BulletinLocale"];
             fileName: string;
             /** @constant */
             mimeType: "application/pdf";
@@ -1875,7 +1974,9 @@ export interface components {
             subtitle: string;
         };
         CompleteBulletinUploadInput: {
-            locale: components["schemas"]["BulletinEdition"];
+            /** @default general */
+            series: components["schemas"]["BulletinSeries"];
+            locale: components["schemas"]["BulletinLocale"];
             title: string;
             subtitle: string;
             fileName: string;
@@ -1932,12 +2033,60 @@ export interface components {
             retryable: boolean;
         };
         PublicationInput: {
-            locale: components["schemas"]["BulletinEdition"];
+            /** @default general */
+            series: components["schemas"]["BulletinSeries"];
+            locale: components["schemas"]["BulletinLocale"];
             /**
-             * @description Queue one member-only Web Push campaign after the protected bulletin is published. Ignored by unpublish operations.
+             * @description Queue one member-only Email and Web Push notification pair for the first notification-enabled publication in this series. Ignored by unpublish operations.
              * @default false
              */
             notifySubscribers: boolean;
+        };
+        NotificationCommand: {
+            /** @enum {string} */
+            channel: "email" | "web_push";
+            /** @enum {string} */
+            audienceType: "newsletter" | "all" | "role" | "users" | "bulletin_members";
+            /** Format: uuid */
+            roleId?: string;
+            userIds?: string[];
+            translations: {
+                [key: string]: components["schemas"]["CampaignTranslation"];
+            };
+            requiredEntitlements?: {
+                [key: string]: string;
+            };
+        };
+        CustomNotificationSubmission: {
+            name: string;
+            notifications: components["schemas"]["CustomNotificationCommand"][];
+        };
+        CustomNotificationCommand: {
+            /** @enum {string} */
+            channel: "email" | "web_push";
+            /** @enum {string} */
+            audienceType: "newsletter" | "all" | "role" | "users";
+            /** Format: uuid */
+            roleId?: string;
+            userIds?: string[];
+            translations: {
+                [key: string]: components["schemas"]["CampaignTranslation"];
+            };
+        };
+        BulletinNotificationPreview: {
+            name: string;
+            series: components["schemas"]["BulletinSeries"];
+            notifications: components["schemas"]["NotificationCommand"][];
+            hasPreviousNotification: boolean;
+            latestGeneration?: number;
+            /** Format: date-time */
+            latestAt?: string;
+        };
+        BulletinNotificationSubmission: {
+            /** Format: uuid */
+            issueId: string;
+            series: components["schemas"]["BulletinSeries"];
+            notificationGeneration: number;
         };
         HomePageContentV1: {
             /** @constant */
@@ -2639,6 +2788,20 @@ export interface components {
             };
             error?: null;
         };
+        BulletinNotificationPreviewEnvelope: {
+            data: components["schemas"]["BulletinNotificationPreview"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
+        };
+        BulletinNotificationSubmissionEnvelope: {
+            data: components["schemas"]["BulletinNotificationSubmission"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
+        };
         BulletinListEnvelope: {
             data: components["schemas"]["BulletinIssue"][];
             meta: components["schemas"]["PageMeta"];
@@ -3182,8 +3345,8 @@ export interface components {
     };
     parameters: {
         ContentLocale: components["schemas"]["ContentLocale"];
-        BulletinLocale: components["schemas"]["BulletinEdition"];
-        BulletinSeries: string;
+        BulletinLocale: components["schemas"]["BulletinLocale"];
+        BulletinSeries: components["schemas"]["BulletinSeries"];
         Page: number;
         PageSize: number;
         PerPage: number;
@@ -3467,6 +3630,33 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BulletinWatermarkDSRActionEnvelope"];
+                };
+            };
+            401: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    cleanupDeletedAccountWebsiteData: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulletinWatermarkAccountCleanupInput"];
+            };
+        };
+        responses: {
+            /** @description Manual account cleanup result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulletinWatermarkAccountCleanupEnvelope"];
                 };
             };
             401: components["responses"]["Error"];
@@ -4035,7 +4225,7 @@ export interface operations {
             header?: never;
             path: {
                 issueID: string;
-                locale: components["schemas"]["BulletinEdition"];
+                locale: components["schemas"]["BulletinLocale"];
             };
             cookie?: never;
         };
@@ -4058,7 +4248,7 @@ export interface operations {
             };
             path: {
                 issueID: string;
-                locale: components["schemas"]["BulletinEdition"];
+                locale: components["schemas"]["BulletinLocale"];
             };
             cookie?: never;
         };
@@ -4557,13 +4747,15 @@ export interface operations {
     };
     updateBulletinVersion: {
         parameters: {
-            query?: never;
+            query?: {
+                series?: components["parameters"]["BulletinSeries"];
+            };
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
             };
             path: {
                 issueId: components["parameters"]["IssueID"];
-                locale: components["schemas"]["BulletinEdition"];
+                locale: components["schemas"]["BulletinLocale"];
             };
             cookie?: never;
         };
@@ -4582,13 +4774,15 @@ export interface operations {
     };
     deleteBulletinVersion: {
         parameters: {
-            query?: never;
+            query?: {
+                series?: components["parameters"]["BulletinSeries"];
+            };
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
             };
             path: {
                 issueId: components["parameters"]["IssueID"];
-                locale: components["schemas"]["BulletinEdition"];
+                locale: components["schemas"]["BulletinLocale"];
             };
             cookie?: never;
         };
@@ -4722,6 +4916,102 @@ export interface operations {
             401: components["responses"]["AdminUnauthorized"];
             403: components["responses"]["AdminForbidden"];
             412: components["responses"]["Error"];
+        };
+    };
+    previewBulletinNotification: {
+        parameters: {
+            query?: {
+                series?: components["parameters"]["BulletinSeries"];
+            };
+            header?: never;
+            path: {
+                issueId: components["parameters"]["IssueID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Canonical locked weekly notification preview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulletinNotificationPreviewEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    submitBulletinNotification: {
+        parameters: {
+            query?: {
+                series?: components["parameters"]["BulletinSeries"];
+            };
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                issueId: components["parameters"]["IssueID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Durable notification submission accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulletinNotificationSubmissionEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            413: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    submitCustomNotifications: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomNotificationSubmission"];
+            };
+        };
+        responses: {
+            /** @description Atomic notification submission accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            413: components["responses"]["Error"];
+            503: components["responses"]["Error"];
         };
     };
     listBulletinRevisions: {

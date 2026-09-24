@@ -5,15 +5,17 @@ import type { components, paths } from './generated.js'
 export type ActiveStatement = components['schemas']['ActiveStatement']
 export type StatementNotificationRequest = components['schemas']['StatementNotificationRequest']
 export type ContentLocale = components['schemas']['ContentLocale']
-export type BulletinEdition = components['schemas']['BulletinEdition']
-/** @deprecated Use BulletinEdition. */
-export type BulletinLocale = BulletinEdition
+export type BulletinSeries = components['schemas']['BulletinSeries']
+export type BulletinLocale = components['schemas']['BulletinLocale']
+export type BulletinEdition =
+  | { series: 'general'; locale: BulletinLocale }
+  | { series: 'children'; locale: Exclude<BulletinLocale, 'zh-Hans'> }
 export type ContentTranslationTargetLocale = components['schemas']['ContentTranslationTargetLocale']
 export type BulletinTranslationTargetEdition = components['schemas']['BulletinTranslationTargetEdition']
 export type BulletinStatus = components['schemas']['BulletinStatus']
 export type BulletinWatermarkLookup = components['schemas']['BulletinWatermarkLookupResult']
 export type BulletinWatermarkVersion = components['schemas']['BulletinWatermarkVersion']
-export type BulletinWatermarkInvestigationInput = components['schemas']['BulletinWatermarkInvestigationInput']
+export type BulletinWatermarkInvestigationInput = Omit<components['schemas']['BulletinWatermarkInvestigationInput'], 'series'> & {series?: BulletinSeries}
 export type BulletinWatermarkInvestigation = components['schemas']['BulletinWatermarkInvestigation']
 export type BulletinTraceIdentity = components['schemas']['BulletinTraceIdentity']
 export type BulletinWatermarkInvestigationRow = components['schemas']['BulletinWatermarkInvestigationGlobalRow']
@@ -35,7 +37,11 @@ export type BulletinRevision = components['schemas']['BulletinRevision']
 export type PageMeta = components['schemas']['PageMeta']
 export type UploadTarget = components['schemas']['UploadTarget']
 export type CreatedBulletinUpload = components['schemas']['CreatedUpload']
-export type CompleteBulletinUploadInput = components['schemas']['CompleteBulletinUploadInput']
+export type CreateBulletinUploadInput = Omit<components['schemas']['CreateBulletinUploadInput'], 'series' | 'locale'> & BulletinEdition
+export type CompleteBulletinUploadInput = Omit<components['schemas']['CompleteBulletinUploadInput'], 'series' | 'locale'> & BulletinEdition
+export type CustomNotificationSubmission = components['schemas']['CustomNotificationSubmission']
+export type BulletinNotificationPreview = components['schemas']['BulletinNotificationPreview']
+export type BulletinNotificationSubmission = components['schemas']['BulletinNotificationSubmission']
 export type ContentModule = components['schemas']['ContentModule']
 export type PublicationContentModule = components['schemas']['PublicationContentModule']
 export type CreatableContentModule = components['schemas']['CreatableContentModule']
@@ -152,26 +158,26 @@ export function createHhcWebClient(options: {
   }
 
   return {
-    async listProtectedBulletins(params: { locale: BulletinEdition; series?: string; issueNumber?: number; page?: number; pageSize?: number; signal?: AbortSignal }) {
+    async listProtectedBulletins(params: { locale: BulletinLocale; series?: BulletinSeries; issueNumber?: number; page?: number; pageSize?: number; signal?: AbortSignal }) {
       const envelope = await unwrap(client.GET('/member/bulletins', {
         params: { query: { locale: params.locale, series: params.series, issueNumber: params.issueNumber, page: params.page, pageSize: params.pageSize } }, signal: params.signal, cache: 'no-store',
       }))
       return { data: envelope.data, meta: envelope.meta }
     },
-    async getLatestProtectedBulletin(locale: BulletinEdition, series = 'general', signal?: AbortSignal) {
+    async getLatestProtectedBulletin(locale: BulletinLocale, series: BulletinSeries = 'general', signal?: AbortSignal) {
       return (await unwrap(client.GET('/member/bulletins/latest', { params: { query: { locale, series } }, signal, cache: 'no-store' }))).data
     },
-    async getProtectedBulletinVersion(issueID: string, locale: BulletinEdition, series = 'general', signal?: AbortSignal) {
+    async getProtectedBulletinVersion(issueID: string, locale: BulletinLocale, series: BulletinSeries = 'general', signal?: AbortSignal) {
       return (await unwrap(client.GET('/member/bulletins/{issueID}/versions/{locale}', {
         params: {path: {issueID, locale}, query: {series}}, signal, cache: 'no-store',
       }))).data
     },
-    async createBulletinDownloadJob(issueId: string, locale: BulletinEdition, series: string, idempotencyKey: string, signal?: AbortSignal) {
+    async createBulletinDownloadJob(issueId: string, locale: BulletinLocale, series: BulletinSeries, idempotencyKey: string, signal?: AbortSignal) {
       return (await unwrap(client.POST('/member/bulletin-download-jobs', {
         params: { query: { series, locale }, header: { 'Idempotency-Key': idempotencyKey } }, body: { issueId }, signal, cache: 'no-store',
       }))).data
     },
-    async getBulletinDownloadJob(id: string, locale: BulletinEdition, series: string, signal?: AbortSignal) {
+    async getBulletinDownloadJob(id: string, locale: BulletinLocale, series: BulletinSeries, signal?: AbortSignal) {
       return (await unwrap(client.GET('/member/bulletin-download-jobs/{id}', {
         params: { path: { id }, query: { series, locale } }, signal, cache: 'no-store',
       }))).data
@@ -243,22 +249,22 @@ export function createHhcWebClient(options: {
         body: { issueNumber, issueDate },
       }))).data
     },
-    async createBulletinUpload(issueId: string, input: components['schemas']['CreateBulletinUploadInput'], idempotencyKey: string, signal?: AbortSignal) {
+    async createBulletinUpload(issueId: string, input: CreateBulletinUploadInput, idempotencyKey: string, signal?: AbortSignal) {
       return (await unwrap(client.POST('/admin/bulletins/{issueId}/upload-sessions', {
         params: { path: { issueId }, header: { 'Idempotency-Key': idempotencyKey } },
         body: input,
         signal,
       }))).data
     },
-    async updateBulletinVersion(issueId: string, locale: BulletinEdition, version: number, title: string, subtitle: string) {
+    async updateBulletinVersion(issueId: string, edition: BulletinEdition, version: number, title: string, subtitle: string) {
       return (await unwrap(client.PUT('/admin/bulletins/{issueId}/versions/{locale}', {
-        params: { path: { issueId, locale }, header: { 'If-Match': `"${version}"` } },
+        params: { path: { issueId, locale: edition.locale }, query: { series: edition.series }, header: { 'If-Match': `"${version}"` } },
         body: { title, subtitle },
       }))).data
     },
-    async deleteBulletinVersion(issueId: string, locale: BulletinEdition, version: number) {
+    async deleteBulletinVersion(issueId: string, edition: BulletinEdition, version: number) {
       return (await unwrap(client.DELETE('/admin/bulletins/{issueId}/versions/{locale}', {
-        params: { path: { issueId, locale }, header: { 'If-Match': `"${version}"` } },
+        params: { path: { issueId, locale: edition.locale }, query: { series: edition.series }, header: { 'If-Match': `"${version}"` } },
       }))).data
     },
     async completeBulletinUpload(issueId: string, assetId: string, version: number, input: CompleteBulletinUploadInput, signal?: AbortSignal) {
@@ -268,17 +274,33 @@ export function createHhcWebClient(options: {
         signal,
       }))).data
     },
-    async publishBulletin(issueId: string, version: number, locale: BulletinEdition, options: { notifySubscribers: boolean }) {
+    async publishBulletin(issueId: string, version: number, edition: BulletinEdition, options: { notifySubscribers: boolean }) {
       return (await unwrap(client.POST('/admin/bulletins/{issueId}/publish', {
         params: { path: { issueId }, header: { 'If-Match': `"${version}"` } },
-        body: { locale, notifySubscribers: options.notifySubscribers },
+        body: { ...edition, notifySubscribers: options.notifySubscribers },
       }))).data
     },
-    async unpublishBulletin(issueId: string, version: number, locale: BulletinEdition) {
+    async unpublishBulletin(issueId: string, version: number, edition: BulletinEdition) {
       return (await unwrap(client.POST('/admin/bulletins/{issueId}/unpublish', {
         params: { path: { issueId }, header: { 'If-Match': `"${version}"` } },
-        body: { locale, notifySubscribers: false },
+        body: { ...edition, notifySubscribers: false },
       }))).data
+    },
+    async previewBulletinNotification(issueId: string, series: BulletinSeries, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/bulletins/{issueId}/notification-preview', {
+        params: { path: { issueId }, query: { series } }, signal,
+      }))).data
+    },
+    async submitBulletinNotification(issueId: string, series: BulletinSeries, idempotencyKey: string, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/bulletins/{issueId}/notifications', {
+        params: { path: { issueId }, query: { series }, header: { 'Idempotency-Key': idempotencyKey } }, body: {}, signal,
+      }))).data
+    },
+    async submitCustomNotifications(input: CustomNotificationSubmission, idempotencyKey: string, signal?: AbortSignal) {
+      const result = await client.POST('/admin/campaign-submissions', {
+        params: { header: { 'Idempotency-Key': idempotencyKey } }, body: input, signal,
+      })
+      if (result.error !== undefined || !result.response.ok) throw apiError(result.response, result.error)
     },
     async deleteBulletin(issueId: string, version: number) {
       const result = await client.DELETE('/admin/bulletins/{issueId}', {
