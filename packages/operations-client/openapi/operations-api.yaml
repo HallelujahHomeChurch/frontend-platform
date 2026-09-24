@@ -1178,7 +1178,7 @@ components:
     OrgUnit:
       type: object
       additionalProperties: false
-      required: [id, kind, name, status, version]
+      required: [id, kind, name, status, version, updatedAt]
       properties:
         id: { type: string, format: uuid }
         kind: { $ref: '#/components/schemas/OrgUnitKind' }
@@ -1188,6 +1188,7 @@ components:
         parentId: { type: string, format: uuid }
         status: { $ref: '#/components/schemas/OperationStatus' }
         version: { type: integer, minimum: 1 }
+        updatedAt: { type: string, format: date-time }
     OrgUnitList:
       type: array
       items: { $ref: '#/components/schemas/OrgUnit' }

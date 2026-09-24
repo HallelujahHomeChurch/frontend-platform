@@ -1338,6 +1338,8 @@ export interface components {
             parentId?: string;
             status: components["schemas"]["OperationStatus"];
             version: number;
+            /** Format: date-time */
+            updatedAt: string;
         };
         OrgUnitList: components["schemas"]["OrgUnit"][];
         OrgUnitBatchItem: {
