@@ -862,9 +862,9 @@ paths:
     post:
       tags: [Operations]
       operationId: checkEntitlements
-      summary: Resolve exact member entitlement decisions for an allowlisted service
+      summary: Resolve exact member entitlement decisions for Engagement
       x-hhc-visibility: private
-      x-hhc-callers: [hhc-web-api, engagement-api]
+      x-hhc-callers: [engagement-api]
       security: [{ daprCallerAppID: [] }]
       requestBody:
         required: true
@@ -879,6 +879,283 @@ paths:
         '401': { description: Missing caller identity }
         '403': { description: Caller is not allowlisted }
         '503': { description: Authorization facts are unavailable }
+  /priv/operations/managed-audiences/resolve:
+    post:
+      tags: [Operations]
+      operationId: resolveManagedAudience
+      summary: Authorize a responsible person and resolve a deduplicated organization audience
+      x-hhc-visibility: private
+      x-hhc-callers: [engagement-api]
+      security: [{ daprCallerAppID: [] }]
+      parameters:
+        - { name: X-HHC-Actor-ID, in: header, required: true, schema: { type: string, format: uuid } }
+        - { name: X-HHC-Request-ID, in: header, required: true, schema: { type: string } }
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedAudienceRequest' } } } }
+      responses:
+        '200': { description: Deduplicated active Account audience, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedAudience' } } } }
+        '400': { description: Invalid provenance or body }
+        '401': { description: Missing caller identity }
+        '403': { description: Caller or responsibility scope denied }
+        '503': { description: Authorization facts are unavailable }
+  /api/operations/manage/roots:
+    get:
+      tags: [Operations]
+      operationId: listManagedRoots
+      summary: List the authenticated person's effective responsibility roots
+      x-hhc-visibility: authenticated
+      security: [{ gatewayPrincipal: [] }]
+      responses:
+        '200': { description: Effective roots, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedUnitList' } } } }
+        '401': { description: Authentication required }
+        '503': { description: Operations unavailable }
+  /api/operations/manage/org-units/{unitId}:
+    get:
+      tags: [Operations]
+      operationId: getManagedUnitFolder
+      summary: Get a responsibility-scoped unit folder
+      x-hhc-visibility: authenticated
+      security: [{ gatewayPrincipal: [] }]
+      parameters:
+        - { name: unitId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { $ref: '#/components/parameters/IncludeArchived' }
+      responses:
+        '200': { description: Managed unit folder, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedUnitFolder' } } } }
+        '403': { description: Responsibility scope denied }
+        '404': { description: Unit not found }
+    put:
+      tags: [Operations]
+      operationId: updateManagedUnit
+      summary: Update the assigned active unit's name and contact Email
+      x-hhc-visibility: authenticated
+      security: [{ gatewayPrincipal: [] }]
+      parameters:
+        - { name: unitId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { $ref: '#/components/parameters/IfMatch' }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedUnitUpdate' } } } }
+      responses:
+        '200': { description: Updated unit, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedUnit' } } } }
+        '403': { description: Responsibility scope denied }
+        '409': { description: Version or idempotency conflict }
+        '422': { description: Invalid name or Email }
+  /api/operations/manage/org-units/{unitId}/children:
+    post:
+      tags: [Operations]
+      operationId: createManagedChild
+      summary: Create a legal direct child under an active managed unit
+      x-hhc-visibility: authenticated
+      security: [{ gatewayPrincipal: [] }]
+      parameters:
+        - { name: unitId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedChildInput' } } } }
+      responses:
+        '201': { description: Created child, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedUnit' } } } }
+        '403': { description: Responsibility scope denied }
+        '409': { description: Idempotency or sibling conflict }
+        '422': { description: "Invalid hierarchy, name, or Email" }
+  /api/operations/manage/org-units/{unitId}/archive:
+    post:
+      tags: [Operations]
+      operationId: archiveManagedUnit
+      summary: Archive a dependency-free strict descendant without cascading
+      x-hhc-visibility: authenticated
+      security: [{ gatewayPrincipal: [] }]
+      parameters:
+        - { name: unitId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { $ref: '#/components/parameters/IfMatch' }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      responses:
+        '200': { description: Archived unit, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedUnit' } } } }
+        '403': { description: Strict-descendant scope required }
+        '409': { description: "Version, dependency, or idempotency conflict" }
+  /api/operations/manage/org-units/{unitId}/restore:
+    post:
+      tags: [Operations]
+      operationId: restoreManagedUnit
+      summary: Restore an archived strict descendant whose parent is active
+      x-hhc-visibility: authenticated
+      security: [{ gatewayPrincipal: [] }]
+      parameters:
+        - { name: unitId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { $ref: '#/components/parameters/IfMatch' }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      responses:
+        '200': { description: Restored unit, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedUnit' } } } }
+        '403': { description: Strict-descendant scope required }
+        '409': { description: "Version, parent-state, or idempotency conflict" }
+  /api/operations/manage/org-units/{unitId}/members:
+    get:
+      tags: [Operations]
+      operationId: listManagedMembers
+      summary: List members displayed at one managed unit
+      x-hhc-visibility: authenticated
+      security: [{ gatewayPrincipal: [] }]
+      parameters:
+        - { name: unitId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: q, in: query, schema: { type: string, minLength: 2, maxLength: 200 } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, maximum: 10000, default: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 20 } }
+        - { name: sort, in: query, schema: { type: string, enum: [displayName, email, created] } }
+        - { name: direction, in: query, schema: { type: string, enum: [asc, desc] } }
+      responses:
+        '200': { description: Scoped member page, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedMemberPage' } } } }
+        '403': { description: Responsibility scope denied }
+        '422': { description: Search too broad }
+        '503': { description: Account projection unavailable }
+    post:
+      tags: [Operations]
+      operationId: admitManagedMember
+      summary: Admit one searched Account to the target unit atomically
+      x-hhc-visibility: authenticated
+      security: [{ gatewayPrincipal: [] }]
+      parameters:
+        - { name: unitId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedAdmissionInput' } } } }
+      responses:
+        '201': { description: Admitted or already joined member, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedMemberView' } } } }
+        '403': { description: Responsibility scope denied }
+        '409': { description: Church eligibility changed or idempotency conflict }
+        '422': { description: Invalid Account or target }
+        '503': { description: Account directory or Operations unavailable }
+  /api/operations/manage/org-units/{unitId}/members/{memberId}:
+    get:
+      tags: [Operations]
+      operationId: getManagedMember
+      summary: Get a narrow member view within the managed unit scope
+      x-hhc-visibility: authenticated
+      security: [{ gatewayPrincipal: [] }]
+      parameters:
+        - { name: unitId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: memberId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Scoped member, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedMemberView' } } } }
+        '403': { description: Responsibility scope denied }
+        '404': { description: Member not found in scope }
+  /api/operations/manage/org-units/{unitId}/members/{memberId}/affiliation-moves:
+    post:
+      tags: [Operations]
+      operationId: moveManagedAffiliation
+      summary: Atomically move one direct affiliation within the managed folder scope
+      x-hhc-visibility: authenticated
+      security: [{ gatewayPrincipal: [] }]
+      parameters:
+        - { name: unitId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: memberId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { $ref: '#/components/parameters/IfMatch' }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedAffiliationMoveInput' } } } }
+      responses:
+        '200': { description: Updated scoped member, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedMemberView' } } } }
+        '403': { description: Affiliation or target is outside scope }
+        '409': { description: 'Version, responsibility qualification, or idempotency conflict' }
+  /api/operations/manage/org-units/{unitId}/members/{memberId}/affiliations/{affiliationId}:
+    delete:
+      tags: [Operations]
+      operationId: removeManagedAffiliation
+      summary: Remove one direct affiliation with explicit final-membership confirmation
+      x-hhc-visibility: authenticated
+      security: [{ gatewayPrincipal: [] }]
+      parameters:
+        - { name: unitId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: memberId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: affiliationId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: endChurchMembership, in: query, schema: { type: boolean, default: false } }
+        - { $ref: '#/components/parameters/IfMatch' }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      responses:
+        '200': { description: Updated scoped member, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedMemberView' } } } }
+        '403': { description: Affiliation is outside scope }
+        '409': { description: Final binding requires confirmation or mutation conflicts }
+  /api/operations/manage/org-units/{unitId}/account-candidates:
+    get:
+      tags: [Operations]
+      operationId: listManagedAccountCandidates
+      summary: Search eligible Accounts without browse or directory pagination metadata
+      x-hhc-visibility: authenticated
+      security: [{ gatewayPrincipal: [] }]
+      parameters:
+        - { name: unitId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: q, in: query, required: true, schema: { type: string, minLength: 2, maxLength: 200 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 20, default: 20 } }
+      responses:
+        '200': { description: Eligible candidates, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedJoinCandidateList' } } } }
+        '403': { description: Responsibility scope denied }
+        '422': { description: Invalid or over-broad search }
+  /api/operations/manage/org-units/{unitId}/responsibility-candidates:
+    get:
+      tags: [Operations]
+      operationId: listManagedResponsibilityCandidates
+      summary: Search qualified members for delegation
+      x-hhc-visibility: authenticated
+      security: [{ gatewayPrincipal: [] }]
+      parameters:
+        - { name: unitId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: q, in: query, required: true, schema: { type: string, minLength: 2, maxLength: 200 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 20, default: 20 } }
+      responses:
+        '200': { description: Qualified candidates, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedResponsibilityCandidateList' } } } }
+        '403': { description: Strict-descendant scope required }
+        '422': { description: Invalid or over-broad search }
+  /api/operations/manage/org-units/{unitId}/responsibilities:
+    get:
+      tags: [Operations]
+      operationId: listManagedResponsibilities
+      summary: List active responsibilities for a strict descendant
+      x-hhc-visibility: authenticated
+      security: [{ gatewayPrincipal: [] }]
+      parameters: [{ name: unitId, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200': { description: Responsibilities, content: { application/json: { schema: { $ref: '#/components/schemas/UnitResponsibilityViewList' } } } }
+        '403': { description: Strict-descendant scope required }
+    post:
+      tags: [Operations]
+      operationId: assignManagedResponsibility
+      summary: Delegate responsibility for a strict descendant to a qualified member
+      x-hhc-visibility: authenticated
+      security: [{ gatewayPrincipal: [] }]
+      parameters:
+        - { name: unitId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedResponsibilityInput' } } } }
+      responses:
+        '201': { description: Assigned responsibility, content: { application/json: { schema: { $ref: '#/components/schemas/UnitResponsibilityView' } } } }
+        '403': { description: Strict-descendant scope required }
+        '409': { description: Duplicate or idempotency conflict }
+        '422': { description: Member is not qualified }
+  /api/operations/manage/org-units/{unitId}/responsibilities/{responsibilityId}:
+    delete:
+      tags: [Operations]
+      operationId: revokeManagedResponsibility
+      summary: Revoke a responsibility on a strict descendant
+      x-hhc-visibility: authenticated
+      security: [{ gatewayPrincipal: [] }]
+      parameters:
+        - { name: unitId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: responsibilityId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { $ref: '#/components/parameters/IfMatch' }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      responses:
+        '200': { description: Revoked responsibility, content: { application/json: { schema: { $ref: '#/components/schemas/UnitResponsibilityView' } } } }
+        '403': { description: Strict-descendant scope required }
+        '409': { description: Version or idempotency conflict }
+  /api/operations/manage/org-units/{unitId}/entitlements/batch:
+    post:
+      tags: [Operations]
+      operationId: applyManagedEntitlementBatch
+      summary: Atomically grant or revoke one weekly-report entitlement for up to 50 visible members
+      x-hhc-visibility: authenticated
+      security: [{ gatewayPrincipal: [] }]
+      parameters:
+        - { name: unitId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedEntitlementBatchInput' } } } }
+      responses:
+        '200': { description: Atomic batch result, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedEntitlementBatchResult' } } } }
+        '403': { description: A member left scope or responsibility was revoked }
+        '409': { description: Idempotency or concurrent mutation conflict }
+        '422': { description: 'Invalid batch, operation, or entitlement code' }
   /api/operations/me/access:
     get:
       tags: [Operations]
@@ -1192,6 +1469,61 @@ components:
     OrgUnitList:
       type: array
       items: { $ref: '#/components/schemas/OrgUnit' }
+    ManagedActions:
+      type: object
+      additionalProperties: false
+      required: [editUnit, createChild, archive, restore, manageMembers, manageResponsibilities, manageEntitlements, sendNotifications]
+      properties:
+        editUnit: { type: boolean }
+        createChild: { type: boolean }
+        archive: { type: boolean }
+        restore: { type: boolean }
+        manageMembers: { type: boolean }
+        manageResponsibilities: { type: boolean }
+        manageEntitlements: { type: boolean }
+        sendNotifications: { type: boolean }
+    ManagedUnit:
+      type: object
+      additionalProperties: false
+      required: [id, kind, name, status, version, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { $ref: '#/components/schemas/OrgUnitKind' }
+        name: { type: string }
+        email: { type: string, format: email, maxLength: 254 }
+        parentId: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/OperationStatus' }
+        version: { type: integer, minimum: 1 }
+        updatedAt: { type: string, format: date-time }
+    ManagedUnitList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties: { items: { type: array, items: { $ref: '#/components/schemas/ManagedUnit' } } }
+    ManagedUnitFolder:
+      type: object
+      additionalProperties: false
+      required: [unit, breadcrumb, children, actions]
+      properties:
+        unit: { $ref: '#/components/schemas/ManagedUnit' }
+        breadcrumb: { type: array, items: { $ref: '#/components/schemas/ManagedUnit' } }
+        children: { type: array, items: { $ref: '#/components/schemas/ManagedUnit' } }
+        actions: { $ref: '#/components/schemas/ManagedActions' }
+    ManagedChildInput:
+      type: object
+      additionalProperties: false
+      required: [kind, name]
+      properties:
+        kind: { $ref: '#/components/schemas/OrgUnitKind' }
+        name: { type: string, minLength: 1, maxLength: 200 }
+        email: { type: string, format: email, maxLength: 254 }
+    ManagedUnitUpdate:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        email: { type: string, format: email, maxLength: 254 }
     OrgUnitBatchItem:
       type: object
       additionalProperties: false
@@ -1505,7 +1837,7 @@ components:
       properties:
         account: { $ref: '#/components/schemas/AccountReference' }
         memberId: { type: string, format: uuid }
-        state: { type: string, enum: [available, already_joined, transfer_required] }
+        state: { type: string, enum: [available, already_joined] }
     JoinCandidatePage:
       type: object
       additionalProperties: false
@@ -1514,6 +1846,123 @@ components:
         items: { type: array, items: { $ref: '#/components/schemas/JoinCandidate' } }
         page: { type: integer, minimum: 1 }
         nextPage: { type: integer, minimum: 2 }
+    ManagedJoinCandidateList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties: { items: { type: array, maxItems: 20, items: { $ref: '#/components/schemas/JoinCandidate' } } }
+    ManagedMemberSummary:
+      type: object
+      additionalProperties: false
+      required: [memberId, displayName, email]
+      properties:
+        memberId: { type: string, format: uuid }
+        displayName: { type: string }
+        email: { type: string, format: email }
+    ManagedMemberPage:
+      type: object
+      additionalProperties: false
+      required: [items, page]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/ManagedMemberSummary' } }
+        page: { type: integer, minimum: 1 }
+        nextPage: { type: integer, minimum: 2 }
+    ManagedAffiliation:
+      type: object
+      additionalProperties: false
+      required: [id, orgUnitId, kind, name, version]
+      properties:
+        id: { type: string, format: uuid }
+        orgUnitId: { type: string, format: uuid }
+        kind: { $ref: '#/components/schemas/OrgUnitKind' }
+        name: { type: string }
+        version: { type: integer, minimum: 1 }
+    ManagedMemberView:
+      type: object
+      additionalProperties: false
+      required: [memberId, displayName, email, affiliations, entitlementCodes, actions]
+      properties:
+        memberId: { type: string, format: uuid }
+        displayName: { type: string }
+        email: { type: string, format: email }
+        affiliations: { type: array, items: { $ref: '#/components/schemas/ManagedAffiliation' } }
+        entitlementCodes: { type: array, uniqueItems: true, items: { type: string, enum: [bulletin.general.zh-Hant.access, bulletin.general.zh-Hans.access, bulletin.general.en.access] } }
+        actions: { $ref: '#/components/schemas/ManagedActions' }
+    ManagedResponsibilityCandidate:
+      type: object
+      additionalProperties: false
+      required: [memberId, displayName, email]
+      properties:
+        memberId: { type: string, format: uuid }
+        displayName: { type: string }
+        email: { type: string, format: email }
+    ManagedResponsibilityCandidateList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties: { items: { type: array, maxItems: 20, items: { $ref: '#/components/schemas/ManagedResponsibilityCandidate' } } }
+    UnitResponsibilityView:
+      type: object
+      additionalProperties: false
+      required: [id, memberId, displayName, email, version]
+      properties:
+        id: { type: string, format: uuid }
+        memberId: { type: string, format: uuid }
+        displayName: { type: string }
+        email: { type: string, format: email }
+        version: { type: integer, minimum: 1 }
+    UnitResponsibilityViewList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties: { items: { type: array, items: { $ref: '#/components/schemas/UnitResponsibilityView' } } }
+    ManagedResponsibilityInput:
+      type: object
+      additionalProperties: false
+      required: [memberId]
+      properties:
+        memberId: { type: string, format: uuid }
+    ManagedAdmissionInput:
+      type: object
+      additionalProperties: false
+      required: [accountUserId]
+      properties:
+        accountUserId: { type: string, format: uuid }
+    ManagedAffiliationMoveInput:
+      type: object
+      additionalProperties: false
+      required: [affiliationId, targetOrgUnitId]
+      properties:
+        affiliationId: { type: string, format: uuid }
+        targetOrgUnitId: { type: string, format: uuid }
+    ManagedEntitlementBatchInput:
+      type: object
+      additionalProperties: false
+      required: [memberIds, entitlementCode, operation]
+      properties:
+        memberIds: { type: array, minItems: 1, maxItems: 50, uniqueItems: true, items: { type: string, format: uuid } }
+        entitlementCode: { type: string, enum: [bulletin.general.zh-Hant.access, bulletin.general.zh-Hans.access, bulletin.general.en.access] }
+        operation: { type: string, enum: [grant, revoke] }
+    ManagedEntitlementBatchResult:
+      type: object
+      additionalProperties: false
+      required: [matched, changed]
+      properties:
+        matched: { type: integer, minimum: 0, maximum: 50 }
+        changed: { type: integer, minimum: 0, maximum: 50 }
+    ManagedAudienceRequest:
+      type: object
+      additionalProperties: false
+      required: [actorId, orgUnitId]
+      properties:
+        actorId: { type: string, format: uuid }
+        orgUnitId: { type: string, format: uuid }
+    ManagedAudience:
+      type: object
+      additionalProperties: false
+      required: [accountUserIds]
+      properties:
+        accountUserIds: { type: array, uniqueItems: true, items: { type: string, format: uuid } }
     UnitMemberPage:
       type: object
       additionalProperties: false

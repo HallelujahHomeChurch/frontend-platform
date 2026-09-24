@@ -955,8 +955,266 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Resolve exact member entitlement decisions for an allowlisted service */
+        /** Resolve exact member entitlement decisions for Engagement */
         post: operations["checkEntitlements"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/priv/operations/managed-audiences/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Authorize a responsible person and resolve a deduplicated organization audience */
+        post: operations["resolveManagedAudience"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/manage/roots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the authenticated person's effective responsibility roots */
+        get: operations["listManagedRoots"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/manage/org-units/{unitId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a responsibility-scoped unit folder */
+        get: operations["getManagedUnitFolder"];
+        /** Update the assigned active unit's name and contact Email */
+        put: operations["updateManagedUnit"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/manage/org-units/{unitId}/children": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a legal direct child under an active managed unit */
+        post: operations["createManagedChild"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/manage/org-units/{unitId}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive a dependency-free strict descendant without cascading */
+        post: operations["archiveManagedUnit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/manage/org-units/{unitId}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore an archived strict descendant whose parent is active */
+        post: operations["restoreManagedUnit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/manage/org-units/{unitId}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List members displayed at one managed unit */
+        get: operations["listManagedMembers"];
+        put?: never;
+        /** Admit one searched Account to the target unit atomically */
+        post: operations["admitManagedMember"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/manage/org-units/{unitId}/members/{memberId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a narrow member view within the managed unit scope */
+        get: operations["getManagedMember"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/manage/org-units/{unitId}/members/{memberId}/affiliation-moves": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Atomically move one direct affiliation within the managed folder scope */
+        post: operations["moveManagedAffiliation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/manage/org-units/{unitId}/members/{memberId}/affiliations/{affiliationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove one direct affiliation with explicit final-membership confirmation */
+        delete: operations["removeManagedAffiliation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/manage/org-units/{unitId}/account-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search eligible Accounts without browse or directory pagination metadata */
+        get: operations["listManagedAccountCandidates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/manage/org-units/{unitId}/responsibility-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search qualified members for delegation */
+        get: operations["listManagedResponsibilityCandidates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/manage/org-units/{unitId}/responsibilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List active responsibilities for a strict descendant */
+        get: operations["listManagedResponsibilities"];
+        put?: never;
+        /** Delegate responsibility for a strict descendant to a qualified member */
+        post: operations["assignManagedResponsibility"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/manage/org-units/{unitId}/responsibilities/{responsibilityId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke a responsibility on a strict descendant */
+        delete: operations["revokeManagedResponsibility"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/manage/org-units/{unitId}/entitlements/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Atomically grant or revoke one weekly-report entitlement for up to 50 visible members */
+        post: operations["applyManagedEntitlementBatch"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1342,6 +1600,50 @@ export interface components {
             updatedAt: string;
         };
         OrgUnitList: components["schemas"]["OrgUnit"][];
+        ManagedActions: {
+            editUnit: boolean;
+            createChild: boolean;
+            archive: boolean;
+            restore: boolean;
+            manageMembers: boolean;
+            manageResponsibilities: boolean;
+            manageEntitlements: boolean;
+            sendNotifications: boolean;
+        };
+        ManagedUnit: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["OrgUnitKind"];
+            name: string;
+            /** Format: email */
+            email?: string;
+            /** Format: uuid */
+            parentId?: string;
+            status: components["schemas"]["OperationStatus"];
+            version: number;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        ManagedUnitList: {
+            items: components["schemas"]["ManagedUnit"][];
+        };
+        ManagedUnitFolder: {
+            unit: components["schemas"]["ManagedUnit"];
+            breadcrumb: components["schemas"]["ManagedUnit"][];
+            children: components["schemas"]["ManagedUnit"][];
+            actions: components["schemas"]["ManagedActions"];
+        };
+        ManagedChildInput: {
+            kind: components["schemas"]["OrgUnitKind"];
+            name: string;
+            /** Format: email */
+            email?: string;
+        };
+        ManagedUnitUpdate: {
+            name: string;
+            /** Format: email */
+            email?: string;
+        };
         OrgUnitBatchItem: {
             kind: components["schemas"]["OrgUnitKind"];
             name: string;
@@ -1601,12 +1903,103 @@ export interface components {
             /** Format: uuid */
             memberId?: string;
             /** @enum {string} */
-            state: "available" | "already_joined" | "transfer_required";
+            state: "available" | "already_joined";
         };
         JoinCandidatePage: {
             items: components["schemas"]["JoinCandidate"][];
             page: number;
             nextPage?: number;
+        };
+        ManagedJoinCandidateList: {
+            items: components["schemas"]["JoinCandidate"][];
+        };
+        ManagedMemberSummary: {
+            /** Format: uuid */
+            memberId: string;
+            displayName: string;
+            /** Format: email */
+            email: string;
+        };
+        ManagedMemberPage: {
+            items: components["schemas"]["ManagedMemberSummary"][];
+            page: number;
+            nextPage?: number;
+        };
+        ManagedAffiliation: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            orgUnitId: string;
+            kind: components["schemas"]["OrgUnitKind"];
+            name: string;
+            version: number;
+        };
+        ManagedMemberView: {
+            /** Format: uuid */
+            memberId: string;
+            displayName: string;
+            /** Format: email */
+            email: string;
+            affiliations: components["schemas"]["ManagedAffiliation"][];
+            entitlementCodes: ("bulletin.general.zh-Hant.access" | "bulletin.general.zh-Hans.access" | "bulletin.general.en.access")[];
+            actions: components["schemas"]["ManagedActions"];
+        };
+        ManagedResponsibilityCandidate: {
+            /** Format: uuid */
+            memberId: string;
+            displayName: string;
+            /** Format: email */
+            email: string;
+        };
+        ManagedResponsibilityCandidateList: {
+            items: components["schemas"]["ManagedResponsibilityCandidate"][];
+        };
+        UnitResponsibilityView: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            memberId: string;
+            displayName: string;
+            /** Format: email */
+            email: string;
+            version: number;
+        };
+        UnitResponsibilityViewList: {
+            items: components["schemas"]["UnitResponsibilityView"][];
+        };
+        ManagedResponsibilityInput: {
+            /** Format: uuid */
+            memberId: string;
+        };
+        ManagedAdmissionInput: {
+            /** Format: uuid */
+            accountUserId: string;
+        };
+        ManagedAffiliationMoveInput: {
+            /** Format: uuid */
+            affiliationId: string;
+            /** Format: uuid */
+            targetOrgUnitId: string;
+        };
+        ManagedEntitlementBatchInput: {
+            memberIds: string[];
+            /** @enum {string} */
+            entitlementCode: "bulletin.general.zh-Hant.access" | "bulletin.general.zh-Hans.access" | "bulletin.general.en.access";
+            /** @enum {string} */
+            operation: "grant" | "revoke";
+        };
+        ManagedEntitlementBatchResult: {
+            matched: number;
+            changed: number;
+        };
+        ManagedAudienceRequest: {
+            /** Format: uuid */
+            actorId: string;
+            /** Format: uuid */
+            orgUnitId: string;
+        };
+        ManagedAudience: {
+            accountUserIds: string[];
         };
         UnitMemberPage: {
             items: components["schemas"]["MemberView"][];
@@ -4889,6 +5282,784 @@ export interface operations {
             };
             /** @description Authorization facts are unavailable */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    resolveManagedAudience: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-HHC-Actor-ID": string;
+                "X-HHC-Request-ID": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManagedAudienceRequest"];
+            };
+        };
+        responses: {
+            /** @description Deduplicated active Account audience */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedAudience"];
+                };
+            };
+            /** @description Invalid provenance or body */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing caller identity */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Caller or responsibility scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authorization facts are unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listManagedRoots: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Effective roots */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedUnitList"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Operations unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getManagedUnitFolder: {
+        parameters: {
+            query?: {
+                includeArchived?: components["parameters"]["IncludeArchived"];
+            };
+            header?: never;
+            path: {
+                unitId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Managed unit folder */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedUnitFolder"];
+                };
+            };
+            /** @description Responsibility scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unit not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    updateManagedUnit: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                unitId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManagedUnitUpdate"];
+            };
+        };
+        responses: {
+            /** @description Updated unit */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedUnit"];
+                };
+            };
+            /** @description Responsibility scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Version or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid name or Email */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    createManagedChild: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                unitId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManagedChildInput"];
+            };
+        };
+        responses: {
+            /** @description Created child */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedUnit"];
+                };
+            };
+            /** @description Responsibility scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Idempotency or sibling conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid hierarchy, name, or Email */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    archiveManagedUnit: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                unitId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Archived unit */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedUnit"];
+                };
+            };
+            /** @description Strict-descendant scope required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Version, dependency, or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    restoreManagedUnit: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                unitId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Restored unit */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedUnit"];
+                };
+            };
+            /** @description Strict-descendant scope required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Version, parent-state, or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listManagedMembers: {
+        parameters: {
+            query?: {
+                q?: string;
+                page?: number;
+                limit?: number;
+                sort?: "displayName" | "email" | "created";
+                direction?: "asc" | "desc";
+            };
+            header?: never;
+            path: {
+                unitId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Scoped member page */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedMemberPage"];
+                };
+            };
+            /** @description Responsibility scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Search too broad */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Account projection unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    admitManagedMember: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                unitId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManagedAdmissionInput"];
+            };
+        };
+        responses: {
+            /** @description Admitted or already joined member */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedMemberView"];
+                };
+            };
+            /** @description Responsibility scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Church eligibility changed or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid Account or target */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Account directory or Operations unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getManagedMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                unitId: string;
+                memberId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Scoped member */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedMemberView"];
+                };
+            };
+            /** @description Responsibility scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Member not found in scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    moveManagedAffiliation: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                unitId: string;
+                memberId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManagedAffiliationMoveInput"];
+            };
+        };
+        responses: {
+            /** @description Updated scoped member */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedMemberView"];
+                };
+            };
+            /** @description Affiliation or target is outside scope */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Version, responsibility qualification, or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    removeManagedAffiliation: {
+        parameters: {
+            query?: {
+                endChurchMembership?: boolean;
+            };
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                unitId: string;
+                memberId: string;
+                affiliationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Updated scoped member */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedMemberView"];
+                };
+            };
+            /** @description Affiliation is outside scope */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Final binding requires confirmation or mutation conflicts */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listManagedAccountCandidates: {
+        parameters: {
+            query: {
+                q: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                unitId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Eligible candidates */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedJoinCandidateList"];
+                };
+            };
+            /** @description Responsibility scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid or over-broad search */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listManagedResponsibilityCandidates: {
+        parameters: {
+            query: {
+                q: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                unitId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Qualified candidates */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedResponsibilityCandidateList"];
+                };
+            };
+            /** @description Strict-descendant scope required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid or over-broad search */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listManagedResponsibilities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                unitId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Responsibilities */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitResponsibilityViewList"];
+                };
+            };
+            /** @description Strict-descendant scope required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    assignManagedResponsibility: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                unitId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManagedResponsibilityInput"];
+            };
+        };
+        responses: {
+            /** @description Assigned responsibility */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitResponsibilityView"];
+                };
+            };
+            /** @description Strict-descendant scope required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Duplicate or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Member is not qualified */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    revokeManagedResponsibility: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                unitId: string;
+                responsibilityId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Revoked responsibility */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitResponsibilityView"];
+                };
+            };
+            /** @description Strict-descendant scope required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Version or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    applyManagedEntitlementBatch: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                unitId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManagedEntitlementBatchInput"];
+            };
+        };
+        responses: {
+            /** @description Atomic batch result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedEntitlementBatchResult"];
+                };
+            };
+            /** @description A member left scope or responsibility was revoked */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Idempotency or concurrent mutation conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid batch, operation, or entitlement code */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
