@@ -413,7 +413,7 @@ describe('hhc web client', () => {
     }), { status: 412, headers: { 'Content-Type': 'application/json' } }))
     const client = createHhcWebClient({ baseUrl: 'https://www.alive.org.tw/api', getAccessToken: () => 'token', fetcher })
 
-    await expect(client.publishBulletin('issue-1', 2, 'en', { notifySubscribers: false })).rejects.toEqual(
+    await expect(client.publishBulletin('issue-1', 2, {series: 'general', locale: 'en'}, { notifySubscribers: false })).rejects.toEqual(
       expect.objectContaining<HhcWebApiError>({ status: 412, code: 'precondition_failed' }),
     )
   })
@@ -426,11 +426,40 @@ describe('hhc web client', () => {
     }), { status: 202, headers: { 'Content-Type': 'application/json' } }))
     const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
 
-    await client.publishBulletin('issue-1', 2, 'zh-Hant', { notifySubscribers: true })
+    await client.publishBulletin('issue-1', 2, {series: 'children', locale: 'zh-Hant'}, { notifySubscribers: true })
 
     const request = fetcher.mock.calls[0]?.[0] as Request
     expect(request.headers.get('If-Match')).toBe('"2"')
-    await expect(request.json()).resolves.toEqual({ locale: 'zh-Hant', notifySubscribers: true })
+    await expect(request.json()).resolves.toEqual({ series: 'children', locale: 'zh-Hant', notifySubscribers: true })
+  })
+
+  it('uses the canonical bulletin notification routes and the atomic custom submission route', async () => {
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: {name: "Children's weekly bulletin 1300", series: 'children', notifications: [], hasPreviousNotification: false}, meta: {}, error: null,
+      }), {status: 200, headers: {'Content-Type': 'application/json'}}))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: {issueId: 'issue-1', series: 'children', notificationGeneration: 0}, meta: {}, error: null,
+      }), {status: 202, headers: {'Content-Type': 'application/json'}}))
+      .mockResolvedValueOnce(new Response(null, {status: 202}))
+    const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'token', fetcher})
+    const custom = {
+      name: 'Service reminder',
+      notifications: [{channel: 'web_push' as const, audienceType: 'all' as const, translations: {'zh-Hant': {subject: '提醒', body: '內容'}}}],
+    }
+
+    await client.previewBulletinNotification('issue-1', 'children')
+    await client.submitBulletinNotification('issue-1', 'children', 'weekly-key')
+    await client.submitCustomNotifications(custom, 'custom-key')
+
+    const [preview, weekly, general] = fetcher.mock.calls.map(call => call[0] as Request)
+    expect(preview!.url).toBe('http://localhost/api/admin/bulletins/issue-1/notification-preview?series=children')
+    expect(weekly!.url).toBe('http://localhost/api/admin/bulletins/issue-1/notifications?series=children')
+    expect(weekly!.headers.get('Idempotency-Key')).toBe('weekly-key')
+    await expect(weekly!.json()).resolves.toEqual({})
+    expect(general!.url).toBe('http://localhost/api/admin/campaign-submissions')
+    expect(general!.headers.get('Idempotency-Key')).toBe('custom-key')
+    await expect(general!.json()).resolves.toEqual(custom)
   })
 
   it('uses typed content paths and optimistic concurrency', async () => {
@@ -627,12 +656,14 @@ describe('hhc web client', () => {
     const completeController = new AbortController()
 
     await client.createBulletinUpload('issue-1', {
+      series: 'general',
       locale: 'zh-Hant',
       fileName: 'weekly.pdf',
       mimeType: 'application/pdf',
       sizeBytes: 1024,
     }, 'upload-1', createController.signal)
     await client.completeBulletinUpload('issue-1', 'asset-1', 2, {
+      series: 'general',
       locale: 'zh-Hant',
       title: 'Weekly',
       subtitle: '',
@@ -690,7 +721,7 @@ describe('hhc web client', () => {
     expect(completeRequest.signal.aborted).toBe(true)
   })
 
-  it('updates and removes one bulletin locale version with issue concurrency', async () => {
+  it('updates and removes one composite bulletin edition with issue concurrency', async () => {
     const body = JSON.stringify({
       data: { id: 'issue-1', issueDate: '2026-07-31', status: 'draft', version: 3, versions: [], createdBy: 'admin', updatedBy: 'admin', createdAt: '2026-07-31T00:00:00Z', updatedAt: '2026-07-31T00:00:00Z' },
       meta: {}, error: null,
@@ -698,15 +729,17 @@ describe('hhc web client', () => {
     const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(body, { status: 200, headers: { 'Content-Type': 'application/json' } }))
     const client = createHhcWebClient({ baseUrl: '/api', getAccessToken: () => 'token', fetcher })
 
-    await client.updateBulletinVersion('issue-1', 'en', 2, 'Weekly', 'Subtitle')
-    await client.deleteBulletinVersion('issue-1', 'en', 3)
+    await client.updateBulletinVersion('issue-1', {series: 'children', locale: 'en'}, 2, 'Weekly', 'Subtitle')
+    await client.deleteBulletinVersion('issue-1', {series: 'children', locale: 'en'}, 3)
 
     const update = fetcher.mock.calls[0]![0] as Request
     const deletion = fetcher.mock.calls[1]![0] as Request
     expect(update.method).toBe('PUT')
+    expect(update.url).toBe('http://localhost/api/admin/bulletins/issue-1/versions/en?series=children')
     expect(update.headers.get('If-Match')).toBe('"2"')
     await expect(update.json()).resolves.toEqual({ title: 'Weekly', subtitle: 'Subtitle' })
     expect(deletion.method).toBe('DELETE')
+    expect(deletion.url).toBe('http://localhost/api/admin/bulletins/issue-1/versions/en?series=children')
     expect(deletion.headers.get('If-Match')).toBe('"3"')
   })
 

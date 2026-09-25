@@ -1,7 +1,15 @@
 export const adminUiLocales = ['zh-Hant', 'zh-Hans', 'en'] as const;
 export const productLocales = ['zh-Hant', 'zh-Hans', 'en', 'ja', 'ko'] as const;
 export const contentLocales = productLocales;
-export const bulletinEditions = ['zh-Hant', 'zh-Hans', 'en'] as const;
+export const bulletinSeries = ['general', 'children'] as const;
+export const bulletinLocales = ['zh-Hant', 'zh-Hans', 'en'] as const;
+export const bulletinEditions = [
+  {series: 'general', locale: 'zh-Hant'},
+  {series: 'general', locale: 'zh-Hans'},
+  {series: 'general', locale: 'en'},
+  {series: 'children', locale: 'zh-Hant'},
+  {series: 'children', locale: 'en'}
+] as const;
 
 /** @deprecated Use adminUiLocales, productLocales, or contentLocales. */
 export const locales = adminUiLocales;
@@ -10,6 +18,8 @@ export const themes = ['light', 'dark'] as const;
 export type AdminUiLocale = (typeof adminUiLocales)[number];
 export type ProductLocale = (typeof productLocales)[number];
 export type ContentLocale = ProductLocale;
+export type BulletinSeries = (typeof bulletinSeries)[number];
+export type BulletinLocale = (typeof bulletinLocales)[number];
 export type BulletinEdition = (typeof bulletinEditions)[number];
 /** @deprecated Use AdminUiLocale, ProductLocale, or ContentLocale. */
 export type Locale = (typeof locales)[number];
@@ -61,8 +71,10 @@ export function isProductLocale(value: string): value is ProductLocale {
   return productLocales.includes(value as ProductLocale);
 }
 
-export function isBulletinEdition(value: string): value is BulletinEdition {
-  return bulletinEditions.includes(value as BulletinEdition);
+export function isBulletinEdition(value: unknown): value is BulletinEdition {
+  if (!value || typeof value !== 'object') return false;
+  const edition = value as {series?: unknown; locale?: unknown};
+  return bulletinEditions.some(({series, locale}) => series === edition.series && locale === edition.locale);
 }
 
 export function isTheme(value: string): value is Theme {

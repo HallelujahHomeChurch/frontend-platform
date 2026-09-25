@@ -5,6 +5,8 @@ import {
   adminUiLocales,
   applyTheme,
   bulletinEditions,
+  bulletinLocales,
+  bulletinSeries,
   contentLocales,
   detectAdminUiLocale,
   detectProductLocale,
@@ -57,10 +59,19 @@ describe('supported preferences', () => {
   });
 
   it('separates weekly bulletin editions from content locales', () => {
-    expect(bulletinEditions).toEqual(['zh-Hant', 'zh-Hans', 'en']);
-    expect(isBulletinEdition('en')).toBe(true);
-    expect(isBulletinEdition('ja')).toBe(false);
-    expect(isBulletinEdition('ko')).toBe(false);
+    expect(bulletinSeries).toEqual(['general', 'children']);
+    expect(bulletinLocales).toEqual(['zh-Hant', 'zh-Hans', 'en']);
+    expect(bulletinEditions).toEqual([
+      {series: 'general', locale: 'zh-Hant'},
+      {series: 'general', locale: 'zh-Hans'},
+      {series: 'general', locale: 'en'},
+      {series: 'children', locale: 'zh-Hant'},
+      {series: 'children', locale: 'en'}
+    ]);
+    expect(isBulletinEdition({series: 'children', locale: 'en'})).toBe(true);
+    expect(isBulletinEdition({series: 'children', locale: 'zh-Hans'})).toBe(false);
+    expect(isBulletinEdition({series: 'general', locale: 'ja'})).toBe(false);
+    expect(isBulletinEdition(null)).toBe(false);
     expect(isProductLocale('ja')).toBe(true);
     expect(isProductLocale('ko')).toBe(true);
   });
