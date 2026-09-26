@@ -111,4 +111,26 @@ describe('Operations client authentication', () => {
     expect(request.url).toBe('http://localhost/api/admin/operations/members/effective-verification');
     expect(await request.clone().json()).toEqual({accountUserIds: ['account-1', 'account-2']});
   });
+
+  it('keeps the Account unit-management routes in the generated client', async () => {
+	const fetcher = vi.fn<typeof fetch>()
+	  .mockResolvedValueOnce(json({items: []}))
+	  .mockResolvedValueOnce(json({unit: {id: 'unit-1'}, children: [], actions: {}}))
+	  .mockResolvedValueOnce(json({items: []}))
+	  .mockResolvedValueOnce(json({memberId: 'member-1', displayName: 'Member', email: 'member@example.test', affiliations: [], entitlementCodes: [], actions: {}}, 201))
+	  .mockResolvedValueOnce(json({matched: 1, changed: 1}));
+	const client = createOperationsClient({baseUrl: '', getAccessToken: async () => 'token', refreshAfterUnauthorized: async () => null, fetcher});
+
+	await client.raw.GET('/api/operations/manage/roots');
+	await client.raw.GET('/api/operations/manage/org-units/{unitId}', {params: {path: {unitId: 'unit-1'}, query: {includeArchived: true}}});
+	await client.raw.GET('/api/operations/manage/org-units/{unitId}/account-candidates', {params: {path: {unitId: 'unit-1'}, query: {q: '王小', limit: 20}}});
+	await client.raw.POST('/api/operations/manage/org-units/{unitId}/members', {params: {path: {unitId: 'unit-1'}, header: {'Idempotency-Key': 'admit'}}, body: {accountUserId: 'account-1'}});
+	await client.raw.POST('/api/operations/manage/org-units/{unitId}/entitlements/batch', {params: {path: {unitId: 'unit-1'}, header: {'Idempotency-Key': 'grant'}}, body: {memberIds: ['member-1'], entitlementCode: 'bulletin.general.zh-Hant.access', operation: 'grant'}});
+
+	const [, folder, candidates, admission, entitlement] = fetcher.mock.calls.map(([input]) => input as Request);
+	expect(folder.url).toContain('/api/operations/manage/org-units/unit-1?includeArchived=true');
+	expect(candidates.url).toContain('q=%E7%8E%8B%E5%B0%8F');
+	expect(admission.headers.get('idempotency-key')).toBe('admit');
+	expect(entitlement.headers.get('idempotency-key')).toBe('grant');
+  });
 });

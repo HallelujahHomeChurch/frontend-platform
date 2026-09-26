@@ -1,4 +1,4 @@
-import {mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync, mkdirSync} from 'node:fs';
+import {copyFileSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync, mkdirSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {basename, resolve} from 'node:path';
 import {spawnSync} from 'node:child_process';
@@ -9,8 +9,14 @@ const temp = mkdtempSync(resolve(tmpdir(), 'hhc-package-smoke-'));
 const {version} = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
 const tarballs = Object.fromEntries(
   readdirSync(artifacts)
-    .filter((file) => file.endsWith('.tgz'))
-    .map((file) => [file.match(new RegExp(`hallelujahhomechurch-(.+)-${version.replaceAll('.', '\\.')}.tgz$`))?.[1], resolve(artifacts, file)])
+    .filter((file) => file.endsWith('-' + version + '.tgz'))
+    .map((file) => {
+      const name = file.slice('hallelujahhomechurch-'.length, -('-' + version + '.tgz').length);
+      const path = resolve(temp, name + '.tgz');
+      // Keep file references short enough for pnpm's encoded store filenames.
+      copyFileSync(resolve(artifacts, file), path);
+      return [name, path];
+    })
 );
 
 for (const name of ['preferences', 'account-client', 'hhc-web-client', 'operations-client', 'ui']) {
@@ -61,7 +67,7 @@ import {createRoot} from 'react-dom/client';
 import {createAccountSessionClient, createBrowserAccountAuthRuntime, type AccountSessionUser} from '@hallelujahhomechurch/account-client';
 import {canAccessAdmin} from '@hallelujahhomechurch/account-client/admin-access';
 import {createHhcWebClient, type ContentStatus, type PageGroupManifest} from '@hallelujahhomechurch/hhc-web-client';
-import {createOperationsClient} from '@hallelujahhomechurch/operations-client';
+import {createOperationsClient, type ManagedMemberView, type ManagedUnitFolder} from '@hallelujahhomechurch/operations-client';
 import {getInitialTheme} from '@hallelujahhomechurch/preferences';
 import {AccountMenu, Button, ContextMenu} from '@hallelujahhomechurch/ui';
 import '@hallelujahhomechurch/ui/styles.css';
@@ -70,6 +76,14 @@ const accountUser: AccountSessionUser = {id: 'u1', email: 'ada@example.com', dis
 const accountSessionClient = createAccountSessionClient();
 const authRuntime = createBrowserAccountAuthRuntime({client: accountSessionClient});
 const operationsClient = createOperationsClient({baseUrl: '', getAccessToken: authRuntime.getAccessToken, refreshAfterUnauthorized: authRuntime.refreshAfterUnauthorized});
+async function checkUnitManagement(folder: ManagedUnitFolder, member: ManagedMemberView) {
+  await operationsClient.raw.GET('/api/operations/manage/roots');
+  await operationsClient.raw.GET('/api/operations/manage/org-units/{unitId}', {params: {path: {unitId: folder.unit.id}}});
+  await operationsClient.raw.GET('/api/operations/manage/org-units/{unitId}/account-candidates', {params: {path: {unitId: folder.unit.id}, query: {q: '王小'}}});
+  await operationsClient.raw.POST('/api/operations/manage/org-units/{unitId}/members', {params: {path: {unitId: folder.unit.id}, header: {'Idempotency-Key': 'admit'}}, body: {accountUserId: '00000000-0000-4000-8000-000000000001'}});
+  await operationsClient.raw.POST('/api/operations/manage/org-units/{unitId}/entitlements/batch', {params: {path: {unitId: folder.unit.id}, header: {'Idempotency-Key': 'grant'}}, body: {memberIds: [member.memberId], entitlementCode: 'bulletin.general.zh-Hant.access', operation: 'grant'}});
+}
+void checkUnitManagement;
 const contentStatus: ContentStatus = 'pending_removal';
 const groupManifest: PageGroupManifest = {pageId: '00000000-0000-0000-0000-000000000001', pageSourceVersion: 1, pageTargetVersion: 2, childModule: 'history', items: [], sha256: 'a'.repeat(64)};
 void createAccountSessionClient;
@@ -119,7 +133,7 @@ export default function Layout({children}: {children: React.ReactNode}) {
 import {createAccountSessionClient, createBrowserAccountAuthRuntime, type AccountSessionUser} from '@hallelujahhomechurch/account-client';
 import {canAccessAdmin} from '@hallelujahhomechurch/account-client/admin-access';
 import {createHhcWebClient, type ContentStatus, type PageGroupManifest} from '@hallelujahhomechurch/hhc-web-client';
-import {createOperationsClient} from '@hallelujahhomechurch/operations-client';
+import {createOperationsClient, type ManagedMemberView, type ManagedUnitFolder} from '@hallelujahhomechurch/operations-client';
 import {getInitialTheme} from '@hallelujahhomechurch/preferences';
 import {AccountMenu, Button, ContextMenu} from '@hallelujahhomechurch/ui';
 
@@ -127,6 +141,14 @@ const accountUser: AccountSessionUser = {id: 'u1', email: 'ada@example.com', dis
 const accountSessionClient = createAccountSessionClient();
 const authRuntime = createBrowserAccountAuthRuntime({client: accountSessionClient});
 const operationsClient = createOperationsClient({baseUrl: '', getAccessToken: authRuntime.getAccessToken, refreshAfterUnauthorized: authRuntime.refreshAfterUnauthorized});
+async function checkUnitManagement(folder: ManagedUnitFolder, member: ManagedMemberView) {
+  await operationsClient.raw.GET('/api/operations/manage/roots');
+  await operationsClient.raw.GET('/api/operations/manage/org-units/{unitId}', {params: {path: {unitId: folder.unit.id}}});
+  await operationsClient.raw.GET('/api/operations/manage/org-units/{unitId}/account-candidates', {params: {path: {unitId: folder.unit.id}, query: {q: '王小'}}});
+  await operationsClient.raw.POST('/api/operations/manage/org-units/{unitId}/members', {params: {path: {unitId: folder.unit.id}, header: {'Idempotency-Key': 'admit'}}, body: {accountUserId: '00000000-0000-4000-8000-000000000001'}});
+  await operationsClient.raw.POST('/api/operations/manage/org-units/{unitId}/entitlements/batch', {params: {path: {unitId: folder.unit.id}, header: {'Idempotency-Key': 'grant'}}, body: {memberIds: [member.memberId], entitlementCode: 'bulletin.general.zh-Hant.access', operation: 'grant'}});
+}
+void checkUnitManagement;
 const contentStatus: ContentStatus = 'pending_removal';
 const groupManifest: PageGroupManifest = {pageId: '00000000-0000-0000-0000-000000000001', pageSourceVersion: 1, pageTargetVersion: 2, childModule: 'history', items: [], sha256: 'a'.repeat(64)};
 void createAccountSessionClient;
