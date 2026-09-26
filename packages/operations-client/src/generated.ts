@@ -1841,7 +1841,7 @@ export interface components {
         /** @enum {string} */
         OrgRoleName: "church_membership_manager" | "meeting_manager" | "resource_manager" | "reservation_approver";
         /** @enum {string} */
-        EntitlementCode: "bulletin.general.zh-Hant.access" | "bulletin.general.zh-Hans.access" | "bulletin.general.en.access";
+        EntitlementCode: "bulletin.general.zh-Hant.access" | "bulletin.general.zh-Hans.access" | "bulletin.general.en.access" | "bulletin.children.zh-Hant.access" | "bulletin.children.en.access";
         AccountResolutionInput: {
             /** Format: email */
             email: string;

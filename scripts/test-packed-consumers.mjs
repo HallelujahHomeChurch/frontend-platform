@@ -1,4 +1,4 @@
-import {mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync, mkdirSync} from 'node:fs';
+import {copyFileSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync, mkdirSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {basename, resolve} from 'node:path';
 import {spawnSync} from 'node:child_process';
@@ -9,8 +9,14 @@ const temp = mkdtempSync(resolve(tmpdir(), 'hhc-package-smoke-'));
 const {version} = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
 const tarballs = Object.fromEntries(
   readdirSync(artifacts)
-    .filter((file) => file.endsWith('.tgz'))
-    .map((file) => [file.match(new RegExp(`hallelujahhomechurch-(.+)-${version.replaceAll('.', '\\.')}.tgz$`))?.[1], resolve(artifacts, file)])
+    .filter((file) => file.endsWith('-' + version + '.tgz'))
+    .map((file) => {
+      const name = file.slice('hallelujahhomechurch-'.length, -('-' + version + '.tgz').length);
+      const path = resolve(temp, name + '.tgz');
+      // Keep file references short enough for pnpm's encoded store filenames.
+      copyFileSync(resolve(artifacts, file), path);
+      return [name, path];
+    })
 );
 
 for (const name of ['preferences', 'account-client', 'hhc-web-client', 'operations-client', 'ui']) {

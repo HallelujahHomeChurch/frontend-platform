@@ -1755,7 +1755,7 @@ components:
       enum: [church_membership_manager, meeting_manager, resource_manager, reservation_approver]
     EntitlementCode:
       type: string
-      enum: [bulletin.general.zh-Hant.access, bulletin.general.zh-Hans.access, bulletin.general.en.access]
+      enum: [bulletin.general.zh-Hant.access, bulletin.general.zh-Hans.access, bulletin.general.en.access, bulletin.children.zh-Hant.access, bulletin.children.en.access]
     AccountResolutionInput:
       type: object
       additionalProperties: false
