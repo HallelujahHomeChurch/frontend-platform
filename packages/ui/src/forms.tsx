@@ -279,7 +279,7 @@ export function FileUploadField({
           aria-label={label}
           tabIndex={-1}
           accept={accept}
-          multiple
+          multiple={maxFiles !== 1}
           disabled={isDisabled}
           onChange={(event) => {
             addFiles(Array.from(event.currentTarget.files ?? []));
@@ -325,5 +325,7 @@ export function FileUploadField({
 
 function formatFileSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
+  if (bytes >= 1_000_000_000) return `${(bytes / 1_000_000_000).toFixed(2)} GB`;
+  if (bytes >= 1_000_000) return `${(bytes / 1_000_000).toFixed(1)} MB`;
   return `${Math.ceil(bytes / 1024)} KB`;
 }

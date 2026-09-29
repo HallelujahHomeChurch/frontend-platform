@@ -11,6 +11,28 @@ import type {
 } from './client'
 
 describe('hhc web client', () => {
+  it('keeps recording grants in POST bodies and separates versioned publish requests', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({data: {}, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}}))
+    const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'member-token', fetcher})
+    await client.issueRecordingPlayback('rec-1', 'scope-1', 'version-1')
+    await client.publishAdminRecording('rec-1', 3)
+    const [playback, publish] = fetcher.mock.calls.map(call => call[0] as Request)
+    expect(playback!.url).toBe('http://localhost/api/member/recordings/rec-1/playback')
+    expect(playback!.cache).toBe('no-store')
+    expect(JSON.parse(await playback!.text())).toEqual({playbackScopeId: 'scope-1', expectedAssetVersionId: 'version-1'})
+    expect(publish!.headers.get('If-Match')).toBe('"3"')
+    expect(JSON.parse(await publish!.text())).toEqual({})
+  })
+  it('creates and edits a title without occurrence or replacement inputs', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({data: {}, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}}))
+    const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'admin-token', fetcher})
+    await client.createAdminRecording('主日聚會', 'create-key')
+    await client.updateAdminRecordingTitle('rec-1', 2, '整理標題')
+    const [create, update] = fetcher.mock.calls.map(call => call[0] as Request)
+    expect(JSON.parse(await create!.text())).toEqual({title: '主日聚會'})
+    expect(JSON.parse(await update!.text())).toEqual({title: '整理標題'})
+    expect(update!.headers.get('If-Match')).toBe('"2"')
+  })
   it('uploads one-to-five private documents for an issue and reads its creator-owned job', async () => {
     const response = (data: unknown) => new Response(JSON.stringify({data, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}})
     const fetcher = vi.fn<typeof fetch>()
