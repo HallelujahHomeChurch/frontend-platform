@@ -29,6 +29,12 @@ export type BulletinWatermarkIssueInvestigationPage = {
   nextCursor?: string
 }
 export type ProtectedBulletin = components['schemas']['ProtectedBulletin']
+export type MemberRecording = components['schemas']['MemberRecording']
+export type RecordingFile = components['schemas']['RecordingFile']
+export type MemberRecordingPlayback = components['schemas']['MemberRecordingPlayback']
+export type RecordingUploadSession = components['schemas']['RecordingUploadSession']
+export type RecordingPartURL = components['schemas']['RecordingPartURL']
+export type RecordingAssetStatus = components['schemas']['RecordingAssetStatus']
 export type OperationProgress = components['schemas']['OperationProgress']
 export type BulletinDownloadJob = components['schemas']['BulletinDownloadJob']
 export type BulletinIssue = components['schemas']['BulletinIssue']
@@ -158,6 +164,78 @@ export function createHhcWebClient(options: {
   }
 
   return {
+    async listMemberRecordings(signal?: AbortSignal) {
+      return (await unwrap(client.GET('/member/recordings', { signal, cache: 'no-store' }))).data
+    },
+    async issueRecordingPlayback(id: string, playbackScopeId: string, expectedAssetVersionId?: string, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/member/recordings/{id}/playback', {
+        params: { path: { id } }, body: { playbackScopeId, expectedAssetVersionId }, signal, cache: 'no-store',
+      }))).data
+    },
+    async listAdminRecordings(signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/recordings', { signal, cache: 'no-store' }))).data
+    },
+    async getAdminRecording(id: string, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/recordings/{id}', { params: { path: { id } }, signal, cache: 'no-store' }))).data
+    },
+    async listAdminRecordingFiles(id: string, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/recordings/{id}/files', { params: { path: { id } }, signal, cache: 'no-store' }))).data
+    },
+    async createAdminRecording(title: string, idempotencyKey: string) {
+      return (await unwrap(client.POST('/admin/recordings', {
+        params: { header: { 'Idempotency-Key': idempotencyKey } }, body: { title },
+      }))).data
+    },
+    async updateAdminRecordingTitle(id: string, version: number, title: string) {
+      return (await unwrap(client.PATCH('/admin/recordings/{id}', {
+        params: { path: { id }, header: { 'If-Match': `"${version}"` } }, body: { title },
+      }))).data
+    },
+    async setAdminRecordingExposure(id: string, version: number, featured: boolean, hidden: boolean) {
+      return (await unwrap(client.PATCH('/admin/recordings/{id}/exposure', {
+        params: { path: { id }, header: { 'If-Match': `"${version}"` } }, body: { featured, hidden },
+      }))).data
+    },
+    async publishAdminRecording(id: string, version: number) {
+      return (await unwrap(client.POST('/admin/recordings/{id}/publish', {
+        params: { path: { id }, header: { 'If-Match': `"${version}"` } }, body: {},
+      }))).data
+    },
+    async unpublishAdminRecording(id: string, version: number) {
+      return (await unwrap(client.POST('/admin/recordings/{id}/unpublish', {
+        params: { path: { id }, header: { 'If-Match': `"${version}"` } },
+      }))).data
+    },
+    async createAdminRecordingUpload(id: string, input: { fileName: string; sizeBytes: number; checksumSHA256: string }, idempotencyKey: string) {
+      return (await unwrap(client.POST('/admin/recordings/{id}/upload-sessions', {
+        params: { path: { id }, header: { 'Idempotency-Key': idempotencyKey } }, body: input,
+      }))).data
+    },
+    async getAdminRecordingUpload(id: string, sessionID: string, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/recordings/{id}/upload-sessions/{sessionID}', {
+        params: { path: { id, sessionID } }, signal, cache: 'no-store',
+      }))).data
+    },
+    async listAdminRecordingUploadedParts(id: string, sessionID: string) {
+      return (await unwrap(client.GET('/admin/recordings/{id}/upload-sessions/{sessionID}/parts', {
+        params: { path: { id, sessionID } }, cache: 'no-store',
+      }))).data
+    },
+    async signAdminRecordingPart(id: string, sessionID: string, number: number) {
+      return (await unwrap(client.POST('/admin/recordings/{id}/upload-sessions/{sessionID}/parts/{number}', {
+        params: { path: { id, sessionID, number } },
+      }))).data
+    },
+    async completeAdminRecordingUpload(id: string, sessionID: string) {
+      return (await unwrap(client.POST('/admin/recordings/{id}/upload-sessions/{sessionID}/complete', {
+        params: { path: { id, sessionID } },
+      }))).data
+    },
+    async getAdminRecordingAsset(id: string, versionID: string, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/recordings/{id}/assets/{versionID}', {
+        params: { path: { id, versionID } }, signal, cache: 'no-store',
+      }))).data
+    },
     async listProtectedBulletins(params: { locale: BulletinLocale; series?: BulletinSeries; issueNumber?: number; page?: number; pageSize?: number; signal?: AbortSignal }) {
       const envelope = await unwrap(client.GET('/member/bulletins', {
         params: { query: { locale: params.locale, series: params.series, issueNumber: params.issueNumber, page: params.page, pageSize: params.pageSize } }, signal: params.signal, cache: 'no-store',

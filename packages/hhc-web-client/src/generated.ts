@@ -215,6 +215,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/priv/recordings/{recordingID}/notification-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Check that a recording remains published, ready and unexpired */
+        get: operations["getPrivateRecordingNotificationPolicy"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/priv/bulletins/{issueID}/notification-policy": {
         parameters: {
             query?: never;
@@ -244,6 +261,23 @@ export interface paths {
         put?: never;
         /** Create campaign */
         post: operations["createCampaign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/notification-summaries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List logical notifications grouped across delivery channels */
+        get: operations["listNotificationSummaries"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1331,10 +1365,409 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/member/recordings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List recent published recordings after membership and video entitlement checks */
+        get: operations["listMemberRecordings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/recordings/{id}/playback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Recheck entitlement, publication, occurrence and ready asset before one-hour playback grant */
+        post: operations["issueMemberRecordingPlayback"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List recording drafts and published entries */
+        get: operations["listAdminRecordings"];
+        put?: never;
+        /** Create a titled single-upload draft */
+        post: operations["createAdminRecording"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** List attached recording files and validation status */
+        get: operations["listAdminRecordingFiles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Read one recording and version */
+        get: operations["getAdminRecording"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update the title or bind a draft to its first occurrence */
+        patch: operations["updateAdminRecordingTitle"];
+        trace?: never;
+    };
+    "/admin/recordings/{id}/exposure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Set featured and hidden flags with publish capability */
+        patch: operations["setAdminRecordingExposure"];
+        trace?: never;
+    };
+    "/admin/recordings/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publish only an owner-matched, media-validated ready primary version */
+        post: operations["publishAdminRecording"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/unpublish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stop new playback grants without deleting retained bytes */
+        post: operations["unpublishAdminRecording"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/upload-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start a private R2 multipart upload with exact byte size and SHA-256 */
+        post: operations["createAdminRecordingUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/upload-sessions/{sessionID}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                sessionID: string;
+            };
+            cookie?: never;
+        };
+        /** Read owner-scoped multipart session status */
+        get: operations["getAdminRecordingUpload"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/upload-sessions/{sessionID}/parts/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                sessionID: string;
+                number: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sign one fifteen-minute R2 UploadPart URL for an authorized session */
+        post: operations["signAdminRecordingPart"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/upload-sessions/{sessionID}/parts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                sessionID: string;
+            };
+            cookie?: never;
+        };
+        /** List fully uploaded R2 part numbers for owner-scoped resume */
+        get: operations["listAdminRecordingUploadedParts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/upload-sessions/{sessionID}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                sessionID: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete verified multipart parts and enqueue media validation */
+        post: operations["completeAdminRecordingUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/assets/{versionID}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                versionID: string;
+            };
+            cookie?: never;
+        };
+        /** Read media validation state and duration for an attached file */
+        get: operations["getAdminRecordingAsset"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        MemberRecording: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            /** Format: date-time */
+            uploadedAt: string | null;
+            /** Format: date-time */
+            expiresAt: string | null;
+            featured: boolean;
+            hidden: boolean;
+            /** @enum {string} */
+            status: "draft" | "published";
+            primaryAssetVersionId?: string;
+            durationSeconds?: number;
+            /** Format: int64 */
+            version: number;
+        };
+        MemberRecordingPlayback: {
+            /** Format: uri */
+            mediaUrl: string;
+            /** @description One-minute body-only exchange bearer; never log or persist. */
+            exchangeCredential: string;
+            /** Format: date-time */
+            expiresAt: string;
+            assetVersionId: string;
+            watermarkCode: string;
+        };
+        RecordingUploadSession: {
+            id: string;
+            assetVersionId: string;
+            /** Format: uuid */
+            recordingId: string;
+            fileName: string;
+            /** @enum {string} */
+            status: "created" | "completing" | "validating" | "ready" | "failed" | "cancelled" | "deleting" | "deleted";
+            /** Format: int64 */
+            sizeBytes: number;
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: date-time */
+            uploadedAt: string | null;
+        };
+        RecordingPartURL: {
+            /**
+             * Format: uri
+             * @description Fifteen-minute presigned R2 UploadPart URL.
+             */
+            url: string;
+            /** @enum {string} */
+            method: "PUT";
+            headers: {
+                [key: string]: string[];
+            };
+        };
+        RecordingAssetStatus: {
+            assetVersionId: string;
+            /** Format: uuid */
+            recordingId: string;
+            /** @enum {string} */
+            status: "created" | "completing" | "validating" | "ready" | "failed" | "cancelled" | "deleting" | "deleted";
+            /** Format: int64 */
+            sizeBytes: number;
+            durationSeconds: number;
+            /** Format: date-time */
+            uploadedAt: string | null;
+        };
+        RecordingFile: {
+            assetVersionId: string;
+            fileName: string;
+            /** @enum {string} */
+            status: "created" | "completing" | "validating" | "ready" | "failed" | "cancelled" | "deleting" | "deleted";
+            /** Format: int64 */
+            sizeBytes: number;
+            durationSeconds: number;
+        };
+        RecordingFileListEnvelope: {
+            data: components["schemas"]["RecordingFile"][];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
+        };
+        RecordingEnvelope: {
+            data: components["schemas"]["MemberRecording"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
+        };
+        RecordingListEnvelope: {
+            data: components["schemas"]["MemberRecording"][];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
+        };
+        RecordingPlaybackEnvelope: {
+            data: components["schemas"]["MemberRecordingPlayback"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
+        };
+        RecordingUploadEnvelope: {
+            data: components["schemas"]["RecordingUploadSession"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
+        };
+        RecordingPartEnvelope: {
+            data: components["schemas"]["RecordingPartURL"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
+        };
+        RecordingUploadedPartsEnvelope: {
+            data: number[];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
+        };
+        RecordingAssetEnvelope: {
+            data: components["schemas"]["RecordingAssetStatus"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
+        };
         BulletinWatermarkCandidateScope: {
             /** Format: uuid */
             issueId: string;
@@ -1631,7 +2064,7 @@ export interface components {
             actionUrl?: string;
         };
         /** @enum {string} */
-        CampaignStatus: "draft" | "queued" | "sending" | "completed" | "completed_with_failures" | "failed";
+        CampaignStatus: "draft" | "queued" | "sending" | "completed" | "completed_with_failures" | "failed" | "cancelled";
         CampaignDeliverySummary: {
             total: number;
             pending: number;
@@ -1639,6 +2072,7 @@ export interface components {
             submitted: number;
             sent: number;
             failed: number;
+            retryableFailed: number;
             suppressed: number;
         };
         Campaign: {
@@ -1678,12 +2112,16 @@ export interface components {
             recipientId: string;
             /** Format: uuid */
             userId?: string;
+            displayName?: string;
+            accountAvailable?: boolean;
             /** @enum {string} */
             channel: "email" | "web_push";
             locale: string;
             /** @enum {string} */
             status: "pending" | "processing" | "submitted" | "sent" | "failed" | "suppressed";
             attemptCount: number;
+            generationAttemptCount: number;
+            attemptCountKnown: boolean;
             failureCode?: string;
             /** Format: date-time */
             updatedAt: string;
@@ -1695,6 +2133,32 @@ export interface components {
             total: number;
             summary: components["schemas"]["CampaignDeliverySummary"];
             campaignStatus: components["schemas"]["CampaignStatus"];
+        };
+        NotificationChannelSummary: {
+            /** Format: uuid */
+            campaignId: string;
+            /** @enum {string} */
+            channel: "email" | "web_push";
+            status: components["schemas"]["CampaignStatus"];
+            deliverySummary: components["schemas"]["CampaignDeliverySummary"];
+        };
+        NotificationSummary: {
+            key: string;
+            /** Format: uuid */
+            primaryCampaignId: string;
+            name: string;
+            channels: components["schemas"]["NotificationChannelSummary"][];
+            /** @enum {string} */
+            status: "draft" | "queued" | "sending" | "completed" | "partial_failure" | "failed" | "cancelled";
+            deliverySummary: components["schemas"]["CampaignDeliverySummary"];
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        NotificationSummaryPage: {
+            items: components["schemas"]["NotificationSummary"][];
+            page: number;
+            perPage: number;
+            total: number;
         };
         CampaignSchedule: {
             /** Format: uuid */
@@ -1737,6 +2201,9 @@ export interface components {
         };
         CampaignDeliveryPageEnvelope: {
             data: components["schemas"]["CampaignDeliveryPage"];
+        };
+        NotificationSummaryPageEnvelope: {
+            data: components["schemas"]["NotificationSummaryPage"];
         };
         CampaignScheduleEnvelope: {
             data: components["schemas"]["CampaignSchedule"];
@@ -3098,6 +3565,15 @@ export interface components {
                 "application/json": components["schemas"]["CampaignDeliveryPageEnvelope"];
             };
         };
+        /** @description Engagement-owned logical notification page forwarded unchanged. */
+        NotificationSummaryPage: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["NotificationSummaryPageEnvelope"];
+            };
+        };
         /** @description Engagement-owned campaign schedule forwarded unchanged. */
         CampaignSchedule: {
             headers: {
@@ -3714,6 +4190,35 @@ export interface operations {
             503: components["responses"]["Error"];
         };
     };
+    getPrivateRecordingNotificationPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordingID: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description False also covers missing, hidden or expired recordings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            published: boolean;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
     getPrivateBulletinNotificationPolicy: {
         parameters: {
             query?: never;
@@ -3788,6 +4293,30 @@ export interface operations {
             401: components["responses"]["AdminUnauthorized"];
             403: components["responses"]["AdminForbidden"];
             409: components["responses"]["EngagementError"];
+            500: components["responses"]["EngagementError"];
+            503: components["responses"]["EngagementUnavailable"];
+        };
+    };
+    listNotificationSummaries: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["Page"];
+                perPage?: components["parameters"]["PerPage"];
+                /** @description Searches the internal campaign name and localized subject or body. */
+                q?: components["parameters"]["SearchQuery"];
+                sort?: "name" | "status" | "deliveryResult" | "updatedAt";
+                direction?: "asc" | "desc";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["NotificationSummaryPage"];
+            400: components["responses"]["EngagementError"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
             500: components["responses"]["EngagementError"];
             503: components["responses"]["EngagementUnavailable"];
         };
@@ -5593,6 +6122,477 @@ export interface operations {
             409: components["responses"]["Error"];
             412: components["responses"]["Error"];
             428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listMemberRecordings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authorized recent recordings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingListEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    issueMemberRecordingPlayback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    playbackScopeId: string;
+                    expectedAssetVersionId?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Short-lived exchange credential and fixed media URL */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingPlaybackEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listAdminRecordings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recording entries */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingListEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+        };
+    };
+    createAdminRecording: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    title: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Draft recording */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listAdminRecordingFiles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Attached files */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingFileListEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+        };
+    };
+    getAdminRecording: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recording */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+        };
+    };
+    updateAdminRecordingTitle: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    title: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Updated title */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+        };
+    };
+    setAdminRecordingExposure: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    featured: boolean;
+                    hidden: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Updated exposure */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+        };
+    };
+    publishAdminRecording: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Published recording */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    unpublishAdminRecording: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Unpublished recording */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+        };
+    };
+    createAdminRecordingUpload: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    fileName: string;
+                    /** Format: int64 */
+                    sizeBytes: number;
+                    checksumSHA256: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Resumable R2 session */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingUploadEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getAdminRecordingUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                sessionID: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recording upload status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingUploadEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+        };
+    };
+    signAdminRecordingPart: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                sessionID: string;
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Presigned part request */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingPartEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+        };
+    };
+    listAdminRecordingUploadedParts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                sessionID: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Completed part numbers */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingUploadedPartsEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+        };
+    };
+    completeAdminRecordingUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                sessionID: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Validating upload */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingUploadEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getAdminRecordingAsset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                versionID: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Private media status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingAssetEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
             503: components["responses"]["Error"];
         };
     };

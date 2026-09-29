@@ -357,6 +357,39 @@ paths:
       responses:
         '200': { $ref: '#/components/responses/Health' }
         '503': { $ref: '#/components/responses/Error' }
+  /priv/recordings/{recordingID}/notification-policy:
+    get:
+      operationId: getPrivateRecordingNotificationPolicy
+      summary: Check that a recording remains published, ready and unexpired
+      tags: [Private]
+      x-hhc-visibility: private
+      x-hhc-callers: [engagement-api]
+      x-hhc-required-headers: [Dapr-Caller-App-Id, dapr-api-token]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [] }]
+      servers: [{ url: / }]
+      parameters:
+        - name: recordingID
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: False also covers missing, hidden or expired recordings
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [published]
+                    properties:
+                      published: { type: boolean }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
   /priv/bulletins/{issueID}/notification-policy:
     get:
       operationId: getPrivateBulletinNotificationPolicy
@@ -440,6 +473,29 @@ paths:
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
         '403': { $ref: '#/components/responses/AdminForbidden' }
         '409': { $ref: '#/components/responses/EngagementError' }
+        '500': { $ref: '#/components/responses/EngagementError' }
+        '503': { $ref: '#/components/responses/EngagementUnavailable' }
+  /admin/notification-summaries:
+    get:
+      operationId: listNotificationSummaries
+      summary: List logical notifications grouped across delivery channels
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes: [campaigns:read]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+        - $ref: '#/components/parameters/SearchQuery'
+        - { name: sort, in: query, schema: { type: string, enum: [name, status, deliveryResult, updatedAt], default: updatedAt } }
+        - { name: direction, in: query, schema: { type: string, enum: [asc, desc], default: desc } }
+      responses:
+        '200': { $ref: '#/components/responses/NotificationSummaryPage' }
+        '400': { $ref: '#/components/responses/EngagementError' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
         '500': { $ref: '#/components/responses/EngagementError' }
         '503': { $ref: '#/components/responses/EngagementUnavailable' }
   /admin/campaigns/{campaignId}:
@@ -2005,6 +2061,353 @@ paths:
         '412': { $ref: '#/components/responses/Error' }
         '428': { $ref: '#/components/responses/Error' }
         '503': { $ref: '#/components/responses/Error' }
+  /member/recordings:
+    get:
+      operationId: listMemberRecordings
+      summary: List recent published recordings after membership and video entitlement checks
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      responses:
+        '200': { description: Authorized recent recordings, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingListEnvelope' } } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /member/recordings/{id}/playback:
+    post:
+      operationId: issueMemberRecordingPlayback
+      summary: Recheck entitlement, publication, occurrence and ready asset before one-hour playback grant
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [playbackScopeId]
+              properties:
+                playbackScopeId: { type: string, minLength: 1, maxLength: 80 }
+                expectedAssetVersionId: { type: string }
+      responses:
+        '200': { description: Short-lived exchange credential and fixed media URL, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingPlaybackEnvelope' } } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/recordings:
+    get:
+      operationId: listAdminRecordings
+      summary: List recording drafts and published entries
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      x-required-scopes: [cms:recordings:read]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      responses:
+        '200': { description: Recording entries, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingListEnvelope' } } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+    post:
+      operationId: createAdminRecording
+      summary: Create a titled single-upload draft
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      x-required-scopes: [cms:recordings:write]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [title]
+              properties: { title: { type: string, minLength: 1, maxLength: 180 } }
+      responses:
+        '201': { description: Draft recording, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingEnvelope' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/recordings/{id}/files:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    get:
+      operationId: listAdminRecordingFiles
+      summary: List attached recording files and validation status
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      x-required-scopes: [cms:recordings:read]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      responses:
+        '200': { description: Attached files, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingFileListEnvelope' } } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+  /admin/recordings/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    get:
+      operationId: getAdminRecording
+      summary: Read one recording and version
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-required-scopes: [cms:recordings:read]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      responses:
+        '200': { description: Recording, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingEnvelope' } } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+    patch:
+      operationId: updateAdminRecordingTitle
+      summary: Update the title or bind a draft to its first occurrence
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-required-scopes: [cms:recordings:write]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters: [{ $ref: '#/components/parameters/IfMatch' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [title]
+              properties:
+                title: { type: string, minLength: 1, maxLength: 180 }
+      responses:
+        '200': { description: Updated title, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingEnvelope' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '409': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+  /admin/recordings/{id}/exposure:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    patch:
+      operationId: setAdminRecordingExposure
+      summary: Set featured and hidden flags with publish capability
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-required-scopes: [cms:recordings:publish]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters: [{ $ref: '#/components/parameters/IfMatch' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [featured, hidden]
+              properties: { featured: { type: boolean }, hidden: { type: boolean } }
+      responses:
+        '200': { description: Updated exposure, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingEnvelope' } } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '409': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+  /admin/recordings/{id}/publish:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    post:
+      operationId: publishAdminRecording
+      summary: Publish only an owner-matched, media-validated ready primary version
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-required-scopes: [cms:recordings:publish]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters: [{ $ref: '#/components/parameters/IfMatch' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties: {}
+      responses:
+        '200': { description: Published recording, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingEnvelope' } } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '409': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/recordings/{id}/unpublish:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    post:
+      operationId: unpublishAdminRecording
+      summary: Stop new playback grants without deleting retained bytes
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-required-scopes: [cms:recordings:publish]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters: [{ $ref: '#/components/parameters/IfMatch' }]
+      responses:
+        '200': { description: Unpublished recording, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingEnvelope' } } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '409': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+  /admin/recordings/{id}/upload-sessions:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    post:
+      operationId: createAdminRecordingUpload
+      summary: Start a private R2 multipart upload with exact byte size and SHA-256
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-required-scopes: [cms:recordings:write]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [fileName, sizeBytes, checksumSHA256]
+              properties:
+                fileName: { type: string, pattern: '\.mp4$' }
+                sizeBytes: { type: integer, format: int64, minimum: 1, maximum: 10000000000 }
+                checksumSHA256: { type: string, pattern: '^[0-9a-fA-F]{64}$' }
+      responses:
+        '201': { description: Resumable R2 session, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingUploadEnvelope' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/recordings/{id}/upload-sessions/{sessionID}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: sessionID, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getAdminRecordingUpload
+      summary: Read owner-scoped multipart session status
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-required-scopes: [cms:recordings:read]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      responses:
+        '200': { description: Recording upload status, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingUploadEnvelope' } } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+  /admin/recordings/{id}/upload-sessions/{sessionID}/parts/{number}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: sessionID, in: path, required: true, schema: { type: string } }
+      - { name: number, in: path, required: true, schema: { type: integer, minimum: 1, maximum: 597 } }
+    post:
+      operationId: signAdminRecordingPart
+      summary: Sign one fifteen-minute R2 UploadPart URL for an authorized session
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-required-scopes: [cms:recordings:write]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      responses:
+        '200': { description: Presigned part request, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingPartEnvelope' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '409': { $ref: '#/components/responses/Error' }
+  /admin/recordings/{id}/upload-sessions/{sessionID}/parts:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: sessionID, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: listAdminRecordingUploadedParts
+      summary: List fully uploaded R2 part numbers for owner-scoped resume
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-required-scopes: [cms:recordings:read]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      responses:
+        '200': { description: Completed part numbers, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingUploadedPartsEnvelope' } } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '409': { $ref: '#/components/responses/Error' }
+  /admin/recordings/{id}/upload-sessions/{sessionID}/complete:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: sessionID, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: completeAdminRecordingUpload
+      summary: Complete verified multipart parts and enqueue media validation
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-required-scopes: [cms:recordings:write]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      responses:
+        '200': { description: Validating upload, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingUploadEnvelope' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/recordings/{id}/assets/{versionID}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: versionID, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getAdminRecordingAsset
+      summary: Read media validation state and duration for an attached file
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-required-scopes: [cms:recordings:read]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      responses:
+        '200': { description: Private media status, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingAssetEnvelope' } } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
 components:
   securitySchemes:
     daprApiToken:
@@ -2156,6 +2559,11 @@ components:
       content:
         application/json:
           schema: { $ref: '#/components/schemas/CampaignDeliveryPageEnvelope' }
+    NotificationSummaryPage:
+      description: Engagement-owned logical notification page forwarded unchanged.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/NotificationSummaryPageEnvelope' }
     CampaignSchedule:
       description: Engagement-owned campaign schedule forwarded unchanged.
       content:
@@ -2293,6 +2701,129 @@ components:
       description: Public revalidation policy for Site Layout projections.
       schema: { type: string, const: 'public, max-age=30, must-revalidate' }
   schemas:
+    MemberRecording:
+      type: object
+      additionalProperties: false
+      required: [id, title, uploadedAt, expiresAt, featured, hidden, status, version]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string, minLength: 1, maxLength: 180 }
+        uploadedAt: { type: [string, 'null'], format: date-time }
+        expiresAt: { type: [string, 'null'], format: date-time }
+        featured: { type: boolean }
+        hidden: { type: boolean }
+        status: { type: string, enum: [draft, published] }
+        primaryAssetVersionId: { type: string }
+        durationSeconds: { type: number, minimum: 0 }
+        version: { type: integer, format: int64, minimum: 1 }
+    MemberRecordingPlayback:
+      type: object
+      additionalProperties: false
+      required: [mediaUrl, exchangeCredential, expiresAt, assetVersionId, watermarkCode]
+      properties:
+        mediaUrl: { type: string, format: uri }
+        exchangeCredential: { type: string, description: One-minute body-only exchange bearer; never log or persist. }
+        expiresAt: { type: string, format: date-time }
+        assetVersionId: { type: string }
+        watermarkCode: { type: string }
+    RecordingUploadSession:
+      type: object
+      additionalProperties: false
+      required: [id, assetVersionId, recordingId, fileName, status, sizeBytes, expiresAt, uploadedAt]
+      properties:
+        id: { type: string }
+        assetVersionId: { type: string }
+        recordingId: { type: string, format: uuid }
+        fileName: { type: string }
+        status: { type: string, enum: [created, completing, validating, ready, failed, cancelled, deleting, deleted] }
+        sizeBytes: { type: integer, format: int64, minimum: 1, maximum: 10000000000 }
+        expiresAt: { type: string, format: date-time }
+        uploadedAt: { type: [string, 'null'], format: date-time }
+    RecordingPartURL:
+      type: object
+      additionalProperties: false
+      required: [url, method, headers]
+      properties:
+        url: { type: string, format: uri, description: Fifteen-minute presigned R2 UploadPart URL. }
+        method: { type: string, enum: [PUT] }
+        headers: { type: object, additionalProperties: { type: array, items: { type: string } } }
+    RecordingAssetStatus:
+      type: object
+      additionalProperties: false
+      required: [assetVersionId, recordingId, status, sizeBytes, durationSeconds, uploadedAt]
+      properties:
+        assetVersionId: { type: string }
+        recordingId: { type: string, format: uuid }
+        status: { type: string, enum: [created, completing, validating, ready, failed, cancelled, deleting, deleted] }
+        sizeBytes: { type: integer, format: int64 }
+        durationSeconds: { type: number }
+        uploadedAt: { type: [string, 'null'], format: date-time }
+    RecordingFile:
+      type: object
+      additionalProperties: false
+      required: [assetVersionId, fileName, status, sizeBytes, durationSeconds]
+      properties:
+        assetVersionId: { type: string }
+        fileName: { type: string }
+        status: { type: string, enum: [created, completing, validating, ready, failed, cancelled, deleting, deleted] }
+        sizeBytes: { type: integer, format: int64 }
+        durationSeconds: { type: number }
+    RecordingFileListEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/RecordingFile' } }
+        meta: { type: object, additionalProperties: true }
+        error: { type: ['null'] }
+    RecordingEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/MemberRecording' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: ['null'] }
+    RecordingListEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/MemberRecording' } }
+        meta: { type: object, additionalProperties: true }
+        error: { type: ['null'] }
+    RecordingPlaybackEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/MemberRecordingPlayback' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: ['null'] }
+    RecordingUploadEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/RecordingUploadSession' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: ['null'] }
+    RecordingPartEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/RecordingPartURL' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: ['null'] }
+    RecordingUploadedPartsEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { type: array, items: { type: integer, minimum: 1, maximum: 597 } }
+        meta: { type: object, additionalProperties: true }
+        error: { type: ['null'] }
+    RecordingAssetEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/RecordingAssetStatus' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: ['null'] }
     BulletinWatermarkCandidateScope:
       type: object
       additionalProperties: false
@@ -2902,11 +3433,11 @@ components:
           pattern: '^/(?!/).*$'
     CampaignStatus:
       type: string
-      enum: [draft, queued, sending, completed, completed_with_failures, failed]
+      enum: [draft, queued, sending, completed, completed_with_failures, failed, cancelled]
     CampaignDeliverySummary:
       type: object
       additionalProperties: false
-      required: [total, pending, processing, submitted, sent, failed, suppressed]
+      required: [total, pending, processing, submitted, sent, failed, retryableFailed, suppressed]
       properties:
         total: { type: integer, minimum: 0 }
         pending: { type: integer, minimum: 0 }
@@ -2914,6 +3445,7 @@ components:
         submitted: { type: integer, minimum: 0 }
         sent: { type: integer, minimum: 0 }
         failed: { type: integer, minimum: 0 }
+        retryableFailed: { type: integer, minimum: 0 }
         suppressed: { type: integer, minimum: 0 }
     Campaign:
       type: object
@@ -2954,14 +3486,18 @@ components:
     CampaignDelivery:
       type: object
       additionalProperties: false
-      required: [recipientId, channel, locale, status, attemptCount, updatedAt]
+      required: [recipientId, channel, locale, status, attemptCount, generationAttemptCount, attemptCountKnown, updatedAt]
       properties:
         recipientId: { type: string }
         userId: { type: string, format: uuid }
+        displayName: { type: string }
+        accountAvailable: { type: boolean }
         channel: { type: string, enum: [email, web_push] }
         locale: { type: string }
         status: { type: string, enum: [pending, processing, submitted, sent, failed, suppressed] }
         attemptCount: { type: integer, minimum: 0 }
+        generationAttemptCount: { type: integer, minimum: 0 }
+        attemptCountKnown: { type: boolean }
         failureCode: { type: string }
         updatedAt: { type: string, format: date-time }
     CampaignDeliveryPage:
@@ -2975,6 +3511,36 @@ components:
         total: { type: integer, minimum: 0 }
         summary: { $ref: '#/components/schemas/CampaignDeliverySummary' }
         campaignStatus: { $ref: '#/components/schemas/CampaignStatus' }
+    NotificationChannelSummary:
+      type: object
+      additionalProperties: false
+      required: [campaignId, channel, status, deliverySummary]
+      properties:
+        campaignId: { type: string, format: uuid }
+        channel: { type: string, enum: [email, web_push] }
+        status: { $ref: '#/components/schemas/CampaignStatus' }
+        deliverySummary: { $ref: '#/components/schemas/CampaignDeliverySummary' }
+    NotificationSummary:
+      type: object
+      additionalProperties: false
+      required: [key, primaryCampaignId, name, channels, status, deliverySummary, updatedAt]
+      properties:
+        key: { type: string }
+        primaryCampaignId: { type: string, format: uuid }
+        name: { type: string }
+        channels: { type: array, items: { $ref: '#/components/schemas/NotificationChannelSummary' } }
+        status: { type: string, enum: [draft, queued, sending, completed, partial_failure, failed, cancelled] }
+        deliverySummary: { $ref: '#/components/schemas/CampaignDeliverySummary' }
+        updatedAt: { type: string, format: date-time }
+    NotificationSummaryPage:
+      type: object
+      additionalProperties: false
+      required: [items, page, perPage, total]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/NotificationSummary' } }
+        page: { type: integer, minimum: 1 }
+        perPage: { type: integer, minimum: 1, maximum: 100 }
+        total: { type: integer, minimum: 0 }
     CampaignSchedule:
       type: object
       additionalProperties: false
@@ -3023,6 +3589,12 @@ components:
       required: [data]
       properties:
         data: { $ref: '#/components/schemas/CampaignDeliveryPage' }
+    NotificationSummaryPageEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/NotificationSummaryPage' }
     CampaignScheduleEnvelope:
       type: object
       additionalProperties: false
