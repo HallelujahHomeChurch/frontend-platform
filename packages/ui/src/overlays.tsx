@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactElement, type ReactNode, type RefObject} from 'react';
 import {createPortal} from 'react-dom';
+import {ExternalLink} from 'lucide-react';
 import {
   Button as AriaButton,
   Dialog as AriaDialog,
@@ -18,6 +19,7 @@ export interface MenuItem {
   id: string;
   label: string;
   href?: string;
+  newWindow?: {label: string; blockedMessage: string};
   isDisabled?: boolean;
   isSelected?: boolean;
   shortcut?: string;
@@ -42,12 +44,14 @@ function MenuItems({items, isSelectable}: {items: MenuItem[]; isSelectable: bool
     <AriaMenuItem
       id={item.id}
       key={item.id}
-      {...(item.href ? {href: item.href} : {})}
+      {...(item.href && !item.newWindow ? {href: item.href} : {})}
+      aria-label={item.newWindow ? `${item.label}（${item.newWindow.label}）` : undefined}
       isDisabled={item.isDisabled}
       className={`hhc-menu__item hhc-menu__item--${item.variant ?? 'default'}${isSelectable ? ' hhc-menu__item--selectable' : ''}`}
     >
       {isSelectable ? <span className="hhc-menu__check" aria-hidden="true">✓</span> : null}
       <span className="hhc-menu__label">{item.label}</span>
+      {item.newWindow ? <ExternalLink size={16} aria-hidden="true" /> : null}
       {item.shortcut ? <span className="hhc-menu__shortcut" aria-hidden="true">{item.shortcut}</span> : null}
     </AriaMenuItem>
   ));
@@ -284,10 +288,12 @@ export interface AccountMenuLink {
   id: string;
   label: string;
   href: string;
+  newWindow?: {label: string; blockedMessage: string};
 }
 
 export function AccountMenu({user, links, labels, manageAccountHref, onSignOut}: AccountMenuProps) {
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const [blockedLink, setBlockedLink] = useState<AccountMenuLink | null>(null);
   const actions: MenuItem[] = [
     ...(links?.map((link) => ({...link, id: `account-link:${link.id}`})) ?? []),
     ...(labels.manageAccount && manageAccountHref ? [{id: 'manage', label: labels.manageAccount, href: manageAccountHref}] : []),
@@ -305,13 +311,33 @@ export function AccountMenu({user, links, labels, manageAccountHref, onSignOut}:
           </div>
         }
         focusTriggerRef={triggerRef}
-        onAction={(id) => { if (id === 'sign-out') onSignOut(); }}
+        onAction={(id) => {
+          if (id === 'sign-out') { onSignOut(); return; }
+          const link = links?.find((item) => `account-link:${item.id}` === id);
+          if (!link?.newWindow) return;
+          // Open an empty same-origin document so a blocked popup is detectable;
+          // noopener in window features returns null even when opening succeeds.
+          let popup: Window | null = null;
+          try {
+            popup = window.open('about:blank', '_blank', 'popup,width=1280,height=800');
+            if (!popup) { setBlockedLink(link); return; }
+            popup.opener = null;
+            popup.location.replace(link.href);
+          } catch {
+            popup?.close();
+            setBlockedLink(link);
+          }
+        }}
         trigger={
           <AriaButton ref={triggerRef} className="hhc-account-menu__trigger" aria-label={labels.menu}>
             <Avatar name={user.name || user.email} src={user.avatarUrl} />
           </AriaButton>
         }
       />
+      {blockedLink ? <Dialog title={blockedLink.label} isOpen onOpenChange={(open) => { if (!open) setBlockedLink(null); }}>
+        <p>{blockedLink.newWindow?.blockedMessage}</p>
+        <a href={blockedLink.href} target="_blank" rel="noopener noreferrer">{blockedLink.newWindow?.label}</a>
+      </Dialog> : null}
     </div>
   );
 }
