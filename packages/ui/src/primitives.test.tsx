@@ -1107,6 +1107,42 @@ describe('HHC UI primitives', () => {
     ]);
   });
 
+  it.each(['pointer', 'keyboard'])('opens projection synchronously with an isolated opener using %s', async (input) => {
+    const user = userEvent.setup();
+    const popup = {opener: window, location: {replace: vi.fn()}, close: vi.fn()};
+    const open = vi.spyOn(window, 'open').mockReturnValue(popup as unknown as Window);
+    render(<AccountMenu user={{name: 'Ada', email: 'ada@example.com'}}
+      links={[{id: 'projection', label: '投影系統', href: 'https://client.alive.org.tw/', newWindow: {label: '另開視窗', blockedMessage: '瀏覽器阻擋開啟視窗，請使用下方連結。'}}]}
+      labels={{menu: '帳號選單', greeting: '', signOut: '登出'}} onSignOut={() => undefined} />);
+    await user.click(screen.getByRole('button', {name: '帳號選單'}));
+    const item = screen.getByRole('menuitem', {name: '投影系統（另開視窗）'});
+    expect(item.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+    if (input === 'pointer') await user.click(item);
+    else { item.focus(); await user.keyboard('{Enter}'); }
+    expect(open).toHaveBeenCalledWith('about:blank', '_blank', expect.stringContaining('popup'));
+    expect(popup.opener).toBeNull();
+    expect(popup.location.replace).toHaveBeenCalledWith('https://client.alive.org.tw/');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    open.mockRestore();
+  });
+
+  it.each(['blocked', 'throws'])('offers a safe native link when a projection popup %s', async (failure) => {
+    const user = userEvent.setup();
+    const open = vi.spyOn(window, 'open').mockImplementation(() => { if (failure === 'throws') throw new DOMException('Blocked', 'SecurityError'); return null; });
+    render(<AccountMenu user={{name: 'Ada', email: 'ada@example.com'}}
+      links={[{id: 'projection', label: '投影系統', href: 'https://client.alive.org.tw/', newWindow: {label: '另開視窗', blockedMessage: '瀏覽器阻擋開啟視窗，請使用下方連結。'}}]}
+      labels={{menu: '帳號選單', greeting: '', signOut: '登出'}} onSignOut={() => undefined} />);
+    await user.click(screen.getByRole('button', {name: '帳號選單'}));
+    await user.click(screen.getByRole('menuitem', {name: '投影系統（另開視窗）'}));
+    const dialog = screen.getByRole('dialog', {name: '投影系統'});
+    expect(within(dialog).getByText('瀏覽器阻擋開啟視窗，請使用下方連結。')).toBeInTheDocument();
+    const fallback = within(dialog).getByRole('link', {name: '另開視窗'});
+    expect(fallback).toHaveAttribute('href', 'https://client.alive.org.tw/');
+    expect(fallback).toHaveAttribute('target', '_blank');
+    expect(fallback).toHaveAttribute('rel', 'noopener noreferrer');
+    open.mockRestore();
+  });
+
   it('keeps a sign-out-named account destination as a link', async () => {
     const user = userEvent.setup();
     const onSignOut = vi.fn();
