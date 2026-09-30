@@ -98,6 +98,7 @@ export interface components {
             text: string;
             fontRole: components["schemas"]["OnlineBulletinFontRole"];
         };
+        /** @description Dynamic sentence anchor. The canonical- ID prefix is reserved for shared canonical metadata anchors across layouts. */
         OnlineBulletinSentence: {
             id: components["schemas"]["OnlineBulletinID"];
             spans: components["schemas"]["OnlineBulletinSpan"][];

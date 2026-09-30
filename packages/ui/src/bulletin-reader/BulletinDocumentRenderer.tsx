@@ -121,7 +121,7 @@ export function BulletinDocumentRenderer({document, manifest = document.layoutMa
     if (graphic) return <img src={graphic.url} alt="" draggable={false} />;
     if (bulletinFixedDecoration(slot.element)) return null;
     const value = bulletinFixedText(slot.element, canonicalMetadata, pageNumber);
-    return value.annotatable ? sentence({id: slot.id, spans: [{text: value.text, fontRole: value.fontRole}]}, 0, Array.from(value.text).length, slot.id) : <span data-font-role={value.fontRole}>{value.text}</span>;
+    return value.annotatable ? sentence({id: `canonical-${slot.element}`, spans: [{text: value.text, fontRole: value.fontRole}]}, 0, Array.from(value.text).length, slot.id) : <span data-font-role={value.fontRole}>{value.text}</span>;
   };
   const mobileHeader = (manifest.pages[0]?.fixedSlots ?? []).filter(slot => ['masthead', 'date', 'issueNumber', 'title', 'subtitle', 'vision', 'pastor'].includes(slot.element));
   return <div className="hhc-bulletin-v1" data-bulletin-mode={mode} lang={document.contentLocale}

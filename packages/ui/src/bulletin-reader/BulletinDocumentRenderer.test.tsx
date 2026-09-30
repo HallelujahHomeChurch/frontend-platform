@@ -93,11 +93,21 @@ describe('immutable shared bulletin renderer', () => {
     expect(slot.style.fontSize).toBe('16pt');
     expect(slot.style.letterSpacing).toBe('-0.2em');
   });
+  it('shares canonical sentence identity across repeated paper titles and mobile reflow', () => {
+    const document = fixture();
+    const style = {fontSize: 18, lineHeight: 24, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0};
+    for (const [index, page] of document.layoutManifest.pages.entries()) page.fixedSlots = [{id: `title-placement-${index}`, element: 'title', box: {x: .1, y: .01, width: .8, height: .04}, style}];
+    const props = {document, canonicalMetadata: {title: '信息主題', subtitle: '', issueNumber: 1739, date: '2026-09-20'}, sentenceState: {'canonical-title': {selected: true, highlight: 'yellow' as const}}};
+    const paper = render(<UI.BulletinDocumentRenderer {...props} mode="paper" />);
+    expect(paper.container.querySelectorAll('[data-sentence-id="canonical-title"][data-highlight="yellow"]')).toHaveLength(2);
+    const mobile = render(<UI.BulletinDocumentRenderer {...props} mode="mobile" />);
+    expect(mobile.container.querySelectorAll('[data-sentence-id="canonical-title"][data-highlight="yellow"]')).toHaveLength(1);
+  });
   it('keeps canonical cover headings in the mobile composition', () => {
     const document = fixture();
     document.layoutManifest.pages[0].fixedSlots = [{id: 'mobile-title', element: 'title', box: {x: .1, y: .1, width: .8, height: .1}, style: {fontSize: 24, lineHeight: 28, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0}}];
     const {container} = render(<UI.BulletinDocumentRenderer document={document} mode="mobile" canonicalMetadata={{title: '信息主題', subtitle: '', issueNumber: 1739, date: '2026-09-20'}} />);
-    expect(container.querySelector('[data-sentence-id="mobile-title"]')).toHaveTextContent('信息主題');
+    expect(container.querySelector('[data-sentence-id="canonical-title"]')).toHaveTextContent('信息主題');
   });
   it('refuses unsupported or mismatched renderers rather than silently using latest', () => {
     for (const patch of [{rendererVersion: 'v2'}, {rendererArtifactSha256: '0'.repeat(64)}]) {

@@ -427,6 +427,7 @@
         }
       },
       "OnlineBulletinSentence": {
+        "description": "Dynamic sentence anchor. The canonical- ID prefix is reserved for shared canonical metadata anchors across layouts.",
         "type": "object",
         "additionalProperties": false,
         "required": [
