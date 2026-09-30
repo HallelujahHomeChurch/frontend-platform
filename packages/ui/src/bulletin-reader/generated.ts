@@ -61,6 +61,7 @@ export interface components {
         };
         OnlineBulletinLayoutPage: {
             pageId: components["schemas"]["OnlineBulletinID"];
+            fixedSlots?: components["schemas"]["OnlineBulletinFixedSlot"][];
             slots: components["schemas"]["OnlineBulletinSlot"][];
         };
         OnlineBulletinSlot: {
@@ -70,6 +71,22 @@ export interface components {
             box: components["schemas"]["OnlineBulletinBox"];
             continuationOf?: components["schemas"]["OnlineBulletinID"];
             fragments: components["schemas"]["OnlineBulletinFragment"][];
+        };
+        /** @description Template-owned geometry for a fixed label or canonical metadata reference. It contains no editable text or executable URL. */
+        OnlineBulletinFixedSlot: {
+            id: components["schemas"]["OnlineBulletinID"];
+            /** @enum {string} */
+            element: "title" | "subtitle" | "date" | "issueNumber" | "pageNumber" | "masthead" | "vision" | "pastor" | "contact" | "scanHint" | "websiteQRLabel" | "youtubeQRLabel" | "streamQRLabel" | "welcomeLabel" | "worshipLabel" | "workLabel" | "wordLabel" | "verseLabel" | "hymnLabel" | "summaryLabel" | "announcementsLabel" | "prayersLabel" | "titleLabel" | "speakerLabel" | "transcriberLabel" | "editorLabel" | "authorLabel" | "logo" | "backgroundLogo" | "websiteQR" | "youtubeQR" | "streamQR" | "topRule" | "footerRule" | "summaryFrame" | "announcementsFrame" | "prayersFrame";
+            box: components["schemas"]["OnlineBulletinBox"];
+            style: components["schemas"]["OnlineBulletinParagraphStyle"];
+        };
+        /** @description Read-only snapshot of existing CMS fields, separate from editable document content. */
+        OnlineBulletinCanonicalMetadata: {
+            title: string;
+            subtitle: string;
+            issueNumber: number;
+            /** Format: date */
+            date: string;
         };
         /** @description Half-open offsets in Unicode code points, not UTF-8 bytes or UTF-16 units. Coverage must be complete and non-overlapping in reading order. */
         OnlineBulletinFragment: {
@@ -93,6 +110,8 @@ export interface components {
         OnlineBulletinParagraphStyle: {
             fontSize: number;
             lineHeight: number;
+            /** @description Explicit source tracking in em; omitted means zero. Never adjusted automatically to fit edits. */
+            letterSpacing?: number;
             /** @enum {string} */
             align?: "left" | "center" | "right" | "justify";
             indent: number;

@@ -10,6 +10,10 @@ export async function measureRenderedBulletin(root: HTMLElement, fonts: {family:
           if (!faces.length || faces.some(face => face.status !== 'loaded')) throw new Error('missing_font');
         }
         await document.fonts.ready;
+        for (const image of root.querySelectorAll('img')) {
+          try { await image.decode(); } catch { throw new Error('missing_image'); }
+          if (!image.naturalWidth || !image.naturalHeight) throw new Error('missing_image');
+        }
         await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
       })(),
       new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('font_timeout')), timeoutMs); }),
@@ -24,7 +28,8 @@ export async function measureRenderedBulletin(root: HTMLElement, fonts: {family:
       const slotBox = slot.getBoundingClientRect();
       const allocatedHeight = parseFloat(slot.style.minHeight) / .75;
       let exceeds = false;
-      const fragments = Array.from(slot.querySelectorAll<HTMLElement>('[data-sentence-id]')).map(sentence => {
+      const sentenceNodes = Array.from(slot.querySelectorAll<HTMLElement>('[data-sentence-id]'));
+      const fragments = (sentenceNodes.length ? sentenceNodes : [slot]).map(sentence => {
         const range = document.createRange();
         range.selectNodeContents(sentence);
         const lines = Array.from(range.getClientRects()).filter(box => box.width > 0 && box.height > 0).map(box => {
@@ -32,11 +37,11 @@ export async function measureRenderedBulletin(root: HTMLElement, fonts: {family:
           if (box.left < slotBox.left - 1.333 || box.right > slotBox.right + 1.333 || box.top < slotBox.top - 1.333 || box.bottom > slotBox.top + allocatedHeight + 1.333 || box.right > pageBox.right + 1.333 || box.bottom > pageBox.bottom + 1.333) exceeds = true;
           return rectangle(box);
         });
-        return {sentenceId: sentence.dataset.sentenceId!, start: Number(sentence.dataset.fragmentStart), end: Number(sentence.dataset.fragmentEnd), lines};
+        return {sentenceId: sentence.dataset.sentenceId ?? null, start: Number(sentence.dataset.fragmentStart ?? 0), end: Number(sentence.dataset.fragmentEnd ?? Array.from(sentence.textContent ?? '').length), lines};
       });
       const slotId = slot.dataset.slotId!;
       if (exceeds || slot.scrollWidth > slot.clientWidth + 1) overflow.push({pageId: page.dataset.bulletinPage!, slotId});
-      return {slotId, box: rectangle(slotBox), fragments};
+      return {slotId, fixedElement: slot.dataset.fixedElement, box: rectangle(slotBox), fragments};
     });
     return {pageId: page.dataset.bulletinPage!, width: round(pageBox.width * .75), height: round(pageBox.height * .75), slots};
   });

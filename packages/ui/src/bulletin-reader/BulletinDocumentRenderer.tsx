@@ -3,8 +3,10 @@
 import {useRef, type CSSProperties} from 'react';
 import type {components} from './generated.js';
 import {BULLETIN_RENDERER_V1_DIGEST} from './artifact.js';
+import {bulletinFixedText, bulletinFixedGraphic, bulletinFixedDecoration, type BulletinCanonicalMetadata} from './fixed.js';
 
 export {BULLETIN_RENDERER_V1_DIGEST} from './artifact.js';
+export type {BulletinCanonicalMetadata} from './fixed.js';
 export type BulletinDocument = components['schemas']['OnlineBulletinDocument'];
 export type BulletinBlock = components['schemas']['OnlineBulletinBlock'];
 export type BulletinSentence = components['schemas']['OnlineBulletinSentence'];
@@ -70,16 +72,25 @@ export type BulletinDocumentRendererProps = {
   activePage?: string;
   sentenceState?: Readonly<Record<string, BulletinSentenceState>>;
   onSentenceActivate?: (id: string) => void;
+  canonicalMetadata?: BulletinCanonicalMetadata;
 };
 
 /** Pure paper only: authorization, watermark, toolbar and navigation belong to the host. */
-export function BulletinDocumentRenderer({document, manifest = document.layoutManifest, mode, activePage, sentenceState, onSentenceActivate}: BulletinDocumentRendererProps) {
+export function BulletinDocumentRenderer({document, manifest = document.layoutManifest, mode, activePage, sentenceState, onSentenceActivate, canonicalMetadata}: BulletinDocumentRendererProps) {
   requireBulletinRenderer(manifest);
   if (document.schemaVersion !== '1' || document.templateVersion !== manifest.templateVersion) throw new Error('update_required');
   const pointer = useRef<{x: number; y: number; id: number; moved: boolean} | null>(null);
   const activePointers = useRef(new Set<number>());
   const blocks = bulletinBlocks(document);
   const blockIndex = new Map(blocks.map(entry => [entry.block.id, entry]));
+  const headingIDs = new Set(document.components.flatMap(component => {
+    switch (component.type) {
+      case 'bodySection': return [component.bodySection.title.id];
+      case 'hymnLyrics': return component.hymnLyrics.hymns.map(hymn => hymn.title.id);
+      case 'backSummary': case 'announcements': case 'victoriesAndPrayers': return component.items.flatMap(item => item.title ? [item.title.id] : []);
+      default: return [];
+    }
+  }));
   const sentence = (value: BulletinSentence, start: number, end: number, key: string) => {
     const state = sentenceState?.[value.id];
     return <span key={key} data-sentence-id={value.id} data-fragment-start={start} data-fragment-end={end}
@@ -95,15 +106,24 @@ export function BulletinDocumentRenderer({document, manifest = document.layoutMa
       {spansBetween(value, start, end)}
     </span>;
   };
-  const paragraphStyle = (block: BulletinBlock): CSSProperties => ({
-    fontSize: mode === 'paper' ? `${block.style.fontSize}pt` : undefined,
-    lineHeight: mode === 'paper' ? `${block.style.lineHeight}pt` : undefined,
-    textAlign: block.style.align,
-    paddingInlineStart: `${block.style.indent}em`,
-    textIndent: `${block.style.firstLineIndent}em`,
-    marginBlockStart: `${block.style.spaceBefore}em`,
-    marginBlockEnd: `${block.style.spaceAfter}em`,
+  const paragraphStyle = (style: BulletinBlock['style']): CSSProperties => ({
+    fontSize: mode === 'paper' ? `${style.fontSize}pt` : undefined,
+    lineHeight: mode === 'paper' ? `${style.lineHeight}pt` : undefined,
+    letterSpacing: mode === 'paper' ? `${style.letterSpacing ?? 0}em` : '0',
+    textAlign: style.align,
+    paddingInlineStart: `${style.indent}em`,
+    textIndent: `${style.firstLineIndent}em`,
+    marginBlockStart: `${style.spaceBefore}em`,
+    marginBlockEnd: `${mode === 'mobile' ? Math.max(.6, style.spaceAfter) : style.spaceAfter}em`,
   });
+  const fixedContent = (slot: components['schemas']['OnlineBulletinFixedSlot'], pageNumber: number) => {
+    const graphic = bulletinFixedGraphic(slot.element);
+    if (graphic) return <img src={graphic.url} alt="" draggable={false} />;
+    if (bulletinFixedDecoration(slot.element)) return null;
+    const value = bulletinFixedText(slot.element, canonicalMetadata, pageNumber);
+    return value.annotatable ? sentence({id: slot.id, spans: [{text: value.text, fontRole: value.fontRole}]}, 0, Array.from(value.text).length, slot.id) : <span data-font-role={value.fontRole}>{value.text}</span>;
+  };
+  const mobileHeader = (manifest.pages[0]?.fixedSlots ?? []).filter(slot => ['masthead', 'date', 'issueNumber', 'title', 'subtitle', 'vision', 'pastor'].includes(slot.element));
   return <div className="hhc-bulletin-v1" data-bulletin-mode={mode} lang={document.contentLocale}
     onPointerDown={event => {
       activePointers.current.add(event.pointerId);
@@ -115,17 +135,30 @@ export function BulletinDocumentRenderer({document, manifest = document.layoutMa
       if (pointer.current && Math.hypot(event.clientX - pointer.current.x, event.clientY - pointer.current.y) > 8) pointer.current.moved = true;
     }}
     onPointerCancel={event => { activePointers.current.delete(event.pointerId); if (pointer.current) pointer.current.moved = true; }}>
-    {mode === 'mobile' ? blocks.map(({componentId, block}) => <p key={block.id} data-component-id={componentId} data-block-id={block.id} style={paragraphStyle(block)}>
-      {block.sentences.map(value => sentence(value, 0, value.spans.reduce((n, span) => n + Array.from(span.text).length, 0), value.id))}
-    </p>) : document.pages.filter(page => !activePage || page.id === activePage).map(page => {
+    {mode === 'mobile' ? <>
+      {mobileHeader.length > 0 && <header className="hhc-bulletin-mobile-header">{mobileHeader.map(slot => <p key={slot.id} data-fixed-element={slot.element}>{fixedContent(slot, 0)}</p>)}</header>}
+      {blocks.map(({componentId, block}) => {
+        const Tag = headingIDs.has(block.id) ? 'h2' : 'p';
+        return <Tag key={block.id} data-component-id={componentId} data-block-id={block.id} style={paragraphStyle(block.style)}>
+          {block.sentences.map(value => sentence(value, 0, value.spans.reduce((n, span) => n + Array.from(span.text).length, 0), value.id))}
+        </Tag>;
+      })}
+    </> : document.pages.filter(page => !activePage || page.id === activePage).map(page => {
       const layout = manifest.pages.find(entry => entry.pageId === page.id);
       if (!layout) throw new Error('invalid_layout');
       return <section key={page.id} data-bulletin-page={page.id} style={{width: `${page.width}pt`, height: `${page.height}pt`}}>
+        {(layout.fixedSlots ?? []).map(slot => {
+          const style: CSSProperties = {...paragraphStyle(slot.style), left: `${slot.box.x * 100}%`, top: `${slot.box.y * 100}%`, width: `${slot.box.width * 100}%`, minHeight: `${slot.box.height * page.height}pt`};
+          if (bulletinFixedGraphic(slot.element) || bulletinFixedDecoration(slot.element)) style.height = style.minHeight;
+          return <p key={slot.id} data-slot-id={slot.id} data-fixed-element={slot.element} aria-hidden={bulletinFixedDecoration(slot.element) || slot.element === 'backgroundLogo' || undefined} style={style}>
+            {fixedContent(slot, document.pages.indexOf(page))}
+          </p>;
+        })}
         {layout.slots.map(slot => {
           const entry = blockIndex.get(slot.blockId);
           if (!entry || entry.componentId !== slot.componentId) throw new Error('invalid_layout');
           const {block} = entry;
-          const style: CSSProperties = {...paragraphStyle(block), left: `${slot.box.x * 100}%`, top: `${slot.box.y * 100}%`, width: `${slot.box.width * 100}%`, minHeight: `${slot.box.height * page.height}pt`};
+          const style: CSSProperties = {...paragraphStyle(block.style), left: `${slot.box.x * 100}%`, top: `${slot.box.y * 100}%`, width: `${slot.box.width * 100}%`, minHeight: `${slot.box.height * page.height}pt`};
           return <p key={slot.id} data-slot-id={slot.id} data-component-id={slot.componentId} data-block-id={block.id} data-continuation-of={slot.continuationOf} style={style}>
             {slot.fragments.map((fragment, index) => {
               const value = block.sentences.find(s => s.id === fragment.sentenceId);

@@ -237,6 +237,13 @@
           "pageId": {
             "$ref": "#/components/schemas/OnlineBulletinID"
           },
+          "fixedSlots": {
+            "type": "array",
+            "maxItems": 128,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinFixedSlot"
+            }
+          },
           "slots": {
             "type": "array",
             "maxItems": 50000,
@@ -279,6 +286,100 @@
             "items": {
               "$ref": "#/components/schemas/OnlineBulletinFragment"
             }
+          }
+        }
+      },
+      "OnlineBulletinFixedSlot": {
+        "description": "Template-owned geometry for a fixed label or canonical metadata reference. It contains no editable text or executable URL.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "element",
+          "box",
+          "style"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/OnlineBulletinID"
+          },
+          "element": {
+            "type": "string",
+            "enum": [
+              "title",
+              "subtitle",
+              "date",
+              "issueNumber",
+              "pageNumber",
+              "masthead",
+              "vision",
+              "pastor",
+              "contact",
+              "scanHint",
+              "websiteQRLabel",
+              "youtubeQRLabel",
+              "streamQRLabel",
+              "welcomeLabel",
+              "worshipLabel",
+              "workLabel",
+              "wordLabel",
+              "verseLabel",
+              "hymnLabel",
+              "summaryLabel",
+              "announcementsLabel",
+              "prayersLabel",
+              "titleLabel",
+              "speakerLabel",
+              "transcriberLabel",
+              "editorLabel",
+              "authorLabel",
+              "logo",
+              "backgroundLogo",
+              "websiteQR",
+              "youtubeQR",
+              "streamQR",
+              "topRule",
+              "footerRule",
+              "summaryFrame",
+              "announcementsFrame",
+              "prayersFrame"
+            ]
+          },
+          "box": {
+            "$ref": "#/components/schemas/OnlineBulletinBox"
+          },
+          "style": {
+            "$ref": "#/components/schemas/OnlineBulletinParagraphStyle"
+          }
+        }
+      },
+      "OnlineBulletinCanonicalMetadata": {
+        "description": "Read-only snapshot of existing CMS fields, separate from editable document content.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "subtitle",
+          "issueNumber",
+          "date"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "subtitle": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "issueNumber": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
           }
         }
       },
@@ -386,6 +487,12 @@
             "type": "number",
             "minimum": 6,
             "maximum": 192
+          },
+          "letterSpacing": {
+            "type": "number",
+            "minimum": -0.5,
+            "maximum": 1,
+            "description": "Explicit source tracking in em; omitted means zero. Never adjusted automatically to fit edits."
           },
           "align": {
             "type": "string",

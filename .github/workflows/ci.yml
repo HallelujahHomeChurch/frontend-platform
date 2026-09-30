@@ -33,7 +33,10 @@ jobs:
             --skip-dirs /workspace/.git --skip-dirs /workspace/node_modules /workspace
       - run: corepack pnpm build
       - name: Verify immutable bulletin renderer
-        run: node scripts/verify-bulletin-renderer.mjs --base-ref origin/main
+        run: |
+          node scripts/verify-bulletin-renderer.mjs --base-ref origin/main
+          node --test scripts/verify-bulletin-renderer.test.mjs
+          python3 -m unittest discover -s scripts -p test_bulletin_corpus.py
       - name: Measure with pinned Chromium and verified producer fonts
         env:
           HHC_BULLETIN_TEMPLATE_DIR: ${{ runner.temp }}/bulletin-template-v1

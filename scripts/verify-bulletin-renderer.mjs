@@ -10,6 +10,7 @@ const artifact = 'packages/ui/src/bulletin-reader/artifact.ts';
 const frozen = [
   'packages/ui/src/bulletin-reader/BulletinDocumentRenderer.tsx',
   'packages/ui/src/bulletin-reader/measure.ts',
+  'packages/ui/src/bulletin-reader/fixed.ts',
   'packages/ui/src/bulletin-reader/paper.css',
   'packages/ui/src/bulletin-reader/template-assets.json',
   'packages/ui/src/bulletin-reader/font-coverage.json',
@@ -18,8 +19,9 @@ const frozen = [
 const files = [
   'packages/ui/dist/bulletin-reader/BulletinDocumentRenderer.js',
   'packages/ui/dist/bulletin-reader/measure.js',
+  'packages/ui/dist/bulletin-reader/fixed.js',
   'packages/ui/dist/bulletin-reader/paper.css',
-  ...frozen.slice(3),
+  ...frozen.slice(4),
 ];
 const digest = createHash('sha256');
 for (const file of files) digest.update(file).update('\0').update(await readFile(resolve(root, file))).update('\0');

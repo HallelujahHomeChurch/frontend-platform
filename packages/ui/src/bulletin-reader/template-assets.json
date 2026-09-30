@@ -52,5 +52,29 @@
     "mime": "image/png",
     "sizeBytes": 96960,
     "kind": "decoration"
+  },
+  {
+    "url": "/assets/weekly/v1/qr-website-fd963a95c1d3e19834aaf4a814795dddd0fc855d312932626c5c5d0f89f9ea9a.svg",
+    "sha256": "fd963a95c1d3e19834aaf4a814795dddd0fc855d312932626c5c5d0f89f9ea9a",
+    "mime": "image/svg+xml",
+    "sizeBytes": 4061,
+    "kind": "decoration",
+    "sourceUrl": "https://www.alive.org.tw/"
+  },
+  {
+    "url": "/assets/weekly/v1/qr-youtube-9a08ce99ca7d33e0a6a21dea961c0e3626ddabfaa7af5f73ecbc3f807673cef3.svg",
+    "sha256": "9a08ce99ca7d33e0a6a21dea961c0e3626ddabfaa7af5f73ecbc3f807673cef3",
+    "mime": "image/svg+xml",
+    "sizeBytes": 10003,
+    "kind": "decoration",
+    "sourceUrl": "https://www.youtube.com/c/%E5%93%88%E5%88%A9%E8%B7%AF%E4%BA%9E%E5%AE%B6%E6%95%99%E6%9C%83"
+  },
+  {
+    "url": "/assets/weekly/v1/qr-stream-709ad7995ea45f27898bfbddb62d0bff38f526922e9c3825d561a8195c0974cb.svg",
+    "sha256": "709ad7995ea45f27898bfbddb62d0bff38f526922e9c3825d561a8195c0974cb",
+    "mime": "image/svg+xml",
+    "sizeBytes": 4914,
+    "kind": "decoration",
+    "sourceUrl": "https://www.youtube.com/@GKPMusic777"
   }
 ]

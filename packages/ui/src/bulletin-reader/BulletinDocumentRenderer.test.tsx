@@ -35,6 +35,23 @@ describe('immutable shared bulletin renderer', () => {
     expect(container.querySelector('[data-font-role="scripture"]')).toHaveTextContent('。');
     expect(container.querySelector('canvas,iframe,object,embed,img')).toBeNull();
   });
+  it('composes fixed labels with the canonical metadata snapshot without duplicating editable text', () => {
+    const document = fixture();
+    const style = {fontSize: 18, lineHeight: 24, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0};
+    document.layoutManifest.pages[0].fixedSlots = [
+      {id: 'masthead', element: 'masthead', box: {x: .1, y: .01, width: .8, height: .04}, style},
+      {id: 'canonical-title', element: 'title', box: {x: .1, y: .06, width: .8, height: .04}, style},
+      {id: 'issue-label', element: 'issueNumber', box: {x: .1, y: .11, width: .4, height: .04}, style},
+    ];
+    const activate = vi.fn();
+    const {container} = render(<UI.BulletinDocumentRenderer document={document} mode="paper" canonicalMetadata={{title: '信息主題', subtitle: '', issueNumber: 1739, date: '2026-09-20'}} onSentenceActivate={activate} />);
+    expect(container).toHaveTextContent('哈利路亞家教會 週報');
+    expect(container).toHaveTextContent('信息主題');
+    expect(container).toHaveTextContent('第 1739 期');
+    fireEvent.click(container.querySelector('[data-sentence-id="canonical-title"]')!);
+    expect(activate).toHaveBeenCalledWith('canonical-title');
+    expect(JSON.stringify(document)).not.toContain('信息主題');
+  });
   it('reflows whole sentences once on mobile, retaining selection and highlight identity', () => {
     const document = fixture();
     const activate = vi.fn();
@@ -55,6 +72,32 @@ describe('immutable shared bulletin renderer', () => {
     fireEvent.click(sentence);
     expect(activate).toHaveBeenCalledTimes(2);
     selection.removeAllRanges();
+  });
+  it('renders only registry-owned graphics and native rules, never document asset URLs', () => {
+    const document = fixture();
+    const style = {fontSize: 16, lineHeight: 20, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0};
+    document.layoutManifest.pages[0].fixedSlots = ['logo', 'websiteQR', 'topRule', 'summaryFrame'].map((element, index) => ({id: `fixed-${index}`, element: element as components['schemas']['OnlineBulletinFixedSlot']['element'], box: {x: .1, y: index * .1, width: .2, height: .08}, style}));
+    const {container} = render(<UI.BulletinDocumentRenderer document={document} mode="paper" />);
+    expect(container.querySelectorAll('img')).toHaveLength(2);
+    expect(container.querySelector('[data-fixed-element="websiteQR"] img')).toHaveAttribute('src', expect.stringMatching(/^\/assets\/weekly\/v1\/qr-website-[a-f0-9]{64}\.svg$/));
+    expect(container.querySelector('[data-fixed-element="logo"] img')).toHaveAttribute('alt', '');
+    expect(container.querySelector('[data-fixed-element="topRule"]')).toHaveAttribute('aria-hidden', 'true');
+    expect(container.querySelector('[data-fixed-element="summaryFrame"]')).toHaveAttribute('aria-hidden', 'true');
+    expect(container.querySelector('[data-fixed-element="websiteQR"] [data-sentence-id]')).toBeNull();
+  });
+  it('preserves explicit PDF tracking instead of shrinking the glyph size', () => {
+    const document = fixture();
+    Object.assign(document.components[0].items![0].blocks[0].style, {letterSpacing: -.2});
+    const {container} = render(<UI.BulletinDocumentRenderer document={document} mode="paper" />);
+    const slot = container.querySelector<HTMLElement>('[data-slot-id="slot1"]')!;
+    expect(slot.style.fontSize).toBe('16pt');
+    expect(slot.style.letterSpacing).toBe('-0.2em');
+  });
+  it('keeps canonical cover headings in the mobile composition', () => {
+    const document = fixture();
+    document.layoutManifest.pages[0].fixedSlots = [{id: 'mobile-title', element: 'title', box: {x: .1, y: .1, width: .8, height: .1}, style: {fontSize: 24, lineHeight: 28, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0}}];
+    const {container} = render(<UI.BulletinDocumentRenderer document={document} mode="mobile" canonicalMetadata={{title: '信息主題', subtitle: '', issueNumber: 1739, date: '2026-09-20'}} />);
+    expect(container.querySelector('[data-sentence-id="mobile-title"]')).toHaveTextContent('信息主題');
   });
   it('refuses unsupported or mismatched renderers rather than silently using latest', () => {
     for (const patch of [{rendererVersion: 'v2'}, {rendererArtifactSha256: '0'.repeat(64)}]) {
