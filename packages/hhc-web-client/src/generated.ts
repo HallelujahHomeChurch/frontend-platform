@@ -4,6 +4,109 @@
  */
 
 export interface paths {
+    "/legal/common": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** getCommonLegalSnapshot */
+        get: operations["getCommonLegalSnapshot"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/legal/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** getMemberLegalSnapshot */
+        get: operations["getMemberLegalSnapshot"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/legal/{scope}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** getLegalDraft */
+        get: operations["getLegalDraft"];
+        /** saveLegalDraft */
+        put: operations["saveLegalDraft"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/legal/{scope}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** publishLegalDraft */
+        post: operations["publishLegalDraft"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/priv/legal/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** resolveCurrentLegalSnapshot */
+        post: operations["resolveCurrentLegalSnapshot"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/priv/legal/snapshots/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** resolveLegalSnapshot */
+        post: operations["resolveLegalSnapshot"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/bulletins/watermark-lookups": {
         parameters: {
             query?: never;
@@ -1637,6 +1740,67 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @enum {string} */
+        LegalScope: "common" | "verified-member";
+        /**
+         * @default zh-Hant
+         * @enum {string}
+         */
+        LegalLocale: "zh-Hant" | "zh-Hans" | "en" | "ja" | "ko";
+        LegalVersion: string;
+        LegalDocuments: {
+            terms: components["schemas"]["LegalPageContentV1"];
+            privacy: components["schemas"]["LegalPageContentV1"];
+        };
+        LegalManifest: {
+            scope: components["schemas"]["LegalScope"];
+            locale: components["schemas"]["LegalLocale"];
+            termsVersion: components["schemas"]["LegalVersion"];
+            privacyNoticeVersion: components["schemas"]["LegalVersion"];
+            commonTermsVersion?: components["schemas"]["LegalVersion"];
+            commonPrivacyNoticeVersion?: components["schemas"]["LegalVersion"];
+            termsSHA256: string;
+            privacySHA256: string;
+        };
+        LegalSnapshot: {
+            /** Format: uuid */
+            snapshotId: string;
+            manifest: components["schemas"]["LegalManifest"];
+            documents: components["schemas"]["LegalDocuments"];
+        };
+        LegalDraft: {
+            scope: components["schemas"]["LegalScope"];
+            termsVersion: components["schemas"]["LegalVersion"];
+            privacyNoticeVersion: components["schemas"]["LegalVersion"];
+            commonTermsVersion?: components["schemas"]["LegalVersion"];
+            commonPrivacyNoticeVersion?: components["schemas"]["LegalVersion"];
+            /** Format: int64 */
+            version?: number;
+            translations: {
+                "zh-Hant": components["schemas"]["LegalDocuments"];
+                "zh-Hans": components["schemas"]["LegalDocuments"];
+                en: components["schemas"]["LegalDocuments"];
+                ja: components["schemas"]["LegalDocuments"];
+                ko: components["schemas"]["LegalDocuments"];
+            };
+        };
+        LegalCurrentInput: {
+            scope: components["schemas"]["LegalScope"];
+            locale: components["schemas"]["LegalLocale"];
+        };
+        LegalSnapshotInput: {
+            /** Format: uuid */
+            snapshotId: string;
+        };
+        LegalSnapshotEnvelope: {
+            data: components["schemas"]["LegalSnapshot"];
+        };
+        LegalDraftEnvelope: {
+            data: components["schemas"]["LegalDraft"];
+        };
+        LegalSnapshotsEnvelope: {
+            data: components["schemas"]["LegalSnapshot"][];
+        };
         MemberRecording: {
             /** Format: uuid */
             id: string;
@@ -3871,6 +4035,212 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getCommonLegalSnapshot: {
+        parameters: {
+            query?: {
+                locale?: components["schemas"]["LegalLocale"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description LegalSnapshotEnvelope */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalSnapshotEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getMemberLegalSnapshot: {
+        parameters: {
+            query?: {
+                locale?: components["schemas"]["LegalLocale"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description LegalSnapshotEnvelope */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalSnapshotEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getLegalDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scope: components["schemas"]["LegalScope"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description LegalDraftEnvelope */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalDraftEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    saveLegalDraft: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                scope: components["schemas"]["LegalScope"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LegalDraft"];
+            };
+        };
+        responses: {
+            /** @description LegalDraftEnvelope */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalDraftEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    publishLegalDraft: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                scope: components["schemas"]["LegalScope"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description LegalSnapshotsEnvelope */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalSnapshotsEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    resolveCurrentLegalSnapshot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LegalCurrentInput"];
+            };
+        };
+        responses: {
+            /** @description LegalSnapshotEnvelope */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalSnapshotEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    resolveLegalSnapshot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LegalSnapshotInput"];
+            };
+        };
+        responses: {
+            /** @description LegalSnapshotEnvelope */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalSnapshotEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
     lookupBulletinWatermark: {
         parameters: {
             query?: never;

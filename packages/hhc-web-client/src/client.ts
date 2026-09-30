@@ -2,6 +2,11 @@ import createClient from 'openapi-fetch'
 
 import type { components, paths } from './generated.js'
 
+export type LegalScope = components['schemas']['LegalScope']
+export type LegalSnapshot = components['schemas']['LegalSnapshot']
+export type LegalManifest = components['schemas']['LegalManifest']
+export type LegalDraft = components['schemas']['LegalDraft']
+export type LegalDocuments = components['schemas']['LegalDocuments']
 export type ActiveStatement = components['schemas']['ActiveStatement']
 export type StatementNotificationRequest = components['schemas']['StatementNotificationRequest']
 export type ContentLocale = components['schemas']['ContentLocale']
@@ -164,6 +169,23 @@ export function createHhcWebClient(options: {
   }
 
   return {
+    async getCommonLegalSnapshot(locale: ContentLocale, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/legal/common', {params: {query: {locale}}, signal, cache: 'no-store'}))).data
+    },
+    async getMemberLegalSnapshot(locale: ContentLocale, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/member/legal/current', {params: {query: {locale}}, signal, cache: 'no-store'}))).data
+    },
+    async getLegalDraft(scope: LegalScope, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/legal/{scope}', {params: {path: {scope}}, signal, cache: 'no-store'}))).data
+    },
+    async saveLegalDraft(scope: LegalScope, version: number, body: LegalDraft) {
+      if (body.scope !== scope || !Number.isSafeInteger(version) || version < 0) throw new Error('Invalid legal draft version or scope')
+      return (await unwrap(client.PUT('/admin/legal/{scope}', {params: {path: {scope}, header: {'If-Match': `"${version}"`}}, body, cache: 'no-store'}))).data
+    },
+    async publishLegalDraft(scope: LegalScope, version: number) {
+      if (!Number.isSafeInteger(version) || version < 1) throw new Error('Invalid legal publication version')
+      return (await unwrap(client.POST('/admin/legal/{scope}/publish', {params: {path: {scope}, header: {'If-Match': `"${version}"`}}, cache: 'no-store'}))).data
+    },
     async listMemberRecordings(signal?: AbortSignal) {
       return (await unwrap(client.GET('/member/recordings', { signal, cache: 'no-store' }))).data
     },

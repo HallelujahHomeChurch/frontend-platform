@@ -209,13 +209,13 @@ function getCookieValue(cookie: string, name: string): string | undefined {
   }
 }
 
-function serializeCookie(name: string, value: string, context?: CookieContext, includeProductionDomain = true): string {
+function serializeCookie(name: string, value: string, context?: CookieContext, includeProductionDomain = true, maxAge = cookieMaxAge): string {
   const browserContext = typeof location === 'undefined' ? undefined : location;
   const hostname = context?.hostname ?? browserContext?.hostname;
   const protocol = context?.protocol ?? browserContext?.protocol;
   const parts = [
     `${name}=${encodeURIComponent(value)}`,
-    `Max-Age=${cookieMaxAge}`,
+    `Max-Age=${maxAge}`,
     'Path=/',
     'SameSite=Lax'
   ];
@@ -227,3 +227,19 @@ function serializeCookie(name: string, value: string, context?: CookieContext, i
 
   return parts.join('; ');
 }
+
+export type AnalyticsChoice = 'unknown' | 'granted' | 'denied';
+export const analyticsCookieName = 'hhc_analytics';
+export function readAnalyticsChoice(cookie: string): AnalyticsChoice {
+  if (cookie.split(';').filter(part => part.trim().startsWith(`${analyticsCookieName}=`)).length !== 1) return 'unknown';
+  const value = getCookieValue(cookie, analyticsCookieName);
+  return value === 'v1.granted' ? 'granted' : value === 'v1.denied' ? 'denied' : 'unknown';
+}
+export function getAnalyticsChoiceCookie(choice: Exclude<AnalyticsChoice, 'unknown'>, context?: CookieContext): string {
+  const hostname = context?.hostname ?? (typeof location === 'undefined' ? undefined : location.hostname);
+  return serializeCookie(analyticsCookieName, `v1.${choice}`, context, hostname === 'www.alive.org.tw' || hostname === 'account.alive.org.tw', 180 * 24 * 60 * 60);
+}
+export {createAnalyticsController} from './analytics.js';
+export type {AnalyticsSink, SafeAnalyticsEvent, SafeAnalyticsRoute} from './analytics.js';
+
+export {analyticsMessages} from './analytics-copy.js';

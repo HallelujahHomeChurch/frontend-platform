@@ -56,3 +56,4 @@ function browserLockManager(): RefreshLockManager | undefined {
   if (typeof navigator === 'undefined' || !navigator.locks) return undefined;
   return navigator.locks as unknown as RefreshLockManager;
 }
+export * from './legal.js';
