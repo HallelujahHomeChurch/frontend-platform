@@ -52,6 +52,20 @@ describe('immutable shared bulletin renderer', () => {
     expect(activate).toHaveBeenCalledWith('canonical-title');
     expect(JSON.stringify(document)).not.toContain('信息主題');
   });
+  it('does not repeat first-line indentation or paragraph spacing on continuation slots', () => {
+    const document = fixture();
+    document.components[0].items![0].blocks[0].style.spaceBefore = 1;
+    document.components[0].items![0].blocks[0].style.spaceAfter = 1;
+    const {container} = render(<UI.BulletinDocumentRenderer document={document} mode="paper" />);
+    const first = container.querySelector<HTMLElement>('[data-slot-id="slot1"]')!;
+    const continuation = container.querySelector<HTMLElement>('[data-slot-id="slot2"]')!;
+    expect(first.style.textIndent).toBe('1em');
+    expect(first.style.marginBlockStart).toBe('1em');
+    expect(Number.parseFloat(continuation.style.textIndent)).toBe(0);
+    expect(Number.parseFloat(continuation.style.marginBlockStart)).toBe(0);
+    expect(Number.parseFloat(first.style.marginBlockEnd)).toBe(0);
+    expect(continuation.style.marginBlockEnd).toBe('1em');
+  });
   it('reflows whole sentences once on mobile, retaining selection and highlight identity', () => {
     const document = fixture();
     const activate = vi.fn();

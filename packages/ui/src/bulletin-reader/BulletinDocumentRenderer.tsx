@@ -83,6 +83,7 @@ export function BulletinDocumentRenderer({document, manifest = document.layoutMa
   const activePointers = useRef(new Set<number>());
   const blocks = bulletinBlocks(document);
   const blockIndex = new Map(blocks.map(entry => [entry.block.id, entry]));
+  const continuedSlotIDs = new Set(manifest.pages.flatMap(page => page.slots.flatMap(slot => slot.continuationOf ? [slot.continuationOf] : [])));
   const headingIDs = new Set(document.components.flatMap(component => {
     switch (component.type) {
       case 'bodySection': return [component.bodySection.title.id];
@@ -159,6 +160,8 @@ export function BulletinDocumentRenderer({document, manifest = document.layoutMa
           if (!entry || entry.componentId !== slot.componentId) throw new Error('invalid_layout');
           const {block} = entry;
           const style: CSSProperties = {...paragraphStyle(block.style), left: `${slot.box.x * 100}%`, top: `${slot.box.y * 100}%`, width: `${slot.box.width * 100}%`, minHeight: `${slot.box.height * page.height}pt`};
+          if (slot.continuationOf) { style.textIndent = '0'; style.marginBlockStart = '0'; }
+          if (continuedSlotIDs.has(slot.id)) style.marginBlockEnd = '0';
           return <p key={slot.id} data-slot-id={slot.id} data-component-id={slot.componentId} data-block-id={block.id} data-continuation-of={slot.continuationOf} style={style}>
             {slot.fragments.map((fragment, index) => {
               const value = block.sentences.find(s => s.id === fragment.sentenceId);
