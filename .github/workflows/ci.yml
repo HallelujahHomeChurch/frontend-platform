@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
@@ -30,9 +32,19 @@ jobs:
             fs --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 \
             --skip-dirs /workspace/.git --skip-dirs /workspace/node_modules /workspace
       - run: corepack pnpm build
+      - name: Verify immutable bulletin renderer
+        run: node scripts/verify-bulletin-renderer.mjs --base-ref origin/main
+      - name: Measure with pinned Chromium and verified producer fonts
+        env:
+          HHC_BULLETIN_TEMPLATE_DIR: ${{ runner.temp }}/bulletin-template-v1
+        run: |
+          corepack pnpm exec playwright install --with-deps chromium
+          node scripts/fetch-bulletin-template-assets.mjs "$HHC_BULLETIN_TEMPLATE_DIR"
+          node --test scripts/measure-bulletin-layout.test.mjs
       - run: corepack pnpm test
       - run: corepack pnpm lint
       - run: corepack pnpm --filter @hallelujahhomechurch/hhc-web-client check:generated
+      - run: corepack pnpm --filter @hallelujahhomechurch/hhc-web-client check:bulletin
       - run: corepack pnpm check:packages
       - run: corepack pnpm pack:packages
       - run: corepack pnpm test:consumers

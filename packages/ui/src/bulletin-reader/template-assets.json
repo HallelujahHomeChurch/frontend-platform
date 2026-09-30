@@ -1,0 +1,56 @@
+[
+  {
+    "url": "/assets/weekly/v1/body-ba497525931c22348ff17863ecd1b49a0d54010145cd2f2adce115505dbde7b0.woff2",
+    "sha256": "ba497525931c22348ff17863ecd1b49a0d54010145cd2f2adce115505dbde7b0",
+    "mime": "font/woff2",
+    "sizeBytes": 3998724,
+    "kind": "font",
+    "family": "HHC Weekly Serif",
+    "weight": 400,
+    "roles": [
+      "body",
+      "reference",
+      "foreignText"
+    ],
+    "licenseUrl": "/assets/weekly/v1/noto-license-5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6.txt",
+    "sourceUrl": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/notoseriftc/NotoSerifTC%5Bwght%5D.ttf",
+    "sourceSha256": "0077e18f57c6908f4a000969880940bdb0dad057c0e8d98b49dc364c3d1b09c6"
+  },
+  {
+    "url": "/assets/weekly/v1/scripture-b1893f67069a077b26d64f8910136d598146c69e42ed87eeeb19b14ccb5bcc4e.woff2",
+    "sha256": "b1893f67069a077b26d64f8910136d598146c69e42ed87eeeb19b14ccb5bcc4e",
+    "mime": "font/woff2",
+    "sizeBytes": 4921276,
+    "kind": "font",
+    "family": "HHC Weekly Kai",
+    "weight": 400,
+    "roles": [
+      "scripture"
+    ],
+    "licenseUrl": "/assets/weekly/v1/wenkai-license-5c7a27c7ad419621c541a95f7143e98d32c873e60e8790d09268619b98afb71b.txt",
+    "sourceUrl": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/lxgwwenkaitc/LXGWWenKaiTC-Regular.ttf",
+    "sourceSha256": "4fcc5aec11cbbf737b0cfab7b63796f7f280087a7a656b2f13342cd5e5318d95"
+  },
+  {
+    "url": "/assets/weekly/v1/emphasis-9c02738cbfdf263d60baceaf5e97dd1dd39230daf64e98bf91be07a8609fb962.woff2",
+    "sha256": "9c02738cbfdf263d60baceaf5e97dd1dd39230daf64e98bf91be07a8609fb962",
+    "mime": "font/woff2",
+    "sizeBytes": 5389056,
+    "kind": "font",
+    "family": "HHC Weekly Kai",
+    "weight": 700,
+    "roles": [
+      "emphasis"
+    ],
+    "licenseUrl": "/assets/weekly/v1/wenkai-license-5c7a27c7ad419621c541a95f7143e98d32c873e60e8790d09268619b98afb71b.txt",
+    "sourceUrl": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/lxgwwenkaitc/LXGWWenKaiTC-Bold.ttf",
+    "sourceSha256": "5c9feadfd928f3ae3860e7d001ad3d0d0c55b0157fff08cd4d51b51aca677f23"
+  },
+  {
+    "url": "/assets/weekly/v1/logo-5dabd62c4acc8761d650410cb9f2ecf53de967fe8609544d7146b86a592584f5.png",
+    "sha256": "5dabd62c4acc8761d650410cb9f2ecf53de967fe8609544d7146b86a592584f5",
+    "mime": "image/png",
+    "sizeBytes": 96960,
+    "kind": "decoration"
+  }
+]

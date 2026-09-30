@@ -14,7 +14,8 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./styles.css": "./dist/styles.css"
+    "./styles.css": "./dist/styles.css",
+    "./bulletin-paper.css": "./dist/bulletin-reader/paper.css"
   },
   "repository": {
     "type": "git",
@@ -26,7 +27,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json && cp src/styles.css dist/styles.css",
+    "build": "tsc -p tsconfig.json && cp src/styles.css dist/styles.css && cp src/bulletin-reader/paper.css dist/bulletin-reader/paper.css",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "test": "vitest",

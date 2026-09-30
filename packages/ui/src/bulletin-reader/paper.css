@@ -1,0 +1,63 @@
+@font-face {
+  font-family: 'HHC Weekly Serif';
+  src: url('/assets/weekly/v1/body-ba497525931c22348ff17863ecd1b49a0d54010145cd2f2adce115505dbde7b0.woff2') format('woff2');
+  font-weight: 400;
+  font-display: block;
+}
+@font-face {
+  font-family: 'HHC Weekly Kai';
+  src: url('/assets/weekly/v1/scripture-b1893f67069a077b26d64f8910136d598146c69e42ed87eeeb19b14ccb5bcc4e.woff2') format('woff2');
+  font-weight: 400;
+  font-display: block;
+}
+@font-face {
+  font-family: 'HHC Weekly Kai';
+  src: url('/assets/weekly/v1/emphasis-9c02738cbfdf263d60baceaf5e97dd1dd39230daf64e98bf91be07a8609fb962.woff2') format('woff2');
+  font-weight: 700;
+  font-display: block;
+}
+.hhc-bulletin-v1 {
+  color: #111;
+  font-family: 'HHC Weekly Serif', serif;
+  font-weight: 400;
+  font-style: normal;
+  font-synthesis: none;
+  letter-spacing: 0;
+  word-spacing: 0;
+  text-transform: none;
+  text-shadow: none;
+  writing-mode: horizontal-tb;
+  direction: ltr;
+}
+.hhc-bulletin-v1 [data-bulletin-page] {
+  position: relative;
+  box-sizing: border-box;
+  background: #fff;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  isolation: isolate;
+}
+.hhc-bulletin-v1 p {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+.hhc-bulletin-v1 [data-slot-id] { position: absolute; }
+.hhc-bulletin-v1 [data-font-role='body'],
+.hhc-bulletin-v1 [data-font-role='reference'],
+.hhc-bulletin-v1 [data-font-role='foreignText'] { font-family: 'HHC Weekly Serif', serif; font-weight: 400; }
+.hhc-bulletin-v1 [data-sentence-id], .hhc-bulletin-v1 [data-font-role] { color: inherit; font-style: normal; letter-spacing: 0; text-transform: none; }
+.hhc-bulletin-v1 [data-font-role='scripture'] { font-family: 'HHC Weekly Kai', serif; font-weight: 400; }
+.hhc-bulletin-v1 [data-font-role='emphasis'] { font-family: 'HHC Weekly Kai', serif; font-weight: 700; }
+.hhc-bulletin-v1 [data-highlight='yellow'] { background: rgb(255 225 35 / 38%); }
+.hhc-bulletin-v1 [data-highlight='red'] { background: rgb(255 115 130 / 30%); }
+.hhc-bulletin-v1 [data-highlight='blue'] { background: rgb(75 180 255 / 30%); }
+.hhc-bulletin-v1 [data-selected] { outline: 1px solid #2563eb; outline-offset: 1px; }
+.hhc-bulletin-v1 [data-sentence-id]:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.hhc-bulletin-v1[data-bulletin-mode='mobile'] { font-size: 18px; line-height: 1.8; background: #fff; }
+.hhc-bulletin-v1[data-bulletin-mode='mobile'] p { margin-block-end: .6em; }
