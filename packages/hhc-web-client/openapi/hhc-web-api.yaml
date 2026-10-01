@@ -913,6 +913,60 @@ paths:
         '404': { $ref: '#/components/responses/ReaderUnavailable' }
         '409': { description: 'Request, receipt or revision conflict; retry with a new clientRequestId and valid revision', content: { application/json: { schema: { $ref: '#/components/schemas/ErrorEnvelope' } } } }
         '503': { $ref: '#/components/responses/Error' }
+  /member/bulletins/{issueID}/versions/{locale}/online/reader/state:
+    get:
+      operationId: getBulletinReaderState
+      summary: Read and migrate the authorized account's private reader state
+      description: Rechecks the exact PDF entitlement before lookup. Migrates through retained published checkpoints only; draft saves do not count. Optional direct sentence mappings are bounded to 8 MiB, not by transition count. Missing or corrupt history returns mapping_history_unavailable without modifying private data. No account ID is accepted from the client.
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+        - { name: issueID, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: locale, in: path, required: true, schema: { $ref: '#/components/schemas/BulletinLocale' } }
+        - { name: series, in: query, required: true, schema: { $ref: '#/components/schemas/BulletinSeries' } }
+        - { name: fromRevision, in: query, schema: { type: integer, minimum: 1, maximum: 9007199254740991 } }
+      responses:
+        '200': { description: Account-scoped state and optional direct mappings, content: { application/json: { schema: { $ref: '#/components/schemas/ReaderStateEnvelope' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '404': { $ref: '#/components/responses/ReaderUnavailable' }
+        '409': { description: mapping_history_unavailable; retain local changes, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorEnvelope' } } } }
+        '503': { $ref: '#/components/responses/Error' }
+  /member/bulletins/{issueID}/versions/{locale}/online/reader/mutations:
+    post:
+      operationId: mutateBulletinReader
+      summary: Apply an ordered private reader mutation batch
+      description: Same download entitlement and current publication are required even for replay. Maximum body 1 MiB, 100 operations, 500 anchors per action/note, and 10000 Unicode code points per note. Validation/persistence failure rolls back the whole batch. Terminal results and canonical payload fingerprints are retained for 91 days. Unseen operations older than 90 days return recovery_required. revision_changed is nonterminal and retains the mutation ID for mapped retry. Reusing a terminal ID with a different payload returns mutation_id_conflict. Client creation time is not authorization; values more than five minutes ahead of the server are rejected.
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+        - { name: issueID, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: locale, in: path, required: true, schema: { $ref: '#/components/schemas/BulletinLocale' } }
+        - { name: series, in: query, required: true, schema: { $ref: '#/components/schemas/BulletinSeries' } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [mutations]
+              properties:
+                mutations: { type: array, minItems: 1, maxItems: 100, items: { $ref: '#/components/schemas/ReaderMutation' } }
+      responses:
+        '200': { description: Ordered results and current account state, content: { application/json: { schema: { $ref: '#/components/schemas/ReaderMutationEnvelope' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '404': { $ref: '#/components/responses/ReaderUnavailable' }
+        '409': { description: mutation_id_conflict or mapping_history_unavailable; retain local changes, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorEnvelope' } } } }
+        '413': { description: request_too_large; no operations applied, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorEnvelope' } } } }
+        '503': { $ref: '#/components/responses/Error' }
   /member/bulletins/latest:
     get:
       operationId: getLatestProtectedBulletin
@@ -3459,6 +3513,209 @@ components:
           type: array
           maxItems: 256
           items: { $ref: '#/components/schemas/ReaderItem' }
+    ReaderHighlightColor:
+      type: string
+      enum: [yellow, red, blue]
+    ReaderAnchorIDs:
+      type: array
+      minItems: 1
+      maxItems: 500
+      uniqueItems: true
+      items: { $ref: '#/components/schemas/OnlineBulletinID' }
+    ReaderPrivateAnchor:
+      type: object
+      additionalProperties: false
+      required: [sentenceId, quote, componentId, pageId]
+      properties:
+        sentenceId: { type: string }
+        quote: { type: string }
+        componentId: { type: string }
+        pageId: { type: string }
+    ReaderHighlight:
+      type: object
+      additionalProperties: false
+      required: [sentenceId, color, quote, active, version, updatedAt]
+      properties:
+        sentenceId: { $ref: '#/components/schemas/OnlineBulletinID' }
+        color: { $ref: '#/components/schemas/ReaderHighlightColor' }
+        quote: { type: string }
+        active: { type: boolean }
+        version: { type: integer, minimum: 1 }
+        updatedAt: { type: string, format: date-time }
+    ReaderNote:
+      type: object
+      additionalProperties: false
+      required: [id, text, sentenceIds, inactiveAnchors, quote, version, deleted, reanchorRequired, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        text: { type: string, maxLength: 10000 }
+        sentenceIds: { type: array, maxItems: 500, items: { $ref: '#/components/schemas/OnlineBulletinID' } }
+        inactiveAnchors: { type: array, items: { $ref: '#/components/schemas/ReaderPrivateAnchor' } }
+        quote: { type: string }
+        version: { type: integer, minimum: 1 }
+        deleted: { type: boolean }
+        reanchorRequired: { type: boolean, description: Oversized automatic split retains private text/quote without truncation; explicit re-anchoring is required. }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    ReaderProgress:
+      type: object
+      additionalProperties: false
+      required: [pageId, componentId, sentenceId, recordedAt, updatedAt]
+      properties:
+        pageId: { type: string }
+        componentId: { type: string }
+        sentenceId: { type: string }
+        recordedAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    ReaderMigrationConflict:
+      type: object
+      additionalProperties: false
+      required: [id, sentenceIds, sources]
+      properties:
+        id: { type: string, format: uuid }
+        sentenceIds: { $ref: '#/components/schemas/ReaderAnchorIDs' }
+        sources: { type: array, items: { $ref: '#/components/schemas/ReaderHighlight' } }
+    ReaderPrivateState:
+      type: object
+      additionalProperties: false
+      required: [documentId, appliedRevision, currentRevision, highlights, notes, progress, conflicts]
+      properties:
+        documentId: { type: string, format: uuid }
+        appliedRevision: { type: integer, minimum: 1 }
+        currentRevision: { type: integer, minimum: 1 }
+        highlights: { type: array, items: { $ref: '#/components/schemas/ReaderHighlight' } }
+        notes: { type: array, items: { $ref: '#/components/schemas/ReaderNote' } }
+        progress: { oneOf: [{ $ref: '#/components/schemas/ReaderProgress' }, { type: 'null' }] }
+        conflicts: { type: array, items: { $ref: '#/components/schemas/ReaderMigrationConflict' } }
+    ReaderStateEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [state]
+          properties:
+            state: { $ref: '#/components/schemas/ReaderPrivateState' }
+            fromRevision: { type: integer, minimum: 1 }
+            mappings:
+              type: array
+              items:
+                type: object
+                additionalProperties: false
+                required: [fromSentenceId, toSentenceIds]
+                properties:
+                  fromSentenceId: { $ref: '#/components/schemas/OnlineBulletinID' }
+                  toSentenceIds: { type: array, items: { $ref: '#/components/schemas/OnlineBulletinID' } }
+        meta: { type: object, additionalProperties: true }
+        error: { type: 'null' }
+    ReaderMutationResult:
+      type: object
+      additionalProperties: false
+      required: [mutationId, status, revision]
+      properties:
+        mutationId: { type: string, format: uuid }
+        status: { type: string, enum: [applied, revision_changed, recovery_required, note_conflict, migration_conflict, conflict_not_found] }
+        revision: { type: integer, minimum: 1 }
+        note: { $ref: '#/components/schemas/ReaderNote' }
+    ReaderMutationEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [state, results]
+          properties:
+            state: { $ref: '#/components/schemas/ReaderPrivateState' }
+            results: { type: array, maxItems: 100, items: { $ref: '#/components/schemas/ReaderMutationResult' } }
+        meta: { type: object, additionalProperties: true }
+        error: { type: 'null' }
+    ReaderMutation:
+      allOf:
+        - type: object
+          additionalProperties: false
+          required: [mutationId, createdAt, documentRevision, kind, payload]
+          properties:
+            mutationId: { type: string, format: uuid }
+            createdAt: { type: string, format: date-time }
+            documentRevision: { type: integer, minimum: 1, maximum: 9007199254740991 }
+            baseVersion: { type: integer, minimum: 1 }
+            kind: { type: string, enum: [setHighlight, clearHighlight, createNote, editNote, deleteNote, setProgress, resolveHighlightMigrationConflict] }
+            payload: { type: object }
+        - oneOf:
+            - properties:
+                kind: { const: setHighlight }
+                payload:
+                  type: object
+                  additionalProperties: false
+                  required: [sentenceIds, color]
+                  properties:
+                    sentenceIds: { $ref: '#/components/schemas/ReaderAnchorIDs' }
+                    color: { $ref: '#/components/schemas/ReaderHighlightColor' }
+              not: { required: [baseVersion] }
+            - properties:
+                kind: { const: clearHighlight }
+                payload:
+                  type: object
+                  additionalProperties: false
+                  required: [sentenceIds]
+                  properties:
+                    sentenceIds: { $ref: '#/components/schemas/ReaderAnchorIDs' }
+              not: { required: [baseVersion] }
+            - properties:
+                kind: { const: createNote }
+                payload:
+                  type: object
+                  additionalProperties: false
+                  required: [noteId, sentenceIds, text]
+                  properties:
+                    noteId: { type: string, format: uuid }
+                    sentenceIds: { $ref: '#/components/schemas/ReaderAnchorIDs' }
+                    text: { type: string, minLength: 1, maxLength: 10000 }
+              not: { required: [baseVersion] }
+            - required: [baseVersion]
+              properties:
+                kind: { const: editNote }
+                payload:
+                  type: object
+                  additionalProperties: false
+                  required: [noteId, text]
+                  properties:
+                    noteId: { type: string, format: uuid }
+                    text: { type: string, minLength: 1, maxLength: 10000 }
+            - required: [baseVersion]
+              properties:
+                kind: { const: deleteNote }
+                payload:
+                  type: object
+                  additionalProperties: false
+                  required: [noteId]
+                  properties:
+                    noteId: { type: string, format: uuid }
+            - properties:
+                kind: { const: setProgress }
+                payload:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                    pageId: { type: string, maxLength: 128 }
+                    componentId: { type: string, maxLength: 128 }
+                    sentenceId: { type: string, maxLength: 128 }
+              not: { required: [baseVersion] }
+            - properties:
+                kind: { const: resolveHighlightMigrationConflict }
+                payload:
+                  type: object
+                  additionalProperties: false
+                  required: [conflictId, chosenColor, currentRevision]
+                  properties:
+                    conflictId: { type: string, format: uuid }
+                    chosenColor: { $ref: '#/components/schemas/ReaderHighlightColor' }
+                    currentRevision: { type: integer, minimum: 1, maximum: 9007199254740991 }
+              not: { required: [baseVersion] }
     ReaderAccessInput:
       description: At most 4096 encoded bytes. Each client request UUID is account-bound and immutable for the receipt retention period.
       type: object

@@ -540,6 +540,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/member/bulletins/{issueID}/versions/{locale}/online/reader/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read and migrate the authorized account's private reader state
+         * @description Rechecks the exact PDF entitlement before lookup. Migrates through retained published checkpoints only; draft saves do not count. Optional direct sentence mappings are bounded to 8 MiB, not by transition count. Missing or corrupt history returns mapping_history_unavailable without modifying private data. No account ID is accepted from the client.
+         */
+        get: operations["getBulletinReaderState"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/bulletins/{issueID}/versions/{locale}/online/reader/mutations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Apply an ordered private reader mutation batch
+         * @description Same download entitlement and current publication are required even for replay. Maximum body 1 MiB, 100 operations, 500 anchors per action/note, and 10000 Unicode code points per note. Validation/persistence failure rolls back the whole batch. Terminal results and canonical payload fingerprints are retained for 91 days. Unseen operations older than 90 days return recovery_required. revision_changed is nonterminal and retains the mutation ID for mapped retry. Reusing a terminal ID with a different payload returns mutation_id_conflict. Client creation time is not authorization; values more than five minutes ahead of the server are rejected.
+         */
+        post: operations["mutateBulletinReader"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/member/bulletins/latest": {
         parameters: {
             query?: never;
@@ -2036,6 +2076,162 @@ export interface components {
             type: "backSummary" | "announcements" | "victoriesAndPrayers";
             items: components["schemas"]["ReaderItem"][];
         };
+        /** @enum {string} */
+        ReaderHighlightColor: "yellow" | "red" | "blue";
+        ReaderAnchorIDs: components["schemas"]["OnlineBulletinID"][];
+        ReaderPrivateAnchor: {
+            sentenceId: string;
+            quote: string;
+            componentId: string;
+            pageId: string;
+        };
+        ReaderHighlight: {
+            sentenceId: components["schemas"]["OnlineBulletinID"];
+            color: components["schemas"]["ReaderHighlightColor"];
+            quote: string;
+            active: boolean;
+            version: number;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        ReaderNote: {
+            /** Format: uuid */
+            id: string;
+            text: string;
+            sentenceIds: components["schemas"]["OnlineBulletinID"][];
+            inactiveAnchors: components["schemas"]["ReaderPrivateAnchor"][];
+            quote: string;
+            version: number;
+            deleted: boolean;
+            /** @description Oversized automatic split retains private text/quote without truncation; explicit re-anchoring is required. */
+            reanchorRequired: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        ReaderProgress: {
+            pageId: string;
+            componentId: string;
+            sentenceId: string;
+            /** Format: date-time */
+            recordedAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        ReaderMigrationConflict: {
+            /** Format: uuid */
+            id: string;
+            sentenceIds: components["schemas"]["ReaderAnchorIDs"];
+            sources: components["schemas"]["ReaderHighlight"][];
+        };
+        ReaderPrivateState: {
+            /** Format: uuid */
+            documentId: string;
+            appliedRevision: number;
+            currentRevision: number;
+            highlights: components["schemas"]["ReaderHighlight"][];
+            notes: components["schemas"]["ReaderNote"][];
+            progress: components["schemas"]["ReaderProgress"] | null;
+            conflicts: components["schemas"]["ReaderMigrationConflict"][];
+        };
+        ReaderStateEnvelope: {
+            data: {
+                state: components["schemas"]["ReaderPrivateState"];
+                fromRevision?: number;
+                mappings?: {
+                    fromSentenceId: components["schemas"]["OnlineBulletinID"];
+                    toSentenceIds: components["schemas"]["OnlineBulletinID"][];
+                }[];
+            };
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        ReaderMutationResult: {
+            /** Format: uuid */
+            mutationId: string;
+            /** @enum {string} */
+            status: "applied" | "revision_changed" | "recovery_required" | "note_conflict" | "migration_conflict" | "conflict_not_found";
+            revision: number;
+            note?: components["schemas"]["ReaderNote"];
+        };
+        ReaderMutationEnvelope: {
+            data: {
+                state: components["schemas"]["ReaderPrivateState"];
+                results: components["schemas"]["ReaderMutationResult"][];
+            };
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        ReaderMutation: {
+            /** Format: uuid */
+            mutationId: string;
+            /** Format: date-time */
+            createdAt: string;
+            documentRevision: number;
+            baseVersion?: number;
+            /** @enum {string} */
+            kind: "setHighlight" | "clearHighlight" | "createNote" | "editNote" | "deleteNote" | "setProgress" | "resolveHighlightMigrationConflict";
+            payload: Record<string, never>;
+        } & ({
+            /** @constant */
+            kind?: "setHighlight";
+            payload?: {
+                sentenceIds: components["schemas"]["ReaderAnchorIDs"];
+                color: components["schemas"]["ReaderHighlightColor"];
+            };
+        } | {
+            /** @constant */
+            kind?: "clearHighlight";
+            payload?: {
+                sentenceIds: components["schemas"]["ReaderAnchorIDs"];
+            };
+        } | {
+            /** @constant */
+            kind?: "createNote";
+            payload?: {
+                /** Format: uuid */
+                noteId: string;
+                sentenceIds: components["schemas"]["ReaderAnchorIDs"];
+                text: string;
+            };
+        } | {
+            /** @constant */
+            kind?: "editNote";
+            payload?: {
+                /** Format: uuid */
+                noteId: string;
+                text: string;
+            };
+        } | {
+            /** @constant */
+            kind?: "deleteNote";
+            payload?: {
+                /** Format: uuid */
+                noteId: string;
+            };
+        } | {
+            /** @constant */
+            kind?: "setProgress";
+            payload?: {
+                pageId?: string;
+                componentId?: string;
+                sentenceId?: string;
+            };
+        } | {
+            /** @constant */
+            kind?: "resolveHighlightMigrationConflict";
+            payload?: {
+                /** Format: uuid */
+                conflictId: string;
+                chosenColor: components["schemas"]["ReaderHighlightColor"];
+                currentRevision: number;
+            };
+        });
         /** @description At most 4096 encoded bytes. Each client request UUID is account-bound and immutable for the receipt retention period. */
         ReaderAccessInput: {
             /** Format: uuid */
@@ -5781,6 +5977,98 @@ export interface operations {
             404: components["responses"]["ReaderUnavailable"];
             /** @description Request, receipt or revision conflict; retry with a new clientRequestId and valid revision */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            503: components["responses"]["Error"];
+        };
+    };
+    getBulletinReaderState: {
+        parameters: {
+            query: {
+                series: components["schemas"]["BulletinSeries"];
+                fromRevision?: number;
+            };
+            header?: never;
+            path: {
+                issueID: string;
+                locale: components["schemas"]["BulletinLocale"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Account-scoped state and optional direct mappings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReaderStateEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            404: components["responses"]["ReaderUnavailable"];
+            /** @description mapping_history_unavailable; retain local changes */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            503: components["responses"]["Error"];
+        };
+    };
+    mutateBulletinReader: {
+        parameters: {
+            query: {
+                series: components["schemas"]["BulletinSeries"];
+            };
+            header?: never;
+            path: {
+                issueID: string;
+                locale: components["schemas"]["BulletinLocale"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    mutations: components["schemas"]["ReaderMutation"][];
+                };
+            };
+        };
+        responses: {
+            /** @description Ordered results and current account state */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReaderMutationEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            404: components["responses"]["ReaderUnavailable"];
+            /** @description mutation_id_conflict or mapping_history_unavailable; retain local changes */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description request_too_large; no operations applied */
+            413: {
                 headers: {
                     [name: string]: unknown;
                 };

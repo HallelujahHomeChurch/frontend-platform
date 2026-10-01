@@ -32,6 +32,12 @@ export type ProtectedBulletin = components['schemas']['ProtectedBulletin']
 export type MemberOnlineDocument = components['schemas']['ReaderDocument']
 export type OnlineBulletinAccess = components['schemas']['ReaderAccessEnvelope']['data']
 export type OnlineBulletinDiscovery = components['schemas']['ReaderDiscoveryEnvelope']['data']
+export type BulletinReaderState = components['schemas']['ReaderPrivateState']
+export type BulletinReaderStateResponse = components['schemas']['ReaderStateEnvelope']['data']
+export type BulletinReaderMutation = components['schemas']['ReaderMutation']
+export type BulletinReaderMutationResponse = components['schemas']['ReaderMutationEnvelope']['data']
+export type BulletinReaderNote = components['schemas']['ReaderNote']
+export type BulletinReaderHighlightColor = components['schemas']['ReaderHighlightColor']
 export type MemberRecording = components['schemas']['MemberRecording']
 export type RecordingFile = components['schemas']['RecordingFile']
 export type MemberRecordingPlayback = components['schemas']['MemberRecordingPlayback']
@@ -183,6 +189,12 @@ export function createHhcWebClient(options: {
   }
 
   return {
+    async getReaderState({issueId, series, locale, fromRevision, signal}: {issueId: string; series: BulletinSeries; locale: BulletinLocale; fromRevision?: number; signal?: AbortSignal}): Promise<BulletinReaderStateResponse> {
+      return (await unwrap(client.GET('/member/bulletins/{issueID}/versions/{locale}/online/reader/state', {params: {path: {issueID: issueId, locale}, query: {series, fromRevision}}, cache: 'no-store', signal}))).data
+    },
+    async applyReaderMutations({issueId, series, locale, mutations, signal}: {issueId: string; series: BulletinSeries; locale: BulletinLocale; mutations: BulletinReaderMutation[]; signal?: AbortSignal}): Promise<BulletinReaderMutationResponse> {
+      return (await unwrap(client.POST('/member/bulletins/{issueID}/versions/{locale}/online/reader/mutations', {params: {path: {issueID: issueId, locale}, query: {series}}, body: {mutations}, cache: 'no-store', signal}))).data
+    },
     async listOnlineBulletinDiscovery(params: {series: BulletinSeries; offset?: number; limit?: number; issueNumber?: number; signal?: AbortSignal} & ({locale: BulletinLocale; locales?: never} | {locales: readonly BulletinLocale[]; locale?: never})) {
       const {signal, locales, ...selectors} = params
       const query = {...selectors, locales: locales?.join(',')}

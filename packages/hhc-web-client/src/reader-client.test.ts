@@ -9,6 +9,28 @@ async function response(body = JSON.stringify({data:{document:{revision:2},acces
 }
 
 describe('member reader client',()=>{
+  it('forwards private state and atomic mutations with the existing bearer callback', async () => {
+    const results = [{mutationId: input.clientRequestId, status: 'revision_changed', revision: 3}]
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({data: {state: {documentId: 'document', currentRevision: 3}, results}, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}}))
+    const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'member-token', fetcher})
+    const controller = new AbortController()
+    await client.getReaderState({issueId: input.issueId, series: 'children', locale: 'en', fromRevision: 2, signal: controller.signal})
+    const mutations = [{mutationId: input.clientRequestId, createdAt: '2026-10-02T00:00:00Z', documentRevision: 2, kind: 'clearHighlight' as const, payload: {sentenceIds: ['a', 'b']}}]
+    expect((await client.applyReaderMutations({...input, mutations, signal: controller.signal})).results).toEqual(results)
+    const requests = fetcher.mock.calls.map(call => call[0] as Request)
+    expect(requests[0]!.url).toContain('/versions/en/online/reader/state?series=children&fromRevision=2')
+    expect(requests[1]!.url).toContain('/versions/zh-Hant/online/reader/mutations?series=general')
+    expect(await requests[1]!.json()).toEqual({mutations})
+    for (const request of requests) {expect(request.cache).toBe('no-store'); expect(request.headers.get('Authorization')).toBe('Bearer member-token')}
+    controller.abort()
+    expect(requests.every(request => request.signal.aborted)).toBe(true)
+  })
+  it.each(['mapping_history_unavailable', 'mutation_id_conflict'])('retains private reader %s for recovery, without automatic replay', async code => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({data: null, error: {code, message: 'Keep pending operations'}, meta: {}}), {status: 409, headers: {'Content-Type': 'application/json'}}))
+    const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'member-token', fetcher})
+    await expect(client.getReaderState(input)).rejects.toMatchObject({status: 409, code, bulletinUnavailable: false})
+    expect(fetcher).toHaveBeenCalledTimes(1)
+  })
   it('requests one authoritative page for a bounded language set',async()=>{
     const fetcher=vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({data:{items:[],total:0,offset:12,limit:12},meta:{},error:null}),{headers:{'Content-Type':'application/json'}}))
     const client=createHhcWebClient({baseUrl:'/api',getAccessToken:()=> 'token',fetcher})
