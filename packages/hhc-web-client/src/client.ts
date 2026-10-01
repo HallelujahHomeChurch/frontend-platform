@@ -29,6 +29,9 @@ export type BulletinWatermarkIssueInvestigationPage = {
   nextCursor?: string
 }
 export type ProtectedBulletin = components['schemas']['ProtectedBulletin']
+export type MemberOnlineDocument = components['schemas']['ReaderDocument']
+export type OnlineBulletinAccess = components['schemas']['ReaderAccessEnvelope']['data']
+export type OnlineBulletinDiscovery = components['schemas']['ReaderDiscoveryEnvelope']['data']
 export type MemberRecording = components['schemas']['MemberRecording']
 export type RecordingFile = components['schemas']['RecordingFile']
 export type MemberRecordingPlayback = components['schemas']['MemberRecordingPlayback']
@@ -110,8 +113,9 @@ export class HhcWebApiError extends Error {
   readonly contentId?: string
   readonly currentVersion?: number
   readonly canonicalVersion?: number
+  readonly bulletinUnavailable: boolean
 
-  constructor(status: number, code: string, message: string, contentId?: string, versions?: {currentVersion?: number; canonicalVersion?: number}) {
+  constructor(status: number, code: string, message: string, contentId?: string, versions?: {currentVersion?: number; canonicalVersion?: number}, bulletinUnavailable = false) {
     super(message)
     this.name = 'HhcWebApiError'
     this.status = status
@@ -119,6 +123,7 @@ export class HhcWebApiError extends Error {
     this.contentId = contentId
     this.currentVersion = versions?.currentVersion
     this.canonicalVersion = versions?.canonicalVersion
+    this.bulletinUnavailable = bulletinUnavailable
   }
 }
 
@@ -178,6 +183,31 @@ export function createHhcWebClient(options: {
   }
 
   return {
+    async listOnlineBulletinDiscovery(params: {series: BulletinSeries; locale: BulletinLocale; offset?: number; limit?: number; issueNumber?: number; signal?: AbortSignal}) {
+      const {signal, ...query} = params
+      return (await unwrap(client.GET('/member/bulletins/online', {params: {query}, cache: 'no-store', signal}))).data
+    },
+    async openOnlineBulletin(params: {issueId: string; series: BulletinSeries; locale: BulletinLocale; signal?: AbortSignal} & components['schemas']['ReaderAccessInput']): Promise<OnlineBulletinAccess> {
+      const {issueId, series, locale, signal, ...body} = params
+      const result = await client.POST('/member/bulletins/{issueID}/versions/{locale}/online/access', {params: {path: {issueID: issueId, locale}, query: {series}}, body, cache: 'no-store', parseAs: 'stream', signal})
+      if (result.error !== undefined || !result.response.ok) throw apiError(result.response, result.error)
+      const invalid = () => new HhcWebApiError(result.response.status, 'invalid_response', 'The reader response is invalid.')
+      const hash = result.response.headers.get('X-HHC-Content-SHA256') ?? ''
+      if (!result.data || !/^[a-f0-9]{64}$/.test(hash) || result.response.headers.get('Content-Type')?.split(';')[0]?.trim().toLowerCase() !== 'application/json') {
+        await result.data?.cancel()
+        throw invalid()
+      }
+      const bytes = await readBoundedBytes(result.response, result.data, 9 * 1024 * 1024)
+      signal?.throwIfAborted()
+      const digest = [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))].map(value => value.toString(16).padStart(2, '0')).join('')
+      signal?.throwIfAborted()
+      if (digest !== hash) throw invalid()
+      let envelope: components['schemas']['ReaderAccessEnvelope']
+      try { envelope = JSON.parse(new TextDecoder('utf-8', {fatal: true}).decode(bytes)) }
+      catch { throw invalid() }
+      if (!envelope || envelope.error !== null || !envelope.data?.document || !envelope.data.access) throw invalid()
+      return envelope.data
+    },
     async getOnlineBulletinState(edition: OnlineBulletinSelector, signal?: AbortSignal) {
       return (await unwrap(client.GET('/admin/bulletins/{issueId}/online/{series}/{contentLocale}', {params: {path: edition}, cache: 'no-store', signal}))).data
     },
@@ -217,29 +247,12 @@ export function createHhcWebClient(options: {
       const invalid = () => new HhcWebApiError(result.response.status, 'invalid_response', 'The source PDF response is invalid.')
       const checksum = result.response.headers.get('X-HHC-Source-SHA256') ?? ''
       const canonicalVersion = Number(result.response.headers.get('X-HHC-Source-Version'))
-      const length = result.response.headers.get('Content-Length')
-      const maximum = 20 * 1024 * 1024
-      if (!result.data || result.response.headers.get('Content-Type')?.split(';')[0]?.trim().toLowerCase() !== 'application/pdf' || !/^[a-f0-9]{64}$/.test(checksum) || !Number.isSafeInteger(canonicalVersion) || canonicalVersion < 1 || (length !== null && (!/^\d+$/.test(length) || Number(length) > maximum))) {
+      if (!result.data || result.response.headers.get('Content-Type')?.split(';')[0]?.trim().toLowerCase() !== 'application/pdf' || !/^[a-f0-9]{64}$/.test(checksum) || !Number.isSafeInteger(canonicalVersion) || canonicalVersion < 1) {
         await result.data?.cancel()
         throw invalid()
       }
-      const reader = result.data.getReader()
-      const chunks: Uint8Array[] = []
-      let size = 0
-      try {
-        for (;;) {
-          const chunk = await reader.read()
-          if (chunk.done) break
-          size += chunk.value.byteLength
-          if (size > maximum) { await reader.cancel(); throw invalid() }
-          chunks.push(chunk.value)
-        }
-      } finally { reader.releaseLock() }
-      if (length !== null && Number(length) !== size) throw invalid()
-      const bytes = new Uint8Array(size)
-      let offset = 0
-      for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength }
-      if (size < 5 || new TextDecoder().decode(bytes.subarray(0, 5)) !== '%PDF-') throw invalid()
+      const bytes = await readBoundedBytes(result.response, result.data, 20 * 1024 * 1024)
+      if (bytes.length < 5 || new TextDecoder().decode(bytes.subarray(0, 5)) !== '%PDF-') throw invalid()
       return {bytes: bytes.buffer, checksum, canonicalVersion}
     },
     async listMemberRecordings(signal?: AbortSignal) {
@@ -674,10 +687,37 @@ function apiError(response: Response, value: unknown) {
     (error?.message ?? response.statusText) || 'Request failed.',
     typeof error?.contentId === 'string' ? error.contentId : undefined,
     {currentVersion: version(meta?.currentVersion), canonicalVersion: version(meta?.canonicalVersion)},
+    response.status === 404 && error?.code === 'not_found' && response.headers.get('X-HHC-Bulletin-Access') === 'unavailable',
   )
 }
 
 export type HhcWebClient = ReturnType<typeof createHhcWebClient>
+
+async function readBoundedBytes(response: Response, stream: ReadableStream<Uint8Array>, maximum: number): Promise<Uint8Array<ArrayBuffer>> {
+  const invalid = () => new HhcWebApiError(response.status, 'invalid_response', 'The response bytes are invalid.')
+  const length = response.headers.get('Content-Length')
+  if (length !== null && (!/^\d+$/.test(length) || Number(length) > maximum)) {
+    await stream.cancel()
+    throw invalid()
+  }
+  const reader = stream.getReader()
+  const chunks: Uint8Array[] = []
+  let size = 0
+  try {
+    for (;;) {
+      const chunk = await reader.read()
+      if (chunk.done) break
+      size += chunk.value.byteLength
+      if (size > maximum) { await reader.cancel(); throw invalid() }
+      chunks.push(chunk.value)
+    }
+  } finally { reader.releaseLock() }
+  if (length !== null && Number(length) !== size) throw invalid()
+  const bytes = new Uint8Array(size)
+  let offset = 0
+  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength }
+  return bytes
+}
 
 function absoluteBaseUrl(value: string) {
   const base = value.replace(/\/$/, '')

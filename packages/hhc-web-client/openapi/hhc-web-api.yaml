@@ -861,6 +861,56 @@ paths:
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
         '404': { $ref: '#/components/responses/ProtectedBulletinNotFound' }
         '503': { $ref: '#/components/responses/Error' }
+  /member/bulletins/online:
+    get:
+      operationId: discoverOnlineBulletins
+      summary: Discover the authorized union of published PDF and Online editions
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+        - $ref: '#/components/parameters/BulletinSeries'
+        - $ref: '#/components/parameters/BulletinLocale'
+        - { name: offset, in: query, schema: { type: integer, minimum: 0, maximum: 1000000, default: 0 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+        - { name: issueNumber, in: query, schema: { type: integer, minimum: 1, maximum: 2147483647 } }
+      responses:
+        '200': { description: One authoritative union page, content: { application/json: { schema: { $ref: '#/components/schemas/ReaderDiscoveryEnvelope' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '404': { $ref: '#/components/responses/ReaderUnavailable' }
+        '503': { $ref: '#/components/responses/Error' }
+  /member/bulletins/{issueID}/versions/{locale}/online/access:
+    post:
+      operationId: openOnlineBulletin
+      summary: Issue authorized structured content with a durable reader receipt
+      description: Rechecks the exact PDF entitlement on every request. Content is returned only after receipt commit. Same account and clientRequestId replay the original validation window; changed inputs conflict. Receipt reuse requires the same account, document and published revision. Retained published revisions remain readable only while the edition is published. No full-content GET exists. Seven-day offline validity is independent of the fixed 365-day receipt retention.
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+        - { name: issueID, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: locale, in: path, required: true, schema: { $ref: '#/components/schemas/BulletinLocale' } }
+        - $ref: '#/components/parameters/BulletinSeries'
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/ReaderAccessInput' } } }
+      responses:
+        '200':
+          description: Committed receipt and source-free content; verify exact response bytes before decoding or persisting
+          headers:
+            X-HHC-Content-SHA256: { description: Lowercase SHA-256 of exact UTF-8 response body bytes, schema: { $ref: '#/components/schemas/OnlineBulletinHash' } }
+            Cache-Control: { schema: { type: string, const: 'private, no-store' } }
+          content: { application/json: { schema: { $ref: '#/components/schemas/ReaderAccessEnvelope' } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '404': { $ref: '#/components/responses/ReaderUnavailable' }
+        '409': { description: 'Request, receipt or revision conflict; retry with a new clientRequestId and valid revision', content: { application/json: { schema: { $ref: '#/components/schemas/ErrorEnvelope' } } } }
+        '503': { $ref: '#/components/responses/Error' }
   /member/bulletins/latest:
     get:
       operationId: getLatestProtectedBulletin
@@ -2995,6 +3045,12 @@ components:
         application/json:
           schema: { $ref: '#/components/schemas/TranslationPreviewInput' }
   responses:
+    ReaderUnavailable:
+      description: Generic not_found for denied, missing or unpublished edition. Only this owner marker together with typed not_found is terminal; an unrelated router or gateway 404 must not purge offline data.
+      headers:
+        X-HHC-Bulletin-Access: { schema: { type: string, const: unavailable } }
+        Cache-Control: { schema: { type: string, const: 'private, no-store' } }
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorEnvelope' } } }
     Health:
       description: Service process is healthy or ready.
       content:
@@ -3211,6 +3267,327 @@ components:
       description: Public revalidation policy for Site Layout projections.
       schema: { type: string, const: 'public, max-age=30, must-revalidate' }
   schemas:
+    ReaderSentence:
+      description: Dynamic sentence anchor. The canonical- ID prefix is reserved for shared canonical metadata anchors across layouts.
+      type: object
+      additionalProperties: false
+      required: [id, spans]
+      properties:
+        id: { $ref: '#/components/schemas/OnlineBulletinID' }
+        spans:
+          type: array
+          minItems: 1
+          maxItems: 32
+          items: { $ref: '#/components/schemas/OnlineBulletinSpan' }
+    ReaderBlock:
+      type: object
+      additionalProperties: false
+      required: [id, style, sentences]
+      properties:
+        id: { $ref: '#/components/schemas/OnlineBulletinID' }
+        style: { $ref: '#/components/schemas/OnlineBulletinParagraphStyle' }
+        sentences:
+          type: array
+          minItems: 1
+          maxItems: 1024
+          items: { $ref: '#/components/schemas/ReaderSentence' }
+    ReaderItem:
+      type: object
+      additionalProperties: false
+      required: [id, blocks]
+      properties:
+        id: { $ref: '#/components/schemas/OnlineBulletinID' }
+        title: { $ref: '#/components/schemas/ReaderBlock' }
+        blocks:
+          type: array
+          maxItems: 4096
+          items: { $ref: '#/components/schemas/ReaderBlock' }
+    ReaderCover:
+      type: object
+      additionalProperties: false
+      required: [welcome, worship, work, wordQuestions, weeklyVerses]
+      properties:
+        welcome:
+          type: array
+          minItems: 1
+          maxItems: 4096
+          items: { $ref: '#/components/schemas/ReaderBlock' }
+        worship:
+          type: array
+          minItems: 1
+          maxItems: 256
+          items: { $ref: '#/components/schemas/ReaderItem' }
+        work:
+          type: array
+          minItems: 1
+          maxItems: 256
+          items: { $ref: '#/components/schemas/ReaderItem' }
+        wordQuestions:
+          type: array
+          minItems: 1
+          maxItems: 256
+          items: { $ref: '#/components/schemas/ReaderItem' }
+        weeklyVerses:
+          type: array
+          minItems: 1
+          maxItems: 4096
+          items: { $ref: '#/components/schemas/ReaderBlock' }
+    ReaderBodySection:
+      type: object
+      additionalProperties: false
+      required: [kind, title, blocks]
+      properties:
+        kind: { type: string, enum: [sermon, testimony, teaching, reflection, unknown], description: Unknown creates a blocking review issue. }
+        header: { $ref: '#/components/schemas/ReaderBodyHeader' }
+        title: { $ref: '#/components/schemas/ReaderBlock' }
+        subtitle: { $ref: '#/components/schemas/ReaderBlock' }
+        contributors:
+          type: array
+          maxItems: 32
+          items:
+            type: object
+            additionalProperties: false
+            required: [role, name]
+            properties:
+              role: { type: string, enum: [speaker, transcriber, editor, author] }
+              name: { $ref: '#/components/schemas/ReaderBlock' }
+        blocks:
+          type: array
+          minItems: 1
+          maxItems: 4096
+          items: { $ref: '#/components/schemas/ReaderBlock' }
+    ReaderBodyHeader:
+      description: First body section only. Source lecture date is independent of canonical issue publication date; all fields use sentence anchors. Missing contributor roles block publication review.
+      type: object
+      additionalProperties: false
+      required: [lectureDate, contributors]
+      properties:
+        lectureDate: { $ref: '#/components/schemas/ReaderBlock' }
+        contributors:
+          type: array
+          maxItems: 3
+          items:
+            type: object
+            additionalProperties: false
+            required: [role, name]
+            properties:
+              role: { type: string, enum: [speaker, transcriber, editor] }
+              name: { $ref: '#/components/schemas/ReaderBlock' }
+    ReaderHymnLyrics:
+      type: object
+      additionalProperties: false
+      required: [hymns]
+      properties:
+        hymns:
+          type: array
+          minItems: 1
+          maxItems: 32
+          items:
+            type: object
+            additionalProperties: false
+            required: [id, title, sections]
+            properties:
+              id: { $ref: '#/components/schemas/OnlineBulletinID' }
+              number: { $ref: '#/components/schemas/ReaderBlock' }
+              title: { $ref: '#/components/schemas/ReaderBlock' }
+              sourceLabel: { $ref: '#/components/schemas/ReaderBlock' }
+              sections:
+                type: array
+                minItems: 1
+                maxItems: 64
+                items:
+                  type: object
+                  additionalProperties: false
+                  required: [id, kind, lines]
+                  properties:
+                    id: { $ref: '#/components/schemas/OnlineBulletinID' }
+                    kind: { type: string, enum: [verse, chorus, bridge] }
+                    lines:
+                      type: array
+                      minItems: 1
+                      maxItems: 4096
+                      items: { $ref: '#/components/schemas/ReaderBlock' }
+    ReaderComponent:
+      oneOf:
+        - $ref: '#/components/schemas/ReaderCoverComponent'
+        - $ref: '#/components/schemas/ReaderBodyComponent'
+        - $ref: '#/components/schemas/ReaderHymnComponent'
+        - $ref: '#/components/schemas/ReaderBackComponent'
+      discriminator:
+        propertyName: type
+        mapping:
+          cover: '#/components/schemas/ReaderCoverComponent'
+          bodySection: '#/components/schemas/ReaderBodyComponent'
+          hymnLyrics: '#/components/schemas/ReaderHymnComponent'
+          backSummary: '#/components/schemas/ReaderBackComponent'
+          announcements: '#/components/schemas/ReaderBackComponent'
+          victoriesAndPrayers: '#/components/schemas/ReaderBackComponent'
+    ReaderCoverComponent:
+      type: object
+      additionalProperties: false
+      required: [id, type, cover]
+      properties:
+        id: { $ref: '#/components/schemas/OnlineBulletinID' }
+        type: { type: string, const: cover }
+        cover: { $ref: '#/components/schemas/ReaderCover' }
+    ReaderBodyComponent:
+      type: object
+      additionalProperties: false
+      required: [id, type, bodySection]
+      properties:
+        id: { $ref: '#/components/schemas/OnlineBulletinID' }
+        type: { type: string, const: bodySection }
+        bodySection: { $ref: '#/components/schemas/ReaderBodySection' }
+    ReaderHymnComponent:
+      type: object
+      additionalProperties: false
+      required: [id, type, hymnLyrics]
+      properties:
+        id: { $ref: '#/components/schemas/OnlineBulletinID' }
+        type: { type: string, const: hymnLyrics }
+        hymnLyrics: { $ref: '#/components/schemas/ReaderHymnLyrics' }
+    ReaderBackComponent:
+      type: object
+      additionalProperties: false
+      required: [id, type, items]
+      properties:
+        id: { $ref: '#/components/schemas/OnlineBulletinID' }
+        type: { type: string, enum: [backSummary, announcements, victoriesAndPrayers] }
+        items:
+          type: array
+          maxItems: 256
+          items: { $ref: '#/components/schemas/ReaderItem' }
+    ReaderAccessInput:
+      description: At most 4096 encoded bytes. Each client request UUID is account-bound and immutable for the receipt retention period.
+      type: object
+      additionalProperties: false
+      required: [clientRequestId]
+      properties:
+        clientRequestId: { type: string, format: uuid }
+        revision: { type: integer, minimum: 1, maximum: 9007199254740991 }
+        receiptId: { type: string, format: uuid }
+    ReaderPDFAction:
+      description: Current PDF action identity, never a private asset URL.
+      type: object
+      additionalProperties: false
+      required: [issueId, series, locale]
+      properties:
+        issueId: { type: string, format: uuid }
+        series: { $ref: '#/components/schemas/BulletinSeries' }
+        locale: { $ref: '#/components/schemas/BulletinLocale' }
+    ReaderReceiptExport:
+      type: object
+      additionalProperties: false
+      required: [receiptId, accountId, documentId, issueId, series, contentLocale, revision, channel, privacyNoticeVersion, issuedAt, expiresAt]
+      properties:
+        receiptId: { type: string, format: uuid }
+        accountId: { type: string, format: uuid }
+        documentId: { type: string, format: uuid }
+        issueId: { type: string, format: uuid }
+        series: { $ref: '#/components/schemas/BulletinSeries' }
+        contentLocale: { $ref: '#/components/schemas/BulletinLocale' }
+        revision: { type: integer, minimum: 1 }
+        channel: { type: string, const: online_reader }
+        privacyNoticeVersion: { type: string }
+        issuedAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+    ReaderValidationExport:
+      type: object
+      additionalProperties: false
+      required: [clientRequestId, accountId, receiptId, requestHash, validatedAt, offlineValidUntil]
+      properties:
+        clientRequestId: { type: string, format: uuid }
+        accountId: { type: string, format: uuid }
+        receiptId: { type: string, format: uuid }
+        requestHash: { $ref: '#/components/schemas/OnlineBulletinHash' }
+        validatedAt: { type: string, format: date-time }
+        offlineValidUntil: { type: string, format: date-time }
+    ReaderDiscoveryItem:
+      type: object
+      additionalProperties: false
+      required: [issueId, issueNumber, issueDate, series, contentLocale, canonicalMetadata, onlineRevision, pdfPublished]
+      properties:
+        issueId: { type: string, format: uuid }
+        issueNumber: { type: [integer, 'null'], description: 'Current canonical route identity, independent of the frozen publication metadata.' }
+        issueDate: { type: string, format: date }
+        series: { $ref: '#/components/schemas/BulletinSeries' }
+        contentLocale: { $ref: '#/components/schemas/BulletinLocale' }
+        canonicalMetadata: { $ref: '#/components/schemas/OnlineBulletinCanonicalMetadata' }
+        documentId: { type: string, format: uuid }
+        onlineRevision: { type: [integer, 'null'], minimum: 1 }
+        pdfPublished: { type: boolean }
+        download: { $ref: '#/components/schemas/ReaderPDFAction' }
+    ReaderDiscoveryEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [items, total, offset, limit]
+          properties:
+            items: { type: array, maxItems: 100, items: { $ref: '#/components/schemas/ReaderDiscoveryItem' } }
+            total: { type: integer, minimum: 0 }
+            offset: { type: integer, minimum: 0, maximum: 1000000 }
+            limit: { type: integer, minimum: 1, maximum: 100 }
+        meta: { type: object, additionalProperties: true }
+        error: { type: 'null' }
+    ReaderAccessEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [document, access]
+          properties:
+            document: { $ref: '#/components/schemas/ReaderDocument' }
+            access: { $ref: '#/components/schemas/ReaderAccess' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: 'null' }
+    ReaderAccess:
+      type: object
+      additionalProperties: false
+      required: [accountId, documentId, series, contentLocale, revision, currentRevision, receiptId, traceCode, validatedAt, offlineValidUntil]
+      properties:
+        accountId: { type: string, format: uuid }
+        documentId: { type: string, format: uuid }
+        series: { $ref: '#/components/schemas/BulletinSeries' }
+        contentLocale: { $ref: '#/components/schemas/BulletinLocale' }
+        revision: { type: integer, minimum: 1 }
+        currentRevision: { type: integer, minimum: 1 }
+        receiptId: { type: string, format: uuid }
+        traceCode: { type: string, description: Opaque formatted visible code; never account identity. }
+        validatedAt: { type: string, format: date-time }
+        offlineValidUntil: { type: string, format: date-time, description: Exactly 604800 seconds after validatedAt. }
+    ReaderDocument:
+      type: object
+      additionalProperties: false
+      required: [issueId, documentId, series, contentLocale, revision, canonicalMetadata, metadataSyncPending, pdfPublished, content]
+      properties:
+        issueId: { type: string, format: uuid }
+        documentId: { type: string, format: uuid }
+        series: { $ref: '#/components/schemas/BulletinSeries' }
+        contentLocale: { $ref: '#/components/schemas/BulletinLocale' }
+        revision: { type: integer, minimum: 1 }
+        canonicalMetadata: { $ref: '#/components/schemas/OnlineBulletinCanonicalMetadata' }
+        metadataSyncPending: { type: boolean }
+        pdfPublished: { type: boolean }
+        download: { $ref: '#/components/schemas/ReaderPDFAction' }
+        content: { $ref: '#/components/schemas/ReaderContent' }
+    ReaderContent:
+      description: Closed published rendering projection with no extraction provenance. Layout proof binds the original worker measurement; it is not a hash of this redacted DTO. Verify the response byte digest separately.
+      type: object
+      additionalProperties: false
+      required: [schemaVersion, templateVersion, pages, layoutManifest, components]
+      properties:
+        schemaVersion: { type: string, const: '1' }
+        templateVersion: { type: string, const: v1 }
+        pages: { type: array, minItems: 4, maxItems: 80, items: { $ref: '#/components/schemas/OnlineBulletinPage' } }
+        layoutManifest: { $ref: '#/components/schemas/OnlineBulletinLayoutManifest' }
+        components: { type: array, minItems: 6, maxItems: 256, items: { $ref: '#/components/schemas/ReaderComponent' } }
     OnlineBulletinComparisonValue:
       oneOf:
         - { $ref: '#/components/schemas/OnlineBulletinBlock' }
@@ -4320,6 +4697,8 @@ components:
       - issuedAt
       - rendererVersion
       properties:
+        series: { $ref: '#/components/schemas/BulletinSeries' }
+        channel: { type: string, enum: [pdf, online_reader] }
         receiptId: &id001
           type: string
           format: uuid
@@ -4463,12 +4842,14 @@ components:
                 properties:
                   recordType:
                     type: string
-                    enum: [bulletin_watermark_receipt, bulletin_watermark_investigation]
-                  recordKey: *id001
+                    enum: [bulletin_watermark_receipt, bulletin_watermark_investigation, online_reader_receipt, online_reader_validation]
+                  recordKey: { type: string, description: UUID for PDF records; receipt or request prefix plus UUID for reader records. }
                   data:
                     oneOf:
                     - $ref: '#/components/schemas/BulletinWatermarkReceipt'
                     - $ref: '#/components/schemas/BulletinWatermarkInvestigationHistory'
+                    - $ref: '#/components/schemas/ReaderReceiptExport'
+                    - $ref: '#/components/schemas/ReaderValidationExport'
             recordCount: &id005
               type: integer
               minimum: 0

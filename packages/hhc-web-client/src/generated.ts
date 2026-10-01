@@ -500,6 +500,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/member/bulletins/online": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Discover the authorized union of published PDF and Online editions */
+        get: operations["discoverOnlineBulletins"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/bulletins/{issueID}/versions/{locale}/online/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Issue authorized structured content with a durable reader receipt
+         * @description Rechecks the exact PDF entitlement on every request. Content is returned only after receipt commit. Same account and clientRequestId replay the original validation window; changed inputs conflict. Receipt reuse requires the same account, document and published revision. Retained published revisions remain readable only while the edition is published. No full-content GET exists. Seven-day offline validity is independent of the fixed 365-day receipt retention.
+         */
+        post: operations["openOnlineBulletin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/member/bulletins/latest": {
         parameters: {
             query?: never;
@@ -1898,6 +1935,235 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description Dynamic sentence anchor. The canonical- ID prefix is reserved for shared canonical metadata anchors across layouts. */
+        ReaderSentence: {
+            id: components["schemas"]["OnlineBulletinID"];
+            spans: components["schemas"]["OnlineBulletinSpan"][];
+        };
+        ReaderBlock: {
+            id: components["schemas"]["OnlineBulletinID"];
+            style: components["schemas"]["OnlineBulletinParagraphStyle"];
+            sentences: components["schemas"]["ReaderSentence"][];
+        };
+        ReaderItem: {
+            id: components["schemas"]["OnlineBulletinID"];
+            title?: components["schemas"]["ReaderBlock"];
+            blocks: components["schemas"]["ReaderBlock"][];
+        };
+        ReaderCover: {
+            welcome: components["schemas"]["ReaderBlock"][];
+            worship: components["schemas"]["ReaderItem"][];
+            work: components["schemas"]["ReaderItem"][];
+            wordQuestions: components["schemas"]["ReaderItem"][];
+            weeklyVerses: components["schemas"]["ReaderBlock"][];
+        };
+        ReaderBodySection: {
+            /**
+             * @description Unknown creates a blocking review issue.
+             * @enum {string}
+             */
+            kind: "sermon" | "testimony" | "teaching" | "reflection" | "unknown";
+            header?: components["schemas"]["ReaderBodyHeader"];
+            title: components["schemas"]["ReaderBlock"];
+            subtitle?: components["schemas"]["ReaderBlock"];
+            contributors?: {
+                /** @enum {string} */
+                role: "speaker" | "transcriber" | "editor" | "author";
+                name: components["schemas"]["ReaderBlock"];
+            }[];
+            blocks: components["schemas"]["ReaderBlock"][];
+        };
+        /** @description First body section only. Source lecture date is independent of canonical issue publication date; all fields use sentence anchors. Missing contributor roles block publication review. */
+        ReaderBodyHeader: {
+            lectureDate: components["schemas"]["ReaderBlock"];
+            contributors: {
+                /** @enum {string} */
+                role: "speaker" | "transcriber" | "editor";
+                name: components["schemas"]["ReaderBlock"];
+            }[];
+        };
+        ReaderHymnLyrics: {
+            hymns: {
+                id: components["schemas"]["OnlineBulletinID"];
+                number?: components["schemas"]["ReaderBlock"];
+                title: components["schemas"]["ReaderBlock"];
+                sourceLabel?: components["schemas"]["ReaderBlock"];
+                sections: {
+                    id: components["schemas"]["OnlineBulletinID"];
+                    /** @enum {string} */
+                    kind: "verse" | "chorus" | "bridge";
+                    lines: components["schemas"]["ReaderBlock"][];
+                }[];
+            }[];
+        };
+        ReaderComponent: components["schemas"]["ReaderCoverComponent"] | components["schemas"]["ReaderBodyComponent"] | components["schemas"]["ReaderHymnComponent"] | components["schemas"]["ReaderBackComponent"];
+        ReaderCoverComponent: {
+            id: components["schemas"]["OnlineBulletinID"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "cover";
+            cover: components["schemas"]["ReaderCover"];
+        };
+        ReaderBodyComponent: {
+            id: components["schemas"]["OnlineBulletinID"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "bodySection";
+            bodySection: components["schemas"]["ReaderBodySection"];
+        };
+        ReaderHymnComponent: {
+            id: components["schemas"]["OnlineBulletinID"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "hymnLyrics";
+            hymnLyrics: components["schemas"]["ReaderHymnLyrics"];
+        };
+        ReaderBackComponent: {
+            id: components["schemas"]["OnlineBulletinID"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "backSummary" | "announcements" | "victoriesAndPrayers";
+            items: components["schemas"]["ReaderItem"][];
+        };
+        /** @description At most 4096 encoded bytes. Each client request UUID is account-bound and immutable for the receipt retention period. */
+        ReaderAccessInput: {
+            /** Format: uuid */
+            clientRequestId: string;
+            revision?: number;
+            /** Format: uuid */
+            receiptId?: string;
+        };
+        /** @description Current PDF action identity, never a private asset URL. */
+        ReaderPDFAction: {
+            /** Format: uuid */
+            issueId: string;
+            series: components["schemas"]["BulletinSeries"];
+            locale: components["schemas"]["BulletinLocale"];
+        };
+        ReaderReceiptExport: {
+            /** Format: uuid */
+            receiptId: string;
+            /** Format: uuid */
+            accountId: string;
+            /** Format: uuid */
+            documentId: string;
+            /** Format: uuid */
+            issueId: string;
+            series: components["schemas"]["BulletinSeries"];
+            contentLocale: components["schemas"]["BulletinLocale"];
+            revision: number;
+            /** @constant */
+            channel: "online_reader";
+            privacyNoticeVersion: string;
+            /** Format: date-time */
+            issuedAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        ReaderValidationExport: {
+            /** Format: uuid */
+            clientRequestId: string;
+            /** Format: uuid */
+            accountId: string;
+            /** Format: uuid */
+            receiptId: string;
+            requestHash: components["schemas"]["OnlineBulletinHash"];
+            /** Format: date-time */
+            validatedAt: string;
+            /** Format: date-time */
+            offlineValidUntil: string;
+        };
+        ReaderDiscoveryItem: {
+            /** Format: uuid */
+            issueId: string;
+            /** @description Current canonical route identity, independent of the frozen publication metadata. */
+            issueNumber: number | null;
+            /** Format: date */
+            issueDate: string;
+            series: components["schemas"]["BulletinSeries"];
+            contentLocale: components["schemas"]["BulletinLocale"];
+            canonicalMetadata: components["schemas"]["OnlineBulletinCanonicalMetadata"];
+            /** Format: uuid */
+            documentId?: string;
+            onlineRevision: number | null;
+            pdfPublished: boolean;
+            download?: components["schemas"]["ReaderPDFAction"];
+        };
+        ReaderDiscoveryEnvelope: {
+            data: {
+                items: components["schemas"]["ReaderDiscoveryItem"][];
+                total: number;
+                offset: number;
+                limit: number;
+            };
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        ReaderAccessEnvelope: {
+            data: {
+                document: components["schemas"]["ReaderDocument"];
+                access: components["schemas"]["ReaderAccess"];
+            };
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        ReaderAccess: {
+            /** Format: uuid */
+            accountId: string;
+            /** Format: uuid */
+            documentId: string;
+            series: components["schemas"]["BulletinSeries"];
+            contentLocale: components["schemas"]["BulletinLocale"];
+            revision: number;
+            currentRevision: number;
+            /** Format: uuid */
+            receiptId: string;
+            /** @description Opaque formatted visible code; never account identity. */
+            traceCode: string;
+            /** Format: date-time */
+            validatedAt: string;
+            /**
+             * Format: date-time
+             * @description Exactly 604800 seconds after validatedAt.
+             */
+            offlineValidUntil: string;
+        };
+        ReaderDocument: {
+            /** Format: uuid */
+            issueId: string;
+            /** Format: uuid */
+            documentId: string;
+            series: components["schemas"]["BulletinSeries"];
+            contentLocale: components["schemas"]["BulletinLocale"];
+            revision: number;
+            canonicalMetadata: components["schemas"]["OnlineBulletinCanonicalMetadata"];
+            metadataSyncPending: boolean;
+            pdfPublished: boolean;
+            download?: components["schemas"]["ReaderPDFAction"];
+            content: components["schemas"]["ReaderContent"];
+        };
+        /** @description Closed published rendering projection with no extraction provenance. Layout proof binds the original worker measurement; it is not a hash of this redacted DTO. Verify the response byte digest separately. */
+        ReaderContent: {
+            /** @constant */
+            schemaVersion: "1";
+            /** @constant */
+            templateVersion: "v1";
+            pages: components["schemas"]["OnlineBulletinPage"][];
+            layoutManifest: components["schemas"]["OnlineBulletinLayoutManifest"];
+            components: components["schemas"]["ReaderComponent"][];
+        };
         OnlineBulletinComparisonValue: components["schemas"]["OnlineBulletinBlock"] | components["schemas"]["OnlineBulletinComponent"] | components["schemas"]["OnlineBulletinID"][] | null;
         OnlineBulletinComparison: {
             /** Format: uuid */
@@ -2620,6 +2886,9 @@ export interface components {
             code: string;
         };
         BulletinWatermarkLookupResult: {
+            series?: components["schemas"]["BulletinSeries"];
+            /** @enum {string} */
+            channel?: "pdf" | "online_reader";
             /** Format: uuid */
             receiptId: string;
             /** Format: uuid */
@@ -2688,10 +2957,10 @@ export interface components {
             data: {
                 records: {
                     /** @enum {string} */
-                    recordType: "bulletin_watermark_receipt" | "bulletin_watermark_investigation";
-                    /** Format: uuid */
+                    recordType: "bulletin_watermark_receipt" | "bulletin_watermark_investigation" | "online_reader_receipt" | "online_reader_validation";
+                    /** @description UUID for PDF records; receipt or request prefix plus UUID for reader records. */
                     recordKey: string;
-                    data: components["schemas"]["BulletinWatermarkReceipt"] | components["schemas"]["BulletinWatermarkInvestigationHistory"];
+                    data: components["schemas"]["BulletinWatermarkReceipt"] | components["schemas"]["BulletinWatermarkInvestigationHistory"] | components["schemas"]["ReaderReceiptExport"] | components["schemas"]["ReaderValidationExport"];
                 }[];
                 recordCount: number;
                 nextCursor?: string;
@@ -4149,6 +4418,17 @@ export interface components {
         };
     };
     responses: {
+        /** @description Generic not_found for denied, missing or unpublished edition. Only this owner marker together with typed not_found is terminal; an unrelated router or gateway 404 must not purge offline data. */
+        ReaderUnavailable: {
+            headers: {
+                "X-HHC-Bulletin-Access"?: "unavailable";
+                "Cache-Control"?: "private, no-store";
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorEnvelope"];
+            };
+        };
         /** @description Service process is healthy or ready. */
         Health: {
             headers: {
@@ -5426,6 +5706,81 @@ export interface operations {
             };
             401: components["responses"]["AdminUnauthorized"];
             404: components["responses"]["ProtectedBulletinNotFound"];
+            503: components["responses"]["Error"];
+        };
+    };
+    discoverOnlineBulletins: {
+        parameters: {
+            query?: {
+                series?: components["parameters"]["BulletinSeries"];
+                locale?: components["parameters"]["BulletinLocale"];
+                offset?: number;
+                limit?: number;
+                issueNumber?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One authoritative union page */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReaderDiscoveryEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            404: components["responses"]["ReaderUnavailable"];
+            503: components["responses"]["Error"];
+        };
+    };
+    openOnlineBulletin: {
+        parameters: {
+            query?: {
+                series?: components["parameters"]["BulletinSeries"];
+            };
+            header?: never;
+            path: {
+                issueID: string;
+                locale: components["schemas"]["BulletinLocale"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReaderAccessInput"];
+            };
+        };
+        responses: {
+            /** @description Committed receipt and source-free content; verify exact response bytes before decoding or persisting */
+            200: {
+                headers: {
+                    /** @description Lowercase SHA-256 of exact UTF-8 response body bytes */
+                    "X-HHC-Content-SHA256"?: components["schemas"]["OnlineBulletinHash"];
+                    "Cache-Control"?: "private, no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReaderAccessEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            404: components["responses"]["ReaderUnavailable"];
+            /** @description Request, receipt or revision conflict; retry with a new clientRequestId and valid revision */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
             503: components["responses"]["Error"];
         };
     };
