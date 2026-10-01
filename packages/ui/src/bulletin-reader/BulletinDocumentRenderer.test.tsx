@@ -24,6 +24,7 @@ describe('immutable shared bulletin renderer', () => {
     for (const [element, expected] of [
       ['hymnLabel', '小組詩歌'], ['announcementsLabel', '家教會公佈欄'],
       ['transcriberLabel', '謄修：'], ['streamQRLabel', '神國大樂\n京成兄妹'],
+      ['speakerSeparator', '～'],
     ] as const) expect(bulletinFixedText(element, undefined, 1).text).toBe(expected);
     expect(bulletinFixedText('vision', undefined, 1).text).toContain('堅持理想：宣教主導');
   });

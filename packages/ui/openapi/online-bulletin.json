@@ -330,6 +330,7 @@
               "prayersLabel",
               "titleLabel",
               "speakerLabel",
+              "speakerSeparator",
               "transcriberLabel",
               "editorLabel",
               "authorLabel",

@@ -14,7 +14,7 @@ const labels = {
   websiteQRLabel: '家教會官網', youtubeQRLabel: '家教會\nYOUTUBE', streamQRLabel: '神國大樂\n京成兄妹',
   welcomeLabel: '一、Welcome：', worshipLabel: '二、Worship：', workLabel: '三、Work：', wordLabel: '四、Word：',
   verseLabel: '本週金句', hymnLabel: '小組詩歌', summaryLabel: '信息摘要', announcementsLabel: '家教會公佈欄', prayersLabel: '得勝與代求',
-  titleLabel: '本週靈糧主題', speakerLabel: '講員：', transcriberLabel: '謄修：', editorLabel: '完稿：', authorLabel: '作者：',
+  titleLabel: '本週靈糧主題', speakerLabel: '講員：', speakerSeparator: '～', transcriberLabel: '謄修：', editorLabel: '完稿：', authorLabel: '作者：',
 } as const;
 
 export function bulletinFixedGraphic(element: BulletinFixedSlot['element']) {
@@ -34,7 +34,7 @@ export function bulletinFixedDecoration(element: BulletinFixedSlot['element']) {
 export function bulletinFixedText(element: BulletinFixedSlot['element'], metadata: BulletinCanonicalMetadata | undefined, pageNumber: number) {
   if (bulletinFixedGraphic(element) || bulletinFixedDecoration(element)) return {text: '', fontRole: 'body' as const, annotatable: false};
   if (element === 'pageNumber') return {text: String(pageNumber), fontRole: 'body' as const, annotatable: false};
-  if (element in labels) return {text: labels[element as keyof typeof labels], fontRole: element === 'masthead' ? 'body' as const : 'emphasis' as const, annotatable: false};
+  if (element in labels) return {text: labels[element as keyof typeof labels], fontRole: element === 'speakerSeparator' ? 'scripture' as const : element === 'masthead' ? 'body' as const : 'emphasis' as const, annotatable: false};
   if (!metadata) throw new Error('missing_canonical_metadata');
   let text: string;
   switch (element) {
