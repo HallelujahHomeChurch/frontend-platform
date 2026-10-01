@@ -423,6 +423,15 @@
           },
           "fontRole": {
             "$ref": "#/components/schemas/OnlineBulletinFontRole"
+          },
+          "fontSize": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 6,
+            "maximum": 96,
+            "description": "Optional source PDF-point size for mixed-size inline runs. Missing or null inherits the block size; mobile retains the proportional em ratio."
           }
         }
       },

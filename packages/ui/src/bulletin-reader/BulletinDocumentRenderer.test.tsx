@@ -107,6 +107,14 @@ describe('immutable shared bulletin renderer', () => {
     expect(slot.style.fontSize).toBe('16pt');
     expect(slot.style.letterSpacing).toBe('-0.2em');
   });
+  it('preserves mixed source font-size proportions in paper and mobile text', () => {
+    const document = fixture();
+    document.components[0].items![0].blocks[0].sentences[0].spans[1].fontSize = 12;
+    for (const mode of ['paper', 'mobile'] as const) {
+      const {container} = render(<UI.BulletinDocumentRenderer document={document} mode={mode} />);
+      expect(container.querySelector<HTMLElement>('[data-font-role="scripture"]')!.style.fontSize).toBe('0.75em');
+    }
+  });
   it('shares canonical sentence identity across repeated paper titles and mobile reflow', () => {
     const document = fixture();
     const style = {fontSize: 18, lineHeight: 24, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0};

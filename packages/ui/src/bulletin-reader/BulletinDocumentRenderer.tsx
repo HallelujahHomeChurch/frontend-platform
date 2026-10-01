@@ -55,13 +55,13 @@ export function requireBulletinRenderer(manifest: BulletinLayoutManifest): void 
   }
 }
 
-function spansBetween(sentence: BulletinSentence, start: number, end: number) {
+function spansBetween(sentence: BulletinSentence, start: number, end: number, fontSize: number) {
   let offset = 0;
   return sentence.spans.map((span, index) => {
     const points = Array.from(span.text);
     const text = points.slice(Math.max(0, start - offset), Math.max(0, end - offset)).join('');
     offset += points.length;
-    return text ? <span key={index} data-font-role={span.fontRole}>{text}</span> : null;
+    return text ? <span key={index} data-font-role={span.fontRole} style={span.fontSize == null ? undefined : {fontSize: `${span.fontSize / fontSize}em`}}>{text}</span> : null;
   });
 }
 
@@ -92,7 +92,7 @@ export function BulletinDocumentRenderer({document, manifest = document.layoutMa
       default: return [];
     }
   }));
-  const sentence = (value: BulletinSentence, start: number, end: number, key: string) => {
+  const sentence = (value: BulletinSentence, start: number, end: number, key: string, fontSize: number) => {
     const state = sentenceState?.[value.id];
     return <span key={key} data-sentence-id={value.id} data-fragment-start={start} data-fragment-end={end}
       data-selected={state?.selected || undefined} data-highlight={state?.highlight}
@@ -104,7 +104,7 @@ export function BulletinDocumentRenderer({document, manifest = document.layoutMa
       onKeyDown={onSentenceActivate ? event => {
         if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSentenceActivate(value.id); }
       } : undefined}>
-      {spansBetween(value, start, end)}
+      {spansBetween(value, start, end, fontSize)}
     </span>;
   };
   const paragraphStyle = (style: BulletinBlock['style']): CSSProperties => ({
@@ -122,7 +122,7 @@ export function BulletinDocumentRenderer({document, manifest = document.layoutMa
     if (graphic) return <img src={graphic.url} alt="" draggable={false} />;
     if (bulletinFixedDecoration(slot.element)) return null;
     const value = bulletinFixedText(slot.element, canonicalMetadata, pageNumber);
-    return value.annotatable ? sentence({id: `canonical-${slot.element}`, spans: [{text: value.text, fontRole: value.fontRole}]}, 0, Array.from(value.text).length, slot.id) : <span data-font-role={value.fontRole}>{value.text}</span>;
+    return value.annotatable ? sentence({id: `canonical-${slot.element}`, spans: [{text: value.text, fontRole: value.fontRole}]}, 0, Array.from(value.text).length, slot.id, slot.style.fontSize) : <span data-font-role={value.fontRole}>{value.text}</span>;
   };
   const mobileHeader = (manifest.pages[0]?.fixedSlots ?? []).filter(slot => ['masthead', 'date', 'issueNumber', 'title', 'subtitle', 'vision', 'pastor'].includes(slot.element));
   return <div className="hhc-bulletin-v1" data-bulletin-mode={mode} lang={document.contentLocale}
@@ -141,7 +141,7 @@ export function BulletinDocumentRenderer({document, manifest = document.layoutMa
       {blocks.map(({componentId, block}) => {
         const Tag = headingIDs.has(block.id) ? 'h2' : 'p';
         return <Tag key={block.id} data-component-id={componentId} data-block-id={block.id} style={paragraphStyle(block.style)}>
-          {block.sentences.map(value => sentence(value, 0, value.spans.reduce((n, span) => n + Array.from(span.text).length, 0), value.id))}
+          {block.sentences.map(value => sentence(value, 0, value.spans.reduce((n, span) => n + Array.from(span.text).length, 0), value.id, block.style.fontSize))}
         </Tag>;
       })}
     </> : document.pages.filter(page => !activePage || page.id === activePage).map(page => {
@@ -166,7 +166,7 @@ export function BulletinDocumentRenderer({document, manifest = document.layoutMa
             {slot.fragments.map((fragment, index) => {
               const value = block.sentences.find(s => s.id === fragment.sentenceId);
               if (!value || fragment.end > value.spans.reduce((n, span) => n + Array.from(span.text).length, 0) || fragment.start < 0 || fragment.start >= fragment.end) throw new Error('invalid_layout');
-              return sentence(value, fragment.start, fragment.end, `${value.id}-${index}`);
+              return sentence(value, fragment.start, fragment.end, `${value.id}-${index}`, block.style.fontSize);
             })}
           </p>;
         })}

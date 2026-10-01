@@ -129,3 +129,14 @@ test('controlled full-page diagnostics preserve geometry and surface every unres
     for (const issue of result.overflow) assert.ok(slots.some(slot => slot.id === issue.slotId));
   }
 });
+
+test('mixed inline source sizes are measured at their declared PDF-point proportion', {skip: !assetsDirectory}, async () => {
+  const input = await fixture('中文。');
+  const submission = JSON.parse(input.submissionJSON);
+  submission.document.components[0].items[0].blocks[0].sentences[0].spans[0].fontSize = 12;
+  const submissionJSON = JSON.stringify(submission);
+  const result = await measureBulletinLayout({...input, submissionJSON, expectedContentHash: hash(submissionJSON)});
+  assert.deepEqual(result.overflow, []);
+  const lines = result.pages[0].slots[0].fragments[0].lines;
+  assert.ok(lines.some(line => Math.abs(line.height - 12) < .8 && line.width >= 35 && line.width <= 37), 'source 12pt must not inherit 16pt');
+});

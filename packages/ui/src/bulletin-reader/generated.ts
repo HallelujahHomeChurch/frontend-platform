@@ -97,6 +97,8 @@ export interface components {
         OnlineBulletinSpan: {
             text: string;
             fontRole: components["schemas"]["OnlineBulletinFontRole"];
+            /** @description Optional source PDF-point size for mixed-size inline runs. Missing or null inherits the block size; mobile retains the proportional em ratio. */
+            fontSize?: number | null;
         };
         /** @description Dynamic sentence anchor. The canonical- ID prefix is reserved for shared canonical metadata anchors across layouts. */
         OnlineBulletinSentence: {
