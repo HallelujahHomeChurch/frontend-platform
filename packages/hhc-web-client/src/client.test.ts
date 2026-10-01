@@ -11,6 +11,45 @@ import type {
 } from './client'
 
 describe('hhc web client', () => {
+  it('keeps browser source capabilities in authenticated no-store metadata requests', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({data: {}, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}}))
+    const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'admin-token', fetcher})
+    const input = {fileName: 'Sunday.mp4', sizeBytes: 50_000_000_000, checksumSHA256: 'a'.repeat(64)}
+    const signal = new AbortController().signal
+    await client.createAdminRecordingSource('rec-1', input, 'source-key', signal)
+    await client.getAdminRecordingSource('rec-1', 'source-1', {cursor: 1000, limit: 1000, signal})
+    await client.signAdminRecordingSource('rec-1', 'source-1', [1001, 1002], signal)
+    await client.completeAdminRecordingSource('rec-1', 'source-1', signal)
+    await client.retryAdminRecordingSource('rec-1', 'source-1', signal)
+    const requests = fetcher.mock.calls.map(call => call[0] as Request)
+    for (const request of requests) {
+      expect(request.headers.get('Authorization')).toBe('Bearer admin-token')
+      expect(request.cache).toBe('no-store')
+      expect(request.url).not.toContain('admin-token')
+    }
+    const [create, status, sign, complete, retry] = requests
+    expect(create!.url).toBe('http://localhost/api/admin/recordings/rec-1/source-uploads')
+    expect(create!.headers.get('Idempotency-Key')).toBe('source-key')
+    expect(await create!.json()).toEqual(input)
+    expect(status!.url).toBe('http://localhost/api/admin/recordings/rec-1/source-uploads/source-1?cursor=1000&limit=1000')
+    expect(status!.method).toBe('GET')
+    expect(sign!.url).toContain('/source-1/sign')
+    expect(await sign!.json()).toEqual({numbers: [1001, 1002]})
+    expect(complete!.url).toContain('/source-1/complete')
+    expect(await complete!.json()).toEqual({})
+    expect(retry!.url).toContain('/source-1/retry-processing')
+    expect(await retry!.json()).toEqual({})
+  })
+
+  it('reads HLS processing without treating the upload receipt as ready', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({data: {state: 'validating', packageId: 'package-1'}, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}}))
+    const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'admin-token', fetcher})
+    expect((await client.getAdminRecordingPackage('rec-1', 'package-1')).state).toBe('validating')
+    const request = fetcher.mock.calls[0]![0] as Request
+    expect(request.url).toBe('http://localhost/api/admin/recordings/rec-1/packages/package-1?limit=1')
+    expect(request.cache).toBe('no-store')
+  })
+
   it('keeps recording grants in POST bodies and separates versioned publish requests', async () => {
     const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({data: {}, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}}))
     const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'member-token', fetcher})
