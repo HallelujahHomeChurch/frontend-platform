@@ -2159,7 +2159,7 @@ export interface components {
         };
         /** @description Closed published rendering projection with no extraction provenance. Layout proof binds the original worker measurement; it is not a hash of this redacted DTO. Verify the response byte digest separately. */
         ReaderContent: {
-            /** @description Visible printed body issue-summary count */
+            /** @description Visible printed body issue-summary count, independent of HTML pagination. */
             printedBodyPageCount: number;
             /** @constant */
             schemaVersion: "1";
