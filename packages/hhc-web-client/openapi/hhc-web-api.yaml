@@ -23,6 +23,203 @@ servers:
   - url: https://www.alive.org.tw/api
     description: Public and admin gateway surface; api-gateway validates browser JWTs and injects trusted identity headers.
 paths:
+  /legal/common:
+    get:
+      operationId: getCommonLegalSnapshot
+      summary: getCommonLegalSnapshot
+      tags: [Public]
+      x-hhc-visibility: public
+      x-hhc-callers: [api-gateway]
+      security: []
+      parameters:
+        - in: query
+          name: locale
+          schema: { $ref: "#/components/schemas/LegalLocale" }
+      responses:
+        '400': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+        '200':
+          description: LegalSnapshotEnvelope
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LegalSnapshotEnvelope' }
+  /member/legal/current:
+    get:
+      operationId: getMemberLegalSnapshot
+      summary: getMemberLegalSnapshot
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway, hhc-line-function-bot]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      x-hhc-cache: private, no-store
+      parameters:
+        - in: query
+          name: locale
+          schema: { $ref: "#/components/schemas/LegalLocale" }
+      responses:
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '400': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+        '200':
+          description: LegalSnapshotEnvelope
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LegalSnapshotEnvelope' }
+  /admin/legal/{scope}:
+    get:
+      operationId: getLegalDraft
+      summary: getLegalDraft
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:pages:read]
+      parameters:
+        - in: path
+          name: scope
+          required: true
+          schema: { $ref: "#/components/schemas/LegalScope" }
+      responses:
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '400': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+        '200':
+          description: LegalDraftEnvelope
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LegalDraftEnvelope' }
+    put:
+      operationId: saveLegalDraft
+      summary: saveLegalDraft
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:pages:write]
+      parameters:
+        - in: path
+          name: scope
+          required: true
+          schema: { $ref: "#/components/schemas/LegalScope" }
+        - in: header
+          name: If-Match
+          required: true
+          schema: { type: string, description: Quoted draft version; zero creates the initial draft. }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LegalDraft" }
+      responses:
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '400': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '200':
+          description: LegalDraftEnvelope
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LegalDraftEnvelope' }
+  /admin/legal/{scope}/publish:
+    post:
+      operationId: publishLegalDraft
+      summary: publishLegalDraft
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:pages:publish]
+      parameters:
+        - in: path
+          name: scope
+          required: true
+          schema: { $ref: "#/components/schemas/LegalScope" }
+        - in: header
+          name: If-Match
+          required: true
+          schema: { type: string, description: Quoted draft version; zero creates the initial draft. }
+      responses:
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '400': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '200':
+          description: LegalSnapshotsEnvelope
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LegalSnapshotsEnvelope' }
+  /priv/legal/current:
+    post:
+      operationId: resolveCurrentLegalSnapshot
+      summary: resolveCurrentLegalSnapshot
+      tags: [Private]
+      x-hhc-visibility: private
+      x-hhc-callers: [account-api, operations-api]
+      security: [{ daprApiToken: [], daprCallerAppId: [] }]
+      servers: [{ url: / }]
+      x-hhc-cache: private, no-store
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LegalCurrentInput" }
+      responses:
+        '401': { $ref: '#/components/responses/Error' }
+        '400': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+        '200':
+          description: LegalSnapshotEnvelope
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LegalSnapshotEnvelope' }
+  /priv/legal/snapshots/resolve:
+    post:
+      operationId: resolveLegalSnapshot
+      summary: resolveLegalSnapshot
+      tags: [Private]
+      x-hhc-visibility: private
+      x-hhc-callers: [account-api]
+      security: [{ daprApiToken: [], daprCallerAppId: [] }]
+      servers: [{ url: / }]
+      x-hhc-cache: private, no-store
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LegalSnapshotInput" }
+      responses:
+        '401': { $ref: '#/components/responses/Error' }
+        '400': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+        '200':
+          description: LegalSnapshotEnvelope
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LegalSnapshotEnvelope' }
   /admin/bulletins/watermark-lookups:
     post:
       operationId: lookupBulletinWatermark
@@ -2701,6 +2898,86 @@ components:
       description: Public revalidation policy for Site Layout projections.
       schema: { type: string, const: 'public, max-age=30, must-revalidate' }
   schemas:
+    LegalScope: { type: string, enum: [common, verified-member] }
+    LegalLocale: { type: string, enum: [zh-Hant, zh-Hans, en, ja, ko], default: zh-Hant }
+    LegalVersion: { type: string, pattern: '^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$' }
+    LegalDocuments:
+      type: object
+      additionalProperties: false
+      required: [terms, privacy]
+      properties:
+        terms: { $ref: '#/components/schemas/LegalPageContentV1' }
+        privacy: { $ref: '#/components/schemas/LegalPageContentV1' }
+    LegalManifest:
+      type: object
+      additionalProperties: false
+      required: [scope, locale, termsVersion, privacyNoticeVersion, termsSHA256, privacySHA256]
+      properties:
+        scope: { $ref: '#/components/schemas/LegalScope' }
+        locale: { $ref: '#/components/schemas/LegalLocale' }
+        termsVersion: { $ref: '#/components/schemas/LegalVersion' }
+        privacyNoticeVersion: { $ref: '#/components/schemas/LegalVersion' }
+        commonTermsVersion: { $ref: '#/components/schemas/LegalVersion' }
+        commonPrivacyNoticeVersion: { $ref: '#/components/schemas/LegalVersion' }
+        termsSHA256: { type: string, pattern: '^[a-f0-9]{64}$' }
+        privacySHA256: { type: string, pattern: '^[a-f0-9]{64}$' }
+    LegalSnapshot:
+      type: object
+      additionalProperties: false
+      required: [snapshotId, manifest, documents]
+      properties:
+        snapshotId: { type: string, format: uuid }
+        manifest: { $ref: '#/components/schemas/LegalManifest' }
+        documents: { $ref: '#/components/schemas/LegalDocuments' }
+    LegalDraft:
+      type: object
+      additionalProperties: false
+      required: [scope, termsVersion, privacyNoticeVersion, translations]
+      properties:
+        scope: { $ref: '#/components/schemas/LegalScope' }
+        termsVersion: { $ref: '#/components/schemas/LegalVersion' }
+        privacyNoticeVersion: { $ref: '#/components/schemas/LegalVersion' }
+        commonTermsVersion: { $ref: '#/components/schemas/LegalVersion' }
+        commonPrivacyNoticeVersion: { $ref: '#/components/schemas/LegalVersion' }
+        version: { type: integer, format: int64, minimum: 0 }
+        translations:
+          type: object
+          additionalProperties: false
+          required: [zh-Hant, zh-Hans, en, ja, ko]
+          properties:
+            zh-Hant: { $ref: '#/components/schemas/LegalDocuments' }
+            zh-Hans: { $ref: '#/components/schemas/LegalDocuments' }
+            en: { $ref: '#/components/schemas/LegalDocuments' }
+            ja: { $ref: '#/components/schemas/LegalDocuments' }
+            ko: { $ref: '#/components/schemas/LegalDocuments' }
+    LegalCurrentInput:
+      type: object
+      additionalProperties: false
+      required: [scope, locale]
+      properties:
+        scope: { $ref: '#/components/schemas/LegalScope' }
+        locale: { $ref: '#/components/schemas/LegalLocale' }
+    LegalSnapshotInput:
+      type: object
+      additionalProperties: false
+      required: [snapshotId]
+      properties:
+        snapshotId: { type: string, format: uuid }
+    LegalSnapshotEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/LegalSnapshot' }
+    LegalDraftEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/LegalDraft' }
+    LegalSnapshotsEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { type: array, minItems: 5, maxItems: 5, items: { $ref: '#/components/schemas/LegalSnapshot' } }
     MemberRecording:
       type: object
       additionalProperties: false

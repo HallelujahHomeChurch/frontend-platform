@@ -833,3 +833,13 @@ describe('statement contracts', () => {
     expect(await request.json()).toEqual({statementNotification: input})
   })
 })
+
+it('keeps legal reads private and publication version checked', async () => {
+ const fetcher=vi.fn<typeof fetch>().mockImplementation(async()=>new Response(JSON.stringify({data:{},meta:{},error:null}),{headers:{'Content-Type':'application/json'}}));
+ const client=createHhcWebClient({baseUrl:'/api',getAccessToken:()=> 'actor-token',fetcher});
+ await client.getMemberLegalSnapshot('en');
+ await client.publishLegalDraft('verified-member',3);
+ const [read,publish]=fetcher.mock.calls.map(call=>call[0] as Request);
+ expect(read!.url).toBe('http://localhost/api/member/legal/current?locale=en');expect(read!.cache).toBe('no-store');
+ expect(publish!.url).toBe('http://localhost/api/admin/legal/verified-member/publish');expect(publish!.headers.get('If-Match')).toBe('"3"');
+});
