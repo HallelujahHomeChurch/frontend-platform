@@ -5,7 +5,11 @@ WORKDIR /opt/bulletin-renderer
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts --no-audit --no-fund \
     && npx playwright install --with-deps --only-shell chromium \
-    && rm -rf /var/lib/apt/lists/* /root/.npm
+    && apt-get install -y --no-install-recommends \
+       libpcre2-8-0=10.46-1~deb13u3 libssl3t64=3.5.7-1~deb13u3 openssl-provider-legacy=3.5.7-1~deb13u3 \
+    && rm -rf /var/lib/apt/lists/* /root/.npm \
+       /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /opt/yarn-v1.22.22 \
+    && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg
 COPY packages ./packages
 COPY scripts ./scripts
 COPY assets ./assets
