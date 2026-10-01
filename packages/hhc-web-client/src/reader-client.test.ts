@@ -9,6 +9,15 @@ async function response(body = JSON.stringify({data:{document:{revision:2},acces
 }
 
 describe('member reader client',()=>{
+  it('requests one authoritative page for a bounded language set',async()=>{
+    const fetcher=vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({data:{items:[],total:0,offset:12,limit:12},meta:{},error:null}),{headers:{'Content-Type':'application/json'}}))
+    const client=createHhcWebClient({baseUrl:'/api',getAccessToken:()=> 'token',fetcher})
+    await client.listOnlineBulletinDiscovery({series:'general',locales:['zh-Hant','en'],offset:12,limit:12})
+    const query=new URL((fetcher.mock.calls[0]![0] as Request).url).searchParams
+    expect(query.get('locales')).toBe('zh-Hant,en')
+    expect(query.has('locale')).toBe(false)
+    expect(fetcher).toHaveBeenCalledTimes(1)
+  })
   it('forwards bearer, exact selectors, cancellation and unchanged retry identity without caching',async()=>{
     const fetcher=vi.fn<typeof fetch>().mockImplementation(async()=>response())
     const client=createHhcWebClient({baseUrl:'/api',getAccessToken:()=> 'member-token',fetcher})

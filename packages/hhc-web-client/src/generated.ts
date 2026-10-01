@@ -507,7 +507,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Discover the authorized union of published PDF and Online editions */
+        /**
+         * Discover the authorized union of published PDF and Online editions
+         * @description Pages distinct issues once across the requested authorized languages, then returns every matching edition for those issues. Total, offset and limit count issues, not edition rows. Either locale (default zh-Hant) or locales may be supplied, never both. Every requested edition is authorized before any content lookup; one denial fails the entire request without partial disclosure.
+         */
         get: operations["discoverOnlineBulletins"];
         put?: never;
         post?: never;
@@ -5714,6 +5717,8 @@ export interface operations {
             query?: {
                 series?: components["parameters"]["BulletinSeries"];
                 locale?: components["parameters"]["BulletinLocale"];
+                /** @description One to three distinct comma-separated languages, mutually exclusive with locale. */
+                locales?: string;
                 offset?: number;
                 limit?: number;
                 issueNumber?: number;

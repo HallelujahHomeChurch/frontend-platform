@@ -183,8 +183,9 @@ export function createHhcWebClient(options: {
   }
 
   return {
-    async listOnlineBulletinDiscovery(params: {series: BulletinSeries; locale: BulletinLocale; offset?: number; limit?: number; issueNumber?: number; signal?: AbortSignal}) {
-      const {signal, ...query} = params
+    async listOnlineBulletinDiscovery(params: {series: BulletinSeries; offset?: number; limit?: number; issueNumber?: number; signal?: AbortSignal} & ({locale: BulletinLocale; locales?: never} | {locales: readonly BulletinLocale[]; locale?: never})) {
+      const {signal, locales, ...selectors} = params
+      const query = {...selectors, locales: locales?.join(',')}
       return (await unwrap(client.GET('/member/bulletins/online', {params: {query}, cache: 'no-store', signal}))).data
     },
     async openOnlineBulletin(params: {issueId: string; series: BulletinSeries; locale: BulletinLocale; signal?: AbortSignal} & components['schemas']['ReaderAccessInput']): Promise<OnlineBulletinAccess> {

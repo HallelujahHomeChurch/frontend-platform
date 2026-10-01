@@ -865,6 +865,7 @@ paths:
     get:
       operationId: discoverOnlineBulletins
       summary: Discover the authorized union of published PDF and Online editions
+      description: Pages distinct issues once across the requested authorized languages, then returns every matching edition for those issues. Total, offset and limit count issues, not edition rows. Either locale (default zh-Hant) or locales may be supplied, never both. Every requested edition is authorized before any content lookup; one denial fails the entire request without partial disclosure.
       tags: [Authenticated]
       x-hhc-visibility: authenticated
       x-hhc-callers: [api-gateway]
@@ -873,6 +874,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/BulletinSeries'
         - $ref: '#/components/parameters/BulletinLocale'
+        - { name: locales, in: query, description: 'One to three distinct comma-separated languages, mutually exclusive with locale.', schema: { type: string, pattern: '^(zh-Hant|zh-Hans|en)(,(zh-Hant|zh-Hans|en)){0,2}$' } }
         - { name: offset, in: query, schema: { type: integer, minimum: 0, maximum: 1000000, default: 0 } }
         - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
         - { name: issueNumber, in: query, schema: { type: integer, minimum: 1, maximum: 2147483647 } }
@@ -3527,7 +3529,7 @@ components:
           additionalProperties: false
           required: [items, total, offset, limit]
           properties:
-            items: { type: array, maxItems: 100, items: { $ref: '#/components/schemas/ReaderDiscoveryItem' } }
+            items: { type: array, maxItems: 300, items: { $ref: '#/components/schemas/ReaderDiscoveryItem' } }
             total: { type: integer, minimum: 0 }
             offset: { type: integer, minimum: 0, maximum: 1000000 }
             limit: { type: integer, minimum: 1, maximum: 100 }
