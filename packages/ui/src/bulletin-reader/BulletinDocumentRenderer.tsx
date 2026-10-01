@@ -127,7 +127,7 @@ export function BulletinDocumentRenderer({document, manifest = document.layoutMa
     const graphic = bulletinFixedGraphic(slot.element);
     if (graphic) return <img src={graphic.url} alt="" draggable={false} />;
     if (bulletinFixedDecoration(slot.element)) return null;
-    const value = bulletinFixedText(slot.element, canonicalMetadata, pageNumber);
+    const value = bulletinFixedText(slot.element, canonicalMetadata, pageNumber, document.sourcePageCount);
     return value.annotatable ? sentence({id: `canonical-${slot.element}`, spans: [{text: value.text, fontRole: value.fontRole}]}, 0, Array.from(value.text).length, slot.id, slot.style.fontSize) : <span data-font-role={value.fontRole}>{value.text}</span>;
   };
   const mobileHeader = (manifest.pages[0]?.fixedSlots ?? []).filter(slot => ['masthead', 'date', 'issueNumber', 'title', 'subtitle', 'vision', 'visionMission', 'visionFellowship', 'visionCommitment', 'pastor'].includes(slot.element));

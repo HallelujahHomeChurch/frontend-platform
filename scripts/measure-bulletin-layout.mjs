@@ -33,7 +33,7 @@ export async function measureBulletinLayout({submissionJSON, expectedContentHash
   const usedAssets = new Map(fonts.map(asset => [asset.url, asset]));
   for (const [index, page] of document.layoutManifest.pages.entries()) {
     for (const slot of page.fixedSlots ?? []) {
-      spans.push(bulletinFixedText(slot.element, canonicalMetadata, index));
+      spans.push(bulletinFixedText(slot.element, canonicalMetadata, index, document.sourcePageCount));
       const graphic = bulletinFixedGraphic(slot.element);
       if (graphic) {
         if (!document.layoutManifest.assets.some(asset => asset.url === graphic.url && asset.sha256 === graphic.sha256 && asset.kind === 'decoration')) throw new Error('missing_decoration');

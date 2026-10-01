@@ -18,6 +18,7 @@ const labels = {
   welcomeLabel: '一、Welcome：', worshipLabel: '二、Worship：', workLabel: '三、Work：', wordLabel: '四、Word：',
   verseLabel: '本週金句', hymnLabel: '小組詩歌', summaryLabel: '信息摘要', announcementsLabel: '家教會公佈欄', prayersLabel: '得勝與代求',
   titleLabel: '本週靈糧主題', speakerLabel: '講員：', speakerSeparator: '～', transcriberLabel: '謄修：', editorLabel: '完稿：', authorLabel: '作者：',
+  lectureDateMarker: '‧', bodySpeakerLabel: '‧講員：',
 } as const;
 
 export function bulletinFixedGraphic(element: BulletinFixedSlot['element']) {
@@ -34,11 +35,15 @@ export function bulletinFixedDecoration(element: BulletinFixedSlot['element']) {
   return ['topRule', 'footerRule', 'summaryFrame', 'announcementsFrame', 'prayersFrame'].includes(element);
 }
 
-export function bulletinFixedText(element: BulletinFixedSlot['element'], metadata: BulletinCanonicalMetadata | undefined, pageNumber: number) {
+export function bulletinFixedText(element: BulletinFixedSlot['element'], metadata: BulletinCanonicalMetadata | undefined, pageNumber: number, sourcePageCount?: number) {
   if (bulletinFixedGraphic(element) || bulletinFixedDecoration(element)) return {text: '', fontRole: 'body' as const, annotatable: false};
   if (element === 'pageNumber') return {text: String(pageNumber), fontRole: 'body' as const, annotatable: false};
   if (element in labels) return {text: labels[element as keyof typeof labels], fontRole: element === 'speakerSeparator' ? 'scripture' as const : element === 'masthead' ? 'body' as const : 'emphasis' as const, annotatable: false};
   if (!metadata) throw new Error('missing_canonical_metadata');
+  if (element === 'bodyIssueSummary') {
+    if (typeof sourcePageCount !== 'number' || !Number.isInteger(sourcePageCount) || sourcePageCount < 4 || sourcePageCount > 40) throw new Error('invalid_source_page_count');
+    return {text: `(${metadata.issueNumber}共${sourcePageCount - 2}頁)`, fontRole: 'emphasis' as const, annotatable: false};
+  }
   let text: string;
   switch (element) {
     case 'title': text = metadata.title; break;

@@ -20,6 +20,13 @@ function fixture(): Document {
 }
 
 describe('immutable shared bulletin renderer', () => {
+  it('derives the printed body issue summary from canonical issue and immutable source page count', () => {
+    const metadata = {title: '信息', subtitle: '', issueNumber: 1739, date: '2026-09-20'};
+    expect(bulletinFixedText('bodyIssueSummary', metadata, 1, 12)).toEqual({text: '(1739共10頁)', fontRole: 'emphasis', annotatable: false});
+    expect(bulletinFixedText('bodySpeakerLabel', undefined, 1).text).toBe('‧講員：');
+    expect(bulletinFixedText('lectureDateMarker', undefined, 1).text).toBe('‧');
+    expect(() => bulletinFixedText('bodyIssueSummary', metadata, 1)).toThrow('invalid_source_page_count');
+  });
   it('reflows the lecture date and contributor band before the first body title, with fixed role labels', () => {
     const document = fixture();
     const style = {fontSize: 11, lineHeight: 14, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0};

@@ -71,6 +71,20 @@ test('native cover masthead preserves the reference word gap at printed size', {
   assert.ok(width >= 244 && width <= 247, `masthead word gap changed (${width}pt)`);
   assert.deepEqual(result.overflow, []);
 });
+test('body issue and contributor captions use legal glyphs and never become editable sentence anchors', {skip: !assetsDirectory}, async () => {
+  const input = await fixture();
+  const submission = JSON.parse(input.submissionJSON);
+  submission.document.sourcePageCount = 12;
+  submission.document.layoutManifest.pages[0].fixedSlots = [
+    {id: 'date-marker', element: 'lectureDateMarker', box: {x: 68.064/595.32, y: 234.17696/841.92, width: 11.04/595.32, height: 14/841.92}},
+    {id: 'issue-summary', element: 'bodyIssueSummary', box: {x: 203.69/595.32, y: 234.17696/841.92, width: 74/595.32, height: 14/841.92}},
+    {id: 'body-speaker', element: 'bodySpeakerLabel', box: {x: 68.064/595.32, y: 254.21696/841.92, width: 29.04/595.32, height: 14/841.92}},
+  ].map(slot => ({...slot, style: {fontSize: 11, lineHeight: 11.04, letterSpacing: slot.element === 'bodySpeakerLabel' ? -.43 : 0, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0}}));
+  const submissionJSON = JSON.stringify(submission);
+  const result = await measureBulletinLayout({...input, submissionJSON, expectedContentHash: hash(submissionJSON)});
+  assert.deepEqual(result.overflow, []);
+  for (const slot of result.pages[0].slots.filter(slot => slot.fixedElement)) assert.ok(slot.fragments.every(fragment => fragment.sentenceId === null));
+});
 test('fixed graphics must be declared trusted assets and loaded before measurement', {skip: !assetsDirectory}, async () => {
   const input = await fixture();
   const submission = JSON.parse(input.submissionJSON);
