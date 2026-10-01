@@ -145,6 +145,7 @@ export interface components {
              * @enum {string}
              */
             kind: "sermon" | "testimony" | "teaching" | "reflection" | "unknown";
+            header?: components["schemas"]["OnlineBulletinBodyHeader"];
             title: components["schemas"]["OnlineBulletinBlock"];
             subtitle?: components["schemas"]["OnlineBulletinBlock"];
             contributors?: {
@@ -153,6 +154,15 @@ export interface components {
                 name: components["schemas"]["OnlineBulletinBlock"];
             }[];
             blocks: components["schemas"]["OnlineBulletinBlock"][];
+        };
+        /** @description First body section only. Source lecture date is independent of canonical issue publication date; all fields use sentence anchors. Missing contributor roles block publication review. */
+        OnlineBulletinBodyHeader: {
+            lectureDate: components["schemas"]["OnlineBulletinBlock"];
+            contributors: {
+                /** @enum {string} */
+                role: "speaker" | "transcriber" | "editor";
+                name: components["schemas"]["OnlineBulletinBlock"];
+            }[];
         };
         OnlineBulletinHymnLyrics: {
             hymns: {

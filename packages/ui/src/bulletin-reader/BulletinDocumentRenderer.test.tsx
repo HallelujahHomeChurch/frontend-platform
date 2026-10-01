@@ -20,6 +20,19 @@ function fixture(): Document {
 }
 
 describe('immutable shared bulletin renderer', () => {
+  it('reflows the lecture date and contributor band before the first body title, with fixed role labels', () => {
+    const document = fixture();
+    const style = {fontSize: 11, lineHeight: 14, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0};
+    const block = (id: string, text: string) => ({id, style, sentences: [{id: `sentence-${id}`, spans: [{text, fontRole: 'emphasis' as const}]}]});
+    document.components = [{id: 'body', type: 'bodySection', bodySection: {kind: 'sermon', title: block('title', '信息標題'), header: {lectureDate: block('lecture-date', '2026-09-13'), contributors: [{role: 'speaker', name: block('header-speaker', '講員姓名')}, {role: 'transcriber', name: block('header-transcriber', '謄修姓名')}, {role: 'editor', name: block('header-editor', '完稿姓名')}]}, blocks: [block('body', '正文。')]}}];
+    const {container} = render(<UI.BulletinDocumentRenderer document={document} mode="mobile" />);
+    expect(Array.from(container.querySelectorAll('[data-block-id]'), node => node.getAttribute('data-block-id'))).toEqual(['lecture-date', 'header-speaker', 'header-transcriber', 'header-editor', 'title', 'body']);
+    expect(container.querySelector('[data-block-id="header-speaker"]')).toHaveTextContent('講員：講員姓名');
+    expect(container.querySelector('[data-block-id="header-transcriber"]')).toHaveTextContent('謄修：謄修姓名');
+    expect(container.querySelector('[data-block-id="header-editor"]')).toHaveTextContent('完稿：完稿姓名');
+    expect(container.querySelector('[data-sentence-id="sentence-header-editor"]')).toHaveTextContent('完稿姓名');
+    expect(container.querySelector('[data-sentence-id="sentence-header-editor"]')).not.toHaveTextContent('完稿：');
+  });
   it('uses the reference church-owned labels rather than demo wording', () => {
     for (const [element, expected] of [
       ['hymnLabel', '小組詩歌'], ['announcementsLabel', '家教會公佈欄'],

@@ -660,6 +660,9 @@
             ],
             "description": "Unknown creates a blocking review issue."
           },
+          "header": {
+            "$ref": "#/components/schemas/OnlineBulletinBodyHeader"
+          },
           "title": {
             "$ref": "#/components/schemas/OnlineBulletinBlock"
           },
@@ -698,6 +701,45 @@
             "maxItems": 4096,
             "items": {
               "$ref": "#/components/schemas/OnlineBulletinBlock"
+            }
+          }
+        }
+      },
+      "OnlineBulletinBodyHeader": {
+        "description": "First body section only. Source lecture date is independent of canonical issue publication date; all fields use sentence anchors. Missing contributor roles block publication review.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "lectureDate",
+          "contributors"
+        ],
+        "properties": {
+          "lectureDate": {
+            "$ref": "#/components/schemas/OnlineBulletinBlock"
+          },
+          "contributors": {
+            "type": "array",
+            "maxItems": 3,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "role",
+                "name"
+              ],
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "speaker",
+                    "transcriber",
+                    "editor"
+                  ]
+                },
+                "name": {
+                  "$ref": "#/components/schemas/OnlineBulletinBlock"
+                }
+              }
             }
           }
         }

@@ -30,6 +30,10 @@ export function bulletinBlocks(document: BulletinDocument): {componentId: string
         add(component.cover.weeklyVerses);
         break;
       case 'bodySection':
+        if (component.bodySection.header) {
+          add([component.bodySection.header.lectureDate]);
+          for (const contributor of component.bodySection.header.contributors) add([contributor.name]);
+        }
         add([component.bodySection.title]);
         optional(component.bodySection.subtitle);
         for (const contributor of component.bodySection.contributors ?? []) add([contributor.name]);
@@ -93,6 +97,7 @@ export function BulletinDocumentRenderer({document, manifest = document.layoutMa
     }
   }));
   const bodyTitleIDs = new Set(document.components.flatMap(component => component.type === 'bodySection' ? [component.bodySection.title.id] : []));
+  const headerLabels = new Map(document.components.flatMap(component => component.type === 'bodySection' ? (component.bodySection.header?.contributors ?? []).map(contributor => [contributor.name.id, ({speaker: 'speakerLabel', transcriber: 'transcriberLabel', editor: 'editorLabel'} as const)[contributor.role]] as const) : []));
   const sentence = (value: BulletinSentence, start: number, end: number, key: string, fontSize: number) => {
     const state = sentenceState?.[value.id];
     return <span key={key} data-sentence-id={value.id} data-fragment-start={start} data-fragment-end={end}
@@ -159,7 +164,9 @@ export function BulletinDocumentRenderer({document, manifest = document.layoutMa
         {group.label && <h2 data-fixed-element={group.label}>{bulletinFixedText(group.label, canonicalMetadata, 0).text}</h2>}
         {group.blocks.map(block => {
           const Tag = headingIDs.has(block.id) ? group.label ? 'h3' : 'h2' : 'p';
+          const headerLabel = headerLabels.get(block.id);
           return <Tag key={block.id} data-component-id={group.componentId} data-block-id={block.id} style={paragraphStyle(block.style)}>
+            {headerLabel && <span data-fixed-element={headerLabel}>{bulletinFixedText(headerLabel, canonicalMetadata, 0).text}</span>}
             {block.sentences.map(value => sentence(value, 0, value.spans.reduce((n, span) => n + Array.from(span.text).length, 0), value.id, block.style.fontSize))}
           </Tag>;
         })}
