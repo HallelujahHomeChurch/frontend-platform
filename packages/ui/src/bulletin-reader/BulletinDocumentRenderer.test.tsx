@@ -20,6 +20,17 @@ function fixture(): Document {
 }
 
 describe('immutable shared bulletin renderer', () => {
+  it('reconstructs the back summary scroll as code-owned vectors behind selectable content', () => {
+    const document = fixture();
+    document.layoutManifest.pages[0].fixedSlots = [{id: 'native-scroll', element: 'summaryFrame', box: {x: 75.75/595.32, y: 11.25/841.92, width: 486.4/595.32, height: 187.2/841.92}, style: {fontSize: 6, lineHeight: 6, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0}}];
+    const {container} = render(<UI.BulletinDocumentRenderer document={document} mode="paper" />);
+    const frame = container.querySelector('[data-slot-id="native-scroll"]')!;
+    expect(frame).toHaveAttribute('aria-hidden', 'true');
+    expect(frame.querySelector('svg')).toHaveAttribute('viewBox', '0 0 486.4 187.2');
+    expect(frame.querySelectorAll('path')).toHaveLength(3);
+    expect(container.querySelector('[data-sentence-id="s"]')).toHaveTextContent('𠮷你');
+    expect(frame.querySelector('image,use,foreignObject,script')).toBeNull();
+  });
   it('repeats canonical body art as selectable native text without transforming the cover', () => {
     const document = fixture();
     const style = {fontSize: 42, lineHeight: 84, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0};
@@ -66,6 +77,8 @@ describe('immutable shared bulletin renderer', () => {
     expect(container.querySelector('[data-sentence-id="sentence-header-editor"]')).not.toHaveTextContent('完稿：');
   });
   it('uses the reference church-owned labels rather than demo wording', () => {
+    for (const element of ['welcomeLabel', 'worshipLabel', 'workLabel', 'wordLabel'] as const) expect(bulletinFixedText(element, undefined, 0).fontRole).toBe('body');
+    for (const element of ['contact', 'websiteQRLabel', 'youtubeQRLabel', 'streamQRLabel'] as const) expect(bulletinFixedText(element, undefined, 0).fontRole).toBe('scripture');
     for (const [element, expected] of [
       ['hymnLabel', '小組詩歌'], ['announcementsLabel', '家教會公佈欄'],
       ['transcriberLabel', '謄修：'], ['streamQRLabel', '神國大樂\n京成兄妹'],
@@ -120,7 +133,7 @@ describe('immutable shared bulletin renderer', () => {
     const {container} = render(<UI.BulletinDocumentRenderer document={document} mode="paper" canonicalMetadata={{title: '信息主題', subtitle: '', issueNumber: 1739, date: '2026-09-20'}} onSentenceActivate={activate} />);
     expect(container).toHaveTextContent('哈利路亞家教會 週報');
     expect(container).toHaveTextContent('信息主題');
-    expect(container).toHaveTextContent('第 1739 期');
+    expect(container).toHaveTextContent('第1739期');
     fireEvent.click(container.querySelector('[data-sentence-id="canonical-title"]')!);
     expect(activate).toHaveBeenCalledWith('canonical-title');
     expect(JSON.stringify(document)).not.toContain('信息主題');

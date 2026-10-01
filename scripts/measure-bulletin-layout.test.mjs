@@ -70,6 +70,20 @@ test('fixed template labels are measured and can block overflow too', {skip: !as
   const result = await measureBulletinLayout({...input, submissionJSON, expectedContentHash: hash(submissionJSON)});
   assert.ok(result.overflow.some(value => value.slotId === 'fixed-vision'));
 });
+test('template ornament bounds do not masquerade as text overflow', {skip: !assetsDirectory}, async () => {
+  const input = await fixture();
+  const submission = JSON.parse(input.submissionJSON);
+  const slot = {id: 'native-title-label', element: 'titleLabel', box: {x: 45.84/595.32, y: 205.97/841.92, width: 84.24/595.32, height: 14.04/841.92}, style: {fontSize: 14, lineHeight: 14.04, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0}};
+  submission.document.layoutManifest.pages[0].fixedSlots = [slot];
+  let submissionJSON = JSON.stringify(submission);
+  const fitted = await measureBulletinLayout({...input, submissionJSON, expectedContentHash: hash(submissionJSON)});
+  assert.deepEqual(fitted.overflow, []);
+  // A real extra line still blocks; only the non-text pseudo-element is excluded.
+  slot.box.width /= 2;
+  submissionJSON = JSON.stringify(submission);
+  const wrapped = await measureBulletinLayout({...input, submissionJSON, expectedContentHash: hash(submissionJSON)});
+  assert.ok(wrapped.overflow.some(value => value.slotId === slot.id));
+});
 test('native cover masthead preserves the reference word gap at printed size', {skip: !assetsDirectory}, async () => {
   const input = await fixture();
   const submission = JSON.parse(input.submissionJSON);
@@ -139,6 +153,21 @@ test('fixed back sidebar uses vertical native glyphs at the source column positi
   const bounds = slot.fragments.flatMap(fragment => fragment.lines);
   assert.ok(bounds.every(box => box.width < 12 && box.height > 100));
   assert.ok(slot.fragments.every(fragment => fragment.sentenceId === null));
+});
+test('source back frames remain behind text and outside sentence anchors in both originals', {skip: !assetsDirectory}, async () => {
+  for (const boxes of [
+    [[75.75,11.25,486.4,174], [12.75,207.75,560.8,161.3], [18.75,370.5,559.45,90.15]],
+    [[75.75,11.25,486.4,187.2], [12.75,215.35,560.8,171.55], [18.75,390.6,559.45,71.75]],
+  ]) {
+    const input = await fixture();
+    const submission = JSON.parse(input.submissionJSON);
+    submission.document.layoutManifest.pages[0].fixedSlots = boxes.map(([x,y,width,height], index) => ({id: `frame-${index}`, element: ['summaryFrame', 'announcementsFrame', 'prayersFrame'][index], box: {x:x/595.32,y:y/841.92,width:width/595.32,height:height/841.92}, style: {fontSize:6,lineHeight:6,indent:0,firstLineIndent:0,spaceBefore:0,spaceAfter:0}}));
+    const submissionJSON = JSON.stringify(submission);
+    const result = await measureBulletinLayout({...input, submissionJSON, expectedContentHash: hash(submissionJSON)});
+    assert.deepEqual(result.overflow, []);
+    assert.ok(result.pages[0].slots.filter(slot => slot.fixedElement).every(slot => slot.fragments.every(fragment => fragment.sentenceId === null)));
+    assert.equal(result.pages[0].slots.find(slot => slot.slotId === 'slot').fragments[0].sentenceId, 's');
+  }
 });
 test('fixed graphics must be declared trusted assets and loaded before measurement', {skip: !assetsDirectory}, async () => {
   const input = await fixture();

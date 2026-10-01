@@ -69,6 +69,18 @@ function spansBetween(sentence: BulletinSentence, start: number, end: number, fo
   });
 }
 
+function summaryScroll(width: number, height: number) {
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) throw new Error('invalid_layout');
+  const w = Math.round(width * 1000) / 1000;
+  const h = Math.round(height * 1000) / 1000;
+  const r = h / 16;
+  return <svg viewBox={`0 0 ${w} ${h}`} aria-hidden="true" focusable="false" preserveAspectRatio="none">
+    <path fill="#fff" stroke="#111" strokeWidth=".75" strokeLinejoin="round" d={`M0 ${3*r} C0 ${2.448*r} ${.448*r} ${2*r} ${r} ${2*r} L${w-2*r} ${2*r} L${w-2*r} ${r} C${w-2*r} ${.448*r} ${w-1.552*r} 0 ${w-r} 0 C${w-.448*r} 0 ${w} ${.448*r} ${w} ${r} L${w} ${h-3*r} C${w} ${h-2.448*r} ${w-.448*r} ${h-2*r} ${w-r} ${h-2*r} L${2*r} ${h-2*r} L${2*r} ${h-r} C${2*r} ${h-.448*r} ${1.552*r} ${h} ${r} ${h} C${.448*r} ${h} 0 ${h-.448*r} 0 ${h-r} Z`} />
+    <path fill="#c6c6c6" stroke="#111" strokeWidth=".75" d={`M0 ${3.25*r} C0 ${2.836*r} ${.448*r} ${2.5*r} ${r} ${2.5*r} C${1.552*r} ${2.5*r} ${2*r} ${2.836*r} ${2*r} ${3.25*r} C${2*r} ${3.664*r} ${1.552*r} ${4*r} ${r} ${4*r} C${.448*r} ${4*r} 0 ${3.664*r} 0 ${3.25*r} Z M${2*r} ${3*r} L${2*r} ${h-2*r}`} />
+    <path fill="#c6c6c6" stroke="#111" strokeWidth=".75" d={`M${w-2*r} ${r} C${w-2*r} ${1.552*r} ${w-1.552*r} ${2*r} ${w-r} ${2*r} C${w-.448*r} ${2*r} ${w} ${1.552*r} ${w} ${r}`} />
+  </svg>;
+}
+
 export type BulletinDocumentRendererProps = {
   document: BulletinDocument;
   manifest?: BulletinLayoutManifest;
@@ -123,9 +135,10 @@ export function BulletinDocumentRenderer({document, manifest = document.layoutMa
     marginBlockStart: `${style.spaceBefore}em`,
     marginBlockEnd: `${mode === 'mobile' ? Math.max(.6, style.spaceAfter) : style.spaceAfter}em`,
   });
-  const fixedContent = (slot: components['schemas']['OnlineBulletinFixedSlot'], pageNumber: number) => {
+  const fixedContent = (slot: components['schemas']['OnlineBulletinFixedSlot'], pageNumber: number, width = 0, height = 0) => {
     const graphic = bulletinFixedGraphic(slot.element);
     if (graphic) return <img src={graphic.url} alt="" draggable={false} />;
+    if (slot.element === 'summaryFrame') return summaryScroll(width, height);
     if (bulletinFixedDecoration(slot.element)) return null;
     const value = bulletinFixedText(slot.element, canonicalMetadata, pageNumber, document.sourcePageCount);
     return value.annotatable ? sentence({id: `canonical-${slot.element}`, spans: [{text: value.text, fontRole: value.fontRole}]}, 0, Array.from(value.text).length, slot.id, slot.style.fontSize) : <span data-font-role={value.fontRole}>{value.text}</span>;
@@ -184,7 +197,7 @@ export function BulletinDocumentRenderer({document, manifest = document.layoutMa
           }
           if (bulletinFixedGraphic(slot.element) || bulletinFixedDecoration(slot.element)) style.height = style.minHeight;
           return <p key={slot.id} data-slot-id={slot.id} data-fixed-element={slot.element} data-body-canonical-art={bodyArt || undefined} aria-hidden={bulletinFixedDecoration(slot.element) || slot.element === 'backgroundLogo' || undefined} style={style}>
-            {fixedContent(slot, document.pages.indexOf(page))}
+            {fixedContent(slot, document.pages.indexOf(page), slot.box.width * page.width, slot.box.height * page.height)}
           </p>;
         })}
         {layout.slots.map(slot => {

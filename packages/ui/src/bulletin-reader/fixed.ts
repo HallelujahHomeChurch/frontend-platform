@@ -39,7 +39,11 @@ export function bulletinFixedDecoration(element: BulletinFixedSlot['element']) {
 export function bulletinFixedText(element: BulletinFixedSlot['element'], metadata: BulletinCanonicalMetadata | undefined, pageNumber: number, sourcePageCount?: number) {
   if (bulletinFixedGraphic(element) || bulletinFixedDecoration(element)) return {text: '', fontRole: 'body' as const, annotatable: false};
   if (element === 'pageNumber') return {text: String(pageNumber), fontRole: 'body' as const, annotatable: false};
-  if (element in labels) return {text: labels[element as keyof typeof labels], fontRole: element === 'speakerSeparator' ? 'scripture' as const : element === 'masthead' ? 'body' as const : 'emphasis' as const, annotatable: false};
+  if (element in labels) {
+    const body = ['masthead', 'welcomeLabel', 'worshipLabel', 'workLabel', 'wordLabel'].includes(element);
+    const scripture = ['speakerSeparator', 'contact', 'websiteQRLabel', 'youtubeQRLabel', 'streamQRLabel'].includes(element);
+    return {text: labels[element as keyof typeof labels], fontRole: body ? 'body' as const : scripture ? 'scripture' as const : 'emphasis' as const, annotatable: false};
+  }
   if (!metadata) throw new Error('missing_canonical_metadata');
   if (element === 'bodyIssueSummary') {
     if (typeof sourcePageCount !== 'number' || !Number.isInteger(sourcePageCount) || sourcePageCount < 4 || sourcePageCount > 40) throw new Error('invalid_source_page_count');
@@ -49,7 +53,7 @@ export function bulletinFixedText(element: BulletinFixedSlot['element'], metadat
   switch (element) {
     case 'title': text = metadata.title; break;
     case 'subtitle': text = metadata.subtitle; break;
-    case 'issueNumber': text = `第 ${metadata.issueNumber} 期`; break;
+    case 'issueNumber': text = `第${metadata.issueNumber}期`; break;
     case 'date': {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(metadata.date)) throw new Error('invalid_canonical_metadata');
       const date = new Date(`${metadata.date}T00:00:00Z`);

@@ -40,7 +40,9 @@ export async function measureRenderedBulletin(root: HTMLElement, fonts: {family:
         return {sentenceId: sentence.dataset.sentenceId ?? null, start: Number(sentence.dataset.fragmentStart ?? 0), end: Number(sentence.dataset.fragmentEnd ?? Array.from(sentence.textContent ?? '').length), lines};
       });
       const slotId = slot.dataset.slotId!;
-      if (exceeds || slot.scrollWidth > slot.clientWidth + 1) overflow.push({pageId: page.dataset.bulletinPage!, slotId});
+      // scrollWidth includes code-owned ornament pseudo-elements. Text ranges
+      // above measure actual glyphs against the unchanged source allocation.
+      if (exceeds) overflow.push({pageId: page.dataset.bulletinPage!, slotId});
       return {slotId, fixedElement: slot.dataset.fixedElement, box: rectangle(slotBox), fragments};
     });
     return {pageId: page.dataset.bulletinPage!, width: round(pageBox.width * .75), height: round(pageBox.height * .75), slots};

@@ -1,2 +1,2 @@
 // Generated from compiled renderer, measurement code, CSS and fixed assets.
-export const BULLETIN_RENDERER_V1_DIGEST = '4b86312a2607bf83f95f008139ff6153bf4091347996a3b575f91b10a984fbc1';
+export const BULLETIN_RENDERER_V1_DIGEST = '401c0394ee401cdc0337010333833fd47b945fcfb968d5068ce58d53962c95b8';
