@@ -329,6 +329,8 @@
               "verseLabel",
               "hymnLabel",
               "summaryLabel",
+              "summarySidebarTitle",
+              "summarySidebarTagline",
               "announcementsLabel",
               "prayersLabel",
               "titleLabel",

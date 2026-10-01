@@ -85,6 +85,21 @@ test('body issue and contributor captions use legal glyphs and never become edit
   assert.deepEqual(result.overflow, []);
   for (const slot of result.pages[0].slots.filter(slot => slot.fixedElement)) assert.ok(slot.fragments.every(fragment => fragment.sentenceId === null));
 });
+test('fixed back sidebar uses vertical native glyphs at the source column positions', {skip: !assetsDirectory}, async () => {
+  const input = await fixture();
+  const submission = JSON.parse(input.submissionJSON);
+  submission.document.layoutManifest.pages[0].fixedSlots = [
+    {id: 'sidebar-title', element: 'summarySidebarTitle', box: {x: 53.28/595.32, y: 77.077/841.92, width: 11.04/595.32, height: 54.24/841.92}},
+    {id: 'sidebar-tagline', element: 'summarySidebarTagline', box: {x: 40.2/595.32, y: 50.077/841.92, width: 11.04/595.32, height: 108.24/841.92}},
+  ].map(slot => ({...slot, style: {fontSize: 11, lineHeight: 11, letterSpacing: 10.8/11-1, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0}}));
+  const submissionJSON = JSON.stringify(submission);
+  const result = await measureBulletinLayout({...input, submissionJSON, expectedContentHash: hash(submissionJSON)});
+  assert.deepEqual(result.overflow, []);
+  const slot = result.pages[0].slots.find(slot => slot.slotId === 'sidebar-tagline');
+  const bounds = slot.fragments.flatMap(fragment => fragment.lines);
+  assert.ok(bounds.every(box => box.width < 12 && box.height > 100));
+  assert.ok(slot.fragments.every(fragment => fragment.sentenceId === null));
+});
 test('fixed graphics must be declared trusted assets and loaded before measurement', {skip: !assetsDirectory}, async () => {
   const input = await fixture();
   const submission = JSON.parse(input.submissionJSON);

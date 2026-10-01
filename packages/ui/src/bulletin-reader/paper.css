@@ -75,6 +75,8 @@
 .hhc-bulletin-v1 [data-fixed-element='announcementsFrame'],
 .hhc-bulletin-v1 [data-fixed-element='prayersFrame'] { border: 1pt solid #111; pointer-events: none; }
 .hhc-bulletin-v1 [data-fixed-element='summaryFrame'] { border-radius: 10pt 0 10pt 10pt; }
+.hhc-bulletin-v1[data-bulletin-mode='paper'] [data-fixed-element='summarySidebarTitle'],
+.hhc-bulletin-v1[data-bulletin-mode='paper'] [data-fixed-element='summarySidebarTagline'] { writing-mode: vertical-rl; text-orientation: upright; white-space: nowrap; }
 .hhc-bulletin-v1 [data-fixed-element='announcementsFrame'] { border-style: dashed; }
 .hhc-bulletin-v1 [data-fixed-element='prayersFrame'] { border: 4pt solid #c6c6c6; outline: .5pt solid #111; }
 /* Template ornamentation stays outside text layout and sentence hit targets. */

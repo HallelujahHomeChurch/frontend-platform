@@ -20,6 +20,12 @@ function fixture(): Document {
 }
 
 describe('immutable shared bulletin renderer', () => {
+  it('keeps the paper sidebar fixed while mobile summary retains its own section title', () => {
+    expect(bulletinFixedText('summarySidebarTitle', undefined, 0).text).toBe('家教會週報');
+    expect(bulletinFixedText('summarySidebarTagline', undefined, 0).text).toBe('一看再看、百看不厭的');
+    const {container} = render(<UI.BulletinDocumentRenderer document={fixture()} mode="mobile" />);
+    expect(container.querySelector('h2')?.textContent).toBe('信息摘要');
+  });
   it('derives the printed body issue summary from canonical issue and immutable source page count', () => {
     const metadata = {title: '信息', subtitle: '', issueNumber: 1739, date: '2026-09-20'};
     expect(bulletinFixedText('bodyIssueSummary', metadata, 1, 12)).toEqual({text: '(1739共10頁)', fontRole: 'emphasis', annotatable: false});

@@ -19,6 +19,7 @@ const labels = {
   verseLabel: '本週金句', hymnLabel: '小組詩歌', summaryLabel: '信息摘要', announcementsLabel: '家教會公佈欄', prayersLabel: '得勝與代求',
   titleLabel: '本週靈糧主題', speakerLabel: '講員：', speakerSeparator: '～', transcriberLabel: '謄修：', editorLabel: '完稿：', authorLabel: '作者：',
   lectureDateMarker: '‧', bodySpeakerLabel: '‧講員：',
+  summarySidebarTitle: '家教會週報', summarySidebarTagline: '一看再看、百看不厭的',
 } as const;
 
 export function bulletinFixedGraphic(element: BulletinFixedSlot['element']) {
