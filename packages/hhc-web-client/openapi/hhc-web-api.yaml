@@ -3583,8 +3583,9 @@ components:
       description: Closed published rendering projection with no extraction provenance. Layout proof binds the original worker measurement; it is not a hash of this redacted DTO. Verify the response byte digest separately.
       type: object
       additionalProperties: false
-      required: [schemaVersion, templateVersion, pages, layoutManifest, components]
+      required: [schemaVersion, templateVersion, printedBodyPageCount, pages, layoutManifest, components]
       properties:
+        printedBodyPageCount: { type: integer, minimum: 2, maximum: 38, description: Visible printed body issue-summary count, independent of HTML pagination. }
         schemaVersion: { type: string, const: '1' }
         templateVersion: { type: string, const: v1 }
         pages: { type: array, minItems: 4, maxItems: 80, items: { $ref: '#/components/schemas/OnlineBulletinPage' } }

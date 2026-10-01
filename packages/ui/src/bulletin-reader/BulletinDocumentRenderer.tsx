@@ -8,6 +8,7 @@ import {bulletinFixedText, bulletinFixedGraphic, bulletinFixedDecoration, type B
 export {BULLETIN_RENDERER_V1_DIGEST} from './artifact.js';
 export type {BulletinCanonicalMetadata} from './fixed.js';
 export type BulletinDocument = components['schemas']['OnlineBulletinDocument'];
+export type BulletinRenderableDocument = Omit<BulletinDocument, 'issueId' | 'series' | 'sourceAssetChecksum'>;
 export type BulletinBlock = components['schemas']['OnlineBulletinBlock'];
 export type BulletinSentence = components['schemas']['OnlineBulletinSentence'];
 export type BulletinLayoutManifest = components['schemas']['OnlineBulletinLayoutManifest'];
@@ -15,7 +16,7 @@ export type BulletinSentenceState = {selected?: boolean; highlight?: 'yellow' | 
 type Item = components['schemas']['OnlineBulletinItem'];
 
 // Semantic order is shared by mobile reflow, indexing and paper slot lookup.
-export function bulletinBlocks(document: BulletinDocument): {componentId: string; block: BulletinBlock}[] {
+export function bulletinBlocks(document: BulletinRenderableDocument): {componentId: string; block: BulletinBlock}[] {
   const result: {componentId: string; block: BulletinBlock}[] = [];
   for (const component of document.components) {
     const add = (blocks: BulletinBlock[]) => result.push(...blocks.map(block => ({componentId: component.id, block})));
@@ -70,7 +71,7 @@ function spansBetween(sentence: BulletinSentence, start: number, end: number, fo
 }
 
 export type BulletinDocumentRendererProps = {
-  document: BulletinDocument;
+  document: BulletinRenderableDocument;
   manifest?: BulletinLayoutManifest;
   mode: 'paper' | 'mobile';
   activePage?: string;
