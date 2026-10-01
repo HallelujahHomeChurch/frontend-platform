@@ -41,6 +41,13 @@ describe('hhc web client', () => {
     expect(await retry!.json()).toEqual({})
   })
 
+  it('does not expose retired single-file recording helpers', () => {
+    const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'admin-token'})
+    for (const method of ['listAdminRecordingFiles', 'createAdminRecordingUpload', 'getAdminRecordingAsset']) {
+      expect(client).not.toHaveProperty(method)
+    }
+  })
+
   it('reads HLS processing without treating the upload receipt as ready', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({data: {state: 'validating', packageId: 'package-1'}, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}}))
     const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'admin-token', fetcher})
