@@ -2126,6 +2126,11 @@ export interface components {
             sources: components["schemas"]["ReaderHighlight"][];
         };
         ReaderPrivateState: {
+            /**
+             * Format: uuid
+             * @description Trusted response binding only; never accepted as a mutation input.
+             */
+            readonly accountId: string;
             /** Format: uuid */
             documentId: string;
             appliedRevision: number;
@@ -2176,24 +2181,26 @@ export interface components {
             baseVersion?: number;
             /** @enum {string} */
             kind: "setHighlight" | "clearHighlight" | "createNote" | "editNote" | "deleteNote" | "setProgress" | "resolveHighlightMigrationConflict";
-            payload: Record<string, never>;
+            payload: {
+                [key: string]: unknown;
+            };
         } & ({
             /** @constant */
-            kind?: "setHighlight";
-            payload?: {
+            kind: "setHighlight";
+            payload: {
                 sentenceIds: components["schemas"]["ReaderAnchorIDs"];
                 color: components["schemas"]["ReaderHighlightColor"];
             };
         } | {
             /** @constant */
-            kind?: "clearHighlight";
-            payload?: {
+            kind: "clearHighlight";
+            payload: {
                 sentenceIds: components["schemas"]["ReaderAnchorIDs"];
             };
         } | {
             /** @constant */
-            kind?: "createNote";
-            payload?: {
+            kind: "createNote";
+            payload: {
                 /** Format: uuid */
                 noteId: string;
                 sentenceIds: components["schemas"]["ReaderAnchorIDs"];
@@ -2201,31 +2208,31 @@ export interface components {
             };
         } | {
             /** @constant */
-            kind?: "editNote";
-            payload?: {
+            kind: "editNote";
+            payload: {
                 /** Format: uuid */
                 noteId: string;
                 text: string;
             };
         } | {
             /** @constant */
-            kind?: "deleteNote";
-            payload?: {
+            kind: "deleteNote";
+            payload: {
                 /** Format: uuid */
                 noteId: string;
             };
         } | {
             /** @constant */
-            kind?: "setProgress";
-            payload?: {
+            kind: "setProgress";
+            payload: {
                 pageId?: string;
                 componentId?: string;
                 sentenceId?: string;
             };
         } | {
             /** @constant */
-            kind?: "resolveHighlightMigrationConflict";
-            payload?: {
+            kind: "resolveHighlightMigrationConflict";
+            payload: {
                 /** Format: uuid */
                 conflictId: string;
                 chosenColor: components["schemas"]["ReaderHighlightColor"];

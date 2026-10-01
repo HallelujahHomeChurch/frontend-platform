@@ -3578,8 +3578,9 @@ components:
     ReaderPrivateState:
       type: object
       additionalProperties: false
-      required: [documentId, appliedRevision, currentRevision, highlights, notes, progress, conflicts]
+      required: [accountId, documentId, appliedRevision, currentRevision, highlights, notes, progress, conflicts]
       properties:
+        accountId: { type: string, format: uuid, readOnly: true, description: Trusted response binding only; never accepted as a mutation input. }
         documentId: { type: string, format: uuid }
         appliedRevision: { type: integer, minimum: 1 }
         currentRevision: { type: integer, minimum: 1 }
@@ -3644,9 +3645,10 @@ components:
             documentRevision: { type: integer, minimum: 1, maximum: 9007199254740991 }
             baseVersion: { type: integer, minimum: 1 }
             kind: { type: string, enum: [setHighlight, clearHighlight, createNote, editNote, deleteNote, setProgress, resolveHighlightMigrationConflict] }
-            payload: { type: object }
+            payload: { type: object, additionalProperties: true }
         - oneOf:
-            - properties:
+            - required: [kind, payload]
+              properties:
                 kind: { const: setHighlight }
                 payload:
                   type: object
@@ -3656,7 +3658,8 @@ components:
                     sentenceIds: { $ref: '#/components/schemas/ReaderAnchorIDs' }
                     color: { $ref: '#/components/schemas/ReaderHighlightColor' }
               not: { required: [baseVersion] }
-            - properties:
+            - required: [kind, payload]
+              properties:
                 kind: { const: clearHighlight }
                 payload:
                   type: object
@@ -3665,7 +3668,8 @@ components:
                   properties:
                     sentenceIds: { $ref: '#/components/schemas/ReaderAnchorIDs' }
               not: { required: [baseVersion] }
-            - properties:
+            - required: [kind, payload]
+              properties:
                 kind: { const: createNote }
                 payload:
                   type: object
@@ -3676,7 +3680,7 @@ components:
                     sentenceIds: { $ref: '#/components/schemas/ReaderAnchorIDs' }
                     text: { type: string, minLength: 1, maxLength: 10000 }
               not: { required: [baseVersion] }
-            - required: [baseVersion]
+            - required: [kind, payload, baseVersion]
               properties:
                 kind: { const: editNote }
                 payload:
@@ -3686,7 +3690,7 @@ components:
                   properties:
                     noteId: { type: string, format: uuid }
                     text: { type: string, minLength: 1, maxLength: 10000 }
-            - required: [baseVersion]
+            - required: [kind, payload, baseVersion]
               properties:
                 kind: { const: deleteNote }
                 payload:
@@ -3695,7 +3699,8 @@ components:
                   required: [noteId]
                   properties:
                     noteId: { type: string, format: uuid }
-            - properties:
+            - required: [kind, payload]
+              properties:
                 kind: { const: setProgress }
                 payload:
                   type: object
@@ -3705,7 +3710,8 @@ components:
                     componentId: { type: string, maxLength: 128 }
                     sentenceId: { type: string, maxLength: 128 }
               not: { required: [baseVersion] }
-            - properties:
+            - required: [kind, payload]
+              properties:
                 kind: { const: resolveHighlightMigrationConflict }
                 payload:
                   type: object
