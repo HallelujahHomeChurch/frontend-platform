@@ -76,7 +76,7 @@ export interface components {
         OnlineBulletinFixedSlot: {
             id: components["schemas"]["OnlineBulletinID"];
             /** @enum {string} */
-            element: "title" | "subtitle" | "date" | "issueNumber" | "pageNumber" | "masthead" | "vision" | "pastor" | "contact" | "scanHint" | "websiteQRLabel" | "youtubeQRLabel" | "streamQRLabel" | "welcomeLabel" | "worshipLabel" | "workLabel" | "wordLabel" | "verseLabel" | "hymnLabel" | "summaryLabel" | "announcementsLabel" | "prayersLabel" | "titleLabel" | "speakerLabel" | "speakerSeparator" | "transcriberLabel" | "editorLabel" | "authorLabel" | "logo" | "backgroundLogo" | "websiteQR" | "youtubeQR" | "streamQR" | "topRule" | "footerRule" | "summaryFrame" | "announcementsFrame" | "prayersFrame";
+            element: "title" | "subtitle" | "date" | "issueNumber" | "pageNumber" | "masthead" | "vision" | "visionMission" | "visionFellowship" | "visionCommitment" | "pastor" | "contact" | "scanHint" | "websiteQRLabel" | "youtubeQRLabel" | "streamQRLabel" | "welcomeLabel" | "worshipLabel" | "workLabel" | "wordLabel" | "verseLabel" | "hymnLabel" | "summaryLabel" | "announcementsLabel" | "prayersLabel" | "titleLabel" | "speakerLabel" | "speakerSeparator" | "transcriberLabel" | "editorLabel" | "authorLabel" | "logo" | "backgroundLogo" | "websiteQR" | "youtubeQR" | "streamQR" | "topRule" | "footerRule" | "summaryFrame" | "announcementsFrame" | "prayersFrame";
             box: components["schemas"]["OnlineBulletinBox"];
             style: components["schemas"]["OnlineBulletinParagraphStyle"];
         };

@@ -32,6 +32,25 @@ describe('immutable shared bulletin renderer', () => {
     expect(UI.BulletinDocumentRenderer).toBeTypeOf('function');
     expect(UI.BULLETIN_RENDERER_V1_DIGEST).toMatch(/^[a-f0-9]{64}$/);
   });
+  it('retains all three separately positioned church vision rows on mobile', () => {
+    const document = fixture();
+    const style = {fontSize: 10, lineHeight: 10, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0};
+    document.layoutManifest.pages[0].fixedSlots = (['visionMission', 'visionFellowship', 'visionCommitment'] as const).map((element, index) => ({id: element, element, box: {x: .44+index*.034, y: .156+index*.019, width: .4, height: .015}, style}));
+    const {container} = render(<UI.BulletinDocumentRenderer document={document} mode="mobile" />);
+    expect(container.querySelector('[data-fixed-element="visionMission"]')).toHaveTextContent('異象使命：華人遍地興起、福音傳到地極');
+    expect(container.querySelector('[data-fixed-element="visionFellowship"]')).toHaveTextContent('團契行動：共同生活、愛與成全、恩膏傳承');
+    expect(container.querySelector('[data-fixed-element="visionCommitment"]')).toHaveTextContent('堅持理想：宣教主導、靈恩神學、團隊事奉、門徒訓練');
+  });
+  it('frames only a paper body title, not its separately anchored speaker', () => {
+    const document = fixture();
+    const title = document.components[0].items![0].blocks[0];
+    const name = {...title, id: 'name', sentences: [{id: 'speaker', spans: [{text: '講員', fontRole: 'emphasis' as const}]}]};
+    document.components = [{id: 'c', type: 'bodySection', bodySection: {kind: 'unknown', title, contributors: [{role: 'speaker', name}], blocks: []}}];
+    document.layoutManifest.pages[0].slots.push({id: 'speaker-slot', componentId: 'c', blockId: 'name', box: {x: .4, y: .2, width: .2, height: .1}, fragments: [{sentenceId: 'speaker', start: 0, end: 2}]});
+    const {container} = render(<UI.BulletinDocumentRenderer document={document} mode="paper" />);
+    expect(container.querySelectorAll('[data-body-title="true"]')).toHaveLength(2);
+    expect(container.querySelector('[data-slot-id="speaker-slot"]')).not.toHaveAttribute('data-body-title');
+  });
   it('renders point-sized paper and Unicode continuations without duplicate or lost text', () => {
     const document = fixture();
     const {container} = render(<UI.BulletinDocumentRenderer document={document} mode="paper" />);

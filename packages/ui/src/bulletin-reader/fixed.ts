@@ -8,6 +8,9 @@ export type BulletinFixedSlot = components['schemas']['OnlineBulletinFixedSlot']
 const labels = {
   masthead: '哈利路亞家教會 週報',
   vision: '異象使命：華人遍地興起、福音傳到地極\n團契行動：共同生活、愛與成全、恩膏傳承\n堅持理想：宣教主導、靈恩神學、團隊事奉、門徒訓練',
+  visionMission: '異象使命：華人遍地興起、福音傳到地極',
+  visionFellowship: '團契行動：共同生活、愛與成全、恩膏傳承',
+  visionCommitment: '堅持理想：宣教主導、靈恩神學、團隊事奉、門徒訓練',
   pastor: '主任牧師：曾英欽 牧師',
   contact: '教會地址：臺北市仁愛路三段 29 號 B1\nAddress:No.29,B1,Sec3,Ren-Ai.Rd,Taipei,Taiwan\n電子郵件 (E-mail)：home.church@msa.hinet.net\n教會網址 (Website)：www.alive.org.tw\n電話 (Phone)：(02) 2776-1157 / 8773-1972\n傳真 (Fax)：(02) 2781-4980',
   scanHint: '歡迎使用您的手機掃描\n左方的 QRCODE 圖樣\n可以立即加入家教會官網\n直播/下載週報/福音餐會',

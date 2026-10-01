@@ -67,6 +67,19 @@
 .hhc-bulletin-v1 [data-fixed-element='summaryFrame'],
 .hhc-bulletin-v1 [data-fixed-element='announcementsFrame'],
 .hhc-bulletin-v1 [data-fixed-element='prayersFrame'] { border: 1pt solid #111; pointer-events: none; }
+.hhc-bulletin-v1 [data-fixed-element='summaryFrame'] { border-radius: 10pt 0 10pt 10pt; }
+.hhc-bulletin-v1 [data-fixed-element='announcementsFrame'] { border-style: dashed; }
+.hhc-bulletin-v1 [data-fixed-element='prayersFrame'] { border: 4pt solid #c6c6c6; outline: .5pt solid #111; }
+/* Template ornamentation stays outside text layout and sentence hit targets. */
+.hhc-bulletin-v1[data-bulletin-mode='paper'] [data-body-title],
+.hhc-bulletin-v1[data-bulletin-mode='paper'] [data-fixed-element='titleLabel'],
+.hhc-bulletin-v1[data-bulletin-mode='paper'] [data-fixed-element='verseLabel'] { isolation: isolate; }
+.hhc-bulletin-v1[data-bulletin-mode='paper'] [data-body-title]::before,
+.hhc-bulletin-v1[data-bulletin-mode='paper'] [data-fixed-element='titleLabel']::before,
+.hhc-bulletin-v1[data-bulletin-mode='paper'] [data-fixed-element='verseLabel']::before { content: ''; position: absolute; z-index: -1; pointer-events: none; }
+.hhc-bulletin-v1[data-bulletin-mode='paper'] [data-body-title]::before { inset: -.08em -.1em; border: .7pt solid #111; }
+.hhc-bulletin-v1[data-bulletin-mode='paper'] [data-fixed-element='titleLabel']::before { inset: -.4em -.6em; border: 1pt solid #888; background: #c6c6c6; }
+.hhc-bulletin-v1[data-bulletin-mode='paper'] [data-fixed-element='verseLabel']::before { inset: -.6em -.6em -.9em; border: 1pt solid #888; background: #c6c6c6; }
 .hhc-bulletin-v1 [data-font-role='body'],
 .hhc-bulletin-v1 [data-font-role='reference'],
 .hhc-bulletin-v1 [data-font-role='foreignText'] { font-family: 'HHC Weekly Serif', serif; font-weight: 400; }

@@ -92,6 +92,7 @@ export function BulletinDocumentRenderer({document, manifest = document.layoutMa
       default: return [];
     }
   }));
+  const bodyTitleIDs = new Set(document.components.flatMap(component => component.type === 'bodySection' ? [component.bodySection.title.id] : []));
   const sentence = (value: BulletinSentence, start: number, end: number, key: string, fontSize: number) => {
     const state = sentenceState?.[value.id];
     return <span key={key} data-sentence-id={value.id} data-fragment-start={start} data-fragment-end={end}
@@ -124,7 +125,7 @@ export function BulletinDocumentRenderer({document, manifest = document.layoutMa
     const value = bulletinFixedText(slot.element, canonicalMetadata, pageNumber);
     return value.annotatable ? sentence({id: `canonical-${slot.element}`, spans: [{text: value.text, fontRole: value.fontRole}]}, 0, Array.from(value.text).length, slot.id, slot.style.fontSize) : <span data-font-role={value.fontRole}>{value.text}</span>;
   };
-  const mobileHeader = (manifest.pages[0]?.fixedSlots ?? []).filter(slot => ['masthead', 'date', 'issueNumber', 'title', 'subtitle', 'vision', 'pastor'].includes(slot.element));
+  const mobileHeader = (manifest.pages[0]?.fixedSlots ?? []).filter(slot => ['masthead', 'date', 'issueNumber', 'title', 'subtitle', 'vision', 'visionMission', 'visionFellowship', 'visionCommitment', 'pastor'].includes(slot.element));
   const mobileGroups = document.components.flatMap(component => {
     const entries = blocks.filter(entry => entry.componentId === component.id);
     if (component.type === 'cover') {
@@ -181,7 +182,7 @@ export function BulletinDocumentRenderer({document, manifest = document.layoutMa
           const style: CSSProperties = {...paragraphStyle(block.style), left: `${slot.box.x * 100}%`, top: `${slot.box.y * 100}%`, width: `${slot.box.width * 100}%`, minHeight: `${slot.box.height * page.height}pt`};
           if (slot.continuationOf) { style.textIndent = '0'; style.marginBlockStart = '0'; }
           if (continuedSlotIDs.has(slot.id)) style.marginBlockEnd = '0';
-          return <p key={slot.id} data-slot-id={slot.id} data-component-id={slot.componentId} data-block-id={block.id} data-continuation-of={slot.continuationOf} style={style}>
+          return <p key={slot.id} data-slot-id={slot.id} data-component-id={slot.componentId} data-block-id={block.id} data-body-title={bodyTitleIDs.has(block.id) || undefined} data-continuation-of={slot.continuationOf} style={style}>
             {slot.fragments.map((fragment, index) => {
               const value = block.sentences.find(s => s.id === fragment.sentenceId);
               if (!value || fragment.end > value.spans.reduce((n, span) => n + Array.from(span.text).length, 0) || fragment.start < 0 || fragment.start >= fragment.end) throw new Error('invalid_layout');
