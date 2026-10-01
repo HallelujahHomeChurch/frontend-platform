@@ -80,6 +80,14 @@
 }
 .hhc-bulletin-v1 [data-fixed-element='topRule'],
 .hhc-bulletin-v1 [data-fixed-element='footerRule'] { border-top: 1pt solid #111; pointer-events: none; }
+.hhc-bulletin-v1[data-bulletin-mode='paper'] [data-body-canonical-art] [data-sentence-id] {
+  display: inline-block;
+  line-height: 1;
+  /* Keep the legal face's fractional-point ink overhang inside its allocation. */
+  transform: translateY(1pt) scaleY(var(--body-art-scale-y));
+  transform-origin: left top;
+  text-shadow: -8pt var(--body-art-shadow-y) 1pt #c6c6c6;
+}
 .hhc-bulletin-v1 [data-fixed-element='summaryFrame'],
 .hhc-bulletin-v1 [data-fixed-element='announcementsFrame'],
 .hhc-bulletin-v1 [data-fixed-element='prayersFrame'] { border: 1pt solid #111; pointer-events: none; }

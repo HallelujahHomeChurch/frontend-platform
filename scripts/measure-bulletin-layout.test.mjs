@@ -95,6 +95,36 @@ test('body issue and contributor captions use legal glyphs and never become edit
   assert.deepEqual(result.overflow, []);
   for (const slot of result.pages[0].slots.filter(slot => slot.fixedElement)) assert.ok(slot.fragments.every(fragment => fragment.sentenceId === null));
 });
+test('native body canonical art retains transformed sentence bounds without covering metadata', {skip: !assetsDirectory}, async () => {
+  for (const source of [
+    {title: '永恆的命定和呼召', subtitle: '～我們起來建造吧!', issueNumber: 1740, date: '2026-09-27', shadows: [{x: .1026, y: .09022, width: .60502, height: .0625}, {x: .51401, y: .20909, width: .38107, height: .03627}]},
+    {title: '詩篇廿三篇、洗革拉戰役', subtitle: '～被聖靈充滿必有的三個看見', issueNumber: 1739, date: '2026-09-20', shadows: [{x: .10421286, y: .08452109, width: .66186253, height: .06178734}, {x: .40858698, y: .21536607, width: .4927434, height: .03370748}]},
+  ]) {
+  const input = await fixture();
+  const submission = JSON.parse(input.submissionJSON);
+  const {shadows, ...metadata} = source;
+  submission.canonicalMetadata = metadata;
+  submission.document.pages.push({id: 'body', width: 595.32, height: 841.92});
+  const slots = [
+    {element: 'title', shadow: shadows[0]},
+    {element: 'subtitle', shadow: shadows[1]},
+  ].map(({element, shadow}) => {
+    const size = shadow.height * 841.92 * .8;
+    const shift = size * .35 / 595.32;
+    const text = Array.from(submission.canonicalMetadata[element]);
+    const units = text.reduce((sum, character) => sum + (/\p{Script=Han}/u.test(character) || character.codePointAt(0) >= 0x3000 && character.codePointAt(0) <= 0xffef ? 1 : .5), 0);
+    const tracking = ((shadow.width-shift)*595.32 - 1 - size*units) / (text.length*size);
+    return {id: `body-${element}`, element, box: {x: shadow.x + shift, y: shadow.y - size/841.92, width: shadow.width - shift, height: size*2/841.92}, style: {fontSize: size, lineHeight: size*2, letterSpacing: tracking, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0}};
+  });
+  submission.document.layoutManifest.pages.push({pageId: 'body', slots: [], fixedSlots: slots});
+  const submissionJSON = JSON.stringify(submission);
+  const result = await measureBulletinLayout({...input, submissionJSON, expectedContentHash: hash(submissionJSON)});
+  assert.deepEqual(result.overflow, [], JSON.stringify(result.pages[1]));
+  const title = result.pages[1].slots.find(slot => slot.fixedElement === 'title');
+  assert.equal(title.fragments[0].sentenceId, 'canonical-title');
+  assert.ok(title.fragments[0].lines.every(line => line.height > 80 && line.y + line.height < 160));
+  }
+});
 test('fixed back sidebar uses vertical native glyphs at the source column positions', {skip: !assetsDirectory}, async () => {
   const input = await fixture();
   const submission = JSON.parse(input.submissionJSON);

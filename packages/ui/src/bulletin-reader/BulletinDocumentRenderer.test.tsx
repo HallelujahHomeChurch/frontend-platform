@@ -20,6 +20,25 @@ function fixture(): Document {
 }
 
 describe('immutable shared bulletin renderer', () => {
+  it('repeats canonical body art as selectable native text without transforming the cover', () => {
+    const document = fixture();
+    const style = {fontSize: 42, lineHeight: 84, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0};
+    for (const page of document.layoutManifest.pages) page.fixedSlots = [{id: `${page.pageId}-title`, element: 'title', box: {x: .12, y: .04, width: .6, height: .1}, style}];
+    const activate = vi.fn();
+    const {container} = render(<UI.BulletinDocumentRenderer document={document} mode="paper" canonicalMetadata={{title: '永恆的命定和呼召', subtitle: '', issueNumber: 1740, date: '2026-09-27'}} sentenceState={{'canonical-title': {highlight: 'yellow'}}} onSentenceActivate={activate} />);
+    const cover = container.querySelector<HTMLElement>('[data-slot-id="p1-title"]')!;
+    const body = container.querySelector<HTMLElement>('[data-slot-id="p2-title"]')!;
+    expect(cover).not.toHaveAttribute('data-body-canonical-art');
+    expect(body).toHaveAttribute('data-body-canonical-art', 'true');
+    expect(body.style.lineHeight).toBe('42pt');
+    expect(body.style.getPropertyValue('--body-art-scale-y')).toBe('2');
+    const sentence = body.querySelector('[data-sentence-id="canonical-title"]')!;
+    expect(sentence).toHaveTextContent('永恆的命定和呼召');
+    expect(sentence).toHaveAttribute('data-highlight', 'yellow');
+    fireEvent.click(sentence);
+    expect(activate).toHaveBeenCalledWith('canonical-title');
+    expect(container.querySelector('canvas,iframe,object,embed,img')).toBeNull();
+  });
   it('keeps the paper sidebar fixed while mobile summary retains its own section title', () => {
     expect(bulletinFixedText('summarySidebarTitle', undefined, 0).text).toBe('家教會週報');
     expect(bulletinFixedText('summarySidebarTagline', undefined, 0).text).toBe('一看再看、百看不厭的');
