@@ -96,6 +96,25 @@ describe('immutable shared bulletin renderer', () => {
     expect(activate).toHaveBeenCalledTimes(2);
     selection.removeAllRanges();
   });
+  it('keeps the fixed cover and back section headings in mobile semantic order', () => {
+    const document = fixture();
+    const block = (id: string) => ({id, style: {fontSize: 14, lineHeight: 18, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0}, sentences: [{id: `sentence-${id}`, spans: [{text: id, fontRole: 'body' as const}]}]});
+    const item = (id: string) => ({id: `item-${id}`, blocks: [block(id)]});
+    document.components = [
+      {id: 'cover', type: 'cover', cover: {welcome: [block('welcome')], worship: [item('worship')], work: [item('work')], wordQuestions: [item('word')], weeklyVerses: [block('verse')]}},
+      {id: 'summary', type: 'backSummary', items: [item('summary')]},
+      {id: 'announcements', type: 'announcements', items: [item('announcement')]},
+      {id: 'prayers', type: 'victoriesAndPrayers', items: [item('prayer')]},
+    ];
+    const {container} = render(<UI.BulletinDocumentRenderer document={document} mode="mobile" />);
+    expect(Array.from(container.querySelectorAll('h2'), heading => heading.textContent)).toEqual([
+      '一、Welcome：', '二、Worship：', '三、Work：', '四、Word：', '本週金句',
+      '信息摘要', '家教會公佈欄', '得勝與代求',
+    ]);
+    expect(Array.from(container.querySelectorAll('[data-block-id]'), node => node.getAttribute('data-block-id'))).toEqual(['welcome', 'worship', 'work', 'word', 'verse', 'summary', 'announcement', 'prayer']);
+    expect(container.querySelectorAll('[data-sentence-id]')).toHaveLength(8);
+    expect(container.querySelectorAll('h2 [data-sentence-id]')).toHaveLength(0);
+  });
   it('renders only registry-owned graphics and native rules, never document asset URLs', () => {
     const document = fixture();
     const style = {fontSize: 16, lineHeight: 20, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0};

@@ -125,6 +125,22 @@ export function BulletinDocumentRenderer({document, manifest = document.layoutMa
     return value.annotatable ? sentence({id: `canonical-${slot.element}`, spans: [{text: value.text, fontRole: value.fontRole}]}, 0, Array.from(value.text).length, slot.id, slot.style.fontSize) : <span data-font-role={value.fontRole}>{value.text}</span>;
   };
   const mobileHeader = (manifest.pages[0]?.fixedSlots ?? []).filter(slot => ['masthead', 'date', 'issueNumber', 'title', 'subtitle', 'vision', 'pastor'].includes(slot.element));
+  const mobileGroups = document.components.flatMap(component => {
+    const entries = blocks.filter(entry => entry.componentId === component.id);
+    if (component.type === 'cover') {
+      const cover = component.cover;
+      const itemBlocks = (items: Item[]) => items.flatMap(item => [...(item.title ? [item.title] : []), ...item.blocks]);
+      return [
+        {label: 'welcomeLabel' as const, blocks: cover.welcome},
+        {label: 'worshipLabel' as const, blocks: itemBlocks(cover.worship)},
+        {label: 'workLabel' as const, blocks: itemBlocks(cover.work)},
+        {label: 'wordLabel' as const, blocks: itemBlocks(cover.wordQuestions)},
+        {label: 'verseLabel' as const, blocks: cover.weeklyVerses},
+      ].map(group => ({...group, componentId: component.id}));
+    }
+    const label = {hymnLyrics: 'hymnLabel', backSummary: 'summaryLabel', announcements: 'announcementsLabel', victoriesAndPrayers: 'prayersLabel'}[component.type as 'hymnLyrics' | 'backSummary' | 'announcements' | 'victoriesAndPrayers'];
+    return [{componentId: component.id, label: label as components['schemas']['OnlineBulletinFixedSlot']['element'] | undefined, blocks: entries.map(entry => entry.block)}];
+  });
   return <div className="hhc-bulletin-v1" data-bulletin-mode={mode} lang={document.contentLocale}
     onPointerDown={event => {
       activePointers.current.add(event.pointerId);
@@ -138,12 +154,15 @@ export function BulletinDocumentRenderer({document, manifest = document.layoutMa
     onPointerCancel={event => { activePointers.current.delete(event.pointerId); if (pointer.current) pointer.current.moved = true; }}>
     {mode === 'mobile' ? <>
       {mobileHeader.length > 0 && <header className="hhc-bulletin-mobile-header">{mobileHeader.map(slot => <p key={slot.id} data-fixed-element={slot.element}>{fixedContent(slot, 0)}</p>)}</header>}
-      {blocks.map(({componentId, block}) => {
-        const Tag = headingIDs.has(block.id) ? 'h2' : 'p';
-        return <Tag key={block.id} data-component-id={componentId} data-block-id={block.id} style={paragraphStyle(block.style)}>
-          {block.sentences.map(value => sentence(value, 0, value.spans.reduce((n, span) => n + Array.from(span.text).length, 0), value.id, block.style.fontSize))}
-        </Tag>;
-      })}
+      {mobileGroups.map(group => <section key={`${group.componentId}-${group.label ?? 'body'}`} data-component-id={group.componentId}>
+        {group.label && <h2 data-fixed-element={group.label}>{bulletinFixedText(group.label, canonicalMetadata, 0).text}</h2>}
+        {group.blocks.map(block => {
+          const Tag = headingIDs.has(block.id) ? group.label ? 'h3' : 'h2' : 'p';
+          return <Tag key={block.id} data-component-id={group.componentId} data-block-id={block.id} style={paragraphStyle(block.style)}>
+            {block.sentences.map(value => sentence(value, 0, value.spans.reduce((n, span) => n + Array.from(span.text).length, 0), value.id, block.style.fontSize))}
+          </Tag>;
+        })}
+      </section>)}
     </> : document.pages.filter(page => !activePage || page.id === activePage).map(page => {
       const layout = manifest.pages.find(entry => entry.pageId === page.id);
       if (!layout) throw new Error('invalid_layout');

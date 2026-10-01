@@ -48,7 +48,7 @@
   border: 0;
   isolation: isolate;
 }
-.hhc-bulletin-v1 p, .hhc-bulletin-v1 h2 {
+.hhc-bulletin-v1 p, .hhc-bulletin-v1 h2, .hhc-bulletin-v1 h3 {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -81,6 +81,9 @@
 .hhc-bulletin-v1[data-bulletin-mode='mobile'] { font-size: 18px; line-height: 1.8; background: #fff; }
 .hhc-bulletin-v1[data-bulletin-mode='mobile'] p { margin-block-end: .6em; }
 .hhc-bulletin-v1[data-bulletin-mode='mobile'] h2 { font-size: 24px; font-weight: 400; line-height: 1.5; }
+.hhc-bulletin-v1[data-bulletin-mode='mobile'] h3 { font-size: 21px; font-weight: 400; line-height: 1.5; }
+.hhc-bulletin-v1[data-bulletin-mode='mobile'] section { margin-block: 1.5em; }
+.hhc-bulletin-v1[data-bulletin-mode='mobile'] h2[data-fixed-element] { font-family: 'HHC Weekly Kai', serif; font-weight: 700; margin-block-end: .5em; }
 .hhc-bulletin-v1 .hhc-bulletin-mobile-header { border-bottom: 1px solid #999; margin-block-end: 1.5em; padding-block-end: 1em; }
 .hhc-bulletin-v1[data-bulletin-mode='mobile'] [data-fixed-element='title'] { font-size: 28px; line-height: 1.5; }
 .hhc-bulletin-v1[data-bulletin-mode='mobile'] [data-fixed-element='subtitle'] { font-size: 22px; line-height: 1.5; }
