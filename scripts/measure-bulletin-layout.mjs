@@ -108,6 +108,8 @@ export async function composeBulletinLayout(input) {
     ['date',58,156,115], ['issueNumber',180,156,90], ['pastor',58,178,220],
     ['titleLabel',46,210,100], ['title',160,205,page.width-200], ['subtitle',160,233,page.width-200],
   ]) { if (fixed.has(element)) box(fixed.get(element), x, y, width); }
+  const masthead = fixed.get('masthead');
+  if (masthead) box(masthead,masthead.box.x*page.width,masthead.box.y*page.height,page.width*(1-masthead.box.x)-40);
   const rows = [];
   const flowed = new Set();
   const row = (entries, gap = 5) => {
@@ -183,13 +185,43 @@ export async function composeBulletinLayout(input) {
 
 /** Saved-layout composition, not a second browser-side renderer. Source evidence stays unchanged. */
 export async function composeBulletinBodyLayout(input) {
-  const measured = await measureBulletinLayout(input);
+  let measured = await measureBulletinLayout(input);
   const submission = JSON.parse(input.submissionJSON);
   const {document} = submission;
   const componentTypes = new Map(document.components.map(component => [component.id,component.type]));
   const panelTypes = {summaryFrame:'backSummary',announcementsFrame:'announcements',prayersFrame:'victoriesAndPrayers'};
   const panelLabels = {summaryLabel:'backSummary',announcementsLabel:'announcements',prayersLabel:'victoriesAndPrayers'};
   const bodyIDs = new Set(document.components.filter(component => component.type === 'bodySection' || Object.values(panelTypes).includes(component.type)).map(component => component.id));
+  let changed = false;
+  for (const {componentId,block} of bulletinBlocks(document)) {
+    if (!bodyIDs.has(componentId)) continue;
+    const height = Math.max(block.style.lineHeight, 1.25*Math.max(block.style.fontSize,...block.sentences.flatMap(sentence=>sentence.spans.map(span=>span.fontSize ?? block.style.fontSize))));
+    if ((block.style.letterSpacing ?? 0) < 0) { block.style.letterSpacing = 0; changed = true; }
+    if (height !== block.style.lineHeight) { block.style.lineHeight = height; changed = true; }
+  }
+  const contributorLabels = {speaker:'bodySpeakerLabel',transcriber:'transcriberLabel',editor:'editorLabel'};
+  for (const component of document.components) {
+    for (const contributor of component.bodySection?.header?.contributors ?? []) {
+      for (const layout of document.layoutManifest.pages) {
+        const name = layout.slots.find(slot => slot.blockId === contributor.name.id);
+        const label = layout.fixedSlots?.find(slot => slot.element === contributorLabels[contributor.role]);
+        if (!name || !label) continue;
+        const page = document.pages.find(page => page.id === layout.pageId);
+        const text = bulletinFixedText(label.element,submission.canonicalMetadata,0).text;
+        label.style.letterSpacing = 0;
+        label.box.width = Math.max(label.box.width,(Array.from(text).length*label.style.fontSize+1)/page.width);
+        const right = name.box.x+name.box.width;
+        name.box.x = Math.max(name.box.x,label.box.x+label.box.width+2/page.width);
+        name.box.width = right-name.box.x;
+        if (name.box.width <= 0) throw new Error('layout_requires_split');
+        changed = true;
+      }
+    }
+  }
+  if (changed) {
+    const submissionJSON = JSON.stringify(submission);
+    measured = await measureBulletinLayout({...input,submissionJSON,expectedContentHash:hash(submissionJSON)});
+  }
   const ids = new Set();
   JSON.stringify(document, (key, value) => { if (key === 'id') ids.add(value); return value; });
   let serial = 0;
@@ -202,7 +234,10 @@ export async function composeBulletinBodyLayout(input) {
     // Cover and hymn columns have separate template regions.
     if (!layout.slots.length || layout.slots.some(slot => !bodyIDs.has(slot.componentId))) continue;
     const isBack = layout.slots.every(slot => componentTypes.get(slot.componentId) !== 'bodySection');
-    const headers = isBack ? (layout.fixedSlots ?? []).filter(slot => slot.element in panelLabels) : [];
+    const firstRow = Math.min(...layout.slots.map(slot => slot.box.y)) - 1/page.height;
+    const headers = (layout.fixedSlots ?? []).filter(slot => isBack
+      ? slot.element in panelLabels
+      : slot.element !== 'pageNumber' && slot.box.y >= firstRow);
     for (const slot of layout.fixedSlots ?? []) {
       if (slot.element !== 'pageNumber') continue;
       const width = Math.max(slot.box.width, 2 * slot.style.fontSize / page.width);

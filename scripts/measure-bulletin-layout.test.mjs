@@ -334,6 +334,23 @@ test('composition keeps the lecture date clear of its fixed marker', {skip: !ass
   assert.deepEqual(result.measurement.overflow,[]);
 });
 
+test('body contributor captions use readable tracking and reserve space before names', {skip: !assetsDirectory}, async () => {
+  const input = await fixture('講員姓名');
+  const submission = JSON.parse(input.submissionJSON);
+  const name = submission.document.components[0].items[0].blocks[0];
+  const title = {id:'title',style:{...name.style},sentences:[]};
+  const date = {id:'date',style:{...name.style},sentences:[]};
+  submission.document.components = [{id:'c',type:'bodySection',bodySection:{kind:'sermon',title,blocks:[],header:{lectureDate:date,contributors:[{role:'speaker',name}]}}}];
+  const page = submission.document.layoutManifest.pages[0];
+  page.fixedSlots = [{id:'caption',element:'bodySpeakerLabel',box:{x:.05,y:.1,width:.05,height:.04},style:{...name.style,letterSpacing:-.4}}];
+  const submissionJSON = JSON.stringify(submission);
+  const result = await layoutRunner.composeBulletinBodyLayout({...input,submissionJSON,expectedContentHash:hash(submissionJSON)});
+  const layout = JSON.parse(result.submissionJSON).document.layoutManifest.pages[0];
+  assert.equal(layout.fixedSlots[0].style.letterSpacing,0);
+  assert.ok(layout.slots[0].box.x >= layout.fixedSlots[0].box.x+layout.fixedSlots[0].box.width);
+  assert.deepEqual(result.measurement.overflow,[]);
+});
+
 test('retained back panels grow around their text without importing excluded table regions', {skip: !assetsDirectory}, async () => {
   const input = await fixture('摘要'.repeat(100));
   const submission = JSON.parse(input.submissionJSON);
@@ -352,4 +369,48 @@ test('retained back panels grow around their text without importing excluded tab
   assert.ok(frame.box.y <= page.slots[0].box.y);
   assert.ok(frame.box.y+frame.box.height >= page.slots[1].box.y+page.slots[1].box.height);
   assert.deepEqual(JSON.parse(result.submissionJSON).document.components,submission.document.components);
+});
+
+test('composition keeps normal glyph spacing and distinct text lines for compressed source paragraphs', {skip: !assetsDirectory}, async () => {
+  const input = await fixture('經文'.repeat(70));
+  const submission = JSON.parse(input.submissionJSON);
+  const block = submission.document.components[0].items[0].blocks[0];
+  block.style.letterSpacing = -.4;
+  block.style.lineHeight = 8;
+  const submissionJSON = JSON.stringify(submission);
+  const raw = await measureBulletinLayout({...input,submissionJSON,expectedContentHash:hash(submissionJSON)});
+  assert.ok(raw.overflow.some(slot=>slot.slotId==='slot'), 'overlapping lines inside one paragraph must also block publication');
+  const result = await layoutRunner.composeBulletinLayout({...input,submissionJSON,expectedContentHash:hash(submissionJSON)});
+  const lines = result.measurement.pages[0].slots.find(slot=>slot.slotId==='slot').fragments[0].lines;
+  const tops = [...new Set(lines.map(line=>line.y))].sort((a,b)=>a-b);
+  assert.ok(tops.length >= 4, 'normal-size glyphs must wrap rather than squeeze into two lines');
+  assert.ok(tops.slice(1).every((top,index)=>top-tops[index]>=16), 'line spacing must contain the 16pt glyphs');
+  assert.equal(JSON.parse(result.submissionJSON).document.components[0].items[0].blocks[0].style.fontSize,16);
+});
+
+test('overlapping mixed-size lines are rejected even when all ink stays inside one slot', {skip: !assetsDirectory}, async () => {
+  const input = await fixture('先。\n經文。\n經文。');
+  const submission = JSON.parse(input.submissionJSON);
+  const block = submission.document.components[0].items[0].blocks[0];
+  block.style.fontSize = 8;
+  block.style.lineHeight = 12;
+  block.sentences[0].spans = [{text:'先。\n',fontRole:'body'},{text:'經文。\n經文。',fontRole:'body',fontSize:24}];
+  const submissionJSON = JSON.stringify(submission);
+  const result = await measureBulletinLayout({...input,submissionJSON,expectedContentHash:hash(submissionJSON)});
+  assert.ok(result.overflow.some(slot=>slot.slotId==='slot'));
+});
+
+test('body captions move with expanded preceding rows', {skip: !assetsDirectory}, async () => {
+  const input = await fixture('正文'.repeat(40));
+  const submission = JSON.parse(input.submissionJSON);
+  const component = submission.document.components[0];
+  component.type = 'bodySection';
+  component.bodySection = {kind:'sermon',title:component.items[0].blocks[0],blocks:[]};
+  delete component.items;
+  const page = submission.document.layoutManifest.pages[0];
+  page.slots[0].box.height = .02;
+  page.fixedSlots = [{id:'caption',element:'editorLabel',box:{x:.1,y:.14,width:.2,height:.04},style:{...component.bodySection.title.style}}];
+  const submissionJSON = JSON.stringify(submission);
+  const result = await layoutRunner.composeBulletinBodyLayout({...input,submissionJSON,expectedContentHash:hash(submissionJSON)});
+  assert.deepEqual(result.measurement.overflow,[]);
 });

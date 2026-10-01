@@ -34,7 +34,6 @@ export async function measureRenderedBulletin(root: HTMLElement, fonts: {family:
         const range = document.createRange();
         range.selectNodeContents(sentence);
         const lines = Array.from(range.getClientRects()).filter(box => box.width > 0 && box.height > 0).map(box => {
-          if (slot.querySelector('[data-font-role]')) ink.push({slotId: slot.dataset.slotId!, box});
           // One PDF point tolerates font ink overhang; never tolerate another text line.
           if (box.left < slotBox.left - 1.333 || box.right > slotBox.right + 1.333 || box.top < slotBox.top - 1.333 || box.bottom > slotBox.top + allocatedHeight + 1.333 || box.right > pageBox.right + 1.333 || box.bottom > pageBox.bottom + 1.333) exceeds = true;
           return rectangle(box);
@@ -42,20 +41,31 @@ export async function measureRenderedBulletin(root: HTMLElement, fonts: {family:
         return {sentenceId: sentence.dataset.sentenceId ?? null, start: Number(sentence.dataset.fragmentStart ?? 0), end: Number(sentence.dataset.fragmentEnd ?? Array.from(sentence.textContent ?? '').length), lines};
       });
       const slotId = slot.dataset.slotId!;
+      if (slot.querySelector('[data-font-role]')) {
+        // Leaf text ranges avoid counting a wrapping span's enclosing rectangle
+        // as ink; they also expose overlapping lines inside a single paragraph.
+        const walker = document.createTreeWalker(slot, NodeFilter.SHOW_TEXT);
+        let node: Node | null;
+        while ((node = walker.nextNode())) {
+          if (!node.textContent?.trim()) continue;
+          const range = document.createRange();
+          range.selectNodeContents(node);
+          for (const box of range.getClientRects()) if (box.width > 0 && box.height > 0) ink.push({slotId,box});
+        }
+      }
       // scrollWidth includes code-owned ornament pseudo-elements. Text ranges
       // above measure actual glyphs against the unchanged source allocation.
       if (exceeds) overflow.push({pageId: page.dataset.bulletinPage!, slotId});
       return {slotId, fixedElement: slot.dataset.fixedElement, box: rectangle(slotBox), fragments};
     });
-    // A slot can fit its allocation yet cover a neighbouring slot. Decorations
-    // and repeated DOM rectangles within one text slot are not text collisions.
+    // Text can fit its allocation yet cover a neighbouring slot or its next line.
     ink.sort((a, b) => a.box.top - b.box.top);
     const overlapping = new Set<string>();
     for (let i = 0; i < ink.length; i++) {
       const a = ink[i];
       for (let j = i + 1; j < ink.length && ink[j].box.top < a.box.bottom - 1.333; j++) {
         const b = ink[j];
-        if (a.slotId !== b.slotId && Math.min(a.box.right, b.box.right) - Math.max(a.box.left, b.box.left) > 1.333) {
+        if (Math.min(a.box.bottom,b.box.bottom)-b.box.top > 1.333 && Math.min(a.box.right, b.box.right) - Math.max(a.box.left, b.box.left) > 1.333) {
           overlapping.add(a.slotId);
           overlapping.add(b.slotId);
         }
