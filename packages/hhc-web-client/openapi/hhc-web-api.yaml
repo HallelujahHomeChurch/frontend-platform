@@ -1178,6 +1178,502 @@ paths:
         '409': { $ref: '#/components/responses/Error' }
         '422': { $ref: '#/components/responses/Error' }
         '428': { $ref: '#/components/responses/Error' }
+  /admin/bulletins/{issueId}/online/{series}/{contentLocale}:
+    get:
+      operationId: getOnlineBulletinState
+      summary: Read independent Online editing and publication state
+      description: Returns one consistent edition snapshot, current canonical metadata, frozen published metadata, Local content, and bounded background job status. Before first extraction version is zero and documentId is empty. ETag is the Online version, not the canonical issue version. No leases, source asset IDs, or raw extraction snapshots are exposed.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes: [cms:bulletins:read]
+      parameters:
+        - { $ref: '#/components/parameters/IssueID' }
+        - { name: series, in: path, required: true, schema: { type: string, enum: [general] } }
+        - { name: contentLocale, in: path, required: true, schema: { type: string, enum: [zh-Hant] } }
+      responses:
+        '200':
+          description: Independent Online state, including an unstarted edition
+          headers:
+            Cache-Control: { schema: { type: string, const: 'private, no-store' } }
+            ETag: { description: Quoted Online version; zero before first extraction, schema: { type: string } }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta, error]
+                properties:
+                  data: { $ref: '#/components/schemas/OnlineBulletinAdminState' }
+                  meta: { type: object, additionalProperties: true }
+                  error: { type: 'null' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/bulletins/{issueId}/online/{series}/{contentLocale}/extractions:
+    post:
+      operationId: startOnlineBulletinExtraction
+      summary: Queue current source extraction or explicitly retry a failed job
+      description: Source asset and checksum are verified server-side. Initial If-Match is the quoted Online version zero; later calls use the current Online ETag. canonicalVersion independently fences PDF or metadata replacement. Identical source/template/extractor identities reuse the existing job without another audit mutation. retry=true resets only a failed job without an immutable snapshot. Re-upload never overwrites Base, Local, Incoming, or publication. A superseded completed snapshot cannot be rerun; edit or restore the existing revision instead.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes: [cms:bulletins:write]
+      parameters:
+        - { $ref: '#/components/parameters/IssueID' }
+        - { name: series, in: path, required: true, schema: { type: string, enum: [general] } }
+        - { name: contentLocale, in: path, required: true, schema: { type: string, enum: [zh-Hant] } }
+        - { name: If-Match, in: header, required: true, schema: { type: string, pattern: '^"(0|[1-9][0-9]*)"$' } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OnlineBulletinExtractionInput' }
+      responses:
+        '200':
+          description: Existing completed or failed job, not automatically retried
+          headers:
+            ETag: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OnlineBulletinQueuedExtractionEnvelope' }
+        '202':
+          description: Extraction queued or already running; read state for progress
+          headers:
+            ETag: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OnlineBulletinQueuedExtractionEnvelope' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409':
+          description: Version conflict includes meta.currentVersion and meta.canonicalVersion; other conflicts reject retrying an active or immutable job
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '428': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/bulletins/{issueId}/online/{series}/{contentLocale}/comparison:
+    get:
+      operationId: getOnlineBulletinComparison
+      summary: Read a consistent Base Local Incoming comparison
+      description: Returns server-owned comparison values and revision pointers from one snapshot. Suggestions are same, local, incoming or conflict; ambiguous changes require an explicit choice. Reading requires durable audit. All responses are private, no-store.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      x-required-scopes: [cms:bulletins:read]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+        - { name: issueId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: series, in: path, required: true, schema: { type: string, enum: [general] } }
+        - { name: contentLocale, in: path, required: true, schema: { type: string, enum: [zh-Hant] } }
+      responses:
+        '200':
+          description: Consistent three-way comparison
+          headers:
+            ETag: { schema: { type: string } }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta, error]
+                properties:
+                  data: { $ref: '#/components/schemas/OnlineBulletinComparison' }
+                  meta: { type: object, additionalProperties: true }
+                  error: { type: 'null' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/bulletins/{issueId}/online/{series}/{contentLocale}/compare:
+    post:
+      operationId: applyOnlineBulletinComparison
+      summary: Resolve three-way differences into a new Local revision
+      description: Requires exact Online and canonical versions and all three revision pointers. Unresolved concurrent changes are rejected. Applies choices atomically, moves Base to Incoming, clears Incoming, queues fresh layout and audit, and preserves publication and PDF workflows. Manual values cannot contain source coordinates or layout proof. Unsupported structural coverage is rejected. Body capped at 8 MiB. All responses are private, no-store.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      x-required-scopes: [cms:bulletins:write]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+        - { name: issueId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: series, in: path, required: true, schema: { type: string, enum: [general] } }
+        - { name: contentLocale, in: path, required: true, schema: { type: string, enum: [zh-Hant] } }
+        - { name: If-Match, in: header, required: true, schema: { type: string, pattern: '^"[1-9][0-9]*"$' } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OnlineBulletinCompareInput' }
+      responses:
+        '200':
+          description: Saved immutable Local awaiting fresh layout validation
+          headers:
+            ETag: { schema: { type: string } }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta, error]
+                properties:
+                  data: { $ref: '#/components/schemas/OnlineBulletinSavedDraft' }
+                  meta: { type: object, additionalProperties: true }
+                  error: { type: 'null' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/bulletins/{issueId}/online/{series}/{contentLocale}/draft:
+    put:
+      operationId: saveOnlineBulletinDraft
+      summary: Save typed Local component corrections and enqueue layout validation
+      description: Creates an immutable Local revision, retaining sentence IDs and server-owned provenance. Source coordinates must be omitted from every submitted sentence; layout manifests, assets, canonical metadata copies, and validation flags cannot be submitted. Existing geometry is only a seed for isolated re-composition. Published, Base, and Incoming pointers are unchanged; no notification or publication mapping is created. All sentences must retain valid server-assigned slot coverage; unsupported structural changes are rejected, never silently clipped.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes: [cms:bulletins:write]
+      parameters:
+        - { $ref: '#/components/parameters/IssueID' }
+        - { name: series, in: path, required: true, schema: { type: string, enum: [general] } }
+        - { name: contentLocale, in: path, required: true, schema: { type: string, enum: [zh-Hant] } }
+        - { name: If-Match, in: header, required: true, schema: { type: string, pattern: '^"[1-9][0-9]*"$' } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OnlineBulletinDraftInput' }
+      responses:
+        '200':
+          description: Saved immutable draft awaiting isolated layout validation
+          headers:
+            ETag: { schema: { type: string } }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta, error]
+                properties:
+                  data: { $ref: '#/components/schemas/OnlineBulletinSavedDraft' }
+                  meta: { type: object, additionalProperties: true }
+                  error: { type: 'null' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409':
+          description: Stale Online or canonical version; meta.currentVersion and meta.canonicalVersion identify current state
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '428': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/bulletins/{issueId}/online/{series}/{contentLocale}/publish:
+    post:
+      operationId: publishOnlineBulletin
+      summary: Publish the confirmed immutable Online revision
+      description: Atomically verifies current canonical and Online CAS, matching published PDF, exact worker layout evidence and human confirmation. Mappings describe explicit structural decisions from the last publication only; unresolved replacements block publication. No weekly notification. Repeating the current publication with fresh CAS and no mappings is a no-op.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes: [cms:bulletins:publish]
+      parameters:
+        - { $ref: '#/components/parameters/IssueID' }
+        - { name: series, in: path, required: true, schema: { type: string, enum: [general] } }
+        - { name: contentLocale, in: path, required: true, schema: { type: string, enum: [zh-Hant] } }
+        - { name: If-Match, in: header, required: true, schema: { type: string, pattern: '^"[1-9][0-9]*"$' } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OnlineBulletinPublishInput' }
+      responses:
+        '200':
+          description: Online publish committed independently
+          headers:
+            ETag: { schema: { type: string } }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta, error]
+                properties:
+                  data: { $ref: '#/components/schemas/OnlineBulletinConfirmedRevision' }
+                  meta: { type: object, additionalProperties: true }
+                  error: { type: 'null' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409':
+          description: Publication gate failed or CAS conflict; version conflicts include meta.currentVersion and meta.canonicalVersion
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '428': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/bulletins/{issueId}/online/{series}/{contentLocale}/unpublish:
+    post:
+      operationId: unpublishOnlineBulletin
+      summary: Unpublish Online without changing the PDF
+      description: Clears only the Online published pointer. Retains all immutable history, confirmation, mappings and PDF state. No weekly notification. Already-unpublished with fresh CAS is a no-op.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes: [cms:bulletins:publish]
+      parameters:
+        - { $ref: '#/components/parameters/IssueID' }
+        - { name: series, in: path, required: true, schema: { type: string, enum: [general] } }
+        - { name: contentLocale, in: path, required: true, schema: { type: string, enum: [zh-Hant] } }
+        - { name: If-Match, in: header, required: true, schema: { type: string, pattern: '^"[1-9][0-9]*"$' } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OnlineBulletinRestoreInput' }
+      responses:
+        '200':
+          description: Online unpublish committed independently
+          headers:
+            ETag: { schema: { type: string } }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta, error]
+                properties:
+                  data: { $ref: '#/components/schemas/OnlineBulletinUnpublishedRevision' }
+                  meta: { type: object, additionalProperties: true }
+                  error: { type: 'null' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409':
+          description: Publication gate failed or CAS conflict; version conflicts include meta.currentVersion and meta.canonicalVersion
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '428': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/bulletins/{issueId}/online/{series}/{contentLocale}/confirm:
+    post:
+      operationId: confirmOnlineBulletin
+      summary: Confirm the exact measured Local version after human review
+      description: Records immutable human confirmation without publishing or notifying. Every review finding must be explicitly accepted; hard validation, unassigned content, exclusion errors, unknown issue codes and missing layout evidence cannot be waived. Revision, canonicalVersion, layout hash and displayed page count must match the current server-owned worker result. Later edits invalidate confirmation by changing Local or canonical metadata.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes: [cms:bulletins:write]
+      parameters:
+        - { $ref: '#/components/parameters/IssueID' }
+        - { name: series, in: path, required: true, schema: { type: string, enum: [general] } }
+        - { name: contentLocale, in: path, required: true, schema: { type: string, enum: [zh-Hant] } }
+        - { name: If-Match, in: header, required: true, schema: { type: string, pattern: '^"[1-9][0-9]*"$' } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OnlineBulletinConfirmInput' }
+      responses:
+        '200':
+          description: Confirmed current Local; PDF and Online publication unchanged
+          headers:
+            ETag: { schema: { type: string } }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta, error]
+                properties:
+                  data: { $ref: '#/components/schemas/OnlineBulletinConfirmedRevision' }
+                  meta: { type: object, additionalProperties: true }
+                  error: { type: 'null' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409':
+          description: Incomplete review or missing/stale proof; version conflicts include meta.currentVersion and meta.canonicalVersion
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '428': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/bulletins/{issueId}/online/{series}/{contentLocale}/revisions/{revision}/restore:
+    post:
+      operationId: restoreOnlineBulletinRevision
+      summary: Restore immutable history into a new Local draft
+      description: Selects only server-owned history for the exact edition, preserves sentence IDs, clears prior layout and human confirmation, and queues fresh layout validation against current canonical metadata. Published, Base, Incoming and PDF state remain unchanged. No weekly notification or publication mapping is created.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes: [cms:bulletins:publish]
+      parameters:
+        - { $ref: '#/components/parameters/IssueID' }
+        - { name: series, in: path, required: true, schema: { type: string, enum: [general] } }
+        - { name: contentLocale, in: path, required: true, schema: { type: string, enum: [zh-Hant] } }
+        - { name: revision, in: path, required: true, schema: { type: integer, format: int64, minimum: 1 } }
+        - { name: If-Match, in: header, required: true, schema: { type: string, pattern: '^"[1-9][0-9]*"$' } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OnlineBulletinRestoreInput' }
+      responses:
+        '200':
+          description: Restored as new immutable Local awaiting validation
+          headers:
+            ETag: { schema: { type: string } }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta, error]
+                properties:
+                  data: { $ref: '#/components/schemas/OnlineBulletinSavedDraft' }
+                  meta: { type: object, additionalProperties: true }
+                  error: { type: 'null' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409':
+          description: Stale Online or canonical version; meta.currentVersion and meta.canonicalVersion identify current state
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '428': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/bulletins/{issueId}/online/{series}/{contentLocale}/revisions:
+    get:
+      operationId: listOnlineBulletinRevisions
+      summary: List immutable Online history using bounded keyset pagination
+      description: Returns revision summaries only, newest first. Follow nextBefore as the next request's before value; null means the end. Read audit must commit before returning history. No source asset IDs or private worker evidence is exposed.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes: [cms:bulletins:read]
+      parameters:
+        - { $ref: '#/components/parameters/IssueID' }
+        - { name: series, in: path, required: true, schema: { type: string, enum: [general] } }
+        - { name: contentLocale, in: path, required: true, schema: { type: string, enum: [zh-Hant] } }
+        - { name: before, in: query, schema: { type: integer, format: int64, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 20 } }
+      responses:
+        '200':
+          description: Bounded history summaries
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta, error]
+                properties:
+                  data: { $ref: '#/components/schemas/OnlineBulletinRevisionPage' }
+                  meta: { type: object, additionalProperties: true }
+                  error: { type: 'null' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/bulletins/{issueId}/online/{series}/{contentLocale}/revisions/{revision}:
+    get:
+      operationId: getOnlineBulletinRevision
+      summary: Read one immutable Online revision with its historical metadata
+      description: Uses frozen publication or original worker metadata, never current CMS metadata. History preview is read-only and is not authority to publish or reuse old confirmation. Durable read audit is required; source asset IDs, raw extraction snapshots and leases are withheld.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes: [cms:bulletins:read]
+      parameters:
+        - { $ref: '#/components/parameters/IssueID' }
+        - { name: series, in: path, required: true, schema: { type: string, enum: [general] } }
+        - { name: contentLocale, in: path, required: true, schema: { type: string, enum: [zh-Hant] } }
+        - { name: revision, in: path, required: true, schema: { type: integer, format: int64, minimum: 1 } }
+      responses:
+        '200':
+          description: Immutable content and historical canonical metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta, error]
+                properties:
+                  data: { $ref: '#/components/schemas/OnlineBulletinHistoricalRevision' }
+                  meta: { type: object, additionalProperties: true }
+                  error: { type: 'null' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/bulletins/{issueId}/online/{series}/{contentLocale}/source-pdf:
+    get:
+      operationId: getOnlineBulletinSourcePDF
+      summary: Preview the current private source PDF for Online editing
+      description: Returns the complete current edition PDF only, capped at 20 MiB. Range is ignored. Ownership, clean scan, MIME and SHA-256 are verified and the temporary service grant is revoked before any PDF bytes are returned. Historical revision assets and public or SAS URLs are never exposed.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes: [cms:bulletins:read]
+      parameters:
+        - { $ref: '#/components/parameters/IssueID' }
+        - { name: series, in: path, required: true, schema: { type: string, enum: [general] } }
+        - { name: contentLocale, in: path, required: true, schema: { type: string, enum: [zh-Hant] } }
+      responses:
+        '200':
+          description: Verified complete source PDF
+          headers:
+            Cache-Control: { schema: { type: string, const: 'private, no-store' } }
+            X-HHC-Source-SHA256: { schema: { type: string, pattern: '^[0-9a-f]{64}$' } }
+            X-HHC-Source-Version: { description: Current canonical issue version, schema: { type: string, pattern: '^[1-9][0-9]*$' } }
+          content: { application/pdf: { schema: { type: string, format: binary } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
   /admin/bulletins:
     get:
       operationId: listAdminBulletins
@@ -1250,6 +1746,7 @@ paths:
     put:
       operationId: updateBulletinIssue
       summary: Update bulletin issue
+      description: Existing PDF mutation guards remain in force. Changing issue number or date forks every affected existing Online Local into a new draft and queues layout validation in the same transaction. Immutable Online publication metadata remains unchanged until explicit republish.
       tags: [Admin]
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
@@ -1273,6 +1770,7 @@ paths:
     delete:
       operationId: deleteBulletin
       summary: Delete bulletin
+      description: Returns 409 with code online_document_exists while any Online document history exists. Online history cannot be permanently removed through this operation.
       tags: [Admin]
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
@@ -1318,6 +1816,7 @@ paths:
     put:
       operationId: updateBulletinVersion
       summary: Update bulletin version
+      description: Changing title or subtitle invalidates only this edition's Online Local proof and human confirmation, creates a new draft and queues layout validation. Other editions and immutable Online publication metadata remain unchanged. Existing PDF mutation guards remain in force.
       tags: [Admin]
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
@@ -1343,6 +1842,7 @@ paths:
     delete:
       operationId: deleteBulletinVersion
       summary: Delete bulletin version
+      description: Returns 409 with code online_document_exists while the exact series and content-locale edition has Online document history. Other editions are unaffected.
       tags: [Admin]
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
@@ -1409,6 +1909,7 @@ paths:
     post:
       operationId: completeBulletinUpload
       summary: Complete bulletin upload
+      description: Replacing PDF bytes does not overwrite Online Local or publication. Changed canonical title or subtitle forks only the affected Online Local for fresh layout validation; re-extraction is a separate action producing Incoming.
       tags: [Admin]
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
@@ -1456,6 +1957,7 @@ paths:
     post:
       operationId: unpublishBulletin
       summary: Unpublish bulletin
+      description: By default removes only the PDF projection and retains Online publication. Admin reads Online state to show a warning and an unchecked simultaneous-unpublish option. Only explicit unpublishOnline=true with the current onlineVersion clears the matching Online pointer synchronously in the same transaction; either CAS or audit failure rolls back both. Historical Online revisions and private annotations are retained. Existing PDF asset revocation remains asynchronous.
       tags: [Admin]
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
@@ -1465,12 +1967,19 @@ paths:
       parameters:
         - $ref: '#/components/parameters/IssueID'
         - $ref: '#/components/parameters/IfMatch'
-      requestBody: { $ref: '#/components/requestBodies/PublicationInput' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BulletinUnpublishInput' }
       responses:
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
         '403': { $ref: '#/components/responses/AdminForbidden' }
         '200': { $ref: '#/components/responses/BulletinIssue' }
+        '400': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
         '412': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
   /admin/bulletins/{issueId}/notification-preview:
     get:
       operationId: previewBulletinNotification
@@ -1558,6 +2067,7 @@ paths:
     post:
       operationId: restoreBulletinRevision
       summary: Restore bulletin revision
+      description: Restored canonical metadata forks affected Online Local drafts for fresh validation while preserving immutable Online publication metadata. Restoration cannot remove an edition with Online history; this returns 409 online_document_exists.
       tags: [Admin]
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
@@ -2701,6 +3211,635 @@ components:
       description: Public revalidation policy for Site Layout projections.
       schema: { type: string, const: 'public, max-age=30, must-revalidate' }
   schemas:
+    OnlineBulletinComparisonValue:
+      oneOf:
+        - { $ref: '#/components/schemas/OnlineBulletinBlock' }
+        - { $ref: '#/components/schemas/OnlineBulletinComponent' }
+        - type: array
+          maxItems: 256
+          items: { $ref: '#/components/schemas/OnlineBulletinID' }
+        - { type: 'null' }
+    OnlineBulletinComparison:
+      type: object
+      additionalProperties: false
+      required: [documentId, version, canonicalVersion, baseRevision, localRevision, incomingRevision, units]
+      properties:
+        documentId: { type: string, format: uuid }
+        version: { type: integer, format: int64, minimum: 1 }
+        canonicalVersion: { type: integer, format: int64, minimum: 1 }
+        baseRevision: { type: integer, format: int64, minimum: 1 }
+        localRevision: { type: integer, format: int64, minimum: 1 }
+        incomingRevision: { type: integer, format: int64, minimum: 1 }
+        units:
+          type: array
+          maxItems: 65536
+          items:
+            type: object
+            additionalProperties: false
+            required: [componentId, blockId, suggestion, base, local, incoming]
+            properties:
+              componentId: { type: string, maxLength: 128 }
+              blockId: { type: string, maxLength: 128 }
+              suggestion: { type: string, enum: [same, local, incoming, conflict] }
+              base: { $ref: '#/components/schemas/OnlineBulletinComparisonValue' }
+              local: { $ref: '#/components/schemas/OnlineBulletinComparisonValue' }
+              incoming: { $ref: '#/components/schemas/OnlineBulletinComparisonValue' }
+    OnlineBulletinCompareInput:
+      type: object
+      additionalProperties: false
+      required: [canonicalVersion, baseRevision, localRevision, incomingRevision]
+      properties:
+        canonicalVersion: { type: integer, format: int64, minimum: 1 }
+        baseRevision: { type: integer, format: int64, minimum: 1 }
+        localRevision: { type: integer, format: int64, minimum: 1 }
+        incomingRevision: { type: integer, format: int64, minimum: 1 }
+        choices:
+          type: array
+          maxItems: 65536
+          items:
+            type: object
+            additionalProperties: false
+            required: [componentId, blockId, choice]
+            properties:
+              componentId: { type: string, maxLength: 128 }
+              blockId: { type: string, maxLength: 128 }
+              choice: { type: string, enum: [local, incoming, manual] }
+              value: { $ref: '#/components/schemas/OnlineBulletinComparisonValue' }
+            oneOf:
+              - properties:
+                  choice: { const: manual }
+                required: [value]
+              - properties:
+                  choice: { enum: [local, incoming] }
+                not:
+                  properties:
+                    value: {}
+                  required: [value]
+    OnlineBulletinDraftInput:
+      type: object
+      additionalProperties: false
+      required: [canonicalVersion, components]
+      properties:
+        canonicalVersion: { type: integer, format: int64, minimum: 1 }
+        components:
+          description: Typed editable content only. Omit every read-only sentence source field; the server preserves source provenance by stable sentence ID.
+          type: array
+          minItems: 6
+          maxItems: 256
+          items: { $ref: '#/components/schemas/OnlineBulletinComponent' }
+    OnlineBulletinSavedDraft:
+      type: object
+      additionalProperties: false
+      required: [documentId, version, revision, layoutJobId]
+      properties:
+        documentId: { type: string, format: uuid }
+        version: { type: integer, format: int64, minimum: 1 }
+        revision: { type: integer, format: int64, minimum: 1 }
+        layoutJobId: { type: string, format: uuid }
+    OnlineBulletinExtractionInput:
+      type: object
+      additionalProperties: false
+      required: [canonicalVersion]
+      properties:
+        canonicalVersion: { type: integer, format: int64, minimum: 1 }
+        retry: { type: boolean, default: false }
+    OnlineBulletinQueuedExtractionEnvelope:
+      type: object
+      required: [data, meta, error]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [documentId, version, job]
+          properties:
+            documentId: { type: string, format: uuid }
+            version: { type: integer, format: int64, minimum: 1 }
+            job: { $ref: '#/components/schemas/OnlineBulletinAdminJob' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: 'null' }
+    OnlineBulletinRevisionPage:
+      type: object
+      additionalProperties: false
+      required: [documentId, items, nextBefore]
+      properties:
+        documentId: { type: string, format: uuid }
+        nextBefore: { type: [integer, 'null'], format: int64, minimum: 1 }
+        items:
+          type: array
+          maxItems: 50
+          items:
+            type: object
+            additionalProperties: false
+            required: [revision, createdBy, createdAt, sourceAssetChecksum, layoutValidated]
+            properties:
+              revision: { type: integer, format: int64, minimum: 1 }
+              createdBy: { type: string }
+              createdAt: { type: string, format: date-time }
+              sourceAssetChecksum: { type: string, pattern: '^[0-9a-f]{64}$' }
+              layoutValidated: { type: boolean, description: Historical worker proof exists; not current publication authority. }
+    OnlineBulletinHistoricalRevision:
+      type: object
+      additionalProperties: false
+      required: [documentId, revision, document, reviewIssues, canonicalMetadata, createdBy, createdAt]
+      properties:
+        documentId: { type: string, format: uuid }
+        revision: { type: integer, format: int64, minimum: 1 }
+        document: { $ref: '#/components/schemas/OnlineBulletinDocument' }
+        reviewIssues:
+          type: array
+          maxItems: 4096
+          items: { $ref: '#/components/schemas/OnlineBulletinReviewIssue' }
+        canonicalMetadata: { $ref: '#/components/schemas/OnlineBulletinCanonicalMetadata' }
+        createdBy: { type: string }
+        createdAt: { type: string, format: date-time }
+    OnlineBulletinPublishInput:
+      type: object
+      additionalProperties: false
+      required: [canonicalVersion, revision]
+      properties:
+        canonicalVersion: { type: integer, format: int64, minimum: 1 }
+        revision: { type: integer, format: int64, minimum: 1 }
+        mappings:
+          type: array
+          maxItems: 65536
+          items: { $ref: '#/components/schemas/OnlineBulletinSentenceMapping' }
+    OnlineBulletinSentenceMapping:
+      type: object
+      additionalProperties: false
+      required: [fromSentenceId, status, toSentenceIds]
+      properties:
+        fromSentenceId: { type: string, pattern: '^[A-Za-z0-9_-]{1,128}$' }
+        status: { type: string, enum: [unchanged, moved, split, merged, removed] }
+        toSentenceIds:
+          type: array
+          maxItems: 1024
+          uniqueItems: true
+          items: { type: string, pattern: '^[A-Za-z0-9_-]{1,128}$' }
+    OnlineBulletinUnpublishedRevision:
+      type: object
+      additionalProperties: false
+      required: [documentId, version]
+      properties:
+        documentId: { type: string, format: uuid }
+        version: { type: integer, format: int64, minimum: 1 }
+    OnlineBulletinRestoreInput:
+      type: object
+      additionalProperties: false
+      required: [canonicalVersion]
+      properties:
+        canonicalVersion: { type: integer, format: int64, minimum: 1 }
+    OnlineBulletinConfirmInput:
+      type: object
+      additionalProperties: false
+      required: [canonicalVersion, revision, layoutValidationHash, pageCount, acceptedIssues]
+      properties:
+        canonicalVersion: { type: integer, format: int64, minimum: 1 }
+        revision: { type: integer, format: int64, minimum: 1 }
+        layoutValidationHash: { type: string, pattern: '^[0-9a-f]{64}$' }
+        pageCount: { type: integer, minimum: 1, maximum: 80 }
+        acceptedIssues:
+          type: array
+          maxItems: 4096
+          uniqueItems: true
+          items: { $ref: '#/components/schemas/OnlineBulletinReviewIssue' }
+    OnlineBulletinConfirmedRevision:
+      type: object
+      additionalProperties: false
+      required: [documentId, version, revision]
+      properties:
+        documentId: { type: string, format: uuid }
+        version: { type: integer, format: int64, minimum: 1 }
+        revision: { type: integer, format: int64, minimum: 1 }
+    OnlineBulletinAdminState:
+      type: object
+      additionalProperties: false
+      required: [issueId, series, contentLocale, canonicalVersion, canonicalMetadata, pdfStatus, documentId, version, draftStatus, baseRevision, local, incomingRevision, publishedRevision, publishedMetadata, metadataSyncPending, confirmed, extraction, layout]
+      properties:
+        issueId: { type: string, format: uuid }
+        series: { type: string, enum: [general] }
+        contentLocale: { type: string, enum: [zh-Hant] }
+        canonicalVersion: { type: integer, format: int64, minimum: 1 }
+        canonicalMetadata: { $ref: '#/components/schemas/OnlineBulletinCanonicalMetadata' }
+        pdfStatus: { $ref: '#/components/schemas/BulletinVersionStatus' }
+        documentId: { type: string, pattern: '^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?$' }
+        version: { type: integer, format: int64, minimum: 0 }
+        draftStatus: { type: string, enum: [notStarted, extracting, reviewRequired, ready, published, extractionFailed] }
+        baseRevision: { type: [integer, 'null'], format: int64, minimum: 1 }
+        incomingRevision: { type: [integer, 'null'], format: int64, minimum: 1 }
+        publishedRevision: { type: [integer, 'null'], format: int64, minimum: 1 }
+        metadataSyncPending: { type: boolean, description: Canonical metadata differs from the immutable Online publication and requires explicit republish. }
+        confirmed: { type: boolean, description: Human confirmation matches current Local and canonical metadata. This does not itself authorize publication. }
+        publishedMetadata:
+          oneOf:
+            - { type: 'null' }
+            - { $ref: '#/components/schemas/OnlineBulletinCanonicalMetadata' }
+        local:
+          oneOf:
+            - { type: 'null' }
+            - { $ref: '#/components/schemas/OnlineBulletinAdminRevision' }
+        extraction:
+          oneOf:
+            - { type: 'null' }
+            - { $ref: '#/components/schemas/OnlineBulletinAdminJob' }
+        layout:
+          oneOf:
+            - { type: 'null' }
+            - { $ref: '#/components/schemas/OnlineBulletinAdminJob' }
+    OnlineBulletinAdminRevision:
+      type: object
+      additionalProperties: false
+      required: [revision, document, reviewIssues]
+      properties:
+        revision: { type: integer, format: int64, minimum: 1 }
+        document: { $ref: '#/components/schemas/OnlineBulletinDocument' }
+        reviewIssues:
+          type: array
+          maxItems: 4096
+          items: { $ref: '#/components/schemas/OnlineBulletinReviewIssue' }
+    OnlineBulletinReviewIssue:
+      type: object
+      additionalProperties: false
+      required: [code, blocking]
+      properties:
+        code: { type: string, pattern: '^[a-z0-9_]{1,64}$' }
+        blocking: { type: boolean }
+        componentId: { $ref: '#/components/schemas/OnlineBulletinID' }
+    OnlineBulletinAdminJob:
+      type: object
+      additionalProperties: false
+      required: [id, status, attempts, errorCode]
+      properties:
+        id: { type: string, format: uuid }
+        status: { type: string, enum: [queued, parsing, review_ready, validating, ready, failed] }
+        attempts: { type: integer, minimum: 0 }
+        errorCode: { type: string, pattern: '^[a-z0-9_]{0,64}$' }
+        reviewIssues:
+          type: array
+          maxItems: 4096
+          items: { $ref: '#/components/schemas/OnlineBulletinReviewIssue' }
+    OnlineBulletinID:
+      type: string
+      pattern: '^[A-Za-z0-9_-]{1,128}$'
+    OnlineBulletinHash:
+      type: string
+      pattern: '^[0-9a-f]{64}$'
+    OnlineBulletinFontRole:
+      type: string
+      enum: [body, scripture, emphasis, reference, foreignText, symbol]
+    OnlineBulletinDocument:
+      description: Typed immutable content. Canonical issue metadata and mutable source asset IDs are intentionally absent. Maximum encoded size is 8 MiB; server also validates references, total collection limits and fragment coverage.
+      type: object
+      additionalProperties: false
+      required: [issueId, series, contentLocale, schemaVersion, templateVersion, sourceAssetChecksum, sourcePageCount, pages, layoutManifest, components]
+      properties:
+        issueId: { type: string, format: uuid }
+        series: { type: string, const: general }
+        contentLocale: { type: string, const: zh-Hant }
+        schemaVersion: { type: string, const: '1' }
+        templateVersion: { type: string, const: v1 }
+        sourceAssetChecksum: { $ref: '#/components/schemas/OnlineBulletinHash' }
+        sourcePageCount: { type: integer, minimum: 4, maximum: 40 }
+        pages:
+          type: array
+          minItems: 4
+          maxItems: 80
+          items: { $ref: '#/components/schemas/OnlineBulletinPage' }
+        layoutManifest: { $ref: '#/components/schemas/OnlineBulletinLayoutManifest' }
+        components:
+          type: array
+          minItems: 6
+          maxItems: 256
+          items: { $ref: '#/components/schemas/OnlineBulletinComponent' }
+    OnlineBulletinPage:
+      type: object
+      additionalProperties: false
+      required: [id, width, height]
+      properties:
+        id: { $ref: '#/components/schemas/OnlineBulletinID' }
+        width: { type: number, exclusiveMinimum: 0, maximum: 2000, description: PDF points. }
+        height: { type: number, exclusiveMinimum: 0, maximum: 2000, description: PDF points. }
+    OnlineBulletinBox:
+      description: Normalized page-relative rectangle. Server additionally rejects any edge exceeding the page boundary.
+      type: object
+      additionalProperties: false
+      required: [x, y, width, height]
+      properties:
+        x: { type: number, minimum: 0, maximum: 1 }
+        y: { type: number, minimum: 0, maximum: 1 }
+        width: { type: number, exclusiveMinimum: 0, maximum: 1 }
+        height: { type: number, exclusiveMinimum: 0, maximum: 1 }
+    OnlineBulletinLayoutManifest:
+      description: Revision-owned manifest; hashes bind the authoritative isolated-worker measurement. Empty validation hashes represent a pending draft, never permission to publish.
+      type: object
+      additionalProperties: false
+      required: [templateVersion, rendererVersion, rendererArtifactSha256, assets, pages]
+      properties:
+        templateVersion: { type: string, const: v1 }
+        rendererVersion: { type: string, const: v1 }
+        rendererArtifactSha256: { $ref: '#/components/schemas/OnlineBulletinHash' }
+        contentHash: { $ref: '#/components/schemas/OnlineBulletinHash' }
+        layoutValidationHash: { $ref: '#/components/schemas/OnlineBulletinHash' }
+        assets:
+          type: array
+          minItems: 1
+          maxItems: 64
+          items: { $ref: '#/components/schemas/OnlineBulletinAsset' }
+        pages:
+          type: array
+          minItems: 4
+          maxItems: 80
+          items: { $ref: '#/components/schemas/OnlineBulletinLayoutPage' }
+    OnlineBulletinAsset:
+      description: Code-owned permanent self-hosted asset, never an executable URL. Filename includes its exact SHA-256.
+      type: object
+      additionalProperties: false
+      required: [url, sha256, kind]
+      properties:
+        url: { type: string, pattern: '^/assets/weekly/v1/[a-zA-Z0-9_-]*[0-9a-f]{64}\.(woff2|png|svg|webp)$' }
+        sha256: { $ref: '#/components/schemas/OnlineBulletinHash' }
+        kind: { type: string, enum: [font, decoration] }
+        fontRole: { $ref: '#/components/schemas/OnlineBulletinFontRole' }
+    OnlineBulletinLayoutPage:
+      type: object
+      additionalProperties: false
+      required: [pageId, slots]
+      properties:
+        pageId: { $ref: '#/components/schemas/OnlineBulletinID' }
+        fixedSlots:
+          type: array
+          maxItems: 128
+          items: { $ref: '#/components/schemas/OnlineBulletinFixedSlot' }
+        slots:
+          type: array
+          maxItems: 50000
+          items: { $ref: '#/components/schemas/OnlineBulletinSlot' }
+    OnlineBulletinSlot:
+      type: object
+      additionalProperties: false
+      required: [id, componentId, blockId, box, fragments]
+      properties:
+        id: { $ref: '#/components/schemas/OnlineBulletinID' }
+        componentId: { $ref: '#/components/schemas/OnlineBulletinID' }
+        blockId: { $ref: '#/components/schemas/OnlineBulletinID' }
+        box: { $ref: '#/components/schemas/OnlineBulletinBox' }
+        continuationOf: { $ref: '#/components/schemas/OnlineBulletinID' }
+        fragments:
+          type: array
+          minItems: 1
+          maxItems: 1024
+          items: { $ref: '#/components/schemas/OnlineBulletinFragment' }
+    OnlineBulletinFixedSlot:
+      description: Template-owned geometry for a fixed label or canonical metadata reference. It contains no editable text or executable URL.
+      type: object
+      additionalProperties: false
+      required: [id, element, box, style]
+      properties:
+        id: { $ref: '#/components/schemas/OnlineBulletinID' }
+        element:
+          type: string
+          enum: [title, subtitle, date, issueNumber, pageNumber, masthead, vision, visionMission, visionFellowship, visionCommitment, pastor, contact, scanHint, websiteQRLabel, youtubeQRLabel, streamQRLabel, welcomeLabel, worshipLabel, workLabel, wordLabel, verseLabel, hymnLabel, summaryLabel, summarySidebarTitle, summarySidebarTagline, announcementsLabel, prayersLabel, titleLabel, speakerLabel, speakerSeparator, lectureDateMarker, bodyIssueSummary, bodySpeakerLabel, transcriberLabel, editorLabel, authorLabel, logo, backgroundLogo, websiteQR, youtubeQR, streamQR, topRule, footerRule, summaryFrame, announcementsFrame, prayersFrame]
+        box: { $ref: '#/components/schemas/OnlineBulletinBox' }
+        style: { $ref: '#/components/schemas/OnlineBulletinParagraphStyle' }
+    OnlineBulletinCanonicalMetadata:
+      description: Read-only snapshot of existing CMS fields, separate from editable document content.
+      type: object
+      additionalProperties: false
+      required: [title, subtitle, issueNumber, date]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 256 }
+        subtitle: { type: string, maxLength: 256 }
+        issueNumber: { type: integer, minimum: 1 }
+        date: { type: string, format: date }
+    OnlineBulletinFragment:
+      description: Half-open offsets in Unicode code points, not UTF-8 bytes or UTF-16 units. Coverage must be complete and non-overlapping in reading order.
+      type: object
+      additionalProperties: false
+      required: [sentenceId, start, end]
+      properties:
+        sentenceId: { $ref: '#/components/schemas/OnlineBulletinID' }
+        start: { type: integer, minimum: 0, maximum: 4095 }
+        end: { type: integer, minimum: 1, maximum: 4096 }
+    OnlineBulletinSpan:
+      type: object
+      additionalProperties: false
+      required: [text, fontRole]
+      properties:
+        text: { type: string, minLength: 1, maxLength: 4096 }
+        fontRole: { $ref: '#/components/schemas/OnlineBulletinFontRole' }
+        fontSize: { type: [number, 'null'], minimum: 6, maximum: 96, description: Optional source PDF-point size for mixed-size inline runs. Missing or null inherits the block size; mobile retains the proportional em ratio. }
+    OnlineBulletinSentence:
+      description: Dynamic sentence anchor. The canonical- ID prefix is reserved for shared canonical metadata anchors across layouts.
+      type: object
+      additionalProperties: false
+      required: [id, spans]
+      properties:
+        id: { $ref: '#/components/schemas/OnlineBulletinID' }
+        spans:
+          type: array
+          minItems: 1
+          maxItems: 32
+          items: { $ref: '#/components/schemas/OnlineBulletinSpan' }
+        source:
+          readOnly: true
+          description: Server-owned PDF provenance; forbidden in component edit requests.
+          type: object
+          additionalProperties: false
+          required: [page, box]
+          properties:
+            page: { type: integer, minimum: 1, maximum: 40 }
+            box: { $ref: '#/components/schemas/OnlineBulletinBox' }
+    OnlineBulletinParagraphStyle:
+      description: Font size and line height in PDF points. Indents and spacing in em units; negative first-line indentation supports hanging paragraphs.
+      type: object
+      additionalProperties: false
+      required: [fontSize, lineHeight, indent, firstLineIndent, spaceBefore, spaceAfter]
+      properties:
+        fontSize: { type: number, minimum: 6, maximum: 96 }
+        lineHeight: { type: number, minimum: 6, maximum: 192 }
+        letterSpacing: { type: number, minimum: -0.5, maximum: 1, description: Explicit source tracking in em; omitted means zero. Never adjusted automatically to fit edits. }
+        align: { type: string, enum: [left, center, right, justify] }
+        indent: { type: number, minimum: 0, maximum: 20 }
+        firstLineIndent: { type: number, minimum: -20, maximum: 20 }
+        spaceBefore: { type: number, minimum: 0, maximum: 20 }
+        spaceAfter: { type: number, minimum: 0, maximum: 20 }
+    OnlineBulletinBlock:
+      type: object
+      additionalProperties: false
+      required: [id, style, sentences]
+      properties:
+        id: { $ref: '#/components/schemas/OnlineBulletinID' }
+        style: { $ref: '#/components/schemas/OnlineBulletinParagraphStyle' }
+        sentences:
+          type: array
+          minItems: 1
+          maxItems: 1024
+          items: { $ref: '#/components/schemas/OnlineBulletinSentence' }
+    OnlineBulletinItem:
+      type: object
+      additionalProperties: false
+      required: [id, blocks]
+      properties:
+        id: { $ref: '#/components/schemas/OnlineBulletinID' }
+        title: { $ref: '#/components/schemas/OnlineBulletinBlock' }
+        blocks:
+          type: array
+          maxItems: 4096
+          items: { $ref: '#/components/schemas/OnlineBulletinBlock' }
+    OnlineBulletinCover:
+      type: object
+      additionalProperties: false
+      required: [welcome, worship, work, wordQuestions, weeklyVerses]
+      properties:
+        welcome:
+          type: array
+          minItems: 1
+          maxItems: 4096
+          items: { $ref: '#/components/schemas/OnlineBulletinBlock' }
+        worship:
+          type: array
+          minItems: 1
+          maxItems: 256
+          items: { $ref: '#/components/schemas/OnlineBulletinItem' }
+        work:
+          type: array
+          minItems: 1
+          maxItems: 256
+          items: { $ref: '#/components/schemas/OnlineBulletinItem' }
+        wordQuestions:
+          type: array
+          minItems: 1
+          maxItems: 256
+          items: { $ref: '#/components/schemas/OnlineBulletinItem' }
+        weeklyVerses:
+          type: array
+          minItems: 1
+          maxItems: 4096
+          items: { $ref: '#/components/schemas/OnlineBulletinBlock' }
+    OnlineBulletinBodySection:
+      type: object
+      additionalProperties: false
+      required: [kind, title, blocks]
+      properties:
+        kind: { type: string, enum: [sermon, testimony, teaching, reflection, unknown], description: Unknown creates a blocking review issue. }
+        header: { $ref: '#/components/schemas/OnlineBulletinBodyHeader' }
+        title: { $ref: '#/components/schemas/OnlineBulletinBlock' }
+        subtitle: { $ref: '#/components/schemas/OnlineBulletinBlock' }
+        contributors:
+          type: array
+          maxItems: 32
+          items:
+            type: object
+            additionalProperties: false
+            required: [role, name]
+            properties:
+              role: { type: string, enum: [speaker, transcriber, editor, author] }
+              name: { $ref: '#/components/schemas/OnlineBulletinBlock' }
+        blocks:
+          type: array
+          minItems: 1
+          maxItems: 4096
+          items: { $ref: '#/components/schemas/OnlineBulletinBlock' }
+    OnlineBulletinBodyHeader:
+      description: First body section only. Source lecture date is independent of canonical issue publication date; all fields use sentence anchors. Missing contributor roles block publication review.
+      type: object
+      additionalProperties: false
+      required: [lectureDate, contributors]
+      properties:
+        lectureDate: { $ref: '#/components/schemas/OnlineBulletinBlock' }
+        contributors:
+          type: array
+          maxItems: 3
+          items:
+            type: object
+            additionalProperties: false
+            required: [role, name]
+            properties:
+              role: { type: string, enum: [speaker, transcriber, editor] }
+              name: { $ref: '#/components/schemas/OnlineBulletinBlock' }
+    OnlineBulletinHymnLyrics:
+      type: object
+      additionalProperties: false
+      required: [hymns]
+      properties:
+        hymns:
+          type: array
+          minItems: 1
+          maxItems: 32
+          items:
+            type: object
+            additionalProperties: false
+            required: [id, title, sections]
+            properties:
+              id: { $ref: '#/components/schemas/OnlineBulletinID' }
+              number: { $ref: '#/components/schemas/OnlineBulletinBlock' }
+              title: { $ref: '#/components/schemas/OnlineBulletinBlock' }
+              sourceLabel: { $ref: '#/components/schemas/OnlineBulletinBlock' }
+              sections:
+                type: array
+                minItems: 1
+                maxItems: 64
+                items:
+                  type: object
+                  additionalProperties: false
+                  required: [id, kind, lines]
+                  properties:
+                    id: { $ref: '#/components/schemas/OnlineBulletinID' }
+                    kind: { type: string, enum: [verse, chorus, bridge] }
+                    lines:
+                      type: array
+                      minItems: 1
+                      maxItems: 4096
+                      items: { $ref: '#/components/schemas/OnlineBulletinBlock' }
+    OnlineBulletinComponent:
+      oneOf:
+        - $ref: '#/components/schemas/OnlineBulletinCoverComponent'
+        - $ref: '#/components/schemas/OnlineBulletinBodyComponent'
+        - $ref: '#/components/schemas/OnlineBulletinHymnComponent'
+        - $ref: '#/components/schemas/OnlineBulletinBackComponent'
+      discriminator:
+        propertyName: type
+        mapping:
+          cover: '#/components/schemas/OnlineBulletinCoverComponent'
+          bodySection: '#/components/schemas/OnlineBulletinBodyComponent'
+          hymnLyrics: '#/components/schemas/OnlineBulletinHymnComponent'
+          backSummary: '#/components/schemas/OnlineBulletinBackComponent'
+          announcements: '#/components/schemas/OnlineBulletinBackComponent'
+          victoriesAndPrayers: '#/components/schemas/OnlineBulletinBackComponent'
+    OnlineBulletinCoverComponent:
+      type: object
+      additionalProperties: false
+      required: [id, type, cover]
+      properties:
+        id: { $ref: '#/components/schemas/OnlineBulletinID' }
+        type: { type: string, const: cover }
+        cover: { $ref: '#/components/schemas/OnlineBulletinCover' }
+    OnlineBulletinBodyComponent:
+      type: object
+      additionalProperties: false
+      required: [id, type, bodySection]
+      properties:
+        id: { $ref: '#/components/schemas/OnlineBulletinID' }
+        type: { type: string, const: bodySection }
+        bodySection: { $ref: '#/components/schemas/OnlineBulletinBodySection' }
+    OnlineBulletinHymnComponent:
+      type: object
+      additionalProperties: false
+      required: [id, type, hymnLyrics]
+      properties:
+        id: { $ref: '#/components/schemas/OnlineBulletinID' }
+        type: { type: string, const: hymnLyrics }
+        hymnLyrics: { $ref: '#/components/schemas/OnlineBulletinHymnLyrics' }
+    OnlineBulletinBackComponent:
+      type: object
+      additionalProperties: false
+      required: [id, type, items]
+      properties:
+        id: { $ref: '#/components/schemas/OnlineBulletinID' }
+        type: { type: string, enum: [backSummary, announcements, victoriesAndPrayers] }
+        items:
+          type: array
+          maxItems: 256
+          items: { $ref: '#/components/schemas/OnlineBulletinItem' }
     MemberRecording:
       type: object
       additionalProperties: false
@@ -3938,6 +5077,25 @@ components:
         scanStatus: { type: string, enum: [pending, clean, infected, failed] }
         processingStatus: { type: string, enum: [pending, ready, not_required, failed] }
         retryable: { type: boolean }
+    BulletinUnpublishInput:
+      type: object
+      additionalProperties: false
+      required: [locale]
+      properties:
+        series: { $ref: '#/components/schemas/BulletinSeries', default: general }
+        locale: { $ref: '#/components/schemas/BulletinLocale' }
+        notifySubscribers: { type: boolean, default: false, deprecated: true, description: Ignored for backwards compatibility. }
+        unpublishOnline: { type: boolean, default: false }
+        onlineVersion: { type: integer, format: int64, minimum: 1 }
+      oneOf:
+        - required: [unpublishOnline, onlineVersion]
+          properties:
+            unpublishOnline: { const: true }
+            series: { const: general }
+            locale: { const: zh-Hant }
+        - properties:
+            unpublishOnline: { const: false }
+            onlineVersion: { not: {} }
     PublicationInput:
       type: object
       additionalProperties: false

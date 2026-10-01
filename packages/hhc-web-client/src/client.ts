@@ -1,6 +1,6 @@
 import createClient from 'openapi-fetch'
 
-import type { components, paths } from './generated.js'
+import type { components, operations, paths } from './generated.js'
 
 export type ActiveStatement = components['schemas']['ActiveStatement']
 export type StatementNotificationRequest = components['schemas']['StatementNotificationRequest']
@@ -40,6 +40,16 @@ export type BulletinDownloadJob = components['schemas']['BulletinDownloadJob']
 export type BulletinIssue = components['schemas']['BulletinIssue']
 export type BulletinVersion = components['schemas']['BulletinVersion']
 export type BulletinRevision = components['schemas']['BulletinRevision']
+export type OnlineBulletinSelector = operations['getOnlineBulletinState']['parameters']['path']
+export type OnlineBulletinState = components['schemas']['OnlineBulletinAdminState']
+export type OnlineBulletinDraftInput = components['schemas']['OnlineBulletinDraftInput']
+export type OnlineBulletinCompareInput = components['schemas']['OnlineBulletinCompareInput']
+export type OnlineBulletinComparison = components['schemas']['OnlineBulletinComparison']
+export type OnlineBulletinConfirmInput = components['schemas']['OnlineBulletinConfirmInput']
+export type OnlineBulletinPublishInput = components['schemas']['OnlineBulletinPublishInput']
+export type OnlineBulletinReviewIssue = components['schemas']['OnlineBulletinReviewIssue']
+export type OnlineBulletinComponent = components['schemas']['OnlineBulletinComponent']
+export type OnlineBulletinDocument = components['schemas']['OnlineBulletinDocument']
 export type PageMeta = components['schemas']['PageMeta']
 export type UploadTarget = components['schemas']['UploadTarget']
 export type CreatedBulletinUpload = components['schemas']['CreatedUpload']
@@ -98,13 +108,17 @@ export class HhcWebApiError extends Error {
   readonly status: number
   readonly code: string
   readonly contentId?: string
+  readonly currentVersion?: number
+  readonly canonicalVersion?: number
 
-  constructor(status: number, code: string, message: string, contentId?: string) {
+  constructor(status: number, code: string, message: string, contentId?: string, versions?: {currentVersion?: number; canonicalVersion?: number}) {
     super(message)
     this.name = 'HhcWebApiError'
     this.status = status
     this.code = code
     this.contentId = contentId
+    this.currentVersion = versions?.currentVersion
+    this.canonicalVersion = versions?.canonicalVersion
   }
 }
 
@@ -122,7 +136,7 @@ export function createHhcWebClient(options: {
     onRequest({ request }) {
       const token = options.getAccessToken()
       if (token) request.headers.set('Authorization', `Bearer ${token}`)
-      request.headers.set('Accept', 'application/json')
+      if (!request.headers.has('Accept')) request.headers.set('Accept', 'application/json')
       return request
     },
   })
@@ -164,6 +178,70 @@ export function createHhcWebClient(options: {
   }
 
   return {
+    async getOnlineBulletinState(edition: OnlineBulletinSelector, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/bulletins/{issueId}/online/{series}/{contentLocale}', {params: {path: edition}, cache: 'no-store', signal}))).data
+    },
+    async getOnlineBulletinComparison(edition: OnlineBulletinSelector, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/comparison', {params: {path: edition}, cache: 'no-store', signal}))).data
+    },
+    async listOnlineBulletinRevisions(edition: OnlineBulletinSelector, options: {before?: number; limit?: number; signal?: AbortSignal} = {}) {
+      return (await unwrap(client.GET('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/revisions', {params: {path: edition, query: {before: options.before, limit: options.limit}}, cache: 'no-store', signal: options.signal}))).data
+    },
+    async getOnlineBulletinRevision(edition: OnlineBulletinSelector, revision: number, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/revisions/{revision}', {params: {path: {...edition, revision}}, cache: 'no-store', signal}))).data
+    },
+    async startOnlineBulletinExtraction(edition: OnlineBulletinSelector, version: number, input: components['schemas']['OnlineBulletinExtractionInput'], signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/extractions', {params: {path: edition, header: {'If-Match': `"${version}"`}}, body: input, cache: 'no-store', signal}))).data
+    },
+    async saveOnlineBulletinDraft(edition: OnlineBulletinSelector, version: number, input: OnlineBulletinDraftInput, signal?: AbortSignal) {
+      return (await unwrap(client.PUT('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/draft', {params: {path: edition, header: {'If-Match': `"${version}"`}}, body: input, cache: 'no-store', signal}))).data
+    },
+    async applyOnlineBulletinComparison(edition: OnlineBulletinSelector, version: number, input: OnlineBulletinCompareInput, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/compare', {params: {path: edition, header: {'If-Match': `"${version}"`}}, body: input, cache: 'no-store', signal}))).data
+    },
+    async confirmOnlineBulletin(edition: OnlineBulletinSelector, version: number, input: OnlineBulletinConfirmInput, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/confirm', {params: {path: edition, header: {'If-Match': `"${version}"`}}, body: input, cache: 'no-store', signal}))).data
+    },
+    async publishOnlineBulletin(edition: OnlineBulletinSelector, version: number, input: OnlineBulletinPublishInput, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/publish', {params: {path: edition, header: {'If-Match': `"${version}"`}}, body: input, cache: 'no-store', signal}))).data
+    },
+    async unpublishOnlineBulletin(edition: OnlineBulletinSelector, version: number, input: components['schemas']['OnlineBulletinRestoreInput'], signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/unpublish', {params: {path: edition, header: {'If-Match': `"${version}"`}}, body: input, cache: 'no-store', signal}))).data
+    },
+    async restoreOnlineBulletinRevision(edition: OnlineBulletinSelector, revision: number, version: number, input: components['schemas']['OnlineBulletinRestoreInput'], signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/revisions/{revision}/restore', {params: {path: {...edition, revision}, header: {'If-Match': `"${version}"`}}, body: input, cache: 'no-store', signal}))).data
+    },
+    async getOnlineBulletinSourcePDF(edition: OnlineBulletinSelector, signal?: AbortSignal) {
+      const result = await client.GET('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/source-pdf', {params: {path: edition}, headers: {Accept: 'application/pdf'}, parseAs: 'stream', cache: 'no-store', signal})
+      if (result.error !== undefined || !result.response.ok) throw apiError(result.response, result.error)
+      const invalid = () => new HhcWebApiError(result.response.status, 'invalid_response', 'The source PDF response is invalid.')
+      const checksum = result.response.headers.get('X-HHC-Source-SHA256') ?? ''
+      const canonicalVersion = Number(result.response.headers.get('X-HHC-Source-Version'))
+      const length = result.response.headers.get('Content-Length')
+      const maximum = 20 * 1024 * 1024
+      if (!result.data || result.response.headers.get('Content-Type')?.split(';')[0]?.trim().toLowerCase() !== 'application/pdf' || !/^[a-f0-9]{64}$/.test(checksum) || !Number.isSafeInteger(canonicalVersion) || canonicalVersion < 1 || (length !== null && (!/^\d+$/.test(length) || Number(length) > maximum))) {
+        await result.data?.cancel()
+        throw invalid()
+      }
+      const reader = result.data.getReader()
+      const chunks: Uint8Array[] = []
+      let size = 0
+      try {
+        for (;;) {
+          const chunk = await reader.read()
+          if (chunk.done) break
+          size += chunk.value.byteLength
+          if (size > maximum) { await reader.cancel(); throw invalid() }
+          chunks.push(chunk.value)
+        }
+      } finally { reader.releaseLock() }
+      if (length !== null && Number(length) !== size) throw invalid()
+      const bytes = new Uint8Array(size)
+      let offset = 0
+      for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength }
+      if (size < 5 || new TextDecoder().decode(bytes.subarray(0, 5)) !== '%PDF-') throw invalid()
+      return {bytes: bytes.buffer, checksum, canonicalVersion}
+    },
     async listMemberRecordings(signal?: AbortSignal) {
       return (await unwrap(client.GET('/member/recordings', { signal, cache: 'no-store' }))).data
     },
@@ -358,10 +436,17 @@ export function createHhcWebClient(options: {
         body: { ...edition, notifySubscribers: options.notifySubscribers },
       }))).data
     },
-    async unpublishBulletin(issueId: string, version: number, edition: BulletinEdition) {
+    async unpublishBulletin(issueId: string, version: number, edition: BulletinEdition, options?: { unpublishOnline: true; onlineVersion: number }) {
+      let body: components['schemas']['BulletinUnpublishInput'] = { ...edition, notifySubscribers: false, unpublishOnline: false }
+      if (options?.unpublishOnline) {
+        if (edition.series !== 'general' || edition.locale !== 'zh-Hant' || !Number.isSafeInteger(options.onlineVersion) || options.onlineVersion < 1) {
+          throw new HhcWebApiError(400, 'invalid_request', 'Paired unpublish requires a supported edition and Online version.')
+        }
+        body = { series: 'general', locale: 'zh-Hant', notifySubscribers: false, unpublishOnline: true, onlineVersion: options.onlineVersion }
+      }
       return (await unwrap(client.POST('/admin/bulletins/{issueId}/unpublish', {
         params: { path: { issueId }, header: { 'If-Match': `"${version}"` } },
-        body: { ...edition, notifySubscribers: false },
+        body,
       }))).data
     },
     async previewBulletinNotification(issueId: string, series: BulletinSeries, signal?: AbortSignal) {
@@ -579,11 +664,16 @@ function apiError(response: Response, value: unknown) {
   const error = value && typeof value === 'object' && 'error' in value
     ? (value as { error?: { code?: string; message?: string; contentId?: string } }).error
     : undefined
+  const meta = value && typeof value === 'object' && 'meta' in value && value.meta && typeof value.meta === 'object'
+    ? value.meta as {currentVersion?: unknown; canonicalVersion?: unknown}
+    : undefined
+  const version = (value: unknown) => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : undefined
   return new HhcWebApiError(
     response.status,
     error?.code ?? 'request_failed',
     (error?.message ?? response.statusText) || 'Request failed.',
     typeof error?.contentId === 'string' ? error.contentId : undefined,
+    {currentVersion: version(meta?.currentVersion), canonicalVersion: version(meta?.canonicalVersion)},
   )
 }
 

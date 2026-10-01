@@ -813,6 +813,246 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/bulletins/{issueId}/online/{series}/{contentLocale}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read independent Online editing and publication state
+         * @description Returns one consistent edition snapshot, current canonical metadata, frozen published metadata, Local content, and bounded background job status. Before first extraction version is zero and documentId is empty. ETag is the Online version, not the canonical issue version. No leases, source asset IDs, or raw extraction snapshots are exposed.
+         */
+        get: operations["getOnlineBulletinState"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/online/{series}/{contentLocale}/extractions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Queue current source extraction or explicitly retry a failed job
+         * @description Source asset and checksum are verified server-side. Initial If-Match is the quoted Online version zero; later calls use the current Online ETag. canonicalVersion independently fences PDF or metadata replacement. Identical source/template/extractor identities reuse the existing job without another audit mutation. retry=true resets only a failed job without an immutable snapshot. Re-upload never overwrites Base, Local, Incoming, or publication. A superseded completed snapshot cannot be rerun; edit or restore the existing revision instead.
+         */
+        post: operations["startOnlineBulletinExtraction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/online/{series}/{contentLocale}/comparison": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read a consistent Base Local Incoming comparison
+         * @description Returns server-owned comparison values and revision pointers from one snapshot. Suggestions are same, local, incoming or conflict; ambiguous changes require an explicit choice. Reading requires durable audit. All responses are private, no-store.
+         */
+        get: operations["getOnlineBulletinComparison"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/online/{series}/{contentLocale}/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve three-way differences into a new Local revision
+         * @description Requires exact Online and canonical versions and all three revision pointers. Unresolved concurrent changes are rejected. Applies choices atomically, moves Base to Incoming, clears Incoming, queues fresh layout and audit, and preserves publication and PDF workflows. Manual values cannot contain source coordinates or layout proof. Unsupported structural coverage is rejected. Body capped at 8 MiB. All responses are private, no-store.
+         */
+        post: operations["applyOnlineBulletinComparison"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/online/{series}/{contentLocale}/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Save typed Local component corrections and enqueue layout validation
+         * @description Creates an immutable Local revision, retaining sentence IDs and server-owned provenance. Source coordinates must be omitted from every submitted sentence; layout manifests, assets, canonical metadata copies, and validation flags cannot be submitted. Existing geometry is only a seed for isolated re-composition. Published, Base, and Incoming pointers are unchanged; no notification or publication mapping is created. All sentences must retain valid server-assigned slot coverage; unsupported structural changes are rejected, never silently clipped.
+         */
+        put: operations["saveOnlineBulletinDraft"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/online/{series}/{contentLocale}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publish the confirmed immutable Online revision
+         * @description Atomically verifies current canonical and Online CAS, matching published PDF, exact worker layout evidence and human confirmation. Mappings describe explicit structural decisions from the last publication only; unresolved replacements block publication. No weekly notification. Repeating the current publication with fresh CAS and no mappings is a no-op.
+         */
+        post: operations["publishOnlineBulletin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/online/{series}/{contentLocale}/unpublish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unpublish Online without changing the PDF
+         * @description Clears only the Online published pointer. Retains all immutable history, confirmation, mappings and PDF state. No weekly notification. Already-unpublished with fresh CAS is a no-op.
+         */
+        post: operations["unpublishOnlineBulletin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/online/{series}/{contentLocale}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm the exact measured Local version after human review
+         * @description Records immutable human confirmation without publishing or notifying. Every review finding must be explicitly accepted; hard validation, unassigned content, exclusion errors, unknown issue codes and missing layout evidence cannot be waived. Revision, canonicalVersion, layout hash and displayed page count must match the current server-owned worker result. Later edits invalidate confirmation by changing Local or canonical metadata.
+         */
+        post: operations["confirmOnlineBulletin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/online/{series}/{contentLocale}/revisions/{revision}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restore immutable history into a new Local draft
+         * @description Selects only server-owned history for the exact edition, preserves sentence IDs, clears prior layout and human confirmation, and queues fresh layout validation against current canonical metadata. Published, Base, Incoming and PDF state remain unchanged. No weekly notification or publication mapping is created.
+         */
+        post: operations["restoreOnlineBulletinRevision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/online/{series}/{contentLocale}/revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List immutable Online history using bounded keyset pagination
+         * @description Returns revision summaries only, newest first. Follow nextBefore as the next request's before value; null means the end. Read audit must commit before returning history. No source asset IDs or private worker evidence is exposed.
+         */
+        get: operations["listOnlineBulletinRevisions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/online/{series}/{contentLocale}/revisions/{revision}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read one immutable Online revision with its historical metadata
+         * @description Uses frozen publication or original worker metadata, never current CMS metadata. History preview is read-only and is not authority to publish or reuse old confirmation. Durable read audit is required; source asset IDs, raw extraction snapshots and leases are withheld.
+         */
+        get: operations["getOnlineBulletinRevision"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/online/{series}/{contentLocale}/source-pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Preview the current private source PDF for Online editing
+         * @description Returns the complete current edition PDF only, capped at 20 MiB. Range is ignored. Ownership, clean scan, MIME and SHA-256 are verified and the temporary service grant is revoked before any PDF bytes are returned. Historical revision assets and public or SAS URLs are never exposed.
+         */
+        get: operations["getOnlineBulletinSourcePDF"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/bulletins": {
         parameters: {
             query?: never;
@@ -840,10 +1080,16 @@ export interface paths {
         };
         /** Get admin bulletin */
         get: operations["getAdminBulletin"];
-        /** Update bulletin issue */
+        /**
+         * Update bulletin issue
+         * @description Existing PDF mutation guards remain in force. Changing issue number or date forks every affected existing Online Local into a new draft and queues layout validation in the same transaction. Immutable Online publication metadata remains unchanged until explicit republish.
+         */
         put: operations["updateBulletinIssue"];
         post?: never;
-        /** Delete bulletin */
+        /**
+         * Delete bulletin
+         * @description Returns 409 with code online_document_exists while any Online document history exists. Online history cannot be permanently removed through this operation.
+         */
         delete: operations["deleteBulletin"];
         options?: never;
         head?: never;
@@ -875,10 +1121,16 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Update bulletin version */
+        /**
+         * Update bulletin version
+         * @description Changing title or subtitle invalidates only this edition's Online Local proof and human confirmation, creates a new draft and queues layout validation. Other editions and immutable Online publication metadata remain unchanged. Existing PDF mutation guards remain in force.
+         */
         put: operations["updateBulletinVersion"];
         post?: never;
-        /** Delete bulletin version */
+        /**
+         * Delete bulletin version
+         * @description Returns 409 with code online_document_exists while the exact series and content-locale edition has Online document history. Other editions are unaffected.
+         */
         delete: operations["deleteBulletinVersion"];
         options?: never;
         head?: never;
@@ -928,7 +1180,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Complete bulletin upload */
+        /**
+         * Complete bulletin upload
+         * @description Replacing PDF bytes does not overwrite Online Local or publication. Changed canonical title or subtitle forks only the affected Online Local for fresh layout validation; re-extraction is a separate action producing Incoming.
+         */
         post: operations["completeBulletinUpload"];
         delete?: never;
         options?: never;
@@ -962,7 +1217,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Unpublish bulletin */
+        /**
+         * Unpublish bulletin
+         * @description By default removes only the PDF projection and retains Online publication. Admin reads Online state to show a warning and an unchecked simultaneous-unpublish option. Only explicit unpublishOnline=true with the current onlineVersion clears the matching Online pointer synchronously in the same transaction; either CAS or audit failure rolls back both. Historical Online revisions and private annotations are retained. Existing PDF asset revocation remains asynchronous.
+         */
         post: operations["unpublishBulletin"];
         delete?: never;
         options?: never;
@@ -1047,7 +1305,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Restore bulletin revision */
+        /**
+         * Restore bulletin revision
+         * @description Restored canonical metadata forks affected Online Local drafts for fresh validation while preserving immutable Online publication metadata. Restoration cannot remove an edition with Online history; this returns 409 online_document_exists.
+         */
         post: operations["restoreBulletinRevision"];
         delete?: never;
         options?: never;
@@ -1637,6 +1898,420 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        OnlineBulletinComparisonValue: components["schemas"]["OnlineBulletinBlock"] | components["schemas"]["OnlineBulletinComponent"] | components["schemas"]["OnlineBulletinID"][] | null;
+        OnlineBulletinComparison: {
+            /** Format: uuid */
+            documentId: string;
+            /** Format: int64 */
+            version: number;
+            /** Format: int64 */
+            canonicalVersion: number;
+            /** Format: int64 */
+            baseRevision: number;
+            /** Format: int64 */
+            localRevision: number;
+            /** Format: int64 */
+            incomingRevision: number;
+            units: {
+                componentId: string;
+                blockId: string;
+                /** @enum {string} */
+                suggestion: "same" | "local" | "incoming" | "conflict";
+                base: components["schemas"]["OnlineBulletinComparisonValue"];
+                local: components["schemas"]["OnlineBulletinComparisonValue"];
+                incoming: components["schemas"]["OnlineBulletinComparisonValue"];
+            }[];
+        };
+        OnlineBulletinCompareInput: {
+            /** Format: int64 */
+            canonicalVersion: number;
+            /** Format: int64 */
+            baseRevision: number;
+            /** Format: int64 */
+            localRevision: number;
+            /** Format: int64 */
+            incomingRevision: number;
+            choices?: ({
+                componentId: string;
+                blockId: string;
+                /** @enum {string} */
+                choice: "local" | "incoming" | "manual";
+                value?: components["schemas"]["OnlineBulletinComparisonValue"];
+            } & ({
+                /** @constant */
+                choice?: "manual";
+            } | {
+                /** @enum {unknown} */
+                choice?: "local" | "incoming";
+            }))[];
+        };
+        OnlineBulletinDraftInput: {
+            /** Format: int64 */
+            canonicalVersion: number;
+            /** @description Typed editable content only. Omit every read-only sentence source field; the server preserves source provenance by stable sentence ID. */
+            components: components["schemas"]["OnlineBulletinComponent"][];
+        };
+        OnlineBulletinSavedDraft: {
+            /** Format: uuid */
+            documentId: string;
+            /** Format: int64 */
+            version: number;
+            /** Format: int64 */
+            revision: number;
+            /** Format: uuid */
+            layoutJobId: string;
+        };
+        OnlineBulletinExtractionInput: {
+            /** Format: int64 */
+            canonicalVersion: number;
+            /** @default false */
+            retry: boolean;
+        };
+        OnlineBulletinQueuedExtractionEnvelope: {
+            data: {
+                /** Format: uuid */
+                documentId: string;
+                /** Format: int64 */
+                version: number;
+                job: components["schemas"]["OnlineBulletinAdminJob"];
+            };
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        OnlineBulletinRevisionPage: {
+            /** Format: uuid */
+            documentId: string;
+            /** Format: int64 */
+            nextBefore: number | null;
+            items: {
+                /** Format: int64 */
+                revision: number;
+                createdBy: string;
+                /** Format: date-time */
+                createdAt: string;
+                sourceAssetChecksum: string;
+                /** @description Historical worker proof exists; not current publication authority. */
+                layoutValidated: boolean;
+            }[];
+        };
+        OnlineBulletinHistoricalRevision: {
+            /** Format: uuid */
+            documentId: string;
+            /** Format: int64 */
+            revision: number;
+            document: components["schemas"]["OnlineBulletinDocument"];
+            reviewIssues: components["schemas"]["OnlineBulletinReviewIssue"][];
+            canonicalMetadata: components["schemas"]["OnlineBulletinCanonicalMetadata"];
+            createdBy: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        OnlineBulletinPublishInput: {
+            /** Format: int64 */
+            canonicalVersion: number;
+            /** Format: int64 */
+            revision: number;
+            mappings?: components["schemas"]["OnlineBulletinSentenceMapping"][];
+        };
+        OnlineBulletinSentenceMapping: {
+            fromSentenceId: string;
+            /** @enum {string} */
+            status: "unchanged" | "moved" | "split" | "merged" | "removed";
+            toSentenceIds: string[];
+        };
+        OnlineBulletinUnpublishedRevision: {
+            /** Format: uuid */
+            documentId: string;
+            /** Format: int64 */
+            version: number;
+        };
+        OnlineBulletinRestoreInput: {
+            /** Format: int64 */
+            canonicalVersion: number;
+        };
+        OnlineBulletinConfirmInput: {
+            /** Format: int64 */
+            canonicalVersion: number;
+            /** Format: int64 */
+            revision: number;
+            layoutValidationHash: string;
+            pageCount: number;
+            acceptedIssues: components["schemas"]["OnlineBulletinReviewIssue"][];
+        };
+        OnlineBulletinConfirmedRevision: {
+            /** Format: uuid */
+            documentId: string;
+            /** Format: int64 */
+            version: number;
+            /** Format: int64 */
+            revision: number;
+        };
+        OnlineBulletinAdminState: {
+            /** Format: uuid */
+            issueId: string;
+            /** @enum {string} */
+            series: "general";
+            /** @enum {string} */
+            contentLocale: "zh-Hant";
+            /** Format: int64 */
+            canonicalVersion: number;
+            canonicalMetadata: components["schemas"]["OnlineBulletinCanonicalMetadata"];
+            pdfStatus: components["schemas"]["BulletinVersionStatus"];
+            documentId: string;
+            /** Format: int64 */
+            version: number;
+            /** @enum {string} */
+            draftStatus: "notStarted" | "extracting" | "reviewRequired" | "ready" | "published" | "extractionFailed";
+            /** Format: int64 */
+            baseRevision: number | null;
+            /** Format: int64 */
+            incomingRevision: number | null;
+            /** Format: int64 */
+            publishedRevision: number | null;
+            /** @description Canonical metadata differs from the immutable Online publication and requires explicit republish. */
+            metadataSyncPending: boolean;
+            /** @description Human confirmation matches current Local and canonical metadata. This does not itself authorize publication. */
+            confirmed: boolean;
+            publishedMetadata: null | components["schemas"]["OnlineBulletinCanonicalMetadata"];
+            local: null | components["schemas"]["OnlineBulletinAdminRevision"];
+            extraction: null | components["schemas"]["OnlineBulletinAdminJob"];
+            layout: null | components["schemas"]["OnlineBulletinAdminJob"];
+        };
+        OnlineBulletinAdminRevision: {
+            /** Format: int64 */
+            revision: number;
+            document: components["schemas"]["OnlineBulletinDocument"];
+            reviewIssues: components["schemas"]["OnlineBulletinReviewIssue"][];
+        };
+        OnlineBulletinReviewIssue: {
+            code: string;
+            blocking: boolean;
+            componentId?: components["schemas"]["OnlineBulletinID"];
+        };
+        OnlineBulletinAdminJob: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "queued" | "parsing" | "review_ready" | "validating" | "ready" | "failed";
+            attempts: number;
+            errorCode: string;
+            reviewIssues?: components["schemas"]["OnlineBulletinReviewIssue"][];
+        };
+        OnlineBulletinID: string;
+        OnlineBulletinHash: string;
+        /** @enum {string} */
+        OnlineBulletinFontRole: "body" | "scripture" | "emphasis" | "reference" | "foreignText" | "symbol";
+        /** @description Typed immutable content. Canonical issue metadata and mutable source asset IDs are intentionally absent. Maximum encoded size is 8 MiB; server also validates references, total collection limits and fragment coverage. */
+        OnlineBulletinDocument: {
+            /** Format: uuid */
+            issueId: string;
+            /** @constant */
+            series: "general";
+            /** @constant */
+            contentLocale: "zh-Hant";
+            /** @constant */
+            schemaVersion: "1";
+            /** @constant */
+            templateVersion: "v1";
+            sourceAssetChecksum: components["schemas"]["OnlineBulletinHash"];
+            sourcePageCount: number;
+            pages: components["schemas"]["OnlineBulletinPage"][];
+            layoutManifest: components["schemas"]["OnlineBulletinLayoutManifest"];
+            components: components["schemas"]["OnlineBulletinComponent"][];
+        };
+        OnlineBulletinPage: {
+            id: components["schemas"]["OnlineBulletinID"];
+            /** @description PDF points. */
+            width: number;
+            /** @description PDF points. */
+            height: number;
+        };
+        /** @description Normalized page-relative rectangle. Server additionally rejects any edge exceeding the page boundary. */
+        OnlineBulletinBox: {
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+        };
+        /** @description Revision-owned manifest; hashes bind the authoritative isolated-worker measurement. Empty validation hashes represent a pending draft, never permission to publish. */
+        OnlineBulletinLayoutManifest: {
+            /** @constant */
+            templateVersion: "v1";
+            /** @constant */
+            rendererVersion: "v1";
+            rendererArtifactSha256: components["schemas"]["OnlineBulletinHash"];
+            contentHash?: components["schemas"]["OnlineBulletinHash"];
+            layoutValidationHash?: components["schemas"]["OnlineBulletinHash"];
+            assets: components["schemas"]["OnlineBulletinAsset"][];
+            pages: components["schemas"]["OnlineBulletinLayoutPage"][];
+        };
+        /** @description Code-owned permanent self-hosted asset, never an executable URL. Filename includes its exact SHA-256. */
+        OnlineBulletinAsset: {
+            url: string;
+            sha256: components["schemas"]["OnlineBulletinHash"];
+            /** @enum {string} */
+            kind: "font" | "decoration";
+            fontRole?: components["schemas"]["OnlineBulletinFontRole"];
+        };
+        OnlineBulletinLayoutPage: {
+            pageId: components["schemas"]["OnlineBulletinID"];
+            fixedSlots?: components["schemas"]["OnlineBulletinFixedSlot"][];
+            slots: components["schemas"]["OnlineBulletinSlot"][];
+        };
+        OnlineBulletinSlot: {
+            id: components["schemas"]["OnlineBulletinID"];
+            componentId: components["schemas"]["OnlineBulletinID"];
+            blockId: components["schemas"]["OnlineBulletinID"];
+            box: components["schemas"]["OnlineBulletinBox"];
+            continuationOf?: components["schemas"]["OnlineBulletinID"];
+            fragments: components["schemas"]["OnlineBulletinFragment"][];
+        };
+        /** @description Template-owned geometry for a fixed label or canonical metadata reference. It contains no editable text or executable URL. */
+        OnlineBulletinFixedSlot: {
+            id: components["schemas"]["OnlineBulletinID"];
+            /** @enum {string} */
+            element: "title" | "subtitle" | "date" | "issueNumber" | "pageNumber" | "masthead" | "vision" | "visionMission" | "visionFellowship" | "visionCommitment" | "pastor" | "contact" | "scanHint" | "websiteQRLabel" | "youtubeQRLabel" | "streamQRLabel" | "welcomeLabel" | "worshipLabel" | "workLabel" | "wordLabel" | "verseLabel" | "hymnLabel" | "summaryLabel" | "summarySidebarTitle" | "summarySidebarTagline" | "announcementsLabel" | "prayersLabel" | "titleLabel" | "speakerLabel" | "speakerSeparator" | "lectureDateMarker" | "bodyIssueSummary" | "bodySpeakerLabel" | "transcriberLabel" | "editorLabel" | "authorLabel" | "logo" | "backgroundLogo" | "websiteQR" | "youtubeQR" | "streamQR" | "topRule" | "footerRule" | "summaryFrame" | "announcementsFrame" | "prayersFrame";
+            box: components["schemas"]["OnlineBulletinBox"];
+            style: components["schemas"]["OnlineBulletinParagraphStyle"];
+        };
+        /** @description Read-only snapshot of existing CMS fields, separate from editable document content. */
+        OnlineBulletinCanonicalMetadata: {
+            title: string;
+            subtitle: string;
+            issueNumber: number;
+            /** Format: date */
+            date: string;
+        };
+        /** @description Half-open offsets in Unicode code points, not UTF-8 bytes or UTF-16 units. Coverage must be complete and non-overlapping in reading order. */
+        OnlineBulletinFragment: {
+            sentenceId: components["schemas"]["OnlineBulletinID"];
+            start: number;
+            end: number;
+        };
+        OnlineBulletinSpan: {
+            text: string;
+            fontRole: components["schemas"]["OnlineBulletinFontRole"];
+            /** @description Optional source PDF-point size for mixed-size inline runs. Missing or null inherits the block size; mobile retains the proportional em ratio. */
+            fontSize?: number | null;
+        };
+        /** @description Dynamic sentence anchor. The canonical- ID prefix is reserved for shared canonical metadata anchors across layouts. */
+        OnlineBulletinSentence: {
+            id: components["schemas"]["OnlineBulletinID"];
+            spans: components["schemas"]["OnlineBulletinSpan"][];
+            /** @description Server-owned PDF provenance; forbidden in component edit requests. */
+            readonly source?: {
+                page: number;
+                box: components["schemas"]["OnlineBulletinBox"];
+            };
+        };
+        /** @description Font size and line height in PDF points. Indents and spacing in em units; negative first-line indentation supports hanging paragraphs. */
+        OnlineBulletinParagraphStyle: {
+            fontSize: number;
+            lineHeight: number;
+            /** @description Explicit source tracking in em; omitted means zero. Never adjusted automatically to fit edits. */
+            letterSpacing?: number;
+            /** @enum {string} */
+            align?: "left" | "center" | "right" | "justify";
+            indent: number;
+            firstLineIndent: number;
+            spaceBefore: number;
+            spaceAfter: number;
+        };
+        OnlineBulletinBlock: {
+            id: components["schemas"]["OnlineBulletinID"];
+            style: components["schemas"]["OnlineBulletinParagraphStyle"];
+            sentences: components["schemas"]["OnlineBulletinSentence"][];
+        };
+        OnlineBulletinItem: {
+            id: components["schemas"]["OnlineBulletinID"];
+            title?: components["schemas"]["OnlineBulletinBlock"];
+            blocks: components["schemas"]["OnlineBulletinBlock"][];
+        };
+        OnlineBulletinCover: {
+            welcome: components["schemas"]["OnlineBulletinBlock"][];
+            worship: components["schemas"]["OnlineBulletinItem"][];
+            work: components["schemas"]["OnlineBulletinItem"][];
+            wordQuestions: components["schemas"]["OnlineBulletinItem"][];
+            weeklyVerses: components["schemas"]["OnlineBulletinBlock"][];
+        };
+        OnlineBulletinBodySection: {
+            /**
+             * @description Unknown creates a blocking review issue.
+             * @enum {string}
+             */
+            kind: "sermon" | "testimony" | "teaching" | "reflection" | "unknown";
+            header?: components["schemas"]["OnlineBulletinBodyHeader"];
+            title: components["schemas"]["OnlineBulletinBlock"];
+            subtitle?: components["schemas"]["OnlineBulletinBlock"];
+            contributors?: {
+                /** @enum {string} */
+                role: "speaker" | "transcriber" | "editor" | "author";
+                name: components["schemas"]["OnlineBulletinBlock"];
+            }[];
+            blocks: components["schemas"]["OnlineBulletinBlock"][];
+        };
+        /** @description First body section only. Source lecture date is independent of canonical issue publication date; all fields use sentence anchors. Missing contributor roles block publication review. */
+        OnlineBulletinBodyHeader: {
+            lectureDate: components["schemas"]["OnlineBulletinBlock"];
+            contributors: {
+                /** @enum {string} */
+                role: "speaker" | "transcriber" | "editor";
+                name: components["schemas"]["OnlineBulletinBlock"];
+            }[];
+        };
+        OnlineBulletinHymnLyrics: {
+            hymns: {
+                id: components["schemas"]["OnlineBulletinID"];
+                number?: components["schemas"]["OnlineBulletinBlock"];
+                title: components["schemas"]["OnlineBulletinBlock"];
+                sourceLabel?: components["schemas"]["OnlineBulletinBlock"];
+                sections: {
+                    id: components["schemas"]["OnlineBulletinID"];
+                    /** @enum {string} */
+                    kind: "verse" | "chorus" | "bridge";
+                    lines: components["schemas"]["OnlineBulletinBlock"][];
+                }[];
+            }[];
+        };
+        OnlineBulletinComponent: components["schemas"]["OnlineBulletinCoverComponent"] | components["schemas"]["OnlineBulletinBodyComponent"] | components["schemas"]["OnlineBulletinHymnComponent"] | components["schemas"]["OnlineBulletinBackComponent"];
+        OnlineBulletinCoverComponent: {
+            id: components["schemas"]["OnlineBulletinID"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "cover";
+            cover: components["schemas"]["OnlineBulletinCover"];
+        };
+        OnlineBulletinBodyComponent: {
+            id: components["schemas"]["OnlineBulletinID"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "bodySection";
+            bodySection: components["schemas"]["OnlineBulletinBodySection"];
+        };
+        OnlineBulletinHymnComponent: {
+            id: components["schemas"]["OnlineBulletinID"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "hymnLyrics";
+            hymnLyrics: components["schemas"]["OnlineBulletinHymnLyrics"];
+        };
+        OnlineBulletinBackComponent: {
+            id: components["schemas"]["OnlineBulletinID"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "backSummary" | "announcements" | "victoriesAndPrayers";
+            items: components["schemas"]["OnlineBulletinItem"][];
+        };
         MemberRecording: {
             /** Format: uuid */
             id: string;
@@ -2499,6 +3174,32 @@ export interface components {
             processingStatus: "pending" | "ready" | "not_required" | "failed";
             retryable: boolean;
         };
+        BulletinUnpublishInput: {
+            /** @default general */
+            series: components["schemas"]["BulletinSeries"];
+            locale: components["schemas"]["BulletinLocale"];
+            /**
+             * @deprecated
+             * @description Ignored for backwards compatibility.
+             * @default false
+             */
+            notifySubscribers: boolean;
+            /** @default false */
+            unpublishOnline: boolean;
+            /** Format: int64 */
+            onlineVersion?: number;
+        } & ({
+            /** @constant */
+            unpublishOnline: true;
+            /** @constant */
+            series?: "general";
+            /** @constant */
+            locale?: "zh-Hant";
+        } | {
+            /** @constant */
+            unpublishOnline?: false;
+            onlineVersion?: unknown;
+        });
         PublicationInput: {
             /** @default general */
             series: components["schemas"]["BulletinSeries"];
@@ -5127,6 +5828,548 @@ export interface operations {
             428: components["responses"]["Error"];
         };
     };
+    getOnlineBulletinState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                series: "general";
+                contentLocale: "zh-Hant";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Independent Online state, including an unstarted edition */
+            200: {
+                headers: {
+                    "Cache-Control"?: "private, no-store";
+                    /** @description Quoted Online version; zero before first extraction */
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OnlineBulletinAdminState"];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    startOnlineBulletinExtraction: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                series: "general";
+                contentLocale: "zh-Hant";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnlineBulletinExtractionInput"];
+            };
+        };
+        responses: {
+            /** @description Existing completed or failed job, not automatically retried */
+            200: {
+                headers: {
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnlineBulletinQueuedExtractionEnvelope"];
+                };
+            };
+            /** @description Extraction queued or already running; read state for progress */
+            202: {
+                headers: {
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnlineBulletinQueuedExtractionEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            /** @description Version conflict includes meta.currentVersion and meta.canonicalVersion; other conflicts reject retrying an active or immutable job */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getOnlineBulletinComparison: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                issueId: string;
+                series: "general";
+                contentLocale: "zh-Hant";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Consistent three-way comparison */
+            200: {
+                headers: {
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OnlineBulletinComparison"];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    applyOnlineBulletinComparison: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                issueId: string;
+                series: "general";
+                contentLocale: "zh-Hant";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnlineBulletinCompareInput"];
+            };
+        };
+        responses: {
+            /** @description Saved immutable Local awaiting fresh layout validation */
+            200: {
+                headers: {
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OnlineBulletinSavedDraft"];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    saveOnlineBulletinDraft: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                series: "general";
+                contentLocale: "zh-Hant";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnlineBulletinDraftInput"];
+            };
+        };
+        responses: {
+            /** @description Saved immutable draft awaiting isolated layout validation */
+            200: {
+                headers: {
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OnlineBulletinSavedDraft"];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            /** @description Stale Online or canonical version; meta.currentVersion and meta.canonicalVersion identify current state */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    publishOnlineBulletin: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                series: "general";
+                contentLocale: "zh-Hant";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnlineBulletinPublishInput"];
+            };
+        };
+        responses: {
+            /** @description Online publish committed independently */
+            200: {
+                headers: {
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OnlineBulletinConfirmedRevision"];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            /** @description Publication gate failed or CAS conflict; version conflicts include meta.currentVersion and meta.canonicalVersion */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    unpublishOnlineBulletin: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                series: "general";
+                contentLocale: "zh-Hant";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnlineBulletinRestoreInput"];
+            };
+        };
+        responses: {
+            /** @description Online unpublish committed independently */
+            200: {
+                headers: {
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OnlineBulletinUnpublishedRevision"];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            /** @description Publication gate failed or CAS conflict; version conflicts include meta.currentVersion and meta.canonicalVersion */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    confirmOnlineBulletin: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                series: "general";
+                contentLocale: "zh-Hant";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnlineBulletinConfirmInput"];
+            };
+        };
+        responses: {
+            /** @description Confirmed current Local; PDF and Online publication unchanged */
+            200: {
+                headers: {
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OnlineBulletinConfirmedRevision"];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            /** @description Incomplete review or missing/stale proof; version conflicts include meta.currentVersion and meta.canonicalVersion */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    restoreOnlineBulletinRevision: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                series: "general";
+                contentLocale: "zh-Hant";
+                revision: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnlineBulletinRestoreInput"];
+            };
+        };
+        responses: {
+            /** @description Restored as new immutable Local awaiting validation */
+            200: {
+                headers: {
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OnlineBulletinSavedDraft"];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            /** @description Stale Online or canonical version; meta.currentVersion and meta.canonicalVersion identify current state */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listOnlineBulletinRevisions: {
+        parameters: {
+            query?: {
+                before?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                series: "general";
+                contentLocale: "zh-Hant";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bounded history summaries */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OnlineBulletinRevisionPage"];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getOnlineBulletinRevision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                series: "general";
+                contentLocale: "zh-Hant";
+                revision: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Immutable content and historical canonical metadata */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OnlineBulletinHistoricalRevision"];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getOnlineBulletinSourcePDF: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                series: "general";
+                contentLocale: "zh-Hant";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Verified complete source PDF */
+            200: {
+                headers: {
+                    "Cache-Control"?: "private, no-store";
+                    "X-HHC-Source-SHA256"?: string;
+                    /** @description Current canonical issue version */
+                    "X-HHC-Source-Version"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
     listAdminBulletins: {
         parameters: {
             query?: {
@@ -5439,12 +6682,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: components["requestBodies"]["PublicationInput"];
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulletinUnpublishInput"];
+            };
+        };
         responses: {
             200: components["responses"]["BulletinIssue"];
+            400: components["responses"]["Error"];
             401: components["responses"]["AdminUnauthorized"];
             403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
             412: components["responses"]["Error"];
+            503: components["responses"]["Error"];
         };
     };
     previewBulletinNotification: {
