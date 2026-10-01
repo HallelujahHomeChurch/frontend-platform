@@ -16,7 +16,7 @@ export type BulletinSentenceState = {selected?: boolean; highlight?: 'yellow' | 
 type Item = components['schemas']['OnlineBulletinItem'];
 
 // Semantic order is shared by mobile reflow, indexing and paper slot lookup.
-export function bulletinBlocks(document: BulletinRenderableDocument): {componentId: string; block: BulletinBlock}[] {
+export function bulletinBlocks(document: Pick<BulletinRenderableDocument, 'components'>): {componentId: string; block: BulletinBlock}[] {
   const result: {componentId: string; block: BulletinBlock}[] = [];
   for (const component of document.components) {
     const add = (blocks: BulletinBlock[]) => result.push(...blocks.map(block => ({componentId: component.id, block})));
