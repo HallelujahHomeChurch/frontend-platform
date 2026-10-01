@@ -62,6 +62,13 @@
 .hhc-bulletin-v1 [data-fixed-element='logo'] img,
 .hhc-bulletin-v1 [data-fixed-element='backgroundLogo'] img { filter: grayscale(1) brightness(.6) contrast(10); }
 .hhc-bulletin-v1 [data-fixed-element='backgroundLogo'] { opacity: .08; pointer-events: none; z-index: -1; }
+.hhc-bulletin-v1[data-bulletin-mode='paper'] [data-fixed-element='masthead'] {
+  color: #fff;
+  -webkit-text-stroke: .8pt #111;
+  paint-order: stroke fill;
+  text-shadow: -2pt 4pt 0 #c6c6c6;
+  word-spacing: .85em;
+}
 .hhc-bulletin-v1 [data-fixed-element='topRule'],
 .hhc-bulletin-v1 [data-fixed-element='footerRule'] { border-top: 1pt solid #111; pointer-events: none; }
 .hhc-bulletin-v1 [data-fixed-element='summaryFrame'],

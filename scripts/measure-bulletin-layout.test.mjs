@@ -60,6 +60,17 @@ test('fixed template labels are measured and can block overflow too', {skip: !as
   const result = await measureBulletinLayout({...input, submissionJSON, expectedContentHash: hash(submissionJSON)});
   assert.ok(result.overflow.some(value => value.slotId === 'fixed-vision'));
 });
+test('native cover masthead preserves the reference word gap at printed size', {skip: !assetsDirectory}, async () => {
+  const input = await fixture();
+  const submission = JSON.parse(input.submissionJSON);
+  submission.document.layoutManifest.pages[0].fixedSlots = [{id: 'native-masthead', element: 'masthead', box: {x: 218.25/595.32, y: 44/841.92, width: 246.12/595.32, height: 36/841.92}, style: {fontSize: 28, lineHeight: 36, letterSpacing: -.135, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0}}];
+  const submissionJSON = JSON.stringify(submission);
+  const result = await measureBulletinLayout({...input, submissionJSON, expectedContentHash: hash(submissionJSON)});
+  const slot = result.pages[0].slots.find(slot => slot.slotId === 'native-masthead');
+  const width = Math.max(...slot.fragments.flatMap(fragment => fragment.lines.map(line => line.width)));
+  assert.ok(width >= 244 && width <= 247, `masthead word gap changed (${width}pt)`);
+  assert.deepEqual(result.overflow, []);
+});
 test('fixed graphics must be declared trusted assets and loaded before measurement', {skip: !assetsDirectory}, async () => {
   const input = await fixture();
   const submission = JSON.parse(input.submissionJSON);
