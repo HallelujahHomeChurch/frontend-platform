@@ -114,7 +114,14 @@ export async function composeBulletinLayout(input) {
   const flowed = new Set();
   const row = (entries, gap = 5) => {
     if (!entries.length) return;
-    rows.push({entries, gap});
+    const groups=[], occurrences=new Map();
+    for(const entry of entries) {
+      const id=entry.slot.blockId;
+      const index=id ? occurrences.get(id) ?? 0 : 0;
+      (groups[index]??=[]).push(entry);
+      if(id) occurrences.set(id,index+1);
+    }
+    for(const group of groups) rows.push({entries:group,gap});
     for (const {slot} of entries) if (slot.element) flowed.add(slot.id);
   };
   const slotsFor = block => layout.slots.filter(slot => slot.blockId === block.id);
@@ -149,6 +156,10 @@ export async function composeBulletinLayout(input) {
   row(footer, 18);
   const stagedJSON = JSON.stringify(submission);
   const staged = await measureBulletinLayout({...input, submissionJSON: stagedJSON, expectedContentHash: hash(stagedJSON)});
+  if(splitOversizedText(submission,staged,new Set([component.id]))) {
+    const submissionJSON=JSON.stringify(submission);
+    return composeBulletinLayout({...input,submissionJSON,expectedContentHash:hash(submissionJSON)});
+  }
   const measured = new Map(staged.pages.find(value => value.pageId === page.id).slots.map(slot => [slot.slotId,slot]));
   const existingIDs = new Set();
   JSON.stringify(document,(key,value) => { if (key === 'id') existingIDs.add(value); return value; });
@@ -191,7 +202,7 @@ export async function composeBulletinBodyLayout(input) {
   const componentTypes = new Map(document.components.map(component => [component.id,component.type]));
   const panelTypes = {summaryFrame:'backSummary',announcementsFrame:'announcements',prayersFrame:'victoriesAndPrayers'};
   const panelLabels = {summaryLabel:'backSummary',announcementsLabel:'announcements',prayersLabel:'victoriesAndPrayers'};
-  const bodyIDs = new Set(document.components.filter(component => component.type === 'bodySection' || Object.values(panelTypes).includes(component.type)).map(component => component.id));
+  const bodyIDs = new Set(document.components.filter(component => component.type === 'bodySection' || component.type === 'hymnLyrics' || Object.values(panelTypes).includes(component.type)).map(component => component.id));
   let changed = false;
   for (const {componentId,block} of bulletinBlocks(document)) {
     if (!bodyIDs.has(componentId)) continue;
@@ -222,6 +233,10 @@ export async function composeBulletinBodyLayout(input) {
     const submissionJSON = JSON.stringify(submission);
     measured = await measureBulletinLayout({...input,submissionJSON,expectedContentHash:hash(submissionJSON)});
   }
+  if (splitOversizedText(submission, measured, bodyIDs)) {
+    const submissionJSON=JSON.stringify(submission);
+    return composeBulletinBodyLayout({...input,submissionJSON,expectedContentHash:hash(submissionJSON)});
+  }
   const ids = new Set();
   JSON.stringify(document, (key, value) => { if (key === 'id') ids.add(value); return value; });
   let serial = 0;
@@ -231,9 +246,9 @@ export async function composeBulletinBodyLayout(input) {
     const layout = document.layoutManifest.pages.find(layout => layout.pageId === page.id);
     pages.push(page);
     layouts.push(layout);
-    // Cover and hymn columns have separate template regions.
+    // Cover has its own semantic grid; the remaining regions retain source columns.
     if (!layout.slots.length || layout.slots.some(slot => !bodyIDs.has(slot.componentId))) continue;
-    const isBack = layout.slots.every(slot => componentTypes.get(slot.componentId) !== 'bodySection');
+    const isBack = layout.slots.every(slot => Object.values(panelTypes).includes(componentTypes.get(slot.componentId)));
     const firstRow = Math.min(...layout.slots.map(slot => slot.box.y)) - 1/page.height;
     const headers = (layout.fixedSlots ?? []).filter(slot => isBack
       ? slot.element in panelLabels
@@ -257,7 +272,7 @@ export async function composeBulletinBodyLayout(input) {
       const height = Math.max(slot.box.height * page.height, measuredSlot.box.height,
         ...measuredSlot.fragments.flatMap(fragment => fragment.lines.map(line => line.y + line.height - top)));
       let row = rows.at(-1);
-      if (!row || Math.abs(row.top - top) > 1) { row = {top, bottom: top, height: 0, group: slot.element ? panelLabels[slot.element] : componentTypes.get(slot.componentId), slots: []}; rows.push(row); }
+      if (!row || Math.abs(row.top - top) > 1 || row.slots.some(entry => Math.min(entry.slot.box.x+entry.slot.box.width,slot.box.x+slot.box.width)-Math.max(entry.slot.box.x,slot.box.x)>1/page.width)) { row = {top, bottom: top, height: 0, group: slot.element ? panelLabels[slot.element] : componentTypes.get(slot.componentId), slots: []}; rows.push(row); }
       row.bottom = Math.max(row.bottom, top + slot.box.height * page.height);
       row.height = Math.max(row.height, height + top - row.top);
       row.slots.push({slot, offset: top - row.top, height});
@@ -268,8 +283,6 @@ export async function composeBulletinBodyLayout(input) {
     for (const row of rows) {
       const gap = Math.max(isBack && previousGroup && row.group !== previousGroup ? 18 : 3, row.top - sourceBottom);
       let top = Math.max(row.top + pageOffset, cursor + gap);
-      // ponytail: move whole paragraphs; a paragraph taller than a page stays
-      // review-blocked until Unicode-fragment splitting is implemented.
       if (row.height > page.height - 100) throw new Error('layout_requires_split');
       if (top + row.height > page.height - 48) {
         if (pages.length >= 80) throw new Error('layout_page_limit');
@@ -307,6 +320,51 @@ export async function composeBulletinBodyLayout(input) {
   const expectedContentHash = hash(submissionJSON);
   const measurement = await measureBulletinLayout({...input, submissionJSON, expectedContentHash});
   return {submissionJSON, expectedContentHash, measurement};
+}
+
+// Bisect only measured oversized text, keeping sentence IDs and Unicode scalar
+// offsets. At least one scalar is removed on each branch; no font shrinking or
+// content mutation. The compositor remeasures the fragments before publication.
+function splitOversizedText(submission, measurement, eligible) {
+  const {document}=submission;
+  const ids=new Set();
+  JSON.stringify(document,(key,value)=>{if(key==='id') ids.add(value);return value;});
+  let serial=0, changed=false, count=0;
+  const nextID=()=>{let id;do {id=`layout-fragment-${++serial}`;}while(ids.has(id));ids.add(id);return id;};
+  for (const [index,layout] of document.layoutManifest.pages.entries()) {
+    const bounds=new Map(measurement.pages[index].slots.map(slot=>[slot.slotId,slot]));
+    const page=document.pages[index];
+    layout.slots=layout.slots.flatMap(slot=>{
+      if(!eligible.has(slot.componentId)) return [slot];
+      const value=bounds.get(slot.id);
+      const height=Math.max(value.box.height,...value.fragments.flatMap(fragment=>fragment.lines.map(line=>line.y+line.height-value.box.y)));
+      if(height<=page.height-100) return [slot];
+      const length=slot.fragments.reduce((sum,fragment)=>sum+fragment.end-fragment.start,0);
+      if(length<2) throw new Error('layout_requires_split');
+      let remaining=Math.floor(length/2);
+      const left=[],right=[];
+      for(const fragment of slot.fragments) {
+        const take=Math.min(remaining,fragment.end-fragment.start);
+        if(take) left.push({...fragment,end:fragment.start+take});
+        if(fragment.start+take<fragment.end) right.push({...fragment,start:fragment.start+take});
+        remaining-=take;
+      }
+      changed=true;
+      const box={...slot.box,height:Math.min(slot.box.height,.1)};
+      return [{...slot,box,fragments:left},{...slot,id:nextID(),box:{...box},continuationOf:slot.id,fragments:right}];
+    });
+    count+=layout.slots.length;
+    if(count>50000) throw new Error('layout_slot_limit');
+  }
+  if(changed) {
+    const previous=new Map();
+    for(const layout of document.layoutManifest.pages) for(const slot of layout.slots) {
+      if(previous.has(slot.blockId)) slot.continuationOf=previous.get(slot.blockId);
+      else delete slot.continuationOf;
+      previous.set(slot.blockId,slot.id);
+    }
+  }
+  return changed;
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

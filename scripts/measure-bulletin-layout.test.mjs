@@ -331,6 +331,61 @@ test('body composition grows paragraphs and adds pages without changing sentence
   assert.deepEqual(composed, repeat);
 });
 
+test('oversized single sentence continues without changing its identity or dropping Unicode text', {skip: !assetsDirectory}, async () => {
+  const input=await fixture('禱告。'.repeat(600));
+  const original=JSON.parse(input.submissionJSON);
+  const composed=await layoutRunner.composeBulletinBodyLayout(input);
+  const result=JSON.parse(composed.submissionJSON);
+  assert.deepEqual(result.document.components,original.document.components);
+  assert.ok(result.document.pages.length>1);
+  assert.deepEqual(composed.measurement.overflow,[]);
+  const slots=result.document.layoutManifest.pages.flatMap(page=>page.slots);
+  const fragments=slots.flatMap(slot=>slot.fragments);
+  let offset=0;
+  for (const fragment of fragments) {
+    assert.equal(fragment.sentenceId,'s');
+    assert.equal(fragment.start,offset);
+    assert.ok(fragment.end>fragment.start);
+    offset=fragment.end;
+  }
+  assert.equal(offset,1800);
+  for(let index=1;index<slots.length;index++) assert.equal(slots[index].continuationOf,slots[index-1].id);
+});
+
+test('cover continuation keeps each fragment on its own row', {skip: !assetsDirectory}, async () => {
+  const input=await fixture('文字。'.repeat(600));
+  const submission=JSON.parse(input.submissionJSON);
+  const block=submission.document.components[0].items[0].blocks[0];
+  block.style.letterSpacing=0;
+  submission.document.components=[{id:'c',type:'cover',cover:{welcome:[block],worship:[],work:[],wordQuestions:[],weeklyVerses:[]}}];
+  const submissionJSON=JSON.stringify(submission);
+  const composed=await layoutRunner.composeBulletinLayout({...input,submissionJSON,expectedContentHash:hash(submissionJSON)});
+  const result=JSON.parse(composed.submissionJSON);
+  assert.ok(result.document.pages.length>1);
+  assert.deepEqual(result.document.components,submission.document.components);
+  assert.deepEqual(composed.measurement.overflow,[]);
+  const fragments=result.document.layoutManifest.pages.flatMap(page=>page.slots.flatMap(slot=>slot.fragments));
+  let offset=0;
+  for(const fragment of fragments) {assert.equal(fragment.start,offset);assert.equal(fragment.sentenceId,'s');offset=fragment.end;}
+  assert.equal(offset,1800);
+});
+
+test('lyrics can continue without losing their sentence anchors', {skip: !assetsDirectory}, async () => {
+  const input=await fixture('歌詞。'.repeat(600));
+  const submission=JSON.parse(input.submissionJSON);
+  const block=submission.document.components[0].items[0].blocks[0];
+  submission.document.components=[{id:'c',type:'hymnLyrics',hymnLyrics:{hymns:[{id:'hymn',title:{id:'title',style:{...block.style},sentences:[]},sections:[{id:'verse',kind:'verse',lines:[block]}]}]}}];
+  const submissionJSON=JSON.stringify(submission);
+  const composed=await layoutRunner.composeBulletinLayout({...input,submissionJSON,expectedContentHash:hash(submissionJSON)});
+  const result=JSON.parse(composed.submissionJSON);
+  assert.ok(result.document.pages.length>1);
+  assert.deepEqual(result.document.components,submission.document.components);
+  assert.deepEqual(composed.measurement.overflow,[]);
+  const fragments=result.document.layoutManifest.pages.flatMap(page=>page.slots.flatMap(slot=>slot.fragments));
+  assert.equal(fragments.reduce((sum,fragment)=>sum+fragment.end-fragment.start,0),1800);
+  assert.ok(fragments.every(fragment=>fragment.sentenceId==='s'));
+});
+
 test('cover composition retains every sentence while separating its variable-length sections', {skip: !assetsDirectory}, async () => {
   const input = await fixture('歡迎一起敬拜。');
   const submission = JSON.parse(input.submissionJSON);
