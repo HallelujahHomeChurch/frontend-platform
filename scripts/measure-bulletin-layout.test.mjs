@@ -31,6 +31,16 @@ test('canonical metadata belongs to the same content identity as the page text',
 test('rejects unavailable glyphs instead of measuring a platform fallback font', {skip: !assetsDirectory}, async () => {
   await assert.rejects(measureBulletinLayout(await fixture('測試🫠')), /missing_glyph/);
 });
+test('verified hymn stars use their immutable symbol font and Unicode scalar anchors', {skip: !assetsDirectory}, async () => {
+  const input = await fixture('★\u{1f7cb}');
+  const submission = JSON.parse(input.submissionJSON);
+  submission.document.components[0].items[0].blocks[0].sentences[0].spans[0].fontRole = 'symbol';
+  const submissionJSON = JSON.stringify(submission);
+  const result = await measureBulletinLayout({...input, submissionJSON, expectedContentHash: hash(submissionJSON)});
+  assert.deepEqual(result.overflow, []);
+  assert.equal(result.pages[0].slots[0].fragments[0].end, 2);
+  assert.ok(result.fontHashes.includes('89ed6ff28006ceddbfb893fc2812b5868c5b691341c48959a092b25f33ec5bdd'));
+});
 test('rejects an unbounded or invalid timeout before starting the browser', async () => {
   for (const timeoutMs of [0, -1, Infinity, NaN]) {
     await assert.rejects(measureBulletinLayout({...await fixture(), timeoutMs}), /invalid_timeout/);
@@ -48,7 +58,7 @@ test('post-font-load measurement is deterministic and reports source slot overfl
   assert.equal(first.contentHash, input.expectedContentHash);
   assert.equal(first.rendererArtifactSha256, BULLETIN_RENDERER_V1_DIGEST);
   assert.equal(first.pages[0].slots[0].fragments[0].sentenceId, 's');
-  assert.equal(first.fontHashes.length, 3);
+  assert.equal(first.fontHashes.length, 4);
   const long = await measureBulletinLayout(await fixture('文字'.repeat(1500)));
   assert.ok(long.overflow.some(value => value.slotId === 'slot'));
 });
@@ -124,7 +134,7 @@ test('one immutable font asset serves its code-owned role aliases without duplic
   const submissionJSON = JSON.stringify(submission);
   const result = await measureBulletinLayout({...input, submissionJSON, expectedContentHash: hash(submissionJSON)});
   assert.deepEqual(result.overflow, []);
-  assert.equal(new Set(submission.document.layoutManifest.assets.map(asset => asset.url)).size, 3);
+  assert.equal(new Set(submission.document.layoutManifest.assets.map(asset => asset.url)).size, 4);
 });
 test('legal substitute fonts use their declared typographic metrics without reducing glyph size', {skip: !assetsDirectory}, async () => {
   const input = await fixture('中文。');
@@ -146,6 +156,7 @@ test('controlled full-page diagnostics preserve geometry and surface every unres
   for (const [issue, pageCount, blockCount] of [[1739, 12, 495], [1740, 16, 679]]) {
     const submission = JSON.parse(await readFile(new URL(`./testdata/bulletin/${issue}-typography.json`, import.meta.url), 'utf8'));
     submission.document.layoutManifest.rendererArtifactSha256 = BULLETIN_RENDERER_V1_DIGEST;
+    submission.document.layoutManifest.assets = JSON.parse((await fixture()).submissionJSON).document.layoutManifest.assets;
     const slots = submission.document.layoutManifest.pages.flatMap(page => page.slots);
     assert.equal(slots.length, blockCount);
     for (const component of submission.document.components) {

@@ -76,5 +76,18 @@
     "sizeBytes": 4914,
     "kind": "decoration",
     "sourceUrl": "https://www.youtube.com/@GKPMusic777"
+  },
+  {
+    "url": "/assets/weekly/v1/symbol-89ed6ff28006ceddbfb893fc2812b5868c5b691341c48959a092b25f33ec5bdd.woff2",
+    "sha256": "89ed6ff28006ceddbfb893fc2812b5868c5b691341c48959a092b25f33ec5bdd",
+    "mime": "font/woff2",
+    "sizeBytes": 396064,
+    "kind": "font",
+    "family": "HHC Weekly Symbols",
+    "weight": 400,
+    "roles": ["symbol"],
+    "licenseUrl": "/assets/weekly/v1/symbol-license-e87c2ed7ff174c637d55fa381939ebb96f43f0415ad94605a37589228f4cbf4f.txt",
+    "sourceUrl": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/notosanssymbols2/NotoSansSymbols2-Regular.ttf",
+    "sourceSha256": "7d5fb73b7ca67a6798101741f5d280a3d016a56a197afcd4199dbb57b4b82a21"
   }
 ]

@@ -6,7 +6,7 @@ export interface components {
         OnlineBulletinID: string;
         OnlineBulletinHash: string;
         /** @enum {string} */
-        OnlineBulletinFontRole: "body" | "scripture" | "emphasis" | "reference" | "foreignText";
+        OnlineBulletinFontRole: "body" | "scripture" | "emphasis" | "reference" | "foreignText" | "symbol";
         /** @description Typed immutable content. Canonical issue metadata and mutable source asset IDs are intentionally absent. Maximum encoded size is 8 MiB; server also validates references, total collection limits and fragment coverage. */
         OnlineBulletinDocument: {
             /** Format: uuid */

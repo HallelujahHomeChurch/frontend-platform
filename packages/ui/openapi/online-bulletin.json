@@ -22,7 +22,8 @@
           "scripture",
           "emphasis",
           "reference",
-          "foreignText"
+          "foreignText",
+          "symbol"
         ]
       },
       "OnlineBulletinDocument": {

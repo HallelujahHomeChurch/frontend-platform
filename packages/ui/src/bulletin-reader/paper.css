@@ -1,4 +1,13 @@
 @font-face {
+  font-family: 'HHC Weekly Symbols';
+  src: url('/assets/weekly/v1/symbol-89ed6ff28006ceddbfb893fc2812b5868c5b691341c48959a092b25f33ec5bdd.woff2') format('woff2');
+  font-weight: 400;
+  font-display: block;
+  ascent-override: 88%;
+  descent-override: 12%;
+  line-gap-override: 0%;
+}
+@font-face {
   font-family: 'HHC Weekly Serif';
   src: url('/assets/weekly/v1/body-ba497525931c22348ff17863ecd1b49a0d54010145cd2f2adce115505dbde7b0.woff2') format('woff2');
   font-weight: 400;
@@ -95,6 +104,7 @@
 .hhc-bulletin-v1 [data-sentence-id], .hhc-bulletin-v1 [data-font-role] { color: inherit; font-style: normal; letter-spacing: inherit; text-transform: none; }
 .hhc-bulletin-v1 [data-font-role='scripture'] { font-family: 'HHC Weekly Kai', serif; font-weight: 400; }
 .hhc-bulletin-v1 [data-font-role='emphasis'] { font-family: 'HHC Weekly Kai', serif; font-weight: 700; }
+.hhc-bulletin-v1 [data-font-role='symbol'] { font-family: 'HHC Weekly Symbols', serif; font-weight: 400; }
 .hhc-bulletin-v1 [data-highlight='yellow'] { background: rgb(255 225 35 / 38%); }
 .hhc-bulletin-v1 [data-highlight='red'] { background: rgb(255 115 130 / 30%); }
 .hhc-bulletin-v1 [data-highlight='blue'] { background: rgb(75 180 255 / 30%); }

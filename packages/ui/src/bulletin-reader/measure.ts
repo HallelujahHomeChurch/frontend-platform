@@ -6,7 +6,7 @@ export async function measureRenderedBulletin(root: HTMLElement, fonts: {family:
     await Promise.race([
       (async () => {
         for (const font of fonts) {
-          const faces = await document.fonts.load(`${font.weight} 16px "${font.family}"`, '中文ABC');
+          const faces = await document.fonts.load(`${font.weight} 16px "${font.family}"`, '中文ABC★');
           if (!faces.length || faces.some(face => face.status !== 'loaded')) throw new Error('missing_font');
         }
         await document.fonts.ready;
