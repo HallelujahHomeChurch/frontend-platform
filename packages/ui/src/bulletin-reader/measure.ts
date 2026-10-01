@@ -23,6 +23,7 @@ export async function measureRenderedBulletin(root: HTMLElement, fonts: {family:
   const overflow: {pageId: string; slotId: string}[] = [];
   const pages = Array.from(root.querySelectorAll<HTMLElement>('[data-bulletin-page]')).map(page => {
     const pageBox = page.getBoundingClientRect();
+    const ink: {slotId: string; box: DOMRect}[] = [];
     const rectangle = (box: DOMRect) => ({x: round((box.x - pageBox.x) * .75), y: round((box.y - pageBox.y) * .75), width: round(box.width * .75), height: round(box.height * .75)});
     const slots = Array.from(page.querySelectorAll<HTMLElement>('[data-slot-id]')).map(slot => {
       const slotBox = slot.getBoundingClientRect();
@@ -33,6 +34,7 @@ export async function measureRenderedBulletin(root: HTMLElement, fonts: {family:
         const range = document.createRange();
         range.selectNodeContents(sentence);
         const lines = Array.from(range.getClientRects()).filter(box => box.width > 0 && box.height > 0).map(box => {
+          if (slot.querySelector('[data-font-role]')) ink.push({slotId: slot.dataset.slotId!, box});
           // One PDF point tolerates font ink overhang; never tolerate another text line.
           if (box.left < slotBox.left - 1.333 || box.right > slotBox.right + 1.333 || box.top < slotBox.top - 1.333 || box.bottom > slotBox.top + allocatedHeight + 1.333 || box.right > pageBox.right + 1.333 || box.bottom > pageBox.bottom + 1.333) exceeds = true;
           return rectangle(box);
@@ -45,6 +47,23 @@ export async function measureRenderedBulletin(root: HTMLElement, fonts: {family:
       if (exceeds) overflow.push({pageId: page.dataset.bulletinPage!, slotId});
       return {slotId, fixedElement: slot.dataset.fixedElement, box: rectangle(slotBox), fragments};
     });
+    // A slot can fit its allocation yet cover a neighbouring slot. Decorations
+    // and repeated DOM rectangles within one text slot are not text collisions.
+    ink.sort((a, b) => a.box.top - b.box.top);
+    const overlapping = new Set<string>();
+    for (let i = 0; i < ink.length; i++) {
+      const a = ink[i];
+      for (let j = i + 1; j < ink.length && ink[j].box.top < a.box.bottom - 1.333; j++) {
+        const b = ink[j];
+        if (a.slotId !== b.slotId && Math.min(a.box.right, b.box.right) - Math.max(a.box.left, b.box.left) > 1.333) {
+          overlapping.add(a.slotId);
+          overlapping.add(b.slotId);
+        }
+      }
+    }
+    for (const slotId of overlapping) {
+      if (!overflow.some(issue => issue.pageId === page.dataset.bulletinPage && issue.slotId === slotId)) overflow.push({pageId: page.dataset.bulletinPage!, slotId});
+    }
     return {pageId: page.dataset.bulletinPage!, width: round(pageBox.width * .75), height: round(pageBox.height * .75), slots};
   });
   return {pages, overflow};

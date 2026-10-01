@@ -190,7 +190,7 @@ export function BulletinDocumentRenderer({document, manifest = document.layoutMa
       return <section key={page.id} data-bulletin-page={page.id} style={{width: `${page.width}pt`, height: `${page.height}pt`}}>
         {(layout.fixedSlots ?? []).map(slot => {
           const style: CSSProperties = {...paragraphStyle(slot.style), left: `${slot.box.x * 100}%`, top: `${slot.box.y * 100}%`, width: `${slot.box.width * 100}%`, minHeight: `${slot.box.height * page.height}pt`};
-          const bodyArt = document.pages.indexOf(page) === 1 && ['title', 'subtitle'].includes(slot.element);
+          const bodyArt = layout.fixedSlots?.some(fixed => fixed.element === 'bodyIssueSummary') && ['title', 'subtitle'].includes(slot.element);
           if (bodyArt) {
             style.lineHeight = `${slot.style.fontSize}pt`;
             Object.assign(style, {'--body-art-scale-y': slot.style.lineHeight / slot.style.fontSize, '--body-art-shadow-y': `${8 * slot.style.fontSize / slot.style.lineHeight}pt`});

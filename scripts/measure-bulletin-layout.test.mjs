@@ -3,6 +3,7 @@ import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {test} from 'node:test';
 import {measureBulletinLayout} from './measure-bulletin-layout.mjs';
+import * as layoutRunner from './measure-bulletin-layout.mjs';
 import {BULLETIN_RENDERER_V1_DIGEST} from '../packages/ui/dist/bulletin-reader/artifact.js';
 
 const assetsDirectory = process.env.HHC_BULLETIN_TEMPLATE_DIR;
@@ -70,6 +71,24 @@ test('fixed template labels are measured and can block overflow too', {skip: !as
   const result = await measureBulletinLayout({...input, submissionJSON, expectedContentHash: hash(submissionJSON)});
   assert.ok(result.overflow.some(value => value.slotId === 'fixed-vision'));
 });
+test('individually fitting text slots still block publication when their glyphs overlap', {skip: !assetsDirectory}, async () => {
+  const input = await fixture();
+  const submission = JSON.parse(input.submissionJSON);
+  const block = submission.document.components[0].items[0].blocks[0];
+  const next = structuredClone(block);
+  next.id = 'next-block';
+  next.sentences[0].id = 'next-sentence';
+  submission.document.components[0].items[0].blocks.push(next);
+  const slot = submission.document.layoutManifest.pages[0].slots[0];
+  submission.document.layoutManifest.pages[0].slots.push({...structuredClone(slot), id: 'next-slot', blockId: next.id, fragments: [{sentenceId: 'next-sentence', start: 0, end: 7}]});
+  let submissionJSON = JSON.stringify(submission);
+  const overlapping = await measureBulletinLayout({...input, submissionJSON, expectedContentHash: hash(submissionJSON)});
+  assert.deepEqual(new Set(overlapping.overflow.map(value => value.slotId)), new Set(['slot', 'next-slot']));
+  submission.document.layoutManifest.pages[0].slots[1].box.y = .3;
+  submissionJSON = JSON.stringify(submission);
+  const separated = await measureBulletinLayout({...input, submissionJSON, expectedContentHash: hash(submissionJSON)});
+  assert.deepEqual(separated.overflow, []);
+});
 test('template ornament bounds do not masquerade as text overflow', {skip: !assetsDirectory}, async () => {
   const input = await fixture();
   const submission = JSON.parse(input.submissionJSON);
@@ -130,6 +149,7 @@ test('native body canonical art retains transformed sentence bounds without cove
     const tracking = ((shadow.width-shift)*595.32 - 1 - size*units) / (text.length*size);
     return {id: `body-${element}`, element, box: {x: shadow.x + shift, y: shadow.y - size/841.92, width: shadow.width - shift, height: size*2/841.92}, style: {fontSize: size, lineHeight: size*2, letterSpacing: tracking, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0}};
   });
+  slots.push({id:'body-issue-summary',element:'bodyIssueSummary',box:{x:.3,y:.3,width:.2,height:.02},style:{fontSize:11,lineHeight:14,indent:0,firstLineIndent:0,spaceBefore:0,spaceAfter:0}});
   submission.document.layoutManifest.pages.push({pageId: 'body', slots: [], fixedSlots: slots});
   const submissionJSON = JSON.stringify(submission);
   const result = await measureBulletinLayout({...input, submissionJSON, expectedContentHash: hash(submissionJSON)});
@@ -142,6 +162,9 @@ test('native body canonical art retains transformed sentence bounds without cove
 test('fixed back sidebar uses vertical native glyphs at the source column positions', {skip: !assetsDirectory}, async () => {
   const input = await fixture();
   const submission = JSON.parse(input.submissionJSON);
+  // Summary body starts to the right of the two vertical sidebar columns.
+  submission.document.layoutManifest.pages[0].slots[0].box.x = .2;
+  submission.document.layoutManifest.pages[0].slots[0].box.width = .7;
   submission.document.layoutManifest.pages[0].fixedSlots = [
     {id: 'sidebar-title', element: 'summarySidebarTitle', box: {x: 53.28/595.32, y: 77.077/841.92, width: 11.04/595.32, height: 54.24/841.92}},
     {id: 'sidebar-tagline', element: 'summarySidebarTagline', box: {x: 40.2/595.32, y: 50.077/841.92, width: 11.04/595.32, height: 108.24/841.92}},
@@ -249,4 +272,84 @@ test('mixed inline source sizes are measured at their declared PDF-point proport
   assert.deepEqual(result.overflow, []);
   const lines = result.pages[0].slots[0].fragments[0].lines;
   assert.ok(lines.some(line => Math.abs(line.height - 12) < .8 && line.width >= 35 && line.width <= 37), 'source 12pt must not inherit 16pt');
+});
+
+test('body composition grows paragraphs and adds pages without changing sentence anchors or font sizes', {skip: !assetsDirectory}, async () => {
+  const input = await fixture('信息');
+  const submission = JSON.parse(input.submissionJSON);
+  const title = submission.document.components[0].items[0].blocks[0];
+  const paragraph = (id, text) => ({id, style: {...title.style}, sentences: [{id: `${id}-sentence`, spans: [{text, fontRole: 'scripture'}]}]});
+  const body = [paragraph('first', '經文'.repeat(100)), paragraph('second', '正文。'), paragraph('last', '禱告'.repeat(40)), paragraph('ending', '結語。')];
+  submission.document.components = [{id: 'c', type: 'bodySection', bodySection: {kind: 'sermon', title, blocks: body}}];
+  const original = submission.document.layoutManifest.pages[0].slots[0];
+  submission.document.layoutManifest.pages[0].fixedSlots = [{id:'page-number',element:'pageNumber',box:{x:.88,y:.05,width:.005,height:.04},style:{...title.style,indent:0,firstLineIndent:0}}];
+  original.box.height = 24 / 841.92;
+  submission.document.layoutManifest.pages[0].slots.push(...body.map((block, index) => ({id: `slot-${block.id}`, componentId: 'c', blockId: block.id, box: {x: .1, y: [110, 134, 740, 770][index] / 841.92, width: .8, height: 24 / 841.92}, fragments: [{sentenceId: block.sentences[0].id, start: 0, end: Array.from(block.sentences[0].spans[0].text).length}]})));
+  const submissionJSON = JSON.stringify(submission);
+  assert.equal(typeof layoutRunner.composeBulletinBodyLayout, 'function');
+  const composed = await layoutRunner.composeBulletinBodyLayout({...input, submissionJSON, expectedContentHash: hash(submissionJSON)});
+  const result = JSON.parse(composed.submissionJSON);
+  assert.equal(result.document.pages.length, 2);
+  assert.equal(result.document.sourcePageCount, 4);
+  assert.deepEqual(result.document.components, submission.document.components);
+  assert.deepEqual(result.document.layoutManifest.pages.flatMap(page => page.slots.map(slot => slot.fragments)), submission.document.layoutManifest.pages.flatMap(page => page.slots.map(slot => slot.fragments)));
+  assert.deepEqual(composed.measurement.overflow, []);
+  assert.equal(composed.measurement.contentHash, hash(composed.submissionJSON));
+  assert.notEqual(composed.measurement.contentHash, hash(submissionJSON));
+  const repeat = await layoutRunner.composeBulletinBodyLayout({...input, submissionJSON, expectedContentHash: hash(submissionJSON)});
+  assert.deepEqual(composed, repeat);
+});
+
+test('cover composition retains every sentence while separating its variable-length sections', {skip: !assetsDirectory}, async () => {
+  const input = await fixture('歡迎一起敬拜。');
+  const submission = JSON.parse(input.submissionJSON);
+  const welcome = submission.document.components[0].items[0].blocks[0];
+  const question = {id: 'question', style: {...welcome.style}, sentences: [{id: 'question-sentence', spans: [{text: '分享與禱告。'.repeat(18), fontRole: 'body'}]}]};
+  submission.document.components = [{id: 'c', type: 'cover', cover: {welcome: [welcome], worship: [], work: [], wordQuestions: [{id: 'q', blocks: [question]}], weeklyVerses: []}}];
+  const layout = submission.document.layoutManifest.pages[0];
+  layout.slots.push({id: 'question-slot', componentId: 'c', blockId: question.id, box: {...layout.slots[0].box}, fragments: [{sentenceId: 'question-sentence', start: 0, end: 108}]});
+  layout.fixedSlots = ['welcomeLabel','wordLabel','title','subtitle','date','issueNumber'].map(element => ({id: `fixed-${element}`, element, style: {...welcome.style}, box: {x: .1, y: .1, width: .05, height: .02}}));
+  const submissionJSON = JSON.stringify(submission);
+  assert.equal(typeof layoutRunner.composeBulletinLayout, 'function');
+  const composed = await layoutRunner.composeBulletinLayout({...input, submissionJSON, expectedContentHash: hash(submissionJSON)});
+  const result = JSON.parse(composed.submissionJSON);
+  assert.deepEqual(composed.measurement.overflow, []);
+  assert.deepEqual(result.document.components[0].cover.welcome[0].sentences, welcome.sentences);
+  assert.deepEqual(result.document.components[0].cover.wordQuestions[0].blocks[0].sentences, question.sentences);
+  assert.equal(result.document.components[0].cover.wordQuestions[0].blocks[0].style.fontSize, 16);
+  assert.equal(result.document.layoutManifest.pages.flatMap(page => page.slots).length, 2);
+});
+
+test('composition keeps the lecture date clear of its fixed marker', {skip: !assetsDirectory}, async () => {
+  const input = await fixture('Sep.13.2026');
+  const submission = JSON.parse(input.submissionJSON);
+  const date = submission.document.components[0].items[0].blocks[0];
+  const title = {id:'heading',style:{...date.style},sentences:[{id:'heading-sentence',spans:[{text:'信息',fontRole:'emphasis'}]}]};
+  submission.document.components = [{id:'c',type:'bodySection',bodySection:{kind:'sermon',header:{lectureDate:date,contributors:[]},title,blocks:[]}}];
+  const page = submission.document.layoutManifest.pages[0];
+  page.fixedSlots = [{id:'date-marker',element:'lectureDateMarker',box:{x:.095,y:.1,width:.03,height:.04},style:{...date.style}}];
+  page.slots.push({id:'heading-slot',blockId:'heading',componentId:'c',box:{x:.1,y:.3,width:.8,height:.04},fragments:[{sentenceId:'heading-sentence',start:0,end:2}]});
+  const submissionJSON = JSON.stringify(submission);
+  const result = await layoutRunner.composeBulletinLayout({...input,submissionJSON,expectedContentHash:hash(submissionJSON)});
+  assert.deepEqual(result.measurement.overflow,[]);
+});
+
+test('retained back panels grow around their text without importing excluded table regions', {skip: !assetsDirectory}, async () => {
+  const input = await fixture('摘要'.repeat(100));
+  const submission = JSON.parse(input.submissionJSON);
+  const block = submission.document.components[0].items[0].blocks[0];
+  const second = {id:'ending',style:{...block.style},sentences:[{id:'ending-sentence',spans:[{text:'代禱。',fontRole:'body'}]}]};
+  submission.document.components[0].items[0].blocks.push(second);
+  const layout = submission.document.layoutManifest.pages[0];
+  layout.slots[0].box.height = .03;
+  layout.slots.push({id:'ending-slot',componentId:'c',blockId:second.id,box:{x:.1,y:.13,width:.8,height:.03},fragments:[{sentenceId:'ending-sentence',start:0,end:3}]});
+  layout.fixedSlots = [{id:'frame',element:'summaryFrame',box:{x:.08,y:.08,width:.84,height:.1},style:{...block.style}}];
+  const submissionJSON = JSON.stringify(submission);
+  const result = await layoutRunner.composeBulletinLayout({...input,submissionJSON,expectedContentHash:hash(submissionJSON)});
+  assert.deepEqual(result.measurement.overflow,[]);
+  const page = JSON.parse(result.submissionJSON).document.layoutManifest.pages[0];
+  const frame = page.fixedSlots.find(slot=>slot.element==='summaryFrame');
+  assert.ok(frame.box.y <= page.slots[0].box.y);
+  assert.ok(frame.box.y+frame.box.height >= page.slots[1].box.y+page.slots[1].box.height);
+  assert.deepEqual(JSON.parse(result.submissionJSON).document.components,submission.document.components);
 });

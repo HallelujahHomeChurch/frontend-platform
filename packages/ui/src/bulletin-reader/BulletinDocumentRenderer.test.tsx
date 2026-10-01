@@ -35,6 +35,10 @@ describe('immutable shared bulletin renderer', () => {
     const document = fixture();
     const style = {fontSize: 42, lineHeight: 84, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0};
     for (const page of document.layoutManifest.pages) page.fixedSlots = [{id: `${page.pageId}-title`, element: 'title', box: {x: .12, y: .04, width: .6, height: .1}, style}];
+    document.layoutManifest.pages[1].fixedSlots!.push({id: 'body-issue', element: 'bodyIssueSummary', box: {x: .3, y: .3, width: .2, height: .02}, style: {...style, fontSize: 11, lineHeight: 14}});
+    // The cover may gain a continuation; body identity is not physical page 2.
+    document.pages.splice(1,0,{id: 'cover-continuation',width:595.32,height:841.92});
+    document.layoutManifest.pages.splice(1,0,{pageId:'cover-continuation',slots:[]});
     const activate = vi.fn();
     const {container} = render(<UI.BulletinDocumentRenderer document={document} mode="paper" canonicalMetadata={{title: '永恆的命定和呼召', subtitle: '', issueNumber: 1740, date: '2026-09-27'}} sentenceState={{'canonical-title': {highlight: 'yellow'}}} onSentenceActivate={activate} />);
     const cover = container.querySelector<HTMLElement>('[data-slot-id="p1-title"]')!;
