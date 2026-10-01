@@ -10,6 +10,29 @@ Shared, versioned frontend packages for HHC web applications:
 
 Packages are published to GitHub Packages from version tags.
 
+## Isolated bulletin renderer
+
+The bulletin worker uses the same compiled renderer, CSS, fixed assets and legal
+fonts as the UI. Build a new, checksum-verified bundle after `pnpm build`:
+
+```sh
+node scripts/verify-bulletin-renderer.mjs
+node scripts/package-bulletin-renderer.mjs artifacts/bulletin-renderer /path/to/verified/assets
+docker build -f tools/bulletin-renderer/Dockerfile -t hhc-bulletin-renderer:verify artifacts/bulletin-renderer
+```
+
+The image runs as a non-root user. Its CLI accepts an input JSON file and the
+bundled assets directory (`/opt/bulletin-renderer/assets`); `--compose` additionally
+produces a saved layout. Input contains the exact `submissionJSON`, its SHA-256
+`expectedContentHash`, and bounded `timeoutMs`. Output is JSON only; failures emit
+one non-content-bearing error code. Run without network, with a read-only root,
+bounded writable `/tmp`, memory/CPU limits and an external process deadline.
+
+The release workflow verifies the tag belongs to `main`, tests/scans the image,
+and publishes a tag containing both renderer hash and commit. Consumers must pin
+the registry's immutable image digest, not a mutable tag. An artifact mismatch
+must block use; an image build or local test does not freeze or publish V1.
+
 ## License
 
 The source and published packages are publicly visible but remain all rights

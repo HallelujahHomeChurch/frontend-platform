@@ -41,6 +41,7 @@
   font-weight: 400;
   font-style: normal;
   font-synthesis: none;
+  text-rendering: geometricPrecision;
   letter-spacing: 0;
   word-spacing: 0;
   text-transform: none;

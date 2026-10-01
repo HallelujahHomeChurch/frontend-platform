@@ -1,5 +1,5 @@
 import {createHash} from 'node:crypto';
-import {readFile} from 'node:fs/promises';
+import {open, readFile} from 'node:fs/promises';
 import {basename, resolve} from 'node:path';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
@@ -310,7 +310,26 @@ export async function composeBulletinBodyLayout(input) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const [inputPath, assetsDirectory] = process.argv.slice(2);
-  const input = JSON.parse(await readFile(inputPath, 'utf8'));
-  process.stdout.write(JSON.stringify(await measureBulletinLayout({...input, assetsDirectory})) + '\n');
+  try {
+    const args = process.argv.slice(2);
+    const compose = args[0] === '--compose';
+    if (compose) args.shift();
+    if (args.length !== 2) throw new Error('invalid_arguments');
+    const [inputPath, assetsDirectory] = args;
+    const file = await open(inputPath, 'r');
+    let input;
+    try {
+      if (!(await file.stat()).isFile()) throw new Error('invalid_input');
+      const bytes = Buffer.alloc(16 * 1024 * 1024 + 1);
+      const {bytesRead} = await file.read(bytes, 0, bytes.length, 0);
+      if (bytesRead === bytes.length) throw new Error('input_too_large');
+      input = JSON.parse(bytes.subarray(0, bytesRead).toString('utf8'));
+    } finally {await file.close();}
+    const run = compose ? composeBulletinLayout : measureBulletinLayout;
+    process.stdout.write(JSON.stringify(await run({...input, assetsDirectory})) + '\n');
+  } catch {
+    // Document text, filesystem paths and Chromium diagnostics are private.
+    process.stderr.write('layout_runner_failed\n');
+    process.exitCode = 1;
+  }
 }

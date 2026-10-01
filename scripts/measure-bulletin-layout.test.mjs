@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {readFile} from 'node:fs/promises';
+import {mkdtemp, readFile, rm, writeFile} from 'node:fs/promises';
+import {execFileSync, spawnSync} from 'node:child_process';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 import {test} from 'node:test';
 import {measureBulletinLayout} from './measure-bulletin-layout.mjs';
 import * as layoutRunner from './measure-bulletin-layout.mjs';
@@ -19,6 +22,34 @@ async function fixture(text = '這是一句測試。') {
   const submissionJSON = JSON.stringify({document, canonicalMetadata: {title: '原始主題', subtitle: '', issueNumber: 1739, date: '2026-09-20'}});
   return {submissionJSON, expectedContentHash: hash(submissionJSON), assetsDirectory};
 }
+
+test('worker CLI composes the same anchored document and emits only a JSON result', {skip: !assetsDirectory}, async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'hhc-layout-cli-'));
+  try {
+    const input = await fixture();
+    const path = join(directory, 'input.json');
+    await writeFile(path, JSON.stringify(input), {mode: 0o600});
+    const result = JSON.parse(execFileSync(process.execPath, ['scripts/measure-bulletin-layout.mjs', '--compose', path, assetsDirectory], {encoding: 'utf8', maxBuffer: 16 * 1024 * 1024}));
+    assert.deepEqual(JSON.parse(result.submissionJSON).document.components, JSON.parse(input.submissionJSON).document.components);
+    assert.equal(hash(result.submissionJSON), result.expectedContentHash);
+    assert.equal(result.measurement.contentHash, result.expectedContentHash);
+    assert.deepEqual(result.measurement.overflow, []);
+  } finally {await rm(directory, {recursive: true, force: true});}
+});
+
+test('worker CLI rejects oversized or malformed requests without exposing input or paths', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'hhc-layout-cli-'));
+  try {
+    const path = join(directory, 'private-member-content.json');
+    for (const input of ['private-member-content', ' '.repeat(16 * 1024 * 1024 + 1)]) {
+      await writeFile(path, input, {mode: 0o600});
+      const result = spawnSync(process.execPath, ['scripts/measure-bulletin-layout.mjs', '--compose', path, '/private-assets'], {encoding: 'utf8'});
+      assert.equal(result.status, 1);
+      assert.equal(result.stdout, '');
+      assert.equal(result.stderr, 'layout_runner_failed\n');
+    }
+  } finally {await rm(directory, {recursive: true, force: true});}
+});
 
 test('rejects stale content before any browser or file access', async () => {
   await assert.rejects(measureBulletinLayout({...await fixture(), expectedContentHash: '0'.repeat(64)}), /stale_content/);
@@ -96,7 +127,7 @@ test('template ornament bounds do not masquerade as text overflow', {skip: !asse
   submission.document.layoutManifest.pages[0].fixedSlots = [slot];
   let submissionJSON = JSON.stringify(submission);
   const fitted = await measureBulletinLayout({...input, submissionJSON, expectedContentHash: hash(submissionJSON)});
-  assert.deepEqual(fitted.overflow, []);
+  assert.deepEqual(fitted.overflow, [], JSON.stringify(fitted.pages[0].slots.find(value => value.slotId === slot.id)));
   // A real extra line still blocks; only the non-text pseudo-element is excluded.
   slot.box.width /= 2;
   submissionJSON = JSON.stringify(submission);
