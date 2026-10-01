@@ -40,6 +40,12 @@ export type MemberRecordingPlayback = components['schemas']['MemberRecordingPlay
 export type RecordingUploadSession = components['schemas']['RecordingUploadSession']
 export type RecordingPartURL = components['schemas']['RecordingPartURL']
 export type RecordingAssetStatus = components['schemas']['RecordingAssetStatus']
+export type RecordingSourceInput = components['schemas']['RecordingSourceInput']
+export type RecordingSource = components['schemas']['RecordingSource']
+export type RecordingSourceStatus = components['schemas']['RecordingSourceStatus']
+export type SignedRecordingSourceBlock = components['schemas']['SignedRecordingSourceBlock']
+export type RecordingPackageStatus = components['schemas']['RecordingPackageStatus']
+export type RecordingRendition = components['schemas']['RecordingRendition']
 export type OperationProgress = components['schemas']['OperationProgress']
 export type BulletinDownloadJob = components['schemas']['BulletinDownloadJob']
 export type BulletinIssue = components['schemas']['BulletinIssue']
@@ -226,6 +232,36 @@ export function createHhcWebClient(options: {
     async unpublishAdminRecording(id: string, version: number) {
       return (await unwrap(client.POST('/admin/recordings/{id}/unpublish', {
         params: { path: { id }, header: { 'If-Match': `"${version}"` } },
+      }))).data
+    },
+    async createAdminRecordingSource(id: string, input: RecordingSourceInput, idempotencyKey: string, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/recordings/{id}/source-uploads', {
+        params: {path: {id}, header: {'Idempotency-Key': idempotencyKey}}, body: input, signal, cache: 'no-store',
+      }))).data
+    },
+    async getAdminRecordingSource(id: string, sourceID: string, options: {cursor?: number; limit?: number; signal?: AbortSignal} = {}) {
+      return (await unwrap(client.GET('/admin/recordings/{id}/source-uploads/{sourceID}', {
+        params: {path: {id, sourceID}, query: {cursor: options.cursor, limit: options.limit}}, signal: options.signal, cache: 'no-store',
+      }))).data
+    },
+    async signAdminRecordingSource(id: string, sourceID: string, numbers: number[], signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/recordings/{id}/source-uploads/{sourceID}/sign', {
+        params: {path: {id, sourceID}}, body: {numbers}, signal, cache: 'no-store',
+      }))).data
+    },
+    async completeAdminRecordingSource(id: string, sourceID: string, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/recordings/{id}/source-uploads/{sourceID}/complete', {
+        params: {path: {id, sourceID}}, body: {}, signal, cache: 'no-store',
+      }))).data
+    },
+    async retryAdminRecordingSource(id: string, sourceID: string, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/recordings/{id}/source-uploads/{sourceID}/retry-processing', {
+        params: {path: {id, sourceID}}, body: {}, signal, cache: 'no-store',
+      }))).data
+    },
+    async getAdminRecordingPackage(id: string, packageID: string, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/recordings/{id}/packages/{packageID}', {
+        params: {path: {id, packageID}, query: {limit: 1}}, signal, cache: 'no-store',
       }))).data
     },
     async createAdminRecordingUpload(id: string, input: { fileName: string; sizeBytes: number; checksumSHA256: string }, idempotencyKey: string) {
