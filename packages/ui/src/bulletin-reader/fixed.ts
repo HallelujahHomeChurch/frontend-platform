@@ -7,14 +7,14 @@ export type BulletinFixedSlot = components['schemas']['OnlineBulletinFixedSlot']
 // Church-owned fixed template text, not extracted sermon/member content.
 const labels = {
   masthead: '哈利路亞家教會 週報',
-  vision: '異象使命：華人遍地興起、福音傳到地極\n團契行動：共同生活、愛與成全、恩膏傳承\n堅持理念：宣教史詩、靈恩神學、團隊事奉、門徒訓練',
+  vision: '異象使命：華人遍地興起、福音傳到地極\n團契行動：共同生活、愛與成全、恩膏傳承\n堅持理想：宣教主導、靈恩神學、團隊事奉、門徒訓練',
   pastor: '主任牧師：曾英欽 牧師',
-  contact: '教會地址：臺北市仁愛路三段 29 號 B1\nAddress: No.29,B1,Sec3,Ren-Ai.Rd,Taipei,Taiwan\n電子郵件（E-mail）：home.church@msa.hinet.net\n教會網址（Website）：www.alive.org.tw\n電話（Phone）：(02) 2776-1157 / 8773-1972\n傳真（Fax）：(02) 2781-4980',
-  scanHint: '歡迎使用您的手機掃描\n左方的 QRCODE 圖樣\n可以立即加入家教會官網\n直播／下載週報／福音餐會',
-  websiteQRLabel: '家教會官網', youtubeQRLabel: '家教會\nYOUTUBE', streamQRLabel: '神國大業\n京成兄妹',
+  contact: '教會地址：臺北市仁愛路三段 29 號 B1\nAddress:No.29,B1,Sec3,Ren-Ai.Rd,Taipei,Taiwan\n電子郵件 (E-mail)：home.church@msa.hinet.net\n教會網址 (Website)：www.alive.org.tw\n電話 (Phone)：(02) 2776-1157 / 8773-1972\n傳真 (Fax)：(02) 2781-4980',
+  scanHint: '歡迎使用您的手機掃描\n左方的 QRCODE 圖樣\n可以立即加入家教會官網\n直播/下載週報/福音餐會',
+  websiteQRLabel: '家教會官網', youtubeQRLabel: '家教會\nYOUTUBE', streamQRLabel: '神國大樂\n京成兄妹',
   welcomeLabel: '一、Welcome：', worshipLabel: '二、Worship：', workLabel: '三、Work：', wordLabel: '四、Word：',
-  verseLabel: '本週金句', hymnLabel: '詩歌敬拜', summaryLabel: '信息摘要', announcementsLabel: '教會公布欄', prayersLabel: '得勝與代求',
-  titleLabel: '本週靈糧主題', speakerLabel: '講員：', transcriberLabel: '謄稿：', editorLabel: '完稿：', authorLabel: '作者：',
+  verseLabel: '本週金句', hymnLabel: '小組詩歌', summaryLabel: '信息摘要', announcementsLabel: '家教會公佈欄', prayersLabel: '得勝與代求',
+  titleLabel: '本週靈糧主題', speakerLabel: '講員：', transcriberLabel: '謄修：', editorLabel: '完稿：', authorLabel: '作者：',
 } as const;
 
 export function bulletinFixedGraphic(element: BulletinFixedSlot['element']) {

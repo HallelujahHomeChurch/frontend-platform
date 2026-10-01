@@ -2,6 +2,7 @@ import {fireEvent, render} from '@testing-library/react';
 import {describe, expect, it, vi} from 'vitest';
 import * as UI from '../index.js';
 import type {components} from './generated.js';
+import {bulletinFixedText} from './fixed.js';
 
 type Document = components['schemas']['OnlineBulletinDocument'];
 function fixture(): Document {
@@ -19,6 +20,13 @@ function fixture(): Document {
 }
 
 describe('immutable shared bulletin renderer', () => {
+  it('uses the reference church-owned labels rather than demo wording', () => {
+    for (const [element, expected] of [
+      ['hymnLabel', '小組詩歌'], ['announcementsLabel', '家教會公佈欄'],
+      ['transcriberLabel', '謄修：'], ['streamQRLabel', '神國大樂\n京成兄妹'],
+    ] as const) expect(bulletinFixedText(element, undefined, 1).text).toBe(expected);
+    expect(bulletinFixedText('vision', undefined, 1).text).toContain('堅持理想：宣教主導');
+  });
   it('exports a single renderer with an exact artifact identity', () => {
     expect(UI.BulletinDocumentRenderer).toBeTypeOf('function');
     expect(UI.BULLETIN_RENDERER_V1_DIGEST).toMatch(/^[a-f0-9]{64}$/);
