@@ -17,6 +17,12 @@ describe('Admin destination projection', () => {
     expect(authorizedAdminDestinations(['users:manage']).some(({id}) => id === 'donation-sandbox')).toBe(false);
     expect(canAccessAdmin(['donations:sandbox:test'])).toBe(true);
   });
+  it('routes recording and service-account readers without granting access from write-only scopes', () => {
+    expect(firstAuthorizedAdminDestination(['iam:service-principals:read'])?.path).toBe('/service-principals');
+    expect(firstAuthorizedAdminDestination(['cms:recordings:read'])?.path).toBe('/content/recordings');
+    expect(canAccessAdmin(['iam:service-principals:credentials'])).toBe(false);
+    expect(canAccessAdmin(['cms:recordings:publish'])).toBe(false);
+  });
   it('keeps the compatibility map explicitly empty', () => {
     expect(permissionCompatibilityMap).toEqual({});
   });
