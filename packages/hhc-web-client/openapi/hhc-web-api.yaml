@@ -223,6 +223,11 @@ paths:
   /priv/bulletin-watermarks/dsr/exports:
     post:
       operationId: applyBulletinWatermarkDSRExport
+      parameters:
+      - in: query
+        name: coverage
+        schema: { type: string, enum: [reader-v1] }
+        description: Request explicit reader dataset coverage. Omitted for legacy response compatibility.
       summary: Process Account-owned watermark DSR export
       description: >-
         Receipt UUID cursors remain valid. After the last receipt page, investigations:
@@ -255,6 +260,11 @@ paths:
   /priv/bulletin-watermarks/dsr/actions:
     post:
       operationId: applyBulletinWatermarkDSRAction
+      parameters:
+      - in: query
+        name: coverage
+        schema: { type: string, enum: [reader-v1] }
+        description: Request explicit reader dataset coverage. Account must require every dataset before completion.
       summary: Process Account-owned watermark DSR action
       tags: [Private]
       x-hhc-visibility: private
@@ -5108,14 +5118,17 @@ components:
                 properties:
                   recordType:
                     type: string
-                    enum: [bulletin_watermark_receipt, bulletin_watermark_investigation, online_reader_receipt, online_reader_validation]
-                  recordKey: { type: string, description: UUID for PDF records; receipt or request prefix plus UUID for reader records. }
+                    enum: [bulletin_watermark_receipt, bulletin_watermark_investigation, online_reader_receipt, online_reader_validation, bulletin_reader_highlight, bulletin_reader_note, bulletin_reader_progress, bulletin_reader_migration_state, bulletin_reader_processed_mutation]
+                  recordKey: { type: string, maxLength: 512, description: UUID for PDF records; reader dataset prefix and account-scoped stable row key for reader records. }
                   data:
                     oneOf:
                     - $ref: '#/components/schemas/BulletinWatermarkReceipt'
                     - $ref: '#/components/schemas/BulletinWatermarkInvestigationHistory'
                     - $ref: '#/components/schemas/ReaderReceiptExport'
                     - $ref: '#/components/schemas/ReaderValidationExport'
+                    - $ref: '#/components/schemas/ReaderPrivateExportRow'
+            coveredDatasets:
+              $ref: '#/components/schemas/ReaderDSRCoverage'
             recordCount: &id005
               type: integer
               minimum: 0
@@ -5130,6 +5143,23 @@ components:
           type:
           - object
           - 'null'
+    ReaderDSRCoverage:
+      type: array
+      description: Present only for coverage=reader-v1; lists all datasets covered even when no rows exist. Completion still requires status completed and remainingCount zero; exports must exhaust nextCursor.
+      minItems: 9
+      maxItems: 9
+      uniqueItems: true
+      items:
+        type: string
+        enum: [bulletin_watermark_receipt, bulletin_watermark_investigation, online_reader_receipt, online_reader_validation, bulletin_reader_highlight, bulletin_reader_note, bulletin_reader_progress, bulletin_reader_migration_state, bulletin_reader_processed_mutation]
+    ReaderPrivateExportRow:
+      type: object
+      description: Subject-scoped persisted reader row. Dataset-specific fields include private quote/body/anchors, migration conflicts, progress, or processed results; never exposed through CMS or trace lookup.
+      required: [account_id, document_id]
+      properties:
+        account_id: { type: string, format: uuid }
+        document_id: { type: string, format: uuid }
+      additionalProperties: true
     BulletinWatermarkDSRActionEnvelope:
       type: object
       additionalProperties: false
@@ -5160,6 +5190,8 @@ components:
               enum: [pending, completed]
             recordCount: *id005
             remainingCount: *id005
+            coveredDatasets:
+              $ref: '#/components/schemas/ReaderDSRCoverage'
             reasonCodes:
               type: array
               items: *id002

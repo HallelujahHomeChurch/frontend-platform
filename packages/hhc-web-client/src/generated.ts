@@ -3165,17 +3165,29 @@ export interface components {
             data: {
                 records: {
                     /** @enum {string} */
-                    recordType: "bulletin_watermark_receipt" | "bulletin_watermark_investigation" | "online_reader_receipt" | "online_reader_validation";
-                    /** @description UUID for PDF records; receipt or request prefix plus UUID for reader records. */
+                    recordType: "bulletin_watermark_receipt" | "bulletin_watermark_investigation" | "online_reader_receipt" | "online_reader_validation" | "bulletin_reader_highlight" | "bulletin_reader_note" | "bulletin_reader_progress" | "bulletin_reader_migration_state" | "bulletin_reader_processed_mutation";
+                    /** @description UUID for PDF records; reader dataset prefix and account-scoped stable row key for reader records. */
                     recordKey: string;
-                    data: components["schemas"]["BulletinWatermarkReceipt"] | components["schemas"]["BulletinWatermarkInvestigationHistory"] | components["schemas"]["ReaderReceiptExport"] | components["schemas"]["ReaderValidationExport"];
+                    data: components["schemas"]["BulletinWatermarkReceipt"] | components["schemas"]["BulletinWatermarkInvestigationHistory"] | components["schemas"]["ReaderReceiptExport"] | components["schemas"]["ReaderValidationExport"] | components["schemas"]["ReaderPrivateExportRow"];
                 }[];
+                coveredDatasets?: components["schemas"]["ReaderDSRCoverage"];
                 recordCount: number;
                 nextCursor?: string;
                 exceptions: Record<string, never>[];
             };
             meta?: Record<string, never>;
             error?: Record<string, never> | null;
+        };
+        /** @description Present only for coverage=reader-v1; lists all datasets covered even when no rows exist. Completion still requires status completed and remainingCount zero; exports must exhaust nextCursor. */
+        ReaderDSRCoverage: ("bulletin_watermark_receipt" | "bulletin_watermark_investigation" | "online_reader_receipt" | "online_reader_validation" | "bulletin_reader_highlight" | "bulletin_reader_note" | "bulletin_reader_progress" | "bulletin_reader_migration_state" | "bulletin_reader_processed_mutation")[];
+        /** @description Subject-scoped persisted reader row. Dataset-specific fields include private quote/body/anchors, migration conflicts, progress, or processed results; never exposed through CMS or trace lookup. */
+        ReaderPrivateExportRow: {
+            /** Format: uuid */
+            account_id: string;
+            /** Format: uuid */
+            document_id: string;
+        } & {
+            [key: string]: unknown;
         };
         BulletinWatermarkDSRActionEnvelope: {
             data: {
@@ -3187,6 +3199,7 @@ export interface components {
                 status: "pending" | "completed";
                 recordCount: number;
                 remainingCount: number;
+                coveredDatasets?: components["schemas"]["ReaderDSRCoverage"];
                 reasonCodes: string[];
             };
             meta?: Record<string, never>;
@@ -5250,7 +5263,10 @@ export interface operations {
     };
     applyBulletinWatermarkDSRExport: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Request explicit reader dataset coverage. Omitted for legacy response compatibility. */
+                coverage?: "reader-v1";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -5277,7 +5293,10 @@ export interface operations {
     };
     applyBulletinWatermarkDSRAction: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Request explicit reader dataset coverage. Account must require every dataset before completion. */
+                coverage?: "reader-v1";
+            };
             header?: never;
             path?: never;
             cookie?: never;
