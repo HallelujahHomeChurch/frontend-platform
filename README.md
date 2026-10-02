@@ -59,7 +59,9 @@ transport and optional actor-keyed session-storage key, allowing later Website
 reuse without adding donation logic to generic UI. No recurring choices or
 card-entry fields are exposed. Minor units are validated as integers; one stable
 intent is locked and retried. Pending metadata contains only a key, amount and
-creation time, expires after 15 minutes, and fails closed after expiry/corruption
-rather than creating another payment. An accepted order clears it. The Admin
+creation time. Expiry/corruption replaces these fields with only `{blocked:true}`
+and fails closed rather than creating another payment. A bounded mounted timer
+also expires the metadata; startup/submit checks handle suspended browser timers.
+A correlated create/retry order response clears it. The Admin
 permission catalog includes the explicit `donations:sandbox:test` destination;
 other staff grants do not imply this capability.

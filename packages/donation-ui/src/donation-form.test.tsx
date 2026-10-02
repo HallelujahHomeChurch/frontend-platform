@@ -1,10 +1,10 @@
-import {cleanup, render, screen, waitFor} from '@testing-library/react';
+import {act, cleanup, render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {afterEach, expect, it} from 'vitest';
+import {afterEach, expect, it, vi} from 'vitest';
 import {DonationForm} from './index.js';
 import {DonationApiError, type DonationCheckoutInput, type DonationOrder} from '@hallelujahhomechurch/donation-client';
 
-afterEach(() => {cleanup(); sessionStorage.clear()});
+afterEach(() => {cleanup(); vi.useRealTimers(); sessionStorage.clear()});
 const order: DonationOrder = {id: '00000000-0000-4000-8000-000000000001', environment: 'sandbox', currency: 'TWD', amount_minor: 10000, creation_state: 'create_unknown', outcomes: []};
 
 it('locks the submitted amount and preserves the key when a create response is lost', async () => {
@@ -64,13 +64,23 @@ it('restores the same intent after reload and clears retry metadata after receiv
 
 it('blocks expired or malformed unresolved intent rather than generating another order', async () => {
   let calls = 0;
-  for (const value of [JSON.stringify({idempotencyKey: 'stable-intent-0001', amountMinor: 10000, createdAt: Date.now() - 16 * 60000}), '{bad json']) {
+  for (const value of [JSON.stringify({idempotencyKey: 'stable-intent-0001', amountMinor: 10000, createdAt: Date.now() - 16 * 60000}), '{bad json', JSON.stringify({blocked: true})]) {
     sessionStorage.setItem('actor-intent', value);
     const view = render(<DonationForm intentStorageKey="actor-intent" transport={{createCheckout: async () => {calls++; return order;}}} onOrder={() => {}} />);
     expect(screen.getByRole('alert')).toHaveTextContent('原付款');
     expect(screen.getByRole('button')).toBeDisabled();
-    expect(sessionStorage.getItem('actor-intent')).toBe(value);
+    expect(JSON.parse(sessionStorage.getItem('actor-intent')!)).toEqual({blocked: true});
     view.unmount();
   }
   expect(calls).toBe(0);
+});
+
+it('replaces an unresolved mounted intent with a minimal sentinel when its lifetime ends', async () => {
+  vi.useFakeTimers();
+  sessionStorage.setItem('actor-intent', JSON.stringify({idempotencyKey: 'stable-intent-0001', amountMinor: 10000, createdAt: Date.now() - 14 * 60000}));
+  render(<DonationForm intentStorageKey="actor-intent" transport={{createCheckout: async () => order}} onOrder={() => {}} />);
+  await act(async () => {await vi.advanceTimersByTimeAsync(60000)});
+  expect(JSON.parse(sessionStorage.getItem('actor-intent')!)).toEqual({blocked: true});
+  expect(screen.getByRole('alert')).toHaveTextContent('原付款');
+  expect(screen.getByRole('button')).toBeDisabled();
 });
