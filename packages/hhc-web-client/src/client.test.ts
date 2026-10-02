@@ -11,6 +11,11 @@ import type {
 } from './client'
 
 describe('hhc web client', () => {
+  it('rejects a keyed publication receipt on the unkeyed human publication method', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json({data: {receipt: {}, current: {id: 'rec-1'}, outcome: 'state_changed'}, meta: {}, error: null}))
+    const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'admin-token', fetcher})
+    await expect(client.publishAdminRecording('rec-1', 1)).rejects.toMatchObject({code: 'invalid_response'})
+  })
   it('uses independent Online CAS and no-store for every editor operation', async () => {
     const fetcher=vi.fn<typeof fetch>().mockImplementation(async()=>new Response(JSON.stringify({data:{},meta:{},error:null}),{headers:{'Content-Type':'application/json'}}))
     const client=createHhcWebClient({baseUrl:'/api',getAccessToken:()=> 'admin-token',fetcher})

@@ -322,9 +322,12 @@ export function createHhcWebClient(options: {
       }))).data
     },
     async publishAdminRecording(id: string, version: number) {
-      return (await unwrap(client.POST('/admin/recordings/{id}/publish', {
+      const data = (await unwrap(client.POST('/admin/recordings/{id}/publish', {
         params: { path: { id }, header: { 'If-Match': `"${version}"` } }, body: {},
       }))).data
+      // No Idempotency-Key is sent by this human-admin compatibility method.
+      if ('receipt' in data) throw new HhcWebApiError(200, 'invalid_response', 'Unexpected keyed publication response.')
+      return data
     },
     async unpublishAdminRecording(id: string, version: number) {
       return (await unwrap(client.POST('/admin/recordings/{id}/unpublish', {
