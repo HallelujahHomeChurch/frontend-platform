@@ -104,7 +104,7 @@
 .hhc-bulletin-v1[data-bulletin-mode='paper'] [data-fixed-element='verseLabel']::before { content: ''; position: absolute; z-index: -1; pointer-events: none; }
 .hhc-bulletin-v1[data-bulletin-mode='paper'] [data-body-title]::before { inset: -.08em -.1em; border: .7pt solid #111; }
 .hhc-bulletin-v1[data-bulletin-mode='paper'] [data-fixed-element='titleLabel']::before { inset: -.4em -.6em; border: 1pt solid #888; background: #c6c6c6; }
-.hhc-bulletin-v1[data-bulletin-mode='paper'] [data-fixed-element='verseLabel']::before { inset: -.6em -.6em -.9em; border: 1pt solid #888; background: #c6c6c6; }
+.hhc-bulletin-v1[data-bulletin-mode='paper'] [data-fixed-element='verseLabel']::before { inset: -.15em -.3em; border-bottom: 1pt solid #888; background: #eee; }
 .hhc-bulletin-v1 [data-font-role='body'],
 .hhc-bulletin-v1 [data-font-role='reference'],
 .hhc-bulletin-v1 [data-font-role='foreignText'] { font-family: 'HHC Weekly Serif', serif; font-weight: 400; }

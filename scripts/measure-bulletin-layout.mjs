@@ -94,19 +94,20 @@ export async function composeBulletinLayout(input) {
   document.pages = document.pages.filter(page => !removed.has(page.id));
   document.layoutManifest.pages = document.layoutManifest.pages.filter(page => !removed.has(page.pageId));
   layout.slots = coverLayouts.flatMap(page => page.slots);
-  layout.fixedSlots = coverLayouts.flatMap(page => page.fixedSlots ?? []).filter(slot => slot.element !== 'pageNumber');
+  const footerElements = new Set(['pageNumber','contact','websiteQR','youtubeQR','streamQR','websiteQRLabel','youtubeQRLabel','streamQRLabel','scanHint','footerRule','topRule']);
+  layout.fixedSlots = coverLayouts.flatMap(page => page.fixedSlots ?? []).filter(slot => !footerElements.has(slot.element));
   const fixed = new Map(layout.fixedSlots.map(slot => [slot.element, slot]));
   const blocks = new Map(bulletinBlocks(document).map(({block}) => [block.id, block]));
   const box = (slot, x, y, width) => {
     const style = slot.element ? slot.style : blocks.get(slot.blockId).style;
     style.letterSpacing = 0;
-    style.lineHeight = Math.max(style.lineHeight, style.fontSize * 1.25);
+    style.lineHeight = style.fontSize * 1.25;
     slot.box = {x: x/page.width, y: y/page.height, width: width/page.width, height: style.lineHeight/page.height};
     return slot;
   };
   for (const [element, x, y, width] of [
     ['date',58,156,115], ['issueNumber',180,156,90], ['pastor',58,178,220],
-    ['titleLabel',46,210,100], ['title',160,205,page.width-200], ['subtitle',160,233,page.width-200],
+    ['titleLabel',46,210,84],
   ]) { if (fixed.has(element)) box(fixed.get(element), x, y, width); }
   const masthead = fixed.get('masthead');
   if (masthead) box(masthead,masthead.box.x*page.width,masthead.box.y*page.height,page.width*(1-masthead.box.x)-40);
@@ -125,68 +126,91 @@ export async function composeBulletinLayout(input) {
     for (const {slot} of entries) if (slot.element) flowed.add(slot.id);
   };
   const slotsFor = block => layout.slots.filter(slot => slot.blockId === block.id);
-  const textEntries = (block, x, width) => slotsFor(block).map(slot => ({slot: box(slot, x, 268, width), offset: 0}));
-  const label = name => fixed.has(name) ? [{slot: box(fixed.get(name), 40, 268, 105), offset: 0}] : [];
+  const textEntries = (block, x, width) => slotsFor(block).map(slot => ({slot: box(slot, x, 239, width), offset: 0}));
+  const label = name => {
+    if (!fixed.has(name)) return [];
+    const slot = fixed.get(name);
+    slot.style.fontSize = name === 'verseLabel' ? 12 : 11;
+    return [{slot:box(slot,40,239,84),offset:0}];
+  };
   const items = list => list.flatMap(item => [...(item.title ? [item.title] : []), ...item.blocks]);
-  const list = (name, list, x = 150, width = page.width-190) => {
-    list.forEach((block, index) => row([...(index === 0 ? label(name) : []), ...textEntries(block, x, width)]));
+  const singleLines = [];
+  const singleLine = (slots, x, y, width, minimum = 9) => {
+    if (!slots.length) return [];
+    for (const slot of slots) {
+      const style = slot.element ? slot.style : blocks.get(slot.blockId).style;
+      Object.assign(style,{align:'left',indent:0,firstLineIndent:0,spaceBefore:0,spaceAfter:0});
+      box(slot,x,y,10000);
+    }
+    singleLines.push({slots,x,y,width,minimum});
+    return slots.map(slot=>({slot,offset:0}));
   };
   const cover = component.cover;
-  list('welcomeLabel', cover.welcome);
-  const worship = items(cover.worship);
-  for (let index = 0; index < worship.length; index += 2) {
-    const width = (page.width-202)/2;
-    row([...(index === 0 ? label('worshipLabel') : []), ...textEntries(worship[index],150,width), ...(worship[index+1] ? textEntries(worship[index+1],162+width,width) : [])]);
+  singleLine(['title','subtitle'].flatMap(name=>fixed.has(name)?[fixed.get(name)]:[]),145,207,page.width-185,12);
+  const list = (name, list) => list.forEach((block,index)=>row([...(index===0?label(name):[]),...singleLine(slotsFor(block),126,239,page.width-166)]));
+  list('welcomeLabel',cover.welcome);
+  row([...label('worshipLabel'),...singleLine(items(cover.worship).flatMap(slotsFor),126,239,page.width-166)]);
+  const workRowsStart = singleLines.length;
+  list('workLabel',items(cover.work));
+  const workRows = singleLines.slice(workRowsStart);
+  if (cover.wordQuestions.length) row(label('wordLabel'), 7);
+  for (const block of items(cover.wordQuestions)) {
+    block.style.fontSize = Math.min(block.style.fontSize,12);
+    row(textEntries(block,40,page.width-80),3);
   }
-  list('workLabel', items(cover.work));
-  if (cover.wordQuestions.length) row(label('wordLabel'), 9);
-  for (const block of items(cover.wordQuestions)) row(textEntries(block,58,page.width-98));
-  list('verseLabel', cover.weeklyVerses);
-  const footer = [];
-  for (const [element,x,width,offset] of [
-    ['contact',38,205,0], ['websiteQR',260,44,0], ['youtubeQR',322,44,0], ['streamQR',384,44,0],
-    ['websiteQRLabel',252,60,50], ['youtubeQRLabel',314,60,50], ['streamQRLabel',376,60,50], ['scanHint',450,page.width-488,0],
-  ]) {
-    const slot = fixed.get(element);
-    if (!slot) continue;
-    box(slot,x,268+offset,width);
-    if (bulletinFixedGraphic(element)) slot.box.height = 44/page.height;
-    footer.push({slot, offset});
+  if (cover.weeklyVerses.length) row(label('verseLabel'),10);
+  for (const block of cover.weeklyVerses) row(textEntries(block,40,page.width-80),7);
+  const naturalJSON = JSON.stringify(submission);
+  const natural = await measureBulletinLayout({...input,submissionJSON:naturalJSON,expectedContentHash:hash(naturalJSON)});
+  const naturalSlots = new Map(natural.pages.find(value=>value.pageId===page.id).slots.map(slot=>[slot.slotId,slot]));
+  for (const group of singleLines) {
+    group.widths = group.slots.map(slot=>{
+      const measured = naturalSlots.get(slot.id);
+      const lines = measured.fragments.flatMap(fragment=>fragment.lines);
+      return Math.max(0,...lines.map(line=>line.x+line.width-measured.box.x));
+    });
+    group.scale = Math.min(1,(group.width-6*(group.slots.length-1)-2*group.slots.length)/group.widths.reduce((sum,width)=>sum+width,0));
   }
-  row(footer, 18);
+  // Equal-length Work lines retain a common size and native justification, never padding text.
+  const workScale = Math.min(1,...workRows.map(group=>group.scale));
+  for (const group of singleLines) {
+    const scale = workRows.includes(group) ? workScale : group.scale;
+    let x = group.x;
+    for (const [index,slot] of group.slots.entries()) {
+      const block = blocks.get(slot.blockId);
+      const style = slot.element ? slot.style : block.style;
+      const size = Math.floor(style.fontSize*scale*100)/100;
+      if (size < group.minimum) throw new Error('cover_requires_edit');
+      for (const sentence of block?.sentences ?? []) for (const span of sentence.spans) if (span.fontSize != null) span.fontSize *= size/style.fontSize;
+      style.fontSize = size;
+      const width = group.slots.length === 1 ? group.width : group.widths[index]*scale+2;
+      box(slot,x,group.y,width);
+      if (workRows.includes(group)) style.align = 'justify';
+      x += width+6;
+    }
+  }
   const stagedJSON = JSON.stringify(submission);
   const staged = await measureBulletinLayout({...input, submissionJSON: stagedJSON, expectedContentHash: hash(stagedJSON)});
-  if(splitOversizedText(submission,staged,new Set([component.id]))) {
-    const submissionJSON=JSON.stringify(submission);
-    return composeBulletinLayout({...input,submissionJSON,expectedContentHash:hash(submissionJSON)});
-  }
   const measured = new Map(staged.pages.find(value => value.pageId === page.id).slots.map(slot => [slot.slotId,slot]));
-  const existingIDs = new Set();
-  JSON.stringify(document,(key,value) => { if (key === 'id') existingIDs.add(value); return value; });
+  for (const group of singleLines) for (const slot of group.slots) {
+    const lines = measured.get(slot.id).fragments.flatMap(fragment=>fragment.lines);
+    if (Math.max(...lines.map(line=>line.y+line.height))-Math.min(...lines.map(line=>line.y)) > (slot.element?slot.style:blocks.get(slot.blockId).style).lineHeight+1) throw new Error('cover_requires_edit');
+  }
   layout.slots = [];
-  layout.fixedSlots = layout.fixedSlots.filter(slot => !flowed.has(slot.id) && !['footerRule','topRule'].includes(slot.element));
-  let target = layout, cursor = 262, serial = 0;
+  layout.fixedSlots = layout.fixedSlots.filter(slot => !flowed.has(slot.id));
+  let cursor = 234;
   for (const {entries,gap} of rows) {
     const heights = entries.map(({slot}) => {
       const value = measured.get(slot.id);
       return Math.max(value.box.height,...value.fragments.flatMap(fragment => fragment.lines.map(line => line.y+line.height-value.box.y)));
     });
     const height = Math.max(...entries.map((entry,index) => entry.offset+heights[index]));
-    if (height > page.height-100) throw new Error('layout_requires_split');
     cursor += gap;
-    if (cursor+height > page.height-40) {
-      if (document.pages.length >= 80) throw new Error('layout_page_limit');
-      let id; do { id = `layout-cover-${++serial}`; } while (existingIDs.has(id)); existingIDs.add(id);
-      const index = document.pages.findIndex(value => value.id === target.pageId)+1;
-      document.pages.splice(index,0,{...page,id});
-      target = {pageId:id,slots:[],fixedSlots:[]};
-      document.layoutManifest.pages.splice(index,0,target);
-      cursor = 52;
-    }
+    if (cursor+height > page.height-40) throw new Error('cover_requires_edit');
     entries.forEach(({slot,offset},index) => {
       slot.box.y = (cursor+offset)/page.height;
       slot.box.height = heights[index]/page.height;
-      (slot.element ? target.fixedSlots : target.slots).push(slot);
+      (slot.element ? layout.fixedSlots : layout.slots).push(slot);
     });
     cursor += height;
   }

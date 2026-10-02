@@ -98,6 +98,7 @@ export function BulletinDocumentRenderer({document, manifest = document.layoutMa
     }
   }));
   const bodyTitleIDs = new Set(document.components.flatMap(component => component.type === 'bodySection' ? [component.bodySection.title.id] : []));
+  const coverWorkIDs = new Set(document.components.flatMap(component => component.type === 'cover' ? component.cover.work.flatMap(item => item.blocks.map(block => block.id)) : []));
   const headerLabels = new Map(document.components.flatMap(component => component.type === 'bodySection' ? (component.bodySection.header?.contributors ?? []).map(contributor => [contributor.name.id, ({speaker: 'speakerLabel', transcriber: 'transcriberLabel', editor: 'editorLabel'} as const)[contributor.role]] as const) : []));
   const sentence = (value: BulletinSentence, start: number, end: number, key: string, fontSize: number) => {
     const state = sentenceState?.[value.id];
@@ -193,6 +194,7 @@ export function BulletinDocumentRenderer({document, manifest = document.layoutMa
           if (!entry || entry.componentId !== slot.componentId) throw new Error('invalid_layout');
           const {block} = entry;
           const style: CSSProperties = {...paragraphStyle(block.style), left: `${slot.box.x * 100}%`, top: `${slot.box.y * 100}%`, width: `${slot.box.width * 100}%`, minHeight: `${slot.box.height * page.height}pt`};
+          if (coverWorkIDs.has(block.id) && block.style.align === 'justify') style.textAlignLast = 'justify';
           if (slot.continuationOf) { style.textIndent = '0'; style.marginBlockStart = '0'; }
           if (continuedSlotIDs.has(slot.id)) style.marginBlockEnd = '0';
           return <p key={slot.id} data-slot-id={slot.id} data-component-id={slot.componentId} data-block-id={block.id} data-body-title={bodyTitleIDs.has(block.id) || undefined} data-continuation-of={slot.continuationOf} style={style}>

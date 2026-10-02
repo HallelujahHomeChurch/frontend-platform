@@ -352,22 +352,60 @@ test('oversized single sentence continues without changing its identity or dropp
   for(let index=1;index<slots.length;index++) assert.equal(slots[index].continuationOf,slots[index-1].id);
 });
 
-test('cover continuation keeps each fragment on its own row', {skip: !assetsDirectory}, async () => {
+test('an oversized cover rejects composition instead of silently adding another cover page', {skip: !assetsDirectory}, async () => {
   const input=await fixture('文字。'.repeat(600));
   const submission=JSON.parse(input.submissionJSON);
   const block=submission.document.components[0].items[0].blocks[0];
   block.style.letterSpacing=0;
   submission.document.components=[{id:'c',type:'cover',cover:{welcome:[block],worship:[],work:[],wordQuestions:[],weeklyVerses:[]}}];
   const submissionJSON=JSON.stringify(submission);
-  const composed=await layoutRunner.composeBulletinLayout({...input,submissionJSON,expectedContentHash:hash(submissionJSON)});
-  const result=JSON.parse(composed.submissionJSON);
-  assert.ok(result.document.pages.length>1);
-  assert.deepEqual(result.document.components,submission.document.components);
-  assert.deepEqual(composed.measurement.overflow,[]);
-  const fragments=result.document.layoutManifest.pages.flatMap(page=>page.slots.flatMap(slot=>slot.fragments));
-  let offset=0;
-  for(const fragment of fragments) {assert.equal(fragment.start,offset);assert.equal(fragment.sentenceId,'s');offset=fragment.end;}
-  assert.equal(offset,1800);
+  await assert.rejects(layoutRunner.composeBulletinLayout({...input,submissionJSON,expectedContentHash:hash(submissionJSON)}), /cover_requires_edit/);
+});
+
+test('cover keeps its compact rows and aligned work on one page, ending at the full-width verse', {skip: !assetsDirectory}, async () => {
+  const input = await fixture();
+  const submission = JSON.parse(input.submissionJSON);
+  const {document} = submission;
+  const layout = document.layoutManifest.pages[0];
+  const style = {...document.components[0].items[0].blocks[0].style, fontSize:13, lineHeight:19};
+  layout.slots = [];
+  const block = (id, text) => {
+    layout.slots.push({id:`slot-${id}`,componentId:'c',blockId:id,box:{x:.1,y:.3,width:.8,height:.03},fragments:[{sentenceId:`s-${id}`,start:0,end:Array.from(text).length}]});
+    return {id,style:{...style},sentences:[{id:`s-${id}`,spans:[{text,fontRole:'body'}]}]};
+  };
+  const work = [1,2,3].map(n => ({id:`work-${n}`,blocks:[block(`work-${n}`, `${n}.凡事求告耶和華神，領受上頭來的智慧、啟示和能力，勝過仇敵一切的詭計。`)]}));
+  const cover = {
+    welcome:[block('welcome','在這一波風浪中家教會眾肢體同心合意、倚靠聖靈、各盡其職，必迎來一股屬靈極大的復興!')],
+    worship:['➊靠著神/58','➋詩篇廿三篇/新','➌從心合一/106','➍全部攏是祢/新','➎一人不能完成大使命/273'].map((text,n)=>({id:`song-${n}`,blocks:[block(`song-${n}`,text)]})),
+    work,
+    wordQuestions:Array.from({length:10},(_,n)=>({id:`question-${n}`,blocks:[block(`question-${n}`,`${n+1}.分享與禱告，領受上頭來的智慧。`.repeat(4))]})),
+    weeklyVerses:[block('verse','耶和華是我的牧者，我必不致缺乏。'.repeat(10))],
+  };
+  document.components = [{id:'c',type:'cover',cover}];
+  layout.fixedSlots = ['titleLabel','title','subtitle','welcomeLabel','worshipLabel','workLabel','wordLabel','verseLabel','contact','scanHint'].map(element=>({id:`fixed-${element}`,element,style:{...style},box:{x:.1,y:.1,width:.8,height:.03}}));
+  submission.canonicalMetadata.title = '詩篇廿三篇、洗革拉戰役';
+  submission.canonicalMetadata.subtitle = '～被聖靈充滿必有的三個看見';
+  const submissionJSON = JSON.stringify(submission);
+  const result = await layoutRunner.composeBulletinLayout({...input,submissionJSON,expectedContentHash:hash(submissionJSON)});
+  const saved = JSON.parse(result.submissionJSON).document;
+  assert.equal(saved.pages.length,1);
+  assert.deepEqual(result.measurement.overflow,[]);
+  assert.deepEqual(saved.components[0].cover.welcome[0].sentences,cover.welcome[0].sentences);
+  const measured = result.measurement.pages[0].slots;
+  assert.ok(!measured.some(slot=>['contact','scanHint'].includes(slot.fixedElement)));
+  const lines = id => measured.find(slot=>slot.slotId===id).fragments.flatMap(fragment=>fragment.lines);
+  for (const id of ['fixed-title','fixed-subtitle','fixed-welcomeLabel','fixed-worshipLabel','fixed-workLabel','slot-welcome',...work.map(item=>`slot-${item.id}`),...cover.worship.map(item=>`slot-${item.id}`)]) {
+    const rects = lines(id);
+    assert.ok(Math.max(...rects.map(r=>r.y))-Math.min(...rects.map(r=>r.y)) < 1, `${id} must stay on one line`);
+  }
+  const songRows = cover.worship.map(item=>measured.find(slot=>slot.slotId===`slot-${item.id}`).box.y);
+  assert.equal(new Set(songRows).size,1);
+  const workEdges = work.map(item=>Math.max(...lines(`slot-${item.id}`).map(r=>r.x+r.width)));
+  assert.ok(Math.max(...workEdges)-Math.min(...workEdges)<1);
+  const verse = measured.find(slot=>slot.slotId==='slot-verse');
+  const label = measured.find(slot=>slot.fixedElement==='verseLabel');
+  assert.ok(verse.box.y > label.box.y+label.box.height);
+  assert.ok(verse.box.width > 490);
 });
 
 test('lyrics can continue without losing their sentence anchors', {skip: !assetsDirectory}, async () => {
@@ -402,7 +440,7 @@ test('cover composition retains every sentence while separating its variable-len
   assert.deepEqual(composed.measurement.overflow, []);
   assert.deepEqual(result.document.components[0].cover.welcome[0].sentences, welcome.sentences);
   assert.deepEqual(result.document.components[0].cover.wordQuestions[0].blocks[0].sentences, question.sentences);
-  assert.equal(result.document.components[0].cover.wordQuestions[0].blocks[0].style.fontSize, 16);
+  assert.ok(result.document.components[0].cover.wordQuestions[0].blocks[0].style.fontSize >= 12);
   assert.equal(result.document.layoutManifest.pages.flatMap(page => page.slots).length, 2);
 });
 
