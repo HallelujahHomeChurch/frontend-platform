@@ -2,6 +2,11 @@ import createClient from 'openapi-fetch'
 
 import type { components, operations, paths } from './generated.js'
 
+export type LegalScope = components['schemas']['LegalScope']
+export type LegalSnapshot = components['schemas']['LegalSnapshot']
+export type LegalManifest = components['schemas']['LegalManifest']
+export type LegalDraft = components['schemas']['LegalDraft']
+export type LegalDocuments = components['schemas']['LegalDocuments']
 export type ActiveStatement = components['schemas']['ActiveStatement']
 export type StatementNotificationRequest = components['schemas']['StatementNotificationRequest']
 export type ContentLocale = components['schemas']['ContentLocale']
@@ -39,11 +44,13 @@ export type BulletinReaderMutationResponse = components['schemas']['ReaderMutati
 export type BulletinReaderNote = components['schemas']['ReaderNote']
 export type BulletinReaderHighlightColor = components['schemas']['ReaderHighlightColor']
 export type MemberRecording = components['schemas']['MemberRecording']
-export type RecordingFile = components['schemas']['RecordingFile']
 export type MemberRecordingPlayback = components['schemas']['MemberRecordingPlayback']
-export type RecordingUploadSession = components['schemas']['RecordingUploadSession']
-export type RecordingPartURL = components['schemas']['RecordingPartURL']
-export type RecordingAssetStatus = components['schemas']['RecordingAssetStatus']
+export type RecordingSourceInput = components['schemas']['RecordingSourceInput']
+export type RecordingSource = components['schemas']['RecordingSource']
+export type RecordingSourceStatus = components['schemas']['RecordingSourceStatus']
+export type SignedRecordingSourceBlock = components['schemas']['SignedRecordingSourceBlock']
+export type RecordingPackageStatus = components['schemas']['RecordingPackageStatus']
+export type RecordingRendition = components['schemas']['RecordingRendition']
 export type OperationProgress = components['schemas']['OperationProgress']
 export type BulletinDownloadJob = components['schemas']['BulletinDownloadJob']
 export type BulletinIssue = components['schemas']['BulletinIssue']
@@ -268,6 +275,23 @@ export function createHhcWebClient(options: {
       if (bytes.length < 5 || new TextDecoder().decode(bytes.subarray(0, 5)) !== '%PDF-') throw invalid()
       return {bytes: bytes.buffer, checksum, canonicalVersion}
     },
+    async getCommonLegalSnapshot(locale: ContentLocale, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/legal/common', {params: {query: {locale}}, signal, cache: 'no-store'}))).data
+    },
+    async getMemberLegalSnapshot(locale: ContentLocale, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/member/legal/current', {params: {query: {locale}}, signal, cache: 'no-store'}))).data
+    },
+    async getLegalDraft(scope: LegalScope, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/legal/{scope}', {params: {path: {scope}}, signal, cache: 'no-store'}))).data
+    },
+    async saveLegalDraft(scope: LegalScope, version: number, body: LegalDraft) {
+      if (body.scope !== scope || !Number.isSafeInteger(version) || version < 0) throw new Error('Invalid legal draft version or scope')
+      return (await unwrap(client.PUT('/admin/legal/{scope}', {params: {path: {scope}, header: {'If-Match': `"${version}"`}}, body, cache: 'no-store'}))).data
+    },
+    async publishLegalDraft(scope: LegalScope, version: number) {
+      if (!Number.isSafeInteger(version) || version < 1) throw new Error('Invalid legal publication version')
+      return (await unwrap(client.POST('/admin/legal/{scope}/publish', {params: {path: {scope}, header: {'If-Match': `"${version}"`}}, cache: 'no-store'}))).data
+    },
     async listMemberRecordings(signal?: AbortSignal) {
       return (await unwrap(client.GET('/member/recordings', { signal, cache: 'no-store' }))).data
     },
@@ -281,9 +305,6 @@ export function createHhcWebClient(options: {
     },
     async getAdminRecording(id: string, signal?: AbortSignal) {
       return (await unwrap(client.GET('/admin/recordings/{id}', { params: { path: { id } }, signal, cache: 'no-store' }))).data
-    },
-    async listAdminRecordingFiles(id: string, signal?: AbortSignal) {
-      return (await unwrap(client.GET('/admin/recordings/{id}/files', { params: { path: { id } }, signal, cache: 'no-store' }))).data
     },
     async createAdminRecording(title: string, idempotencyKey: string) {
       return (await unwrap(client.POST('/admin/recordings', {
@@ -310,34 +331,34 @@ export function createHhcWebClient(options: {
         params: { path: { id }, header: { 'If-Match': `"${version}"` } },
       }))).data
     },
-    async createAdminRecordingUpload(id: string, input: { fileName: string; sizeBytes: number; checksumSHA256: string }, idempotencyKey: string) {
-      return (await unwrap(client.POST('/admin/recordings/{id}/upload-sessions', {
-        params: { path: { id }, header: { 'Idempotency-Key': idempotencyKey } }, body: input,
+    async createAdminRecordingSource(id: string, input: RecordingSourceInput, idempotencyKey: string, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/recordings/{id}/source-uploads', {
+        params: {path: {id}, header: {'Idempotency-Key': idempotencyKey}}, body: input, signal, cache: 'no-store',
       }))).data
     },
-    async getAdminRecordingUpload(id: string, sessionID: string, signal?: AbortSignal) {
-      return (await unwrap(client.GET('/admin/recordings/{id}/upload-sessions/{sessionID}', {
-        params: { path: { id, sessionID } }, signal, cache: 'no-store',
+    async getAdminRecordingSource(id: string, sourceID: string, options: {cursor?: number; limit?: number; signal?: AbortSignal} = {}) {
+      return (await unwrap(client.GET('/admin/recordings/{id}/source-uploads/{sourceID}', {
+        params: {path: {id, sourceID}, query: {cursor: options.cursor, limit: options.limit}}, signal: options.signal, cache: 'no-store',
       }))).data
     },
-    async listAdminRecordingUploadedParts(id: string, sessionID: string) {
-      return (await unwrap(client.GET('/admin/recordings/{id}/upload-sessions/{sessionID}/parts', {
-        params: { path: { id, sessionID } }, cache: 'no-store',
+    async signAdminRecordingSource(id: string, sourceID: string, numbers: number[], signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/recordings/{id}/source-uploads/{sourceID}/sign', {
+        params: {path: {id, sourceID}}, body: {numbers}, signal, cache: 'no-store',
       }))).data
     },
-    async signAdminRecordingPart(id: string, sessionID: string, number: number) {
-      return (await unwrap(client.POST('/admin/recordings/{id}/upload-sessions/{sessionID}/parts/{number}', {
-        params: { path: { id, sessionID, number } },
+    async completeAdminRecordingSource(id: string, sourceID: string, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/recordings/{id}/source-uploads/{sourceID}/complete', {
+        params: {path: {id, sourceID}}, body: {}, signal, cache: 'no-store',
       }))).data
     },
-    async completeAdminRecordingUpload(id: string, sessionID: string) {
-      return (await unwrap(client.POST('/admin/recordings/{id}/upload-sessions/{sessionID}/complete', {
-        params: { path: { id, sessionID } },
+    async retryAdminRecordingSource(id: string, sourceID: string, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/recordings/{id}/source-uploads/{sourceID}/retry-processing', {
+        params: {path: {id, sourceID}}, body: {}, signal, cache: 'no-store',
       }))).data
     },
-    async getAdminRecordingAsset(id: string, versionID: string, signal?: AbortSignal) {
-      return (await unwrap(client.GET('/admin/recordings/{id}/assets/{versionID}', {
-        params: { path: { id, versionID } }, signal, cache: 'no-store',
+    async getAdminRecordingPackage(id: string, packageID: string, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/recordings/{id}/packages/{packageID}', {
+        params: {path: {id, packageID}, query: {limit: 1}}, signal, cache: 'no-store',
       }))).data
     },
     async listProtectedBulletins(params: { locale: BulletinLocale; series?: BulletinSeries; issueNumber?: number; page?: number; pageSize?: number; signal?: AbortSignal }) {

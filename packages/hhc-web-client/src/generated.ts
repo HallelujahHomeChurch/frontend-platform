@@ -4,6 +4,109 @@
  */
 
 export interface paths {
+    "/legal/common": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** getCommonLegalSnapshot */
+        get: operations["getCommonLegalSnapshot"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/legal/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** getMemberLegalSnapshot */
+        get: operations["getMemberLegalSnapshot"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/legal/{scope}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** getLegalDraft */
+        get: operations["getLegalDraft"];
+        /** saveLegalDraft */
+        put: operations["saveLegalDraft"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/legal/{scope}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** publishLegalDraft */
+        post: operations["publishLegalDraft"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/priv/legal/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** resolveCurrentLegalSnapshot */
+        post: operations["resolveCurrentLegalSnapshot"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/priv/legal/snapshots/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** resolveLegalSnapshot */
+        post: operations["resolveLegalSnapshot"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/bulletins/watermark-lookups": {
         parameters: {
             query?: never;
@@ -121,6 +224,46 @@ export interface paths {
         put?: never;
         /** Process Account-owned watermark DSR action */
         post: operations["applyBulletinWatermarkDSRAction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/priv/bulletin-watermarks/dsr/restrictions/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview one original watermark processing restriction
+         * @description Require verified original provenance and a current preview token for withdrawal. Preserve other restrictions. Legacy or pruned origin evidence and recorded erasure disable withdrawal. Withdrawal never recreates records, jobs or assets. Retry returns a historical receipt; obtain a fresh preview for current state.
+         */
+        post: operations["previewWatermarkRestriction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/priv/bulletin-watermarks/dsr/restrictions/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Withdraw one original watermark processing restriction
+         * @description Require verified original provenance and a current preview token for withdrawal. Preserve other restrictions. Legacy or pruned origin evidence and recorded erasure disable withdrawal. Withdrawal never recreates records, jobs or assets. Retry returns a historical receipt; obtain a fresh preview for current state.
+         */
+        post: operations["withdrawWatermarkRestriction"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1740,6 +1883,174 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/recordings/{id}/source-uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create or replay a single browser MP4 source upload (50GB maximum).
+         * @description Human Admin only. Source bytes go directly to the dedicated temporary Blob container; ordinary uploads and malware scanning are unchanged. No source replacement is supported. All responses are private and no-store.
+         */
+        post: operations["createRecordingSource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/source-uploads/{sourceID}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read source processing state and paged confirmed Blob blocks.
+         * @description Human Admin only. Source bytes go directly to the dedicated temporary Blob container; ordinary uploads and malware scanning are unchanged. No source replacement is supported. All responses are private and no-store.
+         */
+        get: operations["getRecordingSource"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/source-uploads/{sourceID}/sign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Issue write-only block capabilities after rechecking the uploader and session.
+         * @description Human Admin only. Source bytes go directly to the dedicated temporary Blob container; ordinary uploads and malware scanning are unchanged. No source replacement is supported. All responses are private and no-store.
+         */
+        post: operations["signRecordingSource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/source-uploads/{sourceID}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Durably accept finalization; this is not ready or published.
+         * @description Human Admin only. Source bytes go directly to the dedicated temporary Blob container; ordinary uploads and malware scanning are unchanged. No source replacement is supported. All responses are private and no-store.
+         */
+        post: operations["completeRecordingSource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/source-uploads/{sourceID}/retry-processing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Retry within the original seven-day source window and three-attempt budget.
+         * @description Human Admin only. Source bytes go directly to the dedicated temporary Blob container; ordinary uploads and malware scanning are unchanged. No source replacement is supported. All responses are private and no-store.
+         */
+        post: operations["retryRecordingSource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/packages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** createRecordingPackage */
+        post: operations["createRecordingPackage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/packages/{packageID}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** getRecordingPackage */
+        get: operations["getRecordingPackage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/packages/{packageID}/sign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** signRecordingPackage */
+        post: operations["signRecordingPackage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/packages/{packageID}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** completeRecordingPackage */
+        post: operations["completeRecordingPackage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/recordings": {
         parameters: {
             query?: never;
@@ -1752,25 +2063,6 @@ export interface paths {
         put?: never;
         /** Create a titled single-upload draft */
         post: operations["createAdminRecording"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/recordings/{id}/files": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        /** List attached recording files and validation status */
-        get: operations["listAdminRecordingFiles"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1827,7 +2119,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Publish only an owner-matched, media-validated ready primary version */
+        /**
+         * Publish only an owner-matched, media-validated ready primary version
+         * @description A service actor must supply Idempotency-Key. Human callers without it retain the RecordingEnvelope response. With a key, publication, its immutable receipt, audit and first-publication notification share one transaction. Replay returns the original receipt and current recording; outcome state_changed never republishes, including after manual unpublish or expiry. Reusing an actor-scoped key for a different recording or If-Match returns 409. A new intent requires a new key; never retry 412 automatically with the latest version.
+         */
         post: operations["publishAdminRecording"];
         delete?: never;
         options?: never;
@@ -1848,126 +2143,6 @@ export interface paths {
         put?: never;
         /** Stop new playback grants without deleting retained bytes */
         post: operations["unpublishAdminRecording"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/recordings/{id}/upload-sessions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Start a private R2 multipart upload with exact byte size and SHA-256 */
-        post: operations["createAdminRecordingUpload"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/recordings/{id}/upload-sessions/{sessionID}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                sessionID: string;
-            };
-            cookie?: never;
-        };
-        /** Read owner-scoped multipart session status */
-        get: operations["getAdminRecordingUpload"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/recordings/{id}/upload-sessions/{sessionID}/parts/{number}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                sessionID: string;
-                number: number;
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Sign one fifteen-minute R2 UploadPart URL for an authorized session */
-        post: operations["signAdminRecordingPart"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/recordings/{id}/upload-sessions/{sessionID}/parts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                sessionID: string;
-            };
-            cookie?: never;
-        };
-        /** List fully uploaded R2 part numbers for owner-scoped resume */
-        get: operations["listAdminRecordingUploadedParts"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/recordings/{id}/upload-sessions/{sessionID}/complete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                sessionID: string;
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Complete verified multipart parts and enqueue media validation */
-        post: operations["completeAdminRecordingUpload"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/recordings/{id}/assets/{versionID}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                versionID: string;
-            };
-            cookie?: never;
-        };
-        /** Read media validation state and duration for an attached file */
-        get: operations["getAdminRecordingAsset"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2786,6 +2961,350 @@ export interface components {
             type: "backSummary" | "announcements" | "victoriesAndPrayers";
             items: components["schemas"]["OnlineBulletinItem"][];
         };
+        RecordingSourceInput: {
+            /** @description MP4 basename only; bounded to 255 UTF-8 bytes by Asset. */
+            fileName: string;
+            /** Format: int64 */
+            sizeBytes: number;
+            checksumSHA256: string;
+        };
+        RecordingSourceSignInput: {
+            numbers: number[];
+        };
+        RecordingSource: {
+            sourceId: string;
+            /** Format: uuid */
+            recordingId: string;
+            fileName: string;
+            /** Format: int64 */
+            sizeBytes: number;
+            checksumSHA256: string;
+            blockCount: number;
+            /** @enum {string} */
+            state: "uploading" | "finalizing" | "queued" | "processing" | "ready" | "failed" | "expired";
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: date-time */
+            completedAt?: string;
+            /** Format: date-time */
+            retryUntil?: string;
+            /** @enum {string} */
+            failureCode?: "retry" | "invalid" | "exhausted";
+            packageId?: string;
+        };
+        RecordingSourceEnvelope: {
+            data: components["schemas"]["RecordingSource"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        RecordingSourceStatus: {
+            sourceId: string;
+            /** Format: uuid */
+            recordingId: string;
+            fileName: string;
+            /** Format: int64 */
+            sizeBytes: number;
+            checksumSHA256: string;
+            blockCount: number;
+            /** @enum {string} */
+            state: "uploading" | "finalizing" | "queued" | "processing" | "ready" | "failed" | "expired";
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: date-time */
+            completedAt?: string;
+            /** Format: date-time */
+            retryUntil?: string;
+            /** @enum {string} */
+            failureCode?: "retry" | "invalid" | "exhausted";
+            packageId?: string;
+            confirmedBlocks: number[];
+            /** @description Zero when this pass is complete. */
+            nextCursor: number;
+        };
+        RecordingSourceStatusEnvelope: {
+            data: components["schemas"]["RecordingSourceStatus"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        SignedRecordingSourceBlock: {
+            number: number;
+            /**
+             * Format: uri
+             * @description HTTPS write-only Blob capability; never log or persist.
+             */
+            url: string;
+            /** @constant */
+            method: "PUT";
+            headers: {
+                [key: string]: string;
+            };
+            /**
+             * Format: date-time
+             * @description At most fifteen minutes and bounded by session expiry.
+             */
+            expiresAt: string;
+        };
+        SignedRecordingSourceBlocksEnvelope: {
+            data: components["schemas"]["SignedRecordingSourceBlock"][];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        RecordingPackage: {
+            packageId: string;
+            /** @description Same identifier as packageId; one immutable inventory per upload session. */
+            sessionId: string;
+            recordingId: string;
+            /** @enum {string} */
+            state: "uploading" | "freezing" | "validating" | "ready" | "failed" | "expired";
+            /** Format: int64 */
+            sizeBytes: number;
+            /** Format: date-time */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description Upload session expiry; not the ready media retention deadline.
+             */
+            expiresAt: string;
+            inventory: components["schemas"]["RecordingPackageInventory"];
+            /** Format: date-time */
+            readyAt?: string;
+            /**
+             * Format: date-time
+             * @description First ready time plus thirty days; distinct from upload expiry.
+             */
+            mediaExpiresAt?: string;
+        };
+        RecordingPackageStatus: {
+            packageId: string;
+            sessionId: string;
+            recordingId: string;
+            /** @enum {string} */
+            state: "uploading" | "freezing" | "validating" | "ready" | "failed" | "expired";
+            /** Format: int64 */
+            sizeBytes: number;
+            /** Format: date-time */
+            expiresAt: string;
+            confirmedObjects: string[];
+            /** @description Last examined path; empty when this pass is complete. */
+            nextCursor: string;
+            /** Format: date-time */
+            readyAt?: string;
+            /** Format: date-time */
+            mediaExpiresAt?: string;
+            renditions?: components["schemas"]["RecordingRendition"][];
+        };
+        SignedRecordingObject: {
+            path: string;
+            /**
+             * Format: uri
+             * @description At most fifteen-minute single-object R2 PUT capability; never log or persist.
+             */
+            url: string;
+            /** @enum {string} */
+            method: "PUT";
+            headers: {
+                [key: string]: string[];
+            };
+        };
+        /** @description HLS v1 declared inventory for the gated package upload contract; current MP4 routes do not consume it. SHA-256 inventoryDigest hashes UTF-8 encoding/json-compatible serialization with this field omitted, objects sorted by path, renditions sorted by name, and fields in the order shown below. Objects exclude package.json itself; total package bytes include the serialized inventory. Metadata and hashes are declarations, not proof of readiness. Final bytes and media are verified by the recording Job. Master BANDWIDTH and optional AVERAGE-BANDWIDTH must match measured media segment bytes and EXTINF durations under RFC 8216 section 4.1, not configured encoder bitrates. Ineligible short-tail windows are excluded from peak bandwidth. */
+        RecordingPackageInventory: {
+            /** @constant */
+            schemaVersion: 1;
+            presetVersion: string;
+            objects: components["schemas"]["RecordingPackageObject"][];
+            renditions: components["schemas"]["RecordingRendition"][];
+            inventoryDigest: string;
+        };
+        RecordingPackageObject: {
+            /** @description Canonical relative path. Unique paths and every declared rendition's complete contiguous segment list are required. No URLs, encoded paths, queries or package.json. */
+            path: string;
+            /**
+             * Format: int64
+             * @description Playlists additionally have a 1048576-byte limit. Package total including inventory must be at most 10000000000 bytes.
+             */
+            sizeBytes: number;
+            sha256: string;
+        };
+        RecordingRendition: {
+            /**
+             * @description 720p is mandatory; 1080p optional. Names are unique.
+             * @enum {string}
+             */
+            name: "720p" | "1080p";
+            /** @description 720p maximum width is 1280; source must never be upscaled. */
+            width: number;
+            /** @description 720p maximum height is 720. Actual dimensions are retained for smaller sources. */
+            height: number;
+            frameRate: number;
+            videoBitrate: number;
+            /** @constant */
+            audioBitrate: 128000;
+            durationSeconds: number;
+            /** @description ceil(durationSeconds/30); both renditions require aligned actual boundaries. */
+            segmentCount: number;
+        };
+        RecordingPackageSignInput: {
+            paths: string[];
+        };
+        RecordingPackageCompleteInput: Record<string, never>;
+        RecordingPackageEnvelope: {
+            data: components["schemas"]["RecordingPackage"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
+        };
+        RecordingPackageStatusEnvelope: {
+            data: components["schemas"]["RecordingPackageStatus"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
+        };
+        SignedRecordingObjectsEnvelope: {
+            data: components["schemas"]["SignedRecordingObject"][];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
+        };
+        RecordingPublishReceipt: {
+            operationKey: string;
+            /** @enum {string} */
+            actorType: "user" | "service";
+            /** Format: uuid */
+            actorId: string;
+            /** Format: uuid */
+            recordingId: string;
+            assetVersionId: string;
+            packageId?: string;
+            /** Format: int64 */
+            expectedVersion: number;
+            /** Format: int64 */
+            publishedVersion: number;
+            /** Format: date-time */
+            publishedAt: string;
+            /** @description SHA-256 of the versioned canonical empty-body publication request with actor, recording, asset and expected version. */
+            requestFingerprint: string;
+        };
+        RecordingPublishResult: {
+            receipt: components["schemas"]["RecordingPublishReceipt"];
+            current: components["schemas"]["MemberRecording"];
+            /** @enum {string} */
+            outcome: "published" | "state_changed";
+        };
+        RecordingPublishEnvelope: {
+            data: components["schemas"]["RecordingPublishResult"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
+        };
+        DSRRestrictionReference: {
+            /** Format: uuid */
+            userId: string;
+            /** Format: uuid */
+            originalRequestId: string;
+        };
+        DSRRestrictionWithdrawal: {
+            /**
+             * Format: uuid
+             * @description Independent withdrawal request; must differ from the original restriction request.
+             */
+            requestId: string;
+            /** Format: uuid */
+            userId: string;
+            /** Format: uuid */
+            originalRequestId: string;
+            expectedState: string;
+            idempotencyKey: string;
+        };
+        DSRRestrictionPreview: {
+            canWithdraw: boolean;
+            /** Format: int64 */
+            activeRestrictions: number;
+            fencePresent: boolean;
+            stateToken: string;
+            reasonCodes: ("restriction_fence_absent" | "restriction_origin_unverified" | "subject_cleanup_recorded" | "original_restriction_unavailable")[];
+        };
+        DSRRestrictionWithdrawalResult: {
+            withdrawn: boolean;
+            /** @description Fence cleared at this receipt's transaction time; not a current-state claim on later replay. */
+            fenceCleared: boolean;
+            /** Format: int64 */
+            remainingRestrictions: number;
+        };
+        /** @enum {string} */
+        LegalScope: "common" | "verified-member";
+        /**
+         * @default zh-Hant
+         * @enum {string}
+         */
+        LegalLocale: "zh-Hant" | "zh-Hans" | "en" | "ja" | "ko";
+        LegalVersion: string;
+        LegalDocuments: {
+            terms: components["schemas"]["LegalPageContentV1"];
+            privacy: components["schemas"]["LegalPageContentV1"];
+        };
+        LegalManifest: {
+            scope: components["schemas"]["LegalScope"];
+            locale: components["schemas"]["LegalLocale"];
+            termsVersion: components["schemas"]["LegalVersion"];
+            privacyNoticeVersion: components["schemas"]["LegalVersion"];
+            commonTermsVersion?: components["schemas"]["LegalVersion"];
+            commonPrivacyNoticeVersion?: components["schemas"]["LegalVersion"];
+            termsSHA256: string;
+            privacySHA256: string;
+        };
+        LegalSnapshot: {
+            /** Format: uuid */
+            snapshotId: string;
+            manifest: components["schemas"]["LegalManifest"];
+            documents: components["schemas"]["LegalDocuments"];
+        };
+        LegalDraft: {
+            scope: components["schemas"]["LegalScope"];
+            termsVersion: components["schemas"]["LegalVersion"];
+            privacyNoticeVersion: components["schemas"]["LegalVersion"];
+            commonTermsVersion?: components["schemas"]["LegalVersion"];
+            commonPrivacyNoticeVersion?: components["schemas"]["LegalVersion"];
+            /** Format: int64 */
+            version?: number;
+            translations: {
+                "zh-Hant": components["schemas"]["LegalDocuments"];
+                "zh-Hans": components["schemas"]["LegalDocuments"];
+                en: components["schemas"]["LegalDocuments"];
+                ja: components["schemas"]["LegalDocuments"];
+                ko: components["schemas"]["LegalDocuments"];
+            };
+        };
+        LegalCurrentInput: {
+            scope: components["schemas"]["LegalScope"];
+            locale: components["schemas"]["LegalLocale"];
+        };
+        LegalSnapshotInput: {
+            /** Format: uuid */
+            snapshotId: string;
+        };
+        LegalSnapshotEnvelope: {
+            data: components["schemas"]["LegalSnapshot"];
+        };
+        LegalDraftEnvelope: {
+            data: components["schemas"]["LegalDraft"];
+        };
+        LegalSnapshotsEnvelope: {
+            data: components["schemas"]["LegalSnapshot"][];
+        };
         MemberRecording: {
             /** Format: uuid */
             id: string;
@@ -2799,6 +3318,11 @@ export interface components {
             /** @enum {string} */
             status: "draft" | "published";
             primaryAssetVersionId?: string;
+            packageId?: string;
+            /** @description Immutable browser source reference for Admin resume and processing status. */
+            sourceId?: string;
+            /** Format: date-time */
+            readyAt?: string;
             durationSeconds?: number;
             /** Format: int64 */
             version: number;
@@ -2811,62 +3335,9 @@ export interface components {
             /** Format: date-time */
             expiresAt: string;
             assetVersionId: string;
+            packageId?: string;
+            renditions?: components["schemas"]["RecordingRendition"][];
             watermarkCode: string;
-        };
-        RecordingUploadSession: {
-            id: string;
-            assetVersionId: string;
-            /** Format: uuid */
-            recordingId: string;
-            fileName: string;
-            /** @enum {string} */
-            status: "created" | "completing" | "validating" | "ready" | "failed" | "cancelled" | "deleting" | "deleted";
-            /** Format: int64 */
-            sizeBytes: number;
-            /** Format: date-time */
-            expiresAt: string;
-            /** Format: date-time */
-            uploadedAt: string | null;
-        };
-        RecordingPartURL: {
-            /**
-             * Format: uri
-             * @description Fifteen-minute presigned R2 UploadPart URL.
-             */
-            url: string;
-            /** @enum {string} */
-            method: "PUT";
-            headers: {
-                [key: string]: string[];
-            };
-        };
-        RecordingAssetStatus: {
-            assetVersionId: string;
-            /** Format: uuid */
-            recordingId: string;
-            /** @enum {string} */
-            status: "created" | "completing" | "validating" | "ready" | "failed" | "cancelled" | "deleting" | "deleted";
-            /** Format: int64 */
-            sizeBytes: number;
-            durationSeconds: number;
-            /** Format: date-time */
-            uploadedAt: string | null;
-        };
-        RecordingFile: {
-            assetVersionId: string;
-            fileName: string;
-            /** @enum {string} */
-            status: "created" | "completing" | "validating" | "ready" | "failed" | "cancelled" | "deleting" | "deleted";
-            /** Format: int64 */
-            sizeBytes: number;
-            durationSeconds: number;
-        };
-        RecordingFileListEnvelope: {
-            data: components["schemas"]["RecordingFile"][];
-            meta: {
-                [key: string]: unknown;
-            };
-            error?: null;
         };
         RecordingEnvelope: {
             data: components["schemas"]["MemberRecording"];
@@ -2884,34 +3355,6 @@ export interface components {
         };
         RecordingPlaybackEnvelope: {
             data: components["schemas"]["MemberRecordingPlayback"];
-            meta: {
-                [key: string]: unknown;
-            };
-            error?: null;
-        };
-        RecordingUploadEnvelope: {
-            data: components["schemas"]["RecordingUploadSession"];
-            meta: {
-                [key: string]: unknown;
-            };
-            error?: null;
-        };
-        RecordingPartEnvelope: {
-            data: components["schemas"]["RecordingPartURL"];
-            meta: {
-                [key: string]: unknown;
-            };
-            error?: null;
-        };
-        RecordingUploadedPartsEnvelope: {
-            data: number[];
-            meta: {
-                [key: string]: unknown;
-            };
-            error?: null;
-        };
-        RecordingAssetEnvelope: {
-            data: components["schemas"]["RecordingAssetStatus"];
             meta: {
                 [key: string]: unknown;
             };
@@ -3530,6 +3973,7 @@ export interface components {
             /** Format: uuid */
             issueId: string;
         };
+        /** @description Ready PDFs are cached for seven days. Creating a download after cache expiry prepares a new PDF with a new issuance identity. A failed job with errorCode receipt_collision may be retried by creating a new download preparation. */
         BulletinDownloadJob: {
             /** Format: uuid */
             id: string;
@@ -5073,6 +5517,212 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getCommonLegalSnapshot: {
+        parameters: {
+            query?: {
+                locale?: components["schemas"]["LegalLocale"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description LegalSnapshotEnvelope */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalSnapshotEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getMemberLegalSnapshot: {
+        parameters: {
+            query?: {
+                locale?: components["schemas"]["LegalLocale"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description LegalSnapshotEnvelope */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalSnapshotEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getLegalDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scope: components["schemas"]["LegalScope"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description LegalDraftEnvelope */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalDraftEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    saveLegalDraft: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                scope: components["schemas"]["LegalScope"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LegalDraft"];
+            };
+        };
+        responses: {
+            /** @description LegalDraftEnvelope */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalDraftEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    publishLegalDraft: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                scope: components["schemas"]["LegalScope"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description LegalSnapshotsEnvelope */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalSnapshotsEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    resolveCurrentLegalSnapshot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LegalCurrentInput"];
+            };
+        };
+        responses: {
+            /** @description LegalSnapshotEnvelope */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalSnapshotEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    resolveLegalSnapshot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LegalSnapshotInput"];
+            };
+        };
+        responses: {
+            /** @description LegalSnapshotEnvelope */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalSnapshotEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
     lookupBulletinWatermark: {
         parameters: {
             query?: never;
@@ -5317,6 +5967,85 @@ export interface operations {
                 };
             };
             401: components["responses"]["Error"];
+            /** @description Original restriction has already been withdrawn */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    previewWatermarkRestriction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DSRRestrictionReference"];
+            };
+        };
+        responses: {
+            /** @description Owner evidence */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["DSRRestrictionPreview"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            /** @description Restriction evidence changed or unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    withdrawWatermarkRestriction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DSRRestrictionWithdrawal"];
+            };
+        };
+        responses: {
+            /** @description Owner evidence */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["DSRRestrictionWithdrawalResult"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            /** @description Restriction evidence changed or unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             422: components["responses"]["Error"];
             503: components["responses"]["Error"];
         };
@@ -8109,6 +8838,312 @@ export interface operations {
             503: components["responses"]["Error"];
         };
     };
+    createRecordingSource: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingSourceInput"];
+            };
+        };
+        responses: {
+            /** @description Create or replay a single browser MP4 source upload (50GB maximum). */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingSourceEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            413: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getRecordingSource: {
+        parameters: {
+            query?: {
+                cursor?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+                sourceID: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Read source processing state and paged confirmed Blob blocks. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingSourceStatusEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            413: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    signRecordingSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                sourceID: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingSourceSignInput"];
+            };
+        };
+        responses: {
+            /** @description Issue write-only block capabilities after rechecking the uploader and session. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignedRecordingSourceBlocksEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            413: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    completeRecordingSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                sourceID: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingPackageCompleteInput"];
+            };
+        };
+        responses: {
+            /** @description Durably accept finalization; this is not ready or published. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingSourceEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            413: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    retryRecordingSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                sourceID: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingPackageCompleteInput"];
+            };
+        };
+        responses: {
+            /** @description Retry within the original seven-day source window and three-attempt budget. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingSourceEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            413: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    createRecordingPackage: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingPackageInventory"];
+            };
+        };
+        responses: {
+            /** @description Recording package operation result. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingPackageEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            413: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getRecordingPackage: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+                packageID: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recording package operation result. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingPackageStatusEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            413: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    signRecordingPackage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                packageID: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingPackageSignInput"];
+            };
+        };
+        responses: {
+            /** @description Recording package operation result. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignedRecordingObjectsEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            413: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    completeRecordingPackage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                packageID: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingPackageCompleteInput"];
+            };
+        };
+        responses: {
+            /** @description Durable validation accepted; not a readiness guarantee. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingPackageEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            413: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
     listAdminRecordings: {
         parameters: {
             query?: never;
@@ -8162,31 +9197,6 @@ export interface operations {
             403: components["responses"]["AdminForbidden"];
             409: components["responses"]["Error"];
             503: components["responses"]["Error"];
-        };
-    };
-    listAdminRecordingFiles: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Attached files */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RecordingFileListEnvelope"];
-                };
-            };
-            401: components["responses"]["AdminUnauthorized"];
-            403: components["responses"]["AdminForbidden"];
-            404: components["responses"]["Error"];
         };
     };
     getAdminRecording: {
@@ -8291,6 +9301,8 @@ export interface operations {
             query?: never;
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
+                /** @description Required for service actors; optional for human Admin compatibility. Exactly one value. */
+                "Idempotency-Key"?: string;
             };
             path: {
                 id: string;
@@ -8303,15 +9315,17 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Published recording */
+            /** @description Original publication receipt and current state with a key; legacy RecordingEnvelope without a key. */
             200: {
                 headers: {
+                    "Cache-Control"?: "private, no-store";
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RecordingEnvelope"];
+                    "application/json": components["schemas"]["RecordingPublishEnvelope"] | components["schemas"]["RecordingEnvelope"];
                 };
             };
+            400: components["responses"]["Error"];
             401: components["responses"]["AdminUnauthorized"];
             403: components["responses"]["AdminForbidden"];
             409: components["responses"]["Error"];
@@ -8347,179 +9361,6 @@ export interface operations {
             409: components["responses"]["Error"];
             412: components["responses"]["Error"];
             428: components["responses"]["Error"];
-        };
-    };
-    createAdminRecordingUpload: {
-        parameters: {
-            query?: never;
-            header: {
-                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
-            };
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    fileName: string;
-                    /** Format: int64 */
-                    sizeBytes: number;
-                    checksumSHA256: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Resumable R2 session */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RecordingUploadEnvelope"];
-                };
-            };
-            400: components["responses"]["Error"];
-            401: components["responses"]["AdminUnauthorized"];
-            403: components["responses"]["AdminForbidden"];
-            409: components["responses"]["Error"];
-            503: components["responses"]["Error"];
-        };
-    };
-    getAdminRecordingUpload: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                sessionID: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Recording upload status */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RecordingUploadEnvelope"];
-                };
-            };
-            401: components["responses"]["AdminUnauthorized"];
-            403: components["responses"]["AdminForbidden"];
-            404: components["responses"]["Error"];
-        };
-    };
-    signAdminRecordingPart: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                sessionID: string;
-                number: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Presigned part request */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RecordingPartEnvelope"];
-                };
-            };
-            400: components["responses"]["Error"];
-            401: components["responses"]["AdminUnauthorized"];
-            403: components["responses"]["AdminForbidden"];
-            409: components["responses"]["Error"];
-        };
-    };
-    listAdminRecordingUploadedParts: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                sessionID: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Completed part numbers */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RecordingUploadedPartsEnvelope"];
-                };
-            };
-            401: components["responses"]["AdminUnauthorized"];
-            403: components["responses"]["AdminForbidden"];
-            409: components["responses"]["Error"];
-        };
-    };
-    completeAdminRecordingUpload: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                sessionID: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Validating upload */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RecordingUploadEnvelope"];
-                };
-            };
-            400: components["responses"]["Error"];
-            401: components["responses"]["AdminUnauthorized"];
-            403: components["responses"]["AdminForbidden"];
-            409: components["responses"]["Error"];
-            503: components["responses"]["Error"];
-        };
-    };
-    getAdminRecordingAsset: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                versionID: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Private media status */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RecordingAssetEnvelope"];
-                };
-            };
-            401: components["responses"]["AdminUnauthorized"];
-            403: components["responses"]["AdminForbidden"];
-            404: components["responses"]["Error"];
-            503: components["responses"]["Error"];
         };
     };
 }
