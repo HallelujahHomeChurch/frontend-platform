@@ -4,6 +4,20 @@ import {createSandboxDonationClient, DonationApiError, safeHostedCheckoutUrl} fr
 const order = {id: '00000000-0000-4000-8000-000000000001', environment: 'sandbox', currency: 'TWD', amount_minor: 10000, creation_state: 'create_unknown', outcomes: []};
 
 describe('Sandbox donation transport', () => {
+  it('queues only the original owned query with its observed retry version', async () => {
+    const requests: Request[] = [];
+    const client=createSandboxDonationClient({getAccessToken:async()=>'token',refreshAfterUnauthorized:async()=>null,fetcher:async(input)=>{
+      const request=input as Request;requests.push(request.clone());
+      return request.method==='GET' ? Response.json({state:'review',reason:'provider_unavailable',retry_version:2,can_retry:true}) : Response.json({status:'queued'},{status:202});
+    }});
+    expect((await client.getReconciliation(order.id)).retry_version).toBe(2);
+    await client.retryReconciliation(order.id,2);
+    expect(new URL(requests[1].url).pathname).toBe(`/api/admin/donations/sandbox/orders/${order.id}/reconciliation/retry`);
+    expect(await requests[1].json()).toEqual({expected_retry_version:2});
+    for(const version of [-1,1.5,2147483647,NaN]) await expect(client.retryReconciliation(order.id,version)).rejects.toBeInstanceOf(DonationApiError);
+    await expect(client.getReconciliation('../other')).rejects.toBeInstanceOf(DonationApiError);
+    expect(requests).toHaveLength(2);
+  });
   it('retries an unauthorized create with identical intent through the session runtime', async () => {
     const requests: Request[] = [];
     const client = createSandboxDonationClient({

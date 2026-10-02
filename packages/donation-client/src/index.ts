@@ -4,6 +4,7 @@ import type {components, paths} from './generated.js';
 export type {components, paths} from './generated.js';
 export type DonationOrder = components['schemas']['Order'];
 export type DonationCheckoutInput = components['schemas']['CheckoutInput'];
+export type DonationRequeryStatus = components['schemas']['RequeryStatus'];
 export type DonationReturnResult = DonationOrder | {state: 'pending'};
 export type DonationTransport = {
   createCheckout(input: DonationCheckoutInput, idempotencyKey: string, signal?: AbortSignal): Promise<DonationOrder>;
@@ -55,6 +56,14 @@ export function createSandboxDonationClient(options: {
     async getOrder(orderId: string, signal?: AbortSignal): Promise<DonationOrder> {
       if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId)) throw new DonationApiError(400, 'invalid_input');
       return unwrap(raw.GET('/api/admin/donations/sandbox/orders/{orderId}', {params: {path: {orderId}}, signal, cache: 'no-store'}));
+    },
+    async getReconciliation(orderId: string, signal?: AbortSignal): Promise<DonationRequeryStatus> {
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId)) throw new DonationApiError(400, 'invalid_input');
+      return unwrap(raw.GET('/api/admin/donations/sandbox/orders/{orderId}/reconciliation', {params: {path: {orderId}}, signal, cache: 'no-store'}));
+    },
+    async retryReconciliation(orderId: string, version: number, signal?: AbortSignal): Promise<{status: 'queued'}> {
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId) || !Number.isSafeInteger(version) || version < 0 || version >= 2147483647) throw new DonationApiError(400, 'invalid_input');
+      return unwrap(raw.POST('/api/admin/donations/sandbox/orders/{orderId}/reconciliation/retry', {params: {path: {orderId}}, body: {expected_retry_version: version}, signal, cache: 'no-store'}));
     },
     async resolveReturn(reference: string, signal?: AbortSignal): Promise<DonationReturnResult> {
       if (!/^[0-9a-f]{64}$/.test(reference)) throw new DonationApiError(400, 'invalid_input');

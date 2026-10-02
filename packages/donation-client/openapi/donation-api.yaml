@@ -23,6 +23,88 @@ tags:
 security:
   - bearerAuth: []
 paths:
+  /api/admin/donations/sandbox/orders/{orderId}/reconciliation:
+    get:
+      tags: [Sandbox]
+      summary: Read the owner's Sandbox order query checkpoint
+      operationId: getSandboxReconciliation
+      x-hhc-required-permissions: [donations:sandbox:test]
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Owner-only query state; no provider identity or payload
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RequeryStatus'}
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: No owned order checkpoint exists
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Error'}
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /api/admin/donations/sandbox/orders/{orderId}/reconciliation/retry:
+    post:
+      tags: [Sandbox]
+      summary: Audit and queue another read-only query for the owner's original order
+      description: >-
+        Only review caused by exhausted provider_unavailable retries within the
+        30-day query window may be requeued. The expected version prevents stale
+        or duplicate requests. Other review causes, bill jobs and other users'
+        orders remain inaccessible. Never creates an order or changes payment
+        facts. The reset and user audit event commit atomically. Same-origin
+        browser protections and verified bearer identity are required.
+      operationId: retrySandboxReconciliation
+      x-hhc-required-permissions: [donations:sandbox:test]
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_retry_version]
+              properties:
+                expected_retry_version: {type: integer, minimum: 0, maximum: 2147483646}
+      responses:
+        '202':
+          description: Original-order query queued; this is not payment confirmation
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [status]
+                properties:
+                  status: {type: string, enum: [queued]}
+        '400':
+          $ref: '#/components/responses/Invalid'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Order does not belong to the authenticated user
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Error'}
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/Unavailable'
   /healthz:
     servers: [{url: 'http://localhost:8080', description: Private service listener only}]
     get:
@@ -253,6 +335,17 @@ components:
       description: Environment/actor-scoped printable key; changed payload returns conflict
       schema: {type: string, minLength: 16, maxLength: 128, pattern: '^[!-~]+$'}
   schemas:
+    RequeryStatus:
+      type: object
+      additionalProperties: false
+      required: [state, reason, retry_version, can_retry]
+      properties:
+        state: {type: string, enum: [pending, processing, done, review]}
+        reason:
+          type: string
+          enum: ['', provider_unavailable, invalid_response, identity_conflict, unresolved_order, refund_review, unsupported_payment, outside_query_window, provider_review]
+        retry_version: {type: integer, minimum: 0, maximum: 2147483647}
+        can_retry: {type: boolean}
     CheckoutInput:
       type: object
       additionalProperties: false
@@ -320,7 +413,7 @@ components:
         application/json:
           schema: {$ref: '#/components/schemas/Error'}
     Conflict:
-      description: Idempotency key already used with different amount
+      description: Idempotency payload mismatch, stale retry version or query not eligible for retry
       content:
         application/json:
           schema: {$ref: '#/components/schemas/Error'}

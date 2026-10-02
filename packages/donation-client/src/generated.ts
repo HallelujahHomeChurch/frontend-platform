@@ -4,6 +4,43 @@
  */
 
 export interface paths {
+    "/api/admin/donations/sandbox/orders/{orderId}/reconciliation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the owner's Sandbox order query checkpoint */
+        get: operations["getSandboxReconciliation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/donations/sandbox/orders/{orderId}/reconciliation/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Audit and queue another read-only query for the owner's original order
+         * @description Only review caused by exhausted provider_unavailable retries within the 30-day query window may be requeued. The expected version prevents stale or duplicate requests. Other review causes, bill jobs and other users' orders remain inaccessible. Never creates an order or changes payment facts. The reset and user audit event commit atomically. Same-origin browser protections and verified bearer identity are required.
+         */
+        post: operations["retrySandboxReconciliation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -142,6 +179,14 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        RequeryStatus: {
+            /** @enum {string} */
+            state: "pending" | "processing" | "done" | "review";
+            /** @enum {string} */
+            reason: "" | "provider_unavailable" | "invalid_response" | "identity_conflict" | "unresolved_order" | "refund_review" | "unsupported_payment" | "outside_query_window" | "provider_review";
+            retry_version: number;
+            can_retry: boolean;
+        };
         CheckoutInput: {
             /**
              * Format: int64
@@ -209,7 +254,7 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
-        /** @description Idempotency key already used with different amount */
+        /** @description Idempotency payload mismatch, stale retry version or query not eligible for retry */
         Conflict: {
             headers: {
                 [name: string]: unknown;
@@ -238,6 +283,85 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getSandboxReconciliation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orderId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Owner-only query state; no provider identity or payload */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequeryStatus"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description No owned order checkpoint exists */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    retrySandboxReconciliation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orderId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    expected_retry_version: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Original-order query queued; this is not payment confirmation */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        status: "queued";
+                    };
+                };
+            };
+            400: components["responses"]["Invalid"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Order does not belong to the authenticated user */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
     getLiveness: {
         parameters: {
             query?: never;
