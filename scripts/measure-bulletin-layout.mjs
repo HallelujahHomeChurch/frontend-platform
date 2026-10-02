@@ -219,7 +219,7 @@ export async function composeBulletinLayout(input) {
 }
 
 /** Saved-layout composition, not a second browser-side renderer. Source evidence stays unchanged. */
-export async function composeBulletinBodyLayout(input) {
+export async function composeBulletinBodyLayout(input, attempt = 0) {
   let measured = await measureBulletinLayout(input);
   const submission = JSON.parse(input.submissionJSON);
   const {document} = submission;
@@ -227,6 +227,8 @@ export async function composeBulletinBodyLayout(input) {
   const panelTypes = {summaryFrame:'backSummary',announcementsFrame:'announcements',prayersFrame:'victoriesAndPrayers'};
   const panelLabels = {summaryLabel:'backSummary',announcementsLabel:'announcements',prayersLabel:'victoriesAndPrayers'};
   const bodyIDs = new Set(document.components.filter(component => component.type === 'bodySection' || component.type === 'hymnLyrics' || Object.values(panelTypes).includes(component.type)).map(component => component.id));
+  const blocks = new Map(bulletinBlocks(document).map(({block}) => [block.id, block]));
+  const sourceBoxes = new Map(document.layoutManifest.pages.flatMap(layout => layout.slots.map(slot => [slot.id, {...slot.box}])));
   let changed = false;
   for (const {componentId,block} of bulletinBlocks(document)) {
     if (!bodyIDs.has(componentId)) continue;
@@ -253,18 +255,15 @@ export async function composeBulletinBodyLayout(input) {
       }
     }
   }
+  for (const [index,layout] of document.layoutManifest.pages.entries()) for (const slot of layout.slots) {
+    if (!bodyIDs.has(slot.componentId)) continue;
+    slot.box.height = blocks.get(slot.blockId).style.lineHeight/document.pages[index].height;
+    changed = true;
+  }
   if (changed) {
     const submissionJSON = JSON.stringify(submission);
     measured = await measureBulletinLayout({...input,submissionJSON,expectedContentHash:hash(submissionJSON)});
   }
-  if (splitOversizedText(submission, measured, bodyIDs)) {
-    const submissionJSON=JSON.stringify(submission);
-    return composeBulletinBodyLayout({...input,submissionJSON,expectedContentHash:hash(submissionJSON)});
-  }
-  const ids = new Set();
-  JSON.stringify(document, (key, value) => { if (key === 'id') ids.add(value); return value; });
-  let serial = 0;
-  const nextID = () => { let id; do { id = `layout-continuation-${++serial}`; } while (ids.has(id)); ids.add(id); return id; };
   const pages = [], layouts = [];
   for (const page of document.pages) {
     const layout = document.layoutManifest.pages.find(layout => layout.pageId === page.id);
@@ -295,36 +294,49 @@ export async function composeBulletinBodyLayout(input) {
       const measuredSlot = bounds.get(slot.id);
       const height = Math.max(slot.box.height * page.height, measuredSlot.box.height,
         ...measuredSlot.fragments.flatMap(fragment => fragment.lines.map(line => line.y + line.height - top)));
-      let row = rows.at(-1);
-      if (!row || Math.abs(row.top - top) > 1 || row.slots.some(entry => Math.min(entry.slot.box.x+entry.slot.box.width,slot.box.x+slot.box.width)-Math.max(entry.slot.box.x,slot.box.x)>1/page.width)) { row = {top, bottom: top, height: 0, group: slot.element ? panelLabels[slot.element] : componentTypes.get(slot.componentId), slots: []}; rows.push(row); }
-      row.bottom = Math.max(row.bottom, top + slot.box.height * page.height);
+      const row = {top, bottom: top, height: 0, group: slot.element ? panelLabels[slot.element] : componentTypes.get(slot.componentId), slots: []};
+      rows.push(row);
+      row.bottom = Math.max(row.bottom, top + (sourceBoxes.get(slot.id)?.height ?? slot.box.height) * page.height);
       row.height = Math.max(row.height, height + top - row.top);
       row.slots.push({slot, offset: top - row.top, height});
     }
     layout.slots = [];
     layout.fixedSlots = (layout.fixedSlots ?? []).filter(slot => !headers.includes(slot));
-    let target = layout, cursor = 0, sourceBottom = 0, pageOffset = 0, previousGroup;
+    const placed = [];
     for (const row of rows) {
-      const gap = Math.max(isBack && previousGroup && row.group !== previousGroup ? 18 : 3, row.top - sourceBottom);
-      let top = Math.max(row.top + pageOffset, cursor + gap);
-      if (row.height > page.height - 100) throw new Error('layout_requires_split');
-      if (top + row.height > page.height - 48) {
-        if (pages.length >= 80) throw new Error('layout_page_limit');
-        const id = nextID();
-        pages.push({...page, id});
-        target = {pageId: id, slots: [], fixedSlots: (layout.fixedSlots ?? []).filter(slot => slot.element === 'pageNumber').map(slot => ({...structuredClone(slot), id: nextID()}))};
-        layouts.push(target);
-        top = Math.max(52, ...target.fixedSlots.map(slot => (slot.box.y+slot.box.height)*page.height+8));
-        if (top+row.height > page.height-48) throw new Error('layout_requires_split');
-        pageOffset = top - row.top;
+      // Columns flow independently. Only horizontally overlapping rows constrain
+      // one another; a full-width heading naturally constrains both columns.
+      const predecessors = placed.filter(previous => previous.slots.some(a => row.slots.some(b =>
+        Math.min(a.slot.box.x+a.slot.box.width,b.slot.box.x+b.slot.box.width)-Math.max(a.slot.box.x,b.slot.box.x)>1/page.width)));
+      const top = predecessors.length ? Math.max(...predecessors.map(previous =>
+        previous.placedTop + previous.height + Math.max(isBack && row.group !== previous.group ? 18 : row.group === 'hymnLyrics' ? 0 : 3,
+          Math.min(12, row.top-previous.bottom-(row.group === 'hymnLyrics' ? Math.max(0,previous.height-(previous.bottom-previous.top)) : 0))))) : row.top;
+      if (top + row.height > page.height - 40) {
+        if (attempt >= 4) throw new Error('page_requires_edit', {cause:{pageId:page.id,bottom:top+row.height}});
+        // Retry from source geometry, never from a partially moved layout. A
+        // block shared by source pages keeps one consistent presentation size.
+        const retry = JSON.parse(input.submissionJSON);
+        const ids = new Set(retry.document.layoutManifest.pages.find(value => value.pageId === page.id).slots.map(slot => slot.blockId));
+        let reduced = false;
+        for (const {componentId,block} of bulletinBlocks(retry.document)) {
+          if (!bodyIDs.has(componentId) || !ids.has(block.id)) continue;
+          const size = Math.max(12, block.style.fontSize*.95);
+          if (size >= block.style.fontSize) continue;
+          const scale = size/block.style.fontSize;
+          block.style.fontSize = size;
+          block.style.lineHeight = Math.max(1.25*size,block.style.lineHeight*scale);
+          for (const sentence of block.sentences) for (const span of sentence.spans) if (span.fontSize != null) span.fontSize *= scale;
+          reduced = true;
+        }
+        if (!reduced) throw new Error('page_requires_edit', {cause:{pageId:page.id,bottom:top+row.height}});
+        const submissionJSON = JSON.stringify(retry);
+        return composeBulletinBodyLayout({...input,submissionJSON,expectedContentHash:hash(submissionJSON)},attempt+1);
       }
       for (const {slot, offset, height} of row.slots) {
         slot.box = {...slot.box, y: (top + offset) / page.height, height: height / page.height};
-        (slot.element ? target.fixedSlots : target.slots).push(slot);
+        (slot.element ? layout.fixedSlots : layout.slots).push(slot);
       }
-      cursor = top + row.height;
-      sourceBottom = row.bottom;
-      previousGroup = row.group;
+      placed.push({...row,placedTop:top});
     }
     if (isBack) {
       for (const frame of layout.fixedSlots.filter(slot => slot.element in panelTypes)) {
@@ -343,53 +355,10 @@ export async function composeBulletinBodyLayout(input) {
   const submissionJSON = JSON.stringify(submission);
   const expectedContentHash = hash(submissionJSON);
   const measurement = await measureBulletinLayout({...input, submissionJSON, expectedContentHash});
+  if (measurement.overflow.length) throw new Error('page_requires_edit');
   return {submissionJSON, expectedContentHash, measurement};
 }
 
-// Bisect only measured oversized text, keeping sentence IDs and Unicode scalar
-// offsets. At least one scalar is removed on each branch; no font shrinking or
-// content mutation. The compositor remeasures the fragments before publication.
-function splitOversizedText(submission, measurement, eligible) {
-  const {document}=submission;
-  const ids=new Set();
-  JSON.stringify(document,(key,value)=>{if(key==='id') ids.add(value);return value;});
-  let serial=0, changed=false, count=0;
-  const nextID=()=>{let id;do {id=`layout-fragment-${++serial}`;}while(ids.has(id));ids.add(id);return id;};
-  for (const [index,layout] of document.layoutManifest.pages.entries()) {
-    const bounds=new Map(measurement.pages[index].slots.map(slot=>[slot.slotId,slot]));
-    const page=document.pages[index];
-    layout.slots=layout.slots.flatMap(slot=>{
-      if(!eligible.has(slot.componentId)) return [slot];
-      const value=bounds.get(slot.id);
-      const height=Math.max(value.box.height,...value.fragments.flatMap(fragment=>fragment.lines.map(line=>line.y+line.height-value.box.y)));
-      if(height<=page.height-100) return [slot];
-      const length=slot.fragments.reduce((sum,fragment)=>sum+fragment.end-fragment.start,0);
-      if(length<2) throw new Error('layout_requires_split');
-      let remaining=Math.floor(length/2);
-      const left=[],right=[];
-      for(const fragment of slot.fragments) {
-        const take=Math.min(remaining,fragment.end-fragment.start);
-        if(take) left.push({...fragment,end:fragment.start+take});
-        if(fragment.start+take<fragment.end) right.push({...fragment,start:fragment.start+take});
-        remaining-=take;
-      }
-      changed=true;
-      const box={...slot.box,height:Math.min(slot.box.height,.1)};
-      return [{...slot,box,fragments:left},{...slot,id:nextID(),box:{...box},continuationOf:slot.id,fragments:right}];
-    });
-    count+=layout.slots.length;
-    if(count>50000) throw new Error('layout_slot_limit');
-  }
-  if(changed) {
-    const previous=new Map();
-    for(const layout of document.layoutManifest.pages) for(const slot of layout.slots) {
-      if(previous.has(slot.blockId)) slot.continuationOf=previous.get(slot.blockId);
-      else delete slot.continuationOf;
-      previous.set(slot.blockId,slot.id);
-    }
-  }
-  return changed;
-}
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   try {

@@ -2765,6 +2765,7 @@ export interface components {
             /** @constant */
             templateVersion: "v1";
             sourceAssetChecksum: components["schemas"]["OnlineBulletinHash"];
+            /** @description Must equal the saved page count. Composition preserves original page identity and fragment membership; overflow blocks publication instead of adding pages. */
             sourcePageCount: number;
             pages: components["schemas"]["OnlineBulletinPage"][];
             layoutManifest: components["schemas"]["OnlineBulletinLayoutManifest"];

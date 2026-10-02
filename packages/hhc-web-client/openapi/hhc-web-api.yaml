@@ -4250,7 +4250,7 @@ components:
         printedBodyPageCount: { type: integer, minimum: 2, maximum: 38, description: 'Visible printed body issue-summary count, independent of HTML pagination.' }
         schemaVersion: { type: string, const: '1' }
         templateVersion: { type: string, const: v1 }
-        pages: { type: array, minItems: 4, maxItems: 80, items: { $ref: '#/components/schemas/OnlineBulletinPage' } }
+        pages: { type: array, minItems: 4, maxItems: 40, items: { $ref: '#/components/schemas/OnlineBulletinPage' } }
         layoutManifest: { $ref: '#/components/schemas/OnlineBulletinLayoutManifest' }
         components: { type: array, minItems: 6, maxItems: 256, items: { $ref: '#/components/schemas/ReaderComponent' } }
     OnlineBulletinComparisonValue:
@@ -4540,11 +4540,11 @@ components:
         schemaVersion: { type: string, const: '1' }
         templateVersion: { type: string, const: v1 }
         sourceAssetChecksum: { $ref: '#/components/schemas/OnlineBulletinHash' }
-        sourcePageCount: { type: integer, minimum: 4, maximum: 40 }
+        sourcePageCount: { type: integer, minimum: 4, maximum: 40, description: Must equal the saved page count. Composition preserves original page identity and fragment membership; overflow blocks publication instead of adding pages. }
         pages:
           type: array
           minItems: 4
-          maxItems: 80
+          maxItems: 40
           items: { $ref: '#/components/schemas/OnlineBulletinPage' }
         layoutManifest: { $ref: '#/components/schemas/OnlineBulletinLayoutManifest' }
         components:
@@ -4589,7 +4589,7 @@ components:
         pages:
           type: array
           minItems: 4
-          maxItems: 80
+          maxItems: 40
           items: { $ref: '#/components/schemas/OnlineBulletinLayoutPage' }
     OnlineBulletinAsset:
       description: Code-owned permanent self-hosted asset, never an executable URL. Filename includes its exact SHA-256.

@@ -305,7 +305,7 @@ test('mixed inline source sizes are measured at their declared PDF-point proport
   assert.ok(lines.some(line => Math.abs(line.height - 12) < .8 && line.width >= 35 && line.width <= 37), 'source 12pt must not inherit 16pt');
 });
 
-test('body composition grows paragraphs and adds pages without changing sentence anchors or font sizes', {skip: !assetsDirectory}, async () => {
+test('body composition reclaims excessive gaps without adding pages or changing text', {skip: !assetsDirectory}, async () => {
   const input = await fixture('信息');
   const submission = JSON.parse(input.submissionJSON);
   const title = submission.document.components[0].items[0].blocks[0];
@@ -320,7 +320,7 @@ test('body composition grows paragraphs and adds pages without changing sentence
   assert.equal(typeof layoutRunner.composeBulletinBodyLayout, 'function');
   const composed = await layoutRunner.composeBulletinBodyLayout({...input, submissionJSON, expectedContentHash: hash(submissionJSON)});
   const result = JSON.parse(composed.submissionJSON);
-  assert.equal(result.document.pages.length, 2);
+  assert.deepEqual(result.document.pages, submission.document.pages);
   assert.equal(result.document.sourcePageCount, 4);
   assert.deepEqual(result.document.components, submission.document.components);
   assert.deepEqual(result.document.layoutManifest.pages.flatMap(page => page.slots.map(slot => slot.fragments)), submission.document.layoutManifest.pages.flatMap(page => page.slots.map(slot => slot.fragments)));
@@ -331,25 +331,8 @@ test('body composition grows paragraphs and adds pages without changing sentence
   assert.deepEqual(composed, repeat);
 });
 
-test('oversized single sentence continues without changing its identity or dropping Unicode text', {skip: !assetsDirectory}, async () => {
-  const input=await fixture('禱告。'.repeat(600));
-  const original=JSON.parse(input.submissionJSON);
-  const composed=await layoutRunner.composeBulletinBodyLayout(input);
-  const result=JSON.parse(composed.submissionJSON);
-  assert.deepEqual(result.document.components,original.document.components);
-  assert.ok(result.document.pages.length>1);
-  assert.deepEqual(composed.measurement.overflow,[]);
-  const slots=result.document.layoutManifest.pages.flatMap(page=>page.slots);
-  const fragments=slots.flatMap(slot=>slot.fragments);
-  let offset=0;
-  for (const fragment of fragments) {
-    assert.equal(fragment.sentenceId,'s');
-    assert.equal(fragment.start,offset);
-    assert.ok(fragment.end>fragment.start);
-    offset=fragment.end;
-  }
-  assert.equal(offset,1800);
-  for(let index=1;index<slots.length;index++) assert.equal(slots[index].continuationOf,slots[index-1].id);
+test('oversized text fails closed instead of adding source pages', {skip: !assetsDirectory}, async () => {
+  await assert.rejects(layoutRunner.composeBulletinBodyLayout(await fixture('禱告。'.repeat(600))), /page_requires_edit/);
 });
 
 test('an oversized cover rejects composition instead of silently adding another cover page', {skip: !assetsDirectory}, async () => {
@@ -408,20 +391,24 @@ test('cover keeps its compact rows and aligned work on one page, ending at the f
   assert.ok(verse.box.width > 490);
 });
 
-test('lyrics can continue without losing their sentence anchors', {skip: !assetsDirectory}, async () => {
-  const input=await fixture('歌詞。'.repeat(600));
+test('staggered columns retain their independent source-page flow', {skip: !assetsDirectory}, async () => {
+  const input=await fixture('歌詞。'.repeat(130));
   const submission=JSON.parse(input.submissionJSON);
   const block=submission.document.components[0].items[0].blocks[0];
-  submission.document.components=[{id:'c',type:'hymnLyrics',hymnLyrics:{hymns:[{id:'hymn',title:{id:'title',style:{...block.style},sentences:[]},sections:[{id:'verse',kind:'verse',lines:[block]}]}]}}];
+  const second=structuredClone(block);
+  second.id='second';second.sentences[0].id='second-sentence';
+  submission.document.components[0].items[0].blocks.push(second);
+  const layout=submission.document.layoutManifest.pages[0];
+  layout.slots[0].box={x:.05,y:.1,width:.44,height:.02};
+  layout.slots.push({...structuredClone(layout.slots[0]),id:'second-slot',blockId:second.id,box:{x:.51,y:.105,width:.44,height:.02},fragments:[{sentenceId:'second-sentence',start:0,end:390}]});
   const submissionJSON=JSON.stringify(submission);
-  const composed=await layoutRunner.composeBulletinLayout({...input,submissionJSON,expectedContentHash:hash(submissionJSON)});
-  const result=JSON.parse(composed.submissionJSON);
-  assert.ok(result.document.pages.length>1);
-  assert.deepEqual(result.document.components,submission.document.components);
-  assert.deepEqual(composed.measurement.overflow,[]);
-  const fragments=result.document.layoutManifest.pages.flatMap(page=>page.slots.flatMap(slot=>slot.fragments));
-  assert.equal(fragments.reduce((sum,fragment)=>sum+fragment.end-fragment.start,0),1800);
-  assert.ok(fragments.every(fragment=>fragment.sentenceId==='s'));
+  const result=await layoutRunner.composeBulletinBodyLayout({...input,submissionJSON,expectedContentHash:hash(submissionJSON)});
+  const saved=JSON.parse(result.submissionJSON).document;
+  assert.deepEqual(saved.pages,submission.document.pages);
+  assert.deepEqual(saved.components,submission.document.components);
+  assert.deepEqual(saved.layoutManifest.pages[0].slots.map(slot=>slot.fragments),layout.slots.map(slot=>slot.fragments));
+  assert.deepEqual(result.measurement.overflow,[]);
+  assert.ok(Math.abs(saved.layoutManifest.pages[0].slots[0].box.y-saved.layoutManifest.pages[0].slots[1].box.y)<.01);
 });
 
 test('cover composition retains every sentence while separating its variable-length sections', {skip: !assetsDirectory}, async () => {
