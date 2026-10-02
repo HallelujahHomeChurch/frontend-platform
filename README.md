@@ -6,6 +6,8 @@ Shared, versioned frontend packages for HHC web applications:
 - `@hallelujahhomechurch/preferences`
 - `@hallelujahhomechurch/account-client`
 - `@hallelujahhomechurch/hhc-web-client`
+- `@hallelujahhomechurch/donation-client`
+- `@hallelujahhomechurch/donation-ui`
 - `@hallelujahhomechurch/operations-client`
 
 Packages are published to GitHub Packages from version tags.
@@ -41,3 +43,23 @@ The Operations contract uses stable Account-bound members, one active church,
 multiple family/small-group/fellowship affiliations, scoped responsibilities,
 and direct bulletin entitlements. Qualification and validity-window fields are
 not part of the contract.
+
+## Donation Sandbox source gate
+
+The Donation packages use the local delivery 1A Donation API contract, not an
+accepted or deployed bank integration. They retain the workspace version for
+local packing only; neither Donation package has been published. Before consumer
+release, release the canonical API contract and bump the coordinated workspace
+version through the existing tag/publish workflow. Consumers must use an actually
+published exact version; local tarball overrides are development evidence only.
+
+`createSandboxDonationClient` fixes routes to Admin Sandbox and receives existing
+Account runtime token/401-refresh functions. `DonationForm` accepts a typed
+transport and optional actor-keyed session-storage key, allowing later Website
+reuse without adding donation logic to generic UI. No recurring choices or
+card-entry fields are exposed. Minor units are validated as integers; one stable
+intent is locked and retried. Pending metadata contains only a key, amount and
+creation time, expires after 15 minutes, and fails closed after expiry/corruption
+rather than creating another payment. An accepted order clears it. The Admin
+permission catalog includes the explicit `donations:sandbox:test` destination;
+other staff grants do not imply this capability.

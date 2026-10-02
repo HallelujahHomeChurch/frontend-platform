@@ -10,6 +10,13 @@ import {
 } from './admin-access';
 
 describe('Admin destination projection', () => {
+  it('projects the dedicated Sandbox permission without granting it to other staff', () => {
+    expect(authorizedAdminDestinations(['donations:sandbox:test'])).toEqual([
+      {id: 'donation-sandbox', path: '/donations/sandbox', permission: 'donations:sandbox:test'}
+    ]);
+    expect(authorizedAdminDestinations(['users:manage']).some(({id}) => id === 'donation-sandbox')).toBe(false);
+    expect(canAccessAdmin(['donations:sandbox:test'])).toBe(true);
+  });
   it('keeps the compatibility map explicitly empty', () => {
     expect(permissionCompatibilityMap).toEqual({});
   });
