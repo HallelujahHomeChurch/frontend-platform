@@ -11,3 +11,5 @@ export type ManagedMemberView = components['schemas']['ManagedMemberView'];
 export type ManagedResponsibilityCandidate = components['schemas']['ManagedResponsibilityCandidate'];
 export type UnitResponsibilityView = components['schemas']['UnitResponsibilityView'];
 export type ManagedEntitlementBatchResult = components['schemas']['ManagedEntitlementBatchResult'];
+
+export * from "./service.js";

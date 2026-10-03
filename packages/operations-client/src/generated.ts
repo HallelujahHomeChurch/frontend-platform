@@ -4,6 +4,229 @@
  */
 
 export interface paths {
+    "/api/operations/me/service/installation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Register or revoke this device using its installation secret */
+        post: operations["registerServiceInstallation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/priv/service-push/eligibility": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Private native push eligibility */
+        post: operations["servicePushEligibility"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/priv/service-push/result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Private native push result */
+        post: operations["servicePushResult"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/me/service/teams/{id}/occurrences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List church occurrences available to fellowship scheduling managers */
+        get: operations["listServiceOccurrences"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/me/service/teams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** listServiceTeams */
+        get: operations["listServiceTeams"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/me/service/teams/{id}/candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** listServiceCandidates */
+        get: operations["listServiceCandidates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/me/service/assignments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** listServiceAssignments */
+        get: operations["listServiceAssignments"];
+        put?: never;
+        /** createServiceAssignment */
+        post: operations["createServiceAssignment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/me/service/assignments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** getServiceAssignment */
+        get: operations["getServiceAssignment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/me/service/assignments/{id}/commands": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** commandServiceAssignment */
+        post: operations["commandServiceAssignment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/me/service/preference": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** getServicePreference */
+        get: operations["getServicePreference"];
+        put?: never;
+        /** updateServicePreference */
+        post: operations["updateServicePreference"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/me/service/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** listServiceNotifications */
+        get: operations["listServiceNotifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/me/service/notifications/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** readServiceNotification */
+        post: operations["readServiceNotification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/priv/operations/member-qualifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Check current church membership without exposing member details */
+        post: operations["checkMemberQualification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/meetings": {
         parameters: {
             query?: never;
@@ -1073,10 +1296,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List members displayed at one managed unit */
+        /**
+         * List members displayed at one managed unit
+         * @description Excludes the authenticated Account before pagination. Other unit leaders remain visible. Admin member lists are unchanged.
+         */
         get: operations["listManagedMembers"];
         put?: never;
-        /** Admit one searched Account to the target unit atomically */
+        /**
+         * Admit one searched Account to the target unit atomically
+         * @description The authenticated Account cannot admit itself; self-targeted requests return 403, including receipt replays.
+         */
         post: operations["admitManagedMember"];
         delete?: never;
         options?: never;
@@ -1091,7 +1320,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get a narrow member view within the managed unit scope */
+        /**
+         * Get a narrow member view within the managed unit scope
+         * @description The authenticated Account cannot access its own member management view; returns 403.
+         */
         get: operations["getManagedMember"];
         put?: never;
         post?: never;
@@ -1110,7 +1342,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Atomically move one direct affiliation within the managed folder scope */
+        /**
+         * Atomically move one direct affiliation within the managed folder scope
+         * @description Self-targeted requests return 403, including receipt replays.
+         */
         post: operations["moveManagedAffiliation"];
         delete?: never;
         options?: never;
@@ -1128,7 +1363,10 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Remove one direct affiliation with explicit final-membership confirmation */
+        /**
+         * Remove one direct affiliation with explicit final-membership confirmation
+         * @description Self-targeted requests return 403, including receipt replays.
+         */
         delete: operations["removeManagedAffiliation"];
         options?: never;
         head?: never;
@@ -1142,7 +1380,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Search eligible Accounts without browse or directory pagination metadata */
+        /**
+         * Find an eligible Account by its full email without browse or pagination metadata
+         * @description Exact email lookup excludes the authenticated Account. Admin searches remain unchanged.
+         */
         get: operations["listManagedAccountCandidates"];
         put?: never;
         post?: never;
@@ -1159,7 +1400,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Search qualified members for delegation */
+        /**
+         * Search qualified members for delegation
+         * @description Excludes the authenticated Account before applying the result limit.
+         */
         get: operations["listManagedResponsibilityCandidates"];
         put?: never;
         post?: never;
@@ -1176,10 +1420,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List active responsibilities for a strict descendant */
+        /**
+         * List active responsibilities for a strict descendant
+         * @description Includes the authenticated member for read-only display. Assigning or revoking one's own responsibility is forbidden.
+         */
         get: operations["listManagedResponsibilities"];
         put?: never;
-        /** Delegate responsibility for a strict descendant to a qualified member */
+        /**
+         * Delegate responsibility for a strict descendant to a qualified member
+         * @description Self-targeted requests return 403, including receipt replays.
+         */
         post: operations["assignManagedResponsibility"];
         delete?: never;
         options?: never;
@@ -1197,7 +1447,10 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Revoke a responsibility on a strict descendant */
+        /**
+         * Revoke a responsibility on a strict descendant
+         * @description Self-targeted requests return 403, including receipt replays.
+         */
         delete: operations["revokeManagedResponsibility"];
         options?: never;
         head?: never;
@@ -1213,7 +1466,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Atomically grant or revoke one weekly-report entitlement for up to 50 visible members */
+        /**
+         * Atomically grant or revoke one weekly-report entitlement for up to 50 visible members
+         * @description A batch containing the authenticated member returns 403 with no writes, including receipt replays. No members are silently skipped.
+         */
         post: operations["applyManagedEntitlementBatch"];
         delete?: never;
         options?: never;
@@ -1245,7 +1501,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List resources available to the qualified member */
+        /**
+         * List resources available to the qualified member
+         * @description With MEMBER_LEGAL_ENFORCEMENT_ENABLED, current qualification and scoped legal evidence are required before member data or new reservations; missing evidence returns policy_acceptance_required with HTTP 428.
+         */
         get: operations["listMyReservableResources"];
         put?: never;
         post?: never;
@@ -1262,7 +1521,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get privacy-safe merged Resource availability */
+        /**
+         * Get privacy-safe merged Resource availability
+         * @description With MEMBER_LEGAL_ENFORCEMENT_ENABLED, current qualification and scoped legal evidence are required before member data or new reservations; missing evidence returns policy_acceptance_required with HTTP 428.
+         */
         get: operations["getMyResourceAvailability"];
         put?: never;
         post?: never;
@@ -1279,10 +1541,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List the authenticated member's reservations */
+        /**
+         * List the authenticated member's reservations
+         * @description With MEMBER_LEGAL_ENFORCEMENT_ENABLED, current qualification and scoped legal evidence are required before member data or new reservations; missing evidence returns policy_acceptance_required with HTTP 428.
+         */
         get: operations["listMyResourceReservations"];
         put?: never;
-        /** Request one Resource for a half-open interval */
+        /**
+         * Request one Resource for a half-open interval
+         * @description With MEMBER_LEGAL_ENFORCEMENT_ENABLED, current qualification and scoped legal evidence are required before member data or new reservations; missing evidence returns policy_acceptance_required with HTTP 428.
+         */
         post: operations["createMyResourceReservation"];
         delete?: never;
         options?: never;
@@ -1497,6 +1765,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/priv/operations/member-details-access-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check effective church membership for Account member details
+         * @description Active church membership without a processing restriction. Does not grant access based on email verification, staff scopes or entitlements.
+         */
+        post: operations["checkMemberDetailsAccess"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/priv/operations/member-details-retention": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get the expired membership-gap watermark for Account retention
+         * @description Latest matured deadline (ended-at plus 720 hours) of an uninterrupted membership gap. Renewing within the grace period cancels that gap; renewing later does not resurrect expired data. DSR processing restrictions do not start expiry. Missing or incomplete membership history fails closed. Account must compare record creation time and version before deleting; this is not authorization to read private data.
+         */
+        post: operations["getMemberDetailsRetention"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/priv/operations/dsr/exports": {
         parameters: {
             query?: never;
@@ -1525,6 +1833,46 @@ export interface paths {
         put?: never;
         /** Restrict or erase member-owned Operations data for the Account privacy orchestrator */
         post: operations["applyOperationsDSR"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/priv/operations/dsr/restrictions/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check the original restriction and all current subject fences
+         * @description Read-only Account caller contract. Legacy origin gaps and any recorded erasure or account cleanup disable withdrawal. The state token covers all restriction origins, withdrawals and the current fence. Counts cover tracked original requests only; an origin-unverified reason must never be interpreted as no restrictions.
+         */
+        post: operations["previewOperationsRestrictionWithdrawal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/priv/operations/dsr/restrictions/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Withdraw one proven restriction origin with state and retry protection
+         * @description Recheck the preview token under the subject lock. Preserve other active restrictions. Only the last verified origin can clear the future-processing fence; never restore membership, roles, responsibilities, entitlements or deleted records. Persist an independent receipt and preserve original action results. Repeated identical requests return the historical receipt, not a new assertion of the current fence state; obtain a fresh preview to inspect current restrictions.
+         */
+        post: operations["withdrawOperationsRestriction"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1569,6 +1917,124 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ServiceInstallation: {
+            /** Format: uuid */
+            id: string;
+            secret: string;
+            token?: string;
+            /** @enum {string} */
+            platform?: "ios" | "android";
+            revoke?: boolean;
+        };
+        ServiceAcknowledgement: {
+            ok: boolean;
+        };
+        ServicePushEligibilityInput: {
+            /** Format: uuid */
+            deliveryId: string;
+            tokenHash: string;
+        };
+        ServicePushResultInput: {
+            /** Format: uuid */
+            deliveryId: string;
+            /** @enum {string} */
+            result: "provider_received" | "invalid_endpoint" | "provider_failed" | "receipt_unknown";
+        };
+        ServicePushEligibility: {
+            allow: boolean;
+            ttl: number;
+            /** Format: uuid */
+            assignmentId?: string;
+        };
+        ServiceTeam: {
+            id: string;
+            name: string;
+            memberId: string;
+            canManage: boolean;
+        };
+        ServiceCandidate: {
+            id: string;
+            name: string;
+        };
+        ServiceReplacement: {
+            id: string;
+            requesterMemberId: string;
+            /** @enum {string} */
+            mode: "open" | "nominated";
+            targetMemberId?: string;
+            /** @enum {string} */
+            status: "active" | "accepted" | "declined" | "withdrawn" | "invalidated" | "expired";
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            closedAt?: string;
+            acceptedByMemberId?: string;
+        };
+        ServiceAssignment: {
+            /** Format: date-time */
+            reminderAt?: string;
+            /** @enum {string} */
+            reminderReason?: "disabled" | "unavailable" | "at_or_after_start" | "past" | "scheduled";
+            id: string;
+            teamId: string;
+            teamName: string;
+            meetingId: string;
+            meetingName: string;
+            occurrenceDate: string;
+            occurrenceId: string;
+            label: string;
+            assigneeMemberId?: string;
+            assigneeName?: string;
+            timeZone: string;
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string;
+            version: number;
+            meetingVersion: number;
+            cancelled: boolean;
+            helpRecipients?: number;
+            helpOpen: boolean;
+            needsAttention: boolean;
+            request?: components["schemas"]["ServiceReplacement"];
+        };
+        ServiceAssignmentPage: {
+            items: components["schemas"]["ServiceAssignment"][];
+            nextCursor?: string;
+        };
+        ServiceCreateInput: {
+            teamId: string;
+            meetingId: string;
+            occurrenceDate: string;
+            label: string;
+            assigneeMemberId?: string;
+        };
+        ServiceCommand: {
+            /** @enum {string} */
+            action: "update" | "assign" | "edit" | "cancel" | "resolve-help" | "request" | "switch" | "accept" | "decline" | "withdraw" | "help";
+            expectedVersion: number;
+            requestId?: string;
+            mode?: string;
+            targetMemberId?: string;
+            assigneeMemberId?: string;
+            label?: string;
+        };
+        ServicePreference: {
+            enabled: boolean;
+            leadDays: number;
+            localTime: string;
+            timeZone: string;
+            version: number;
+        };
+        ServiceNotice: {
+            id: string;
+            assignmentId: string;
+            kind: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            readAt?: string;
+        };
         /** @enum {string} */
         OperationStatus: "active" | "paused" | "archived";
         /** @enum {string} */
@@ -2240,6 +2706,8 @@ export interface components {
             entitlementCode: string;
         };
         AccessSnapshot: {
+            /** @description Active church membership without a processing restriction; presentation fact only. Account must check privately on every personal-data request. */
+            memberDetailsEligible: boolean;
             /** Format: uuid */
             memberId?: string;
             churchMembership?: components["schemas"]["ChurchMembershipSummary"];
@@ -2283,6 +2751,40 @@ export interface components {
             action: "restrict_processing" | "erase";
             idempotencyKey: string;
         };
+        DSRRestrictionReference: {
+            /** Format: uuid */
+            userId: string;
+            /** Format: uuid */
+            originalRequestId: string;
+        };
+        DSRRestrictionPreview: {
+            canWithdraw: boolean;
+            /** Format: int64 */
+            activeRestrictions: number;
+            fencePresent: boolean;
+            stateToken: string;
+            reasonCodes: ("restriction_fence_absent" | "restriction_origin_unverified" | "subject_cleanup_recorded" | "original_restriction_unavailable")[];
+        };
+        DSRRestrictionWithdrawal: {
+            /**
+             * Format: uuid
+             * @description Independent withdrawal request; must differ from the original restriction request.
+             */
+            requestId: string;
+            /** Format: uuid */
+            userId: string;
+            /** Format: uuid */
+            originalRequestId: string;
+            expectedState: string;
+            idempotencyKey: string;
+        };
+        DSRRestrictionWithdrawalResult: {
+            withdrawn: boolean;
+            /** @description Fence cleared at this receipt's transaction time; not a current-state claim on later replay. */
+            fenceCleared: boolean;
+            /** Format: int64 */
+            remainingRestrictions: number;
+        };
         DSRException: {
             /** @enum {string} */
             code: "audit_retained" | "central_audit_outbox_retained" | "shared_operations_retained" | "relationship_attribution_retained" | "reservation_history_retained" | "reservation_attribution_retained" | "processing_restriction_retained" | "dsr_action_result_retained";
@@ -2291,7 +2793,7 @@ export interface components {
         };
         DSRExportRecord: {
             /** @enum {string} */
-            recordType: "member" | "church_membership" | "org_membership" | "org_role_assignment" | "unit_responsibility" | "membership_transfer" | "entitlement_assignment" | "resource_reservation";
+            recordType: "member" | "church_membership" | "org_membership" | "org_role_assignment" | "unit_responsibility" | "membership_transfer" | "entitlement_assignment" | "resource_reservation" | "service_assignment" | "service_preference" | "service_notification" | "service_installation" | "service_push_delivery";
             /** Format: uuid */
             recordKey: string;
             data: {
@@ -2471,6 +2973,966 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    registerServiceInstallation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ServiceInstallation"];
+            };
+        };
+        responses: {
+            /** @description Device registration updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceAcknowledgement"];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Resource unavailable or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Closed request or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Stale assignment or preference version */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Dependency unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    servicePushEligibility: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ServicePushEligibilityInput"];
+            };
+        };
+        responses: {
+            /** @description Device registration updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServicePushEligibility"];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Resource unavailable or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Closed request or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Stale assignment or preference version */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Dependency unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    servicePushResult: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ServicePushResultInput"];
+            };
+        };
+        responses: {
+            /** @description Device registration updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceAcknowledgement"];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Resource unavailable or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Closed request or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Stale assignment or preference version */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Dependency unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listServiceOccurrences: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Upcoming church occurrences */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Occurrence"][];
+                };
+            };
+            /** @description Invalid date range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not responsible for fellowship */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listServiceTeams: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceTeam"][];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Resource unavailable or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Closed request or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Stale assignment or preference version */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Dependency unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listServiceCandidates: {
+        parameters: {
+            query?: {
+                /** @description Last returned id from a full 100-item page. Omit on the first page. */
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceCandidate"][];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Resource unavailable or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Closed request or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Stale assignment or preference version */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Dependency unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listServiceAssignments: {
+        parameters: {
+            query: {
+                teamId: string;
+                from: string;
+                to: string;
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceAssignmentPage"];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Resource unavailable or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Closed request or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Stale assignment or preference version */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Dependency unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    createServiceAssignment: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ServiceCreateInput"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceAssignment"];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Resource unavailable or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Closed request or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Stale assignment or preference version */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Dependency unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getServiceAssignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceAssignment"];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Resource unavailable or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Closed request or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Stale assignment or preference version */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Dependency unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    commandServiceAssignment: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ServiceCommand"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceAssignment"];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Resource unavailable or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Closed request or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Stale assignment or preference version */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Dependency unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getServicePreference: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServicePreference"];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Resource unavailable or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Closed request or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Stale assignment or preference version */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Dependency unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    updateServicePreference: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ServicePreference"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServicePreference"];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Resource unavailable or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Closed request or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Stale assignment or preference version */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Dependency unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listServiceNotifications: {
+        parameters: {
+            query?: {
+                /** @description Last returned id from a full 100-item page. Omit on the first page. */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceNotice"][];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Resource unavailable or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Closed request or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Stale assignment or preference version */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Dependency unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    readServiceNotification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceNotice"][];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Resource unavailable or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Closed request or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Stale assignment or preference version */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Dependency unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    checkMemberQualification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    subjectId: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Current membership qualification, private no-store */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        subjectId: string;
+                        qualified: boolean;
+                        version: string;
+                    };
+                };
+            };
+            /** @description Invalid request or duplicate caller */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing caller */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Caller not admitted */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Membership authority unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     listPublicMeetings: {
         parameters: {
             query?: never;
@@ -5825,6 +7287,7 @@ export interface operations {
     listManagedAccountCandidates: {
         parameters: {
             query: {
+                /** @description Full account email address */
                 q: string;
                 limit?: number;
             };
@@ -6835,6 +8298,125 @@ export interface operations {
             };
         };
     };
+    checkMemberDetailsAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    accountUserId: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Eligibility only; no member data. Cache-Control private, no-store. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        eligible: boolean;
+                    };
+                };
+            };
+            /** @description Invalid request or body exceeding 1024 bytes */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing caller identity */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Caller is not Account API */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Membership lookup unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getMemberDetailsRetention: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    accountUserId: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Retention metadata only; no member data. Cache-Control private, no-store. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: date-time */
+                        expiredBefore: string | null;
+                    };
+                };
+            };
+            /** @description Invalid request or body exceeding 1024 bytes */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing caller identity */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Caller is not Account API */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Membership lookup unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     exportOperationsDSR: {
         parameters: {
             query?: never;
@@ -6932,6 +8514,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Original restriction has already been withdrawn */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Internal owner failure */
             500: {
                 headers: {
@@ -6940,6 +8529,121 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Error"];
                 };
+            };
+        };
+    };
+    previewOperationsRestrictionWithdrawal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DSRRestrictionReference"];
+            };
+        };
+        responses: {
+            /** @description Current owner evidence */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["DSRRestrictionPreview"];
+                    };
+                };
+            };
+            /** @description Invalid subject or original request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing caller identity */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Caller is not Account API */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Evidence unavailable */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    withdrawOperationsRestriction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DSRRestrictionWithdrawal"];
+            };
+        };
+        responses: {
+            /** @description Historical withdrawal receipt */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["DSRRestrictionWithdrawalResult"];
+                    };
+                };
+            };
+            /** @description Invalid bounded request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing caller identity */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Caller is not Account API */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Evidence changed or unavailable, or conflicting idempotency key */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Owner transaction failed */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
