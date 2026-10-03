@@ -14,7 +14,7 @@ bulletin.layoutManifest.rendererArtifactSha256 = BULLETIN_RENDERER_V1_DIGEST;
 `;
 const tarballs = Object.fromEntries(
   readdirSync(artifacts)
-    .filter((file) => file.endsWith('-' + version + '.tgz'))
+    .filter((file) => file.startsWith('hallelujahhomechurch-') && file.endsWith('-' + version + '.tgz'))
     .map((file) => {
       const name = file.slice('hallelujahhomechurch-'.length, -('-' + version + '.tgz').length);
       const path = resolve(temp, name + '.tgz');

@@ -3921,6 +3921,38 @@ components:
       maxItems: 500
       uniqueItems: true
       items: { $ref: '#/components/schemas/OnlineBulletinID' }
+    ReaderTextRange:
+      type: object
+      additionalProperties: false
+      required: [sentenceId, start, end]
+      description: Half-open Unicode scalar offsets into the trusted published sentence; start must be less than end. DOM UTF-16 offsets are not accepted.
+      properties:
+        sentenceId: { $ref: '#/components/schemas/OnlineBulletinID' }
+        start: { type: integer, minimum: 0, maximum: 1000000 }
+        end: { type: integer, minimum: 1, maximum: 1000000 }
+    ReaderTextRanges:
+      type: array
+      minItems: 1
+      maxItems: 500
+      description: One continuous range in semantic order; exactly one entry for each sentenceIds item. Omit for legacy whole-sentence behavior; null and empty are invalid.
+      items: { $ref: '#/components/schemas/ReaderTextRange' }
+    ReaderHighlightSegment:
+      type: object
+      additionalProperties: false
+      required: [start, end, color]
+      properties:
+        start: { type: integer, minimum: 0 }
+        end: { type: integer, minimum: 1 }
+        color: { $ref: '#/components/schemas/ReaderHighlightColor' }
+    ReaderNoteRange:
+      type: object
+      additionalProperties: false
+      required: [sentenceId, start, end, quote]
+      properties:
+        sentenceId: { $ref: '#/components/schemas/OnlineBulletinID' }
+        start: { type: integer, minimum: 0 }
+        end: { type: integer, minimum: 1 }
+        quote: { type: string, description: Complete server-derived source sentence used to verify offsets on revision migration. The parent note quote contains only selected text. }
     ReaderPrivateAnchor:
       type: object
       additionalProperties: false
@@ -3935,6 +3967,12 @@ components:
       additionalProperties: false
       required: [sentenceId, color, quote, active, version, updatedAt]
       properties:
+        segments:
+          type: array
+          minItems: 1
+          maxItems: 256
+          description: Authoritative sorted non-overlapping ranges. When omitted, legacy color covers the complete sentence. When present, top-level color is only the first segment color.
+          items: { $ref: '#/components/schemas/ReaderHighlightSegment' }
         sentenceId: { $ref: '#/components/schemas/OnlineBulletinID' }
         color: { $ref: '#/components/schemas/ReaderHighlightColor' }
         quote: { type: string }
@@ -3946,6 +3984,11 @@ components:
       additionalProperties: false
       required: [id, text, sentenceIds, inactiveAnchors, quote, version, deleted, reanchorRequired, createdAt, updatedAt]
       properties:
+        ranges:
+          type: array
+          minItems: 1
+          maxItems: 500
+          items: { $ref: '#/components/schemas/ReaderNoteRange' }
         id: { type: string, format: uuid }
         text: { type: string, maxLength: 10000 }
         sentenceIds: { type: array, maxItems: 500, items: { $ref: '#/components/schemas/OnlineBulletinID' } }
@@ -4054,6 +4097,7 @@ components:
                   additionalProperties: false
                   required: [sentenceIds, color]
                   properties:
+                    ranges: { $ref: '#/components/schemas/ReaderTextRanges' }
                     sentenceIds: { $ref: '#/components/schemas/ReaderAnchorIDs' }
                     color: { $ref: '#/components/schemas/ReaderHighlightColor' }
               not: { required: [baseVersion] }
@@ -4065,6 +4109,7 @@ components:
                   additionalProperties: false
                   required: [sentenceIds]
                   properties:
+                    ranges: { $ref: '#/components/schemas/ReaderTextRanges' }
                     sentenceIds: { $ref: '#/components/schemas/ReaderAnchorIDs' }
               not: { required: [baseVersion] }
             - required: [kind, payload]
@@ -4075,6 +4120,7 @@ components:
                   additionalProperties: false
                   required: [noteId, sentenceIds, text]
                   properties:
+                    ranges: { $ref: '#/components/schemas/ReaderTextRanges' }
                     noteId: { type: string, format: uuid }
                     sentenceIds: { $ref: '#/components/schemas/ReaderAnchorIDs' }
                     text: { type: string, minLength: 1, maxLength: 10000 }

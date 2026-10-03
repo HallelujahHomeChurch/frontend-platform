@@ -2254,6 +2254,26 @@ export interface components {
         /** @enum {string} */
         ReaderHighlightColor: "yellow" | "red" | "blue";
         ReaderAnchorIDs: components["schemas"]["OnlineBulletinID"][];
+        /** @description Half-open Unicode scalar offsets into the trusted published sentence; start must be less than end. DOM UTF-16 offsets are not accepted. */
+        ReaderTextRange: {
+            sentenceId: components["schemas"]["OnlineBulletinID"];
+            start: number;
+            end: number;
+        };
+        /** @description One continuous range in semantic order; exactly one entry for each sentenceIds item. Omit for legacy whole-sentence behavior; null and empty are invalid. */
+        ReaderTextRanges: components["schemas"]["ReaderTextRange"][];
+        ReaderHighlightSegment: {
+            start: number;
+            end: number;
+            color: components["schemas"]["ReaderHighlightColor"];
+        };
+        ReaderNoteRange: {
+            sentenceId: components["schemas"]["OnlineBulletinID"];
+            start: number;
+            end: number;
+            /** @description Complete server-derived source sentence used to verify offsets on revision migration. The parent note quote contains only selected text. */
+            quote: string;
+        };
         ReaderPrivateAnchor: {
             sentenceId: string;
             quote: string;
@@ -2261,6 +2281,8 @@ export interface components {
             pageId: string;
         };
         ReaderHighlight: {
+            /** @description Authoritative sorted non-overlapping ranges. When omitted, legacy color covers the complete sentence. When present, top-level color is only the first segment color. */
+            segments?: components["schemas"]["ReaderHighlightSegment"][];
             sentenceId: components["schemas"]["OnlineBulletinID"];
             color: components["schemas"]["ReaderHighlightColor"];
             quote: string;
@@ -2270,6 +2292,7 @@ export interface components {
             updatedAt: string;
         };
         ReaderNote: {
+            ranges?: components["schemas"]["ReaderNoteRange"][];
             /** Format: uuid */
             id: string;
             text: string;
@@ -2363,6 +2386,7 @@ export interface components {
             /** @constant */
             kind: "setHighlight";
             payload: {
+                ranges?: components["schemas"]["ReaderTextRanges"];
                 sentenceIds: components["schemas"]["ReaderAnchorIDs"];
                 color: components["schemas"]["ReaderHighlightColor"];
             };
@@ -2370,12 +2394,14 @@ export interface components {
             /** @constant */
             kind: "clearHighlight";
             payload: {
+                ranges?: components["schemas"]["ReaderTextRanges"];
                 sentenceIds: components["schemas"]["ReaderAnchorIDs"];
             };
         } | {
             /** @constant */
             kind: "createNote";
             payload: {
+                ranges?: components["schemas"]["ReaderTextRanges"];
                 /** Format: uuid */
                 noteId: string;
                 sentenceIds: components["schemas"]["ReaderAnchorIDs"];
