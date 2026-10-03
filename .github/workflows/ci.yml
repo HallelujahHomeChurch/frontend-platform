@@ -33,6 +33,7 @@ jobs:
       - run: corepack pnpm test
       - run: corepack pnpm lint
       - run: corepack pnpm --filter @hallelujahhomechurch/hhc-web-client check:generated
+      - run: corepack pnpm --filter @hallelujahhomechurch/donation-client check:generated
       - run: corepack pnpm check:packages
       - run: corepack pnpm pack:packages
       - run: corepack pnpm test:consumers

@@ -11,6 +11,7 @@ export const staffPermissionCatalog = [
   'assets:read', 'assets:write',
   'presenter:cloud:manage', 'presenter:line:manage',
   'dsr:read', 'dsr:manage',
+  'donations:sandbox:test',
   'cms:pages:read', 'cms:pages:write', 'cms:pages:publish',
   'cms:news:read', 'cms:news:write', 'cms:news:publish',
   'cms:bulletins:read', 'cms:bulletins:write', 'cms:bulletins:publish', 'cms:bulletins:investigate',
@@ -44,7 +45,8 @@ export const adminDestinations = [
   {id: 'assets', path: '/assets', permission: 'assets:read'},
   {id: 'presenter-cloud', path: '/presenter/cloud', permission: 'presenter:cloud:manage'},
   {id: 'presenter-line', path: '/presenter/line', permission: 'presenter:line:manage'},
-  {id: 'dsr', path: '/dsr', permission: 'dsr:read'}
+  {id: 'dsr', path: '/dsr', permission: 'dsr:read'},
+  {id: 'donation-sandbox', path: '/donations/sandbox', permission: 'donations:sandbox:test'}
 ] as const;
 
 export type AdminDestination = typeof adminDestinations[number];

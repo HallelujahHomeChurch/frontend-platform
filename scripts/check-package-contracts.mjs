@@ -9,7 +9,7 @@ const packageDirs = (await readdir(packageRoot, { withFileTypes: true }))
   .map((entry) => entry.name)
   .sort()
 
-assert.equal(packageDirs.length, 5, 'expected five frontend packages')
+assert.equal(packageDirs.length, 7, 'expected seven frontend packages')
 
 for (const directory of packageDirs) {
   const manifestPath = new URL(`${directory}/package.json`, packageRoot)

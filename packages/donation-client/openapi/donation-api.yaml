@@ -1,0 +1,424 @@
+openapi: 3.0.3
+info:
+  title: HHC Donation API
+  version: 0.1.0
+  description: >-
+    Delivery 1A proposed contract. Implementation foundation only; no runtime
+    endpoints are deployed. Sandbox and production are fixed by route, never
+    selected by request fields. Only bank-hosted single credit-card checkout is
+    in scope. Payment authorization, capture and settlement are distinct facts.
+  license:
+    name: All rights reserved
+    url: https://www.alive.org.tw
+servers:
+  - url: https://admin.alive.org.tw
+    description: Admin Sandbox entry; bank ingress is on the Website origin.
+tags:
+  - name: Operations
+    description: Private service probes; never gateway-public routes.
+  - name: Sandbox
+    description: Authenticated test orders owned by the actor.
+  - name: Provider
+    description: Untrusted notifications require an authenticated bank re-query.
+security:
+  - bearerAuth: []
+paths:
+  /api/admin/donations/sandbox/orders/{orderId}/reconciliation:
+    get:
+      tags: [Sandbox]
+      summary: Read the owner's Sandbox order query checkpoint
+      operationId: getSandboxReconciliation
+      x-hhc-required-permissions: [donations:sandbox:test]
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Owner-only query state; no provider identity or payload
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RequeryStatus'}
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: No owned order checkpoint exists
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Error'}
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /api/admin/donations/sandbox/orders/{orderId}/reconciliation/retry:
+    post:
+      tags: [Sandbox]
+      summary: Audit and queue another read-only query for the owner's original order
+      description: >-
+        Only review caused by exhausted provider_unavailable retries within the
+        30-day query window may be requeued. The expected version prevents stale
+        or duplicate requests. Other review causes, bill jobs and other users'
+        orders remain inaccessible. Never creates an order or changes payment
+        facts. The reset and user audit event commit atomically. Same-origin
+        browser protections and verified bearer identity are required.
+      operationId: retrySandboxReconciliation
+      x-hhc-required-permissions: [donations:sandbox:test]
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_retry_version]
+              properties:
+                expected_retry_version: {type: integer, minimum: 0, maximum: 2147483646}
+      responses:
+        '202':
+          description: Original-order query queued; this is not payment confirmation
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [status]
+                properties:
+                  status: {type: string, enum: [queued]}
+        '400':
+          $ref: '#/components/responses/Invalid'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Order does not belong to the authenticated user
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Error'}
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /healthz:
+    servers: [{url: 'http://localhost:8080', description: Private service listener only}]
+    get:
+      tags: [Operations]
+      security: []
+      operationId: getLiveness
+      summary: Process liveness, including disabled mode
+      responses:
+        '200': {description: Process is listening; not bank or payment readiness}
+  /readyz:
+    servers: [{url: 'http://localhost:8080', description: Private service listener only}]
+    get:
+      tags: [Operations]
+      security: []
+      operationId: getReadiness
+      summary: Enabled runtime with reachable database
+      description: >-
+        Startup verifies migration checksums without applying migrations. This
+        probe checks database reachability within two seconds; it makes no bank
+        calls and does not certify provider entitlement or end-to-end acceptance.
+        Disabled mode returns 503. Never publish these probes through the gateway.
+      responses:
+        '200': {description: Enabled runtime and database reachable}
+        '503': {description: Disabled runtime or database unavailable}
+  /api/admin/donations/sandbox/checkout:
+    post:
+      tags: [Sandbox]
+      summary: Create or recover the actor's single-card Sandbox intent
+      operationId: createSandboxCheckout
+      x-hhc-required-permissions: [donations:sandbox:test]
+      description: >-
+        Gateway strips forged identity headers. Service requires the exact Dapr
+        gateway caller and trusted actor plus Sandbox test scope. Mutations use
+        the canonical authenticated browser transport and CSRF policy. Persist
+        one provider OrderNo before sending; ambiguous creation returns pending
+        and must never silently create a new order. This operation accepts no
+        card fields, actor, environment, bank URLs or recurring parameters.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutInput'
+      responses:
+        '200':
+          description: Existing or newly prepared bank-hosted checkout
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '202':
+          description: Creation remains uncertain; query the same order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          $ref: '#/components/responses/Invalid'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /api/admin/donations/sandbox/orders/{orderId}:
+    get:
+      tags: [Sandbox]
+      summary: Query the actor's own Sandbox order and verified facts
+      operationId: getSandboxOrder
+      x-hhc-required-permissions: [donations:sandbox:test]
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Own Sandbox order; includes no card fragments or charge tokens
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Missing or not owned in this environment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /api/admin/donations/sandbox/returns/{reference}:
+    get:
+      tags: [Sandbox]
+      summary: Resolve a short-lived return reference after login
+      operationId: resolveSandboxReturn
+      description: >-
+        Requires the same verified gateway identity and Sandbox test permission
+        as own-order queries. A reference does not grant ownership. Until its
+        callback has been verified, return only pending, with no financial detail.
+        Completed work resolves only for the order owner. Missing, expired,
+        review-state and cross-owner references return not_found. No bank query
+        runs in this endpoint. References expire after 15 minutes; recover through
+        the original owned order after expiry. All responses are private/no-store.
+      parameters:
+        - name: reference
+          in: path
+          required: true
+          schema: {type: string, minLength: 64, maxLength: 64, pattern: '^[0-9a-f]{64}$'}
+      responses:
+        '200':
+          description: Verified reference resolves to an owned Sandbox order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '202':
+          description: Callback verification is pending; no financial details
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [state]
+                properties:
+                  state: {type: string, enum: [pending]}
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Missing, expired, unresolved review or not owned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /api/donations/provider-webhooks/funbiz/sandbox:
+    servers:
+      - url: https://www.alive.org.tw
+    post:
+      tags: [Provider]
+      security: []
+      summary: Persist minimal Sandbox callback work before acknowledgement
+      operationId: receiveSandboxCallback
+      description: >-
+        Requires the exact configured Dapr gateway caller, but no donor JWT.
+        JSON body limited to 4096 bytes. ShopNo must match fixed Sandbox config.
+        V2.5 documents no notification signature. PayToken is only a hint: query
+        OrderPayQuery via its authenticated encrypted protocol and match local
+        environment, merchant, order, amount and payment type before crediting.
+        Outer API Status is not payment success. No raw payload logging.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Notification'
+      responses:
+        '200':
+          description: Work durably stored, not payment acceptance
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [Status]
+                properties:
+                  Status: {type: string, enum: [S]}
+        '400':
+          $ref: '#/components/responses/Invalid'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /api/donations/provider-return/funbiz/sandbox:
+    servers:
+      - url: https://www.alive.org.tw
+    post:
+      tags: [Provider]
+      security: []
+      summary: Accept form return without donor cookies and redirect safely
+      operationId: returnSandboxCheckout
+      description: >-
+        Requires the exact configured Dapr gateway caller, without donor cookies
+        or JWT. Form body is limited to 4096 bytes; query parameters are ignored.
+        Only one ShopNo and PayToken are accepted. Persist callback work and a
+        hashed random 15-minute reference atomically before redirecting to the
+        fixed Admin result page with ?ref=. Invalid form input redirects to the
+        same page without a reference; storage failure is 503. No login/session
+        is granted and PayToken never enters the redirect. Result details require
+        login and order ownership. Return is not financial truth; the original
+        owned order remains the recovery path. Runtime must rate-limit ingress
+        and purge expired references before operational enablement.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Notification'
+      responses:
+        '303':
+          description: Fixed Admin result destination; opaque reference or generic error
+          headers:
+            Location:
+              description: Fixed https://admin.alive.org.tw/donations/sandbox/result destination
+              schema: {type: string, format: uri}
+        '503':
+          $ref: '#/components/responses/Unavailable'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Environment/actor-scoped printable key; changed payload returns conflict
+      schema: {type: string, minLength: 16, maxLength: 128, pattern: '^[!-~]+$'}
+  schemas:
+    RequeryStatus:
+      type: object
+      additionalProperties: false
+      required: [state, reason, retry_version, can_retry]
+      properties:
+        state: {type: string, enum: [pending, processing, done, review]}
+        reason:
+          type: string
+          enum: ['', provider_unavailable, invalid_response, identity_conflict, unresolved_order, refund_review, unsupported_payment, outside_query_window, provider_review]
+        retry_version: {type: integer, minimum: 0, maximum: 2147483647}
+        can_retry: {type: boolean}
+    CheckoutInput:
+      type: object
+      additionalProperties: false
+      required: [amount_minor]
+      properties:
+        amount_minor:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 999999999
+          description: TWD minor units; 10000 represents TWD 100. Production finance limits are not yet approved.
+    Notification:
+      type: object
+      additionalProperties: false
+      required: [ShopNo, PayToken]
+      properties:
+        ShopNo: {type: string, minLength: 1, maxLength: 20}
+        PayToken: {type: string, minLength: 1, maxLength: 100}
+    Order:
+      type: object
+      additionalProperties: false
+      required: [id, environment, amount_minor, currency, creation_state, outcomes]
+      properties:
+        id: {type: string, format: uuid}
+        environment: {type: string, enum: [sandbox]}
+        amount_minor: {type: integer, format: int64}
+        currency: {type: string, enum: [TWD]}
+        creation_state: {type: string, enum: [reserved, create_unknown, checkout_ready, create_failed]}
+        checkout_url:
+          type: string
+          format: uri
+          description: Bank-hosted HTTPS URL on an exact allowlisted Sandbox origin; owner-only, never logged
+        outcomes:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [kind, success, provider_date]
+            properties:
+              kind: {type: string, enum: [authorization, capture, settlement]}
+              success: {type: boolean}
+              provider_date: {type: string, pattern: '^[0-9]{12}$'}
+    Error:
+      type: object
+      additionalProperties: false
+      required: [code]
+      properties:
+        code:
+          type: string
+          enum: [invalid_input, unauthorized, forbidden, not_found, idempotency_conflict, provider_unavailable]
+  responses:
+    Invalid:
+      description: Invalid/unknown input or environment/card override
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+    Unauthorized:
+      description: HHC login required
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+    Forbidden:
+      description: Missing exact Sandbox permission or untrusted service caller
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+    Conflict:
+      description: Idempotency payload mismatch, stale retry version or query not eligible for retry
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+    Unavailable:
+      description: Provider/configuration unavailable; no automatic fallback or blind create retry
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}

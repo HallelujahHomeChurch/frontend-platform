@@ -10,6 +10,13 @@ import {
 } from './admin-access';
 
 describe('Admin destination projection', () => {
+  it('projects the dedicated Sandbox permission without granting it to other staff', () => {
+    expect(authorizedAdminDestinations(['donations:sandbox:test'])).toEqual([
+      {id: 'donation-sandbox', path: '/donations/sandbox', permission: 'donations:sandbox:test'}
+    ]);
+    expect(authorizedAdminDestinations(['users:manage']).some(({id}) => id === 'donation-sandbox')).toBe(false);
+    expect(canAccessAdmin(['donations:sandbox:test'])).toBe(true);
+  });
   it('routes recording and service-account readers without granting access from write-only scopes', () => {
     expect(firstAuthorizedAdminDestination(['iam:service-principals:read'])?.path).toBe('/service-principals');
     expect(firstAuthorizedAdminDestination(['cms:recordings:read'])?.path).toBe('/content/recordings');

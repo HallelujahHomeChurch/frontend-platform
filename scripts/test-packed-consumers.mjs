@@ -19,7 +19,7 @@ const tarballs = Object.fromEntries(
     })
 );
 
-for (const name of ['preferences', 'account-client', 'hhc-web-client', 'operations-client', 'ui']) {
+for (const name of ['preferences', 'account-client', 'hhc-web-client', 'operations-client', 'ui', 'donation-client', 'donation-ui']) {
   if (!tarballs[name]) throw new Error(`Missing package tarball: ${name}`);
 }
 
@@ -69,6 +69,8 @@ import {canAccessAdmin} from '@hallelujahhomechurch/account-client/admin-access'
 import {createHhcWebClient, type ContentStatus, type PageGroupManifest} from '@hallelujahhomechurch/hhc-web-client';
 import {createOperationsClient, type ManagedMemberView, type ManagedUnitFolder} from '@hallelujahhomechurch/operations-client';
 import {getInitialTheme} from '@hallelujahhomechurch/preferences';
+import {createSandboxDonationClient} from '@hallelujahhomechurch/donation-client';
+import {DonationForm} from '@hallelujahhomechurch/donation-ui';
 import {AccountMenu, Button, ContextMenu} from '@hallelujahhomechurch/ui';
 import '@hallelujahhomechurch/ui/styles.css';
 
@@ -76,6 +78,9 @@ const accountUser: AccountSessionUser = {id: 'u1', email: 'ada@example.com', dis
 const accountSessionClient = createAccountSessionClient();
 const authRuntime = createBrowserAccountAuthRuntime({client: accountSessionClient});
 const operationsClient = createOperationsClient({baseUrl: '', getAccessToken: authRuntime.getAccessToken, refreshAfterUnauthorized: authRuntime.refreshAfterUnauthorized});
+const donationClient = createSandboxDonationClient({getAccessToken: authRuntime.getAccessToken, refreshAfterUnauthorized: authRuntime.refreshAfterUnauthorized});
+const donationForm = <DonationForm transport={donationClient} onOrder={() => {}} />;
+void donationForm;
 async function checkUnitManagement(folder: ManagedUnitFolder, member: ManagedMemberView) {
   await operationsClient.raw.GET('/api/operations/manage/roots');
   await operationsClient.raw.GET('/api/operations/manage/org-units/{unitId}', {params: {path: {unitId: folder.unit.id}}});
@@ -101,6 +106,8 @@ createRoot(document.getElementById('root')!).render(<><Button>Smoke</Button><Con
     await import('@hallelujahhomechurch/account-client');
     await import('@hallelujahhomechurch/hhc-web-client');
     await import('@hallelujahhomechurch/preferences');
+    await import('@hallelujahhomechurch/donation-client');
+    await import('@hallelujahhomechurch/donation-ui');
     await import('@hallelujahhomechurch/ui');
   `);
   run(vite, 'build');
@@ -135,12 +142,17 @@ import {canAccessAdmin} from '@hallelujahhomechurch/account-client/admin-access'
 import {createHhcWebClient, type ContentStatus, type PageGroupManifest} from '@hallelujahhomechurch/hhc-web-client';
 import {createOperationsClient, type ManagedMemberView, type ManagedUnitFolder} from '@hallelujahhomechurch/operations-client';
 import {getInitialTheme} from '@hallelujahhomechurch/preferences';
+import {createSandboxDonationClient} from '@hallelujahhomechurch/donation-client';
+import {DonationForm} from '@hallelujahhomechurch/donation-ui';
 import {AccountMenu, Button, ContextMenu} from '@hallelujahhomechurch/ui';
 
 const accountUser: AccountSessionUser = {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null};
 const accountSessionClient = createAccountSessionClient();
 const authRuntime = createBrowserAccountAuthRuntime({client: accountSessionClient});
 const operationsClient = createOperationsClient({baseUrl: '', getAccessToken: authRuntime.getAccessToken, refreshAfterUnauthorized: authRuntime.refreshAfterUnauthorized});
+const donationClient = createSandboxDonationClient({getAccessToken: authRuntime.getAccessToken, refreshAfterUnauthorized: authRuntime.refreshAfterUnauthorized});
+const donationForm = <DonationForm transport={donationClient} onOrder={() => {}} />;
+void donationForm;
 async function checkUnitManagement(folder: ManagedUnitFolder, member: ManagedMemberView) {
   await operationsClient.raw.GET('/api/operations/manage/roots');
   await operationsClient.raw.GET('/api/operations/manage/org-units/{unitId}', {params: {path: {unitId: folder.unit.id}}});
