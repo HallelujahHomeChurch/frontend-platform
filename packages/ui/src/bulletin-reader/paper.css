@@ -18,8 +18,8 @@
   line-gap-override: 0%;
 }
 @font-face {
-  font-family: 'HHC Weekly Kai';
-  src: url('/assets/weekly/v1/scripture-b1893f67069a077b26d64f8910136d598146c69e42ed87eeeb19b14ccb5bcc4e.woff2') format('woff2');
+  font-family: 'HHC Weekly Scripture';
+  src: url('/assets/weekly/v1/scripture-b330d18e5aee29a4035c7ea34581f4268b9913ce9051cd978218caf51c16ca2d.woff2') format('woff2');
   font-weight: 400;
   font-display: block;
   ascent-override: 88%;
@@ -109,7 +109,7 @@
 .hhc-bulletin-v1 [data-font-role='reference'],
 .hhc-bulletin-v1 [data-font-role='foreignText'] { font-family: 'HHC Weekly Serif', serif; font-weight: 400; }
 .hhc-bulletin-v1 [data-sentence-id], .hhc-bulletin-v1 [data-font-role] { color: inherit; font-style: normal; letter-spacing: inherit; text-transform: none; }
-.hhc-bulletin-v1 [data-font-role='scripture'] { font-family: 'HHC Weekly Kai', serif; font-weight: 400; }
+.hhc-bulletin-v1 [data-font-role='scripture'] { font-family: 'HHC Weekly Scripture', serif; font-weight: 400; }
 .hhc-bulletin-v1 [data-font-role='emphasis'] { font-family: 'HHC Weekly Kai', serif; font-weight: 700; }
 .hhc-bulletin-v1 [data-font-role='symbol'] { font-family: 'HHC Weekly Symbols', serif; font-weight: 400; }
 .hhc-bulletin-v1 [data-highlight='yellow'] { background: rgb(255 225 35 / 38%); }

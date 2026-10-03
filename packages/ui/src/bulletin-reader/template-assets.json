@@ -17,19 +17,19 @@
     "sourceSha256": "0077e18f57c6908f4a000969880940bdb0dad057c0e8d98b49dc364c3d1b09c6"
   },
   {
-    "url": "/assets/weekly/v1/scripture-b1893f67069a077b26d64f8910136d598146c69e42ed87eeeb19b14ccb5bcc4e.woff2",
-    "sha256": "b1893f67069a077b26d64f8910136d598146c69e42ed87eeeb19b14ccb5bcc4e",
+    "url": "/assets/weekly/v1/scripture-b330d18e5aee29a4035c7ea34581f4268b9913ce9051cd978218caf51c16ca2d.woff2",
+    "sha256": "b330d18e5aee29a4035c7ea34581f4268b9913ce9051cd978218caf51c16ca2d",
     "mime": "font/woff2",
-    "sizeBytes": 4921276,
+    "sizeBytes": 14982568,
     "kind": "font",
-    "family": "HHC Weekly Kai",
+    "family": "HHC Weekly Scripture",
     "weight": 400,
     "roles": [
       "scripture"
     ],
-    "licenseUrl": "/assets/weekly/v1/wenkai-license-5c7a27c7ad419621c541a95f7143e98d32c873e60e8790d09268619b98afb71b.txt",
-    "sourceUrl": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/lxgwwenkaitc/LXGWWenKaiTC-Regular.ttf",
-    "sourceSha256": "4fcc5aec11cbbf737b0cfab7b63796f7f280087a7a656b2f13342cd5e5318d95"
+    "licenseUrl": "/assets/weekly/v1/kai-license-3891666f7f37bac38e8736f7be6bb0c848ae0114dbd667880e77e9fb767420c4.txt",
+    "sourceUrl": "https://www.cns11643.gov.tw/opendata/Fonts_Kai.zip",
+    "sourceSha256": "d5e8d7d8743c5cf816bdeb393a443f65105a8130266a04c19560e1d3401b28f0"
   },
   {
     "url": "/assets/weekly/v1/emphasis-9c02738cbfdf263d60baceaf5e97dd1dd39230daf64e98bf91be07a8609fb962.woff2",
