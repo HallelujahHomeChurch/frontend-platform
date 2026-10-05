@@ -35,6 +35,59 @@ function storage(): Storage {
 }
 
 describe('browser account auth runtime', () => {
+  it('does not install a callback exchange that finishes after logout', async () => {
+    const runtimeStorage = storage();
+    const transaction = await createOAuthTransaction('/');
+    saveOAuthTransaction(transaction, {storage: runtimeStorage, storageKey: 'hhc:oauth:admin-web'});
+    vi.stubGlobal('location', {href: `https://admin.alive.org.tw/oauth/callback?code=code-1&state=${transaction.state}`});
+    let finish!: (response: Response) => void;
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(resolve => {finish = resolve;})));
+    const account = client();
+    const runtime = createBrowserAccountAuthRuntime({client: account, storage: runtimeStorage, oauth: {clientId: 'admin-web', redirectUri: 'https://admin.alive.org.tw/oauth/callback', scope: 'openid'}});
+    const callback = runtime.completeSignIn();
+    runtime.clear();
+    finish(Response.json({access_token: 'old-callback', expires_in: 900}));
+    await expect(callback).resolves.toEqual({status: 'anonymous'});
+    expect(account.getSession).not.toHaveBeenCalled();
+    await expect(runtime.getAccessToken()).resolves.toBe('access-1');
+    vi.unstubAllGlobals();
+  });
+
+  it('fences in-flight session work and pauses activity checks while logout is pending', async () => {
+    let finishLogout!: () => void;
+    let finishSession!: (value: typeof authenticated) => void;
+    const account = client({
+      getSession: vi.fn(() => new Promise<typeof authenticated>(resolve => {finishSession = resolve;})),
+      logoutAll: vi.fn(() => new Promise<void>(resolve => {finishLogout = resolve;}))
+    });
+    const runtime = createBrowserAccountAuthRuntime({client: account});
+    const startup = runtime.start();
+    const logout = runtime.signOut();
+    await Promise.resolve();
+    finishSession(authenticated);
+    await startup;
+    await runtime.revalidate();
+    expect(account.getSession).toHaveBeenCalledOnce();
+    await expect(runtime.getAccessToken()).resolves.toBeNull();
+    finishLogout();
+    await logout;
+    expect(runtime.getSnapshot()).toEqual({status: 'anonymous'});
+    runtime.dispose();
+  });
+
+  it('does not resurrect a cleared session and permits a fresh check before the old one settles', async () => {
+    let resolve!: (value: typeof authenticated) => void;
+    const getSession = vi.fn().mockImplementationOnce(() => new Promise(next => {resolve = next;})).mockResolvedValue({authenticated: false});
+    const runtime = createBrowserAccountAuthRuntime({client: client({getSession})});
+    const late = runtime.start();
+    runtime.clear();
+    await expect(runtime.start()).resolves.toEqual({status: 'anonymous'});
+    resolve(authenticated);
+    await expect(late).resolves.toEqual({status: 'anonymous'});
+    expect(runtime.getSnapshot()).toEqual({status: 'anonymous'});
+    runtime.dispose();
+  });
+
   it('transitions from checking without putting tokens in snapshots', async () => {
     const runtime = createBrowserAccountAuthRuntime({client: client()});
     expect(runtime.getSnapshot()).toEqual({status: 'checking'});

@@ -1,3 +1,4 @@
+import type {NavigationPresentationStore} from './navigation-presentation.js';
 import {
   buildAuthorizeUrl,
   clearOAuthTransaction,
@@ -47,6 +48,7 @@ export type BrowserAccountAuthRuntimeOptions = {
   now?: () => number;
   storage?: RuntimeStorage;
   onEvent?: (event: AccountAuthEvent) => void;
+  presentation?: NavigationPresentationStore;
 };
 
 export interface BrowserAccountAuthRuntime {
@@ -58,6 +60,7 @@ export interface BrowserAccountAuthRuntime {
   revalidate(): Promise<AccountAuthState>;
   getAccessToken(): Promise<string | null>;
   refreshAfterUnauthorized(rejectedToken: string): Promise<string | null>;
+  signOut(): Promise<void>;
   clear(): void;
   dispose(): void;
 }
@@ -69,7 +72,8 @@ export function createBrowserAccountAuthRuntime({
   oauth,
   now = Date.now,
   storage = browserStorage(),
-  onEvent
+  onEvent,
+  presentation
 }: BrowserAccountAuthRuntimeOptions): BrowserAccountAuthRuntime {
   let state: AccountAuthState = {status: 'checking'};
   let token: string | undefined;
@@ -77,9 +81,12 @@ export function createBrowserAccountAuthRuntime({
   let tokenInFlight: Promise<string | null> | undefined;
   let refreshInFlight: Promise<string | null> | undefined;
   let revalidationInFlight: Promise<AccountAuthState> | undefined;
+  let signOutInFlight: Promise<void> | undefined;
   let generation = 0;
+  let logoutGeneration = 0;
   let started = false;
   const listeners = new Set<() => void>();
+  let unsubscribeInvalidation: (() => void) | undefined;
 
   function emit(stage: AccountAuthEvent['stage'], outcome: AccountAuthEvent['outcome'], error?: unknown) {
     const metadata = error instanceof AccountSessionError ? {
@@ -123,6 +130,7 @@ export function createBrowserAccountAuthRuntime({
   }
 
   async function issueToken(): Promise<string | null> {
+    if (signOutInFlight) return null;
     const coolingDown = cooldownError();
     if (coolingDown) throw coolingDown;
     if (token && tokenExpiresAt - now() >= 30_000) return token;
@@ -149,6 +157,7 @@ export function createBrowserAccountAuthRuntime({
   }
 
   async function refresh(rejectedToken: string): Promise<string | null> {
+    if (signOutInFlight) return null;
     if (token && token !== rejectedToken) return token;
     const coolingDown = cooldownError();
     if (coolingDown) throw coolingDown;
@@ -175,15 +184,30 @@ export function createBrowserAccountAuthRuntime({
   }
 
   function revalidate(): Promise<AccountAuthState> {
+    if (signOutInFlight) return Promise.resolve(state);
     if (revalidationInFlight) return revalidationInFlight;
+    const requestGeneration = generation;
     emit('session', 'started');
     const pending = resolveAccountAuth(client)
       .then((result): AccountAuthState => {
+        if (requestGeneration !== generation) return state;
         if (result.status === 'authenticated') {
+          if (state.status === 'authenticated' && state.session.user.id !== result.session.user.id) {
+            generation += 1;
+            token = undefined;
+            tokenExpiresAt = 0;
+            tokenInFlight = refreshInFlight = undefined;
+          }
+          presentation?.identify(result.session.user.id);
           emit('session', 'succeeded');
           return update(result);
         }
         if (result.status === 'anonymous') {
+          generation += 1;
+          token = undefined;
+          tokenExpiresAt = 0;
+          tokenInFlight = refreshInFlight = undefined;
+          presentation?.clear();
           emit('session', 'anonymous');
           return update(result);
         }
@@ -208,6 +232,7 @@ export function createBrowserAccountAuthRuntime({
   function attachLifecycle() {
     if (started || typeof window === 'undefined') return;
     started = true;
+    unsubscribeInvalidation = presentation?.onInvalidate(() => clear(false));
     window.addEventListener('focus', onActivity);
     window.addEventListener('pageshow', onActivity);
     document.addEventListener('visibilitychange', onVisibility);
@@ -216,9 +241,23 @@ export function createBrowserAccountAuthRuntime({
   function detachLifecycle() {
     if (!started || typeof window === 'undefined') return;
     started = false;
+    unsubscribeInvalidation?.();
+    unsubscribeInvalidation = undefined;
     window.removeEventListener('focus', onActivity);
     window.removeEventListener('pageshow', onActivity);
     document.removeEventListener('visibilitychange', onVisibility);
+  }
+
+  function clear(clearPresentation = true) {
+    generation += 1;
+    logoutGeneration += 1;
+    token = undefined;
+    tokenExpiresAt = 0;
+    tokenInFlight = refreshInFlight = undefined;
+    revalidationInFlight = undefined;
+    storage?.removeItem(cooldownStorageKey);
+    if (clearPresentation) presentation?.clear();
+    update({status: 'anonymous'});
   }
 
   return {
@@ -249,6 +288,7 @@ export function createBrowserAccountAuthRuntime({
       if (!oauth || !storage || typeof location === 'undefined') {
         throw new Error('Browser OAuth is not configured');
       }
+      const requestLogoutGeneration = logoutGeneration;
       emit('callback', 'started');
       const url = new URL(callbackUrl ?? location.href, location.href);
       const redirect = new URL(oauth.redirectUri);
@@ -265,11 +305,13 @@ export function createBrowserAccountAuthRuntime({
         }
         const tokenBaseUrl = oauthTokenBaseUrl(oauth, redirect.href);
         const response = await exchangeAuthorizationCode({...oauth, authorizeBaseUrl: tokenBaseUrl}, transaction, code);
+        if (requestLogoutGeneration !== logoutGeneration) return state;
+        if (revalidationInFlight) await revalidationInFlight;
+        if (requestLogoutGeneration !== logoutGeneration) return state;
         if (typeof response.expires_in === 'number') {
           install({accessToken: response.access_token, expiresIn: response.expires_in}, generation);
         }
         emit('callback', 'succeeded');
-        if (revalidationInFlight) await revalidationInFlight;
         return revalidate();
       } catch (error) {
         emit('callback', 'rejected', error);
@@ -281,13 +323,19 @@ export function createBrowserAccountAuthRuntime({
     revalidate,
     getAccessToken: issueToken,
     refreshAfterUnauthorized: refresh,
-    clear() {
+    signOut() {
+      if (signOutInFlight) return signOutInFlight;
       generation += 1;
-      token = undefined;
-      tokenExpiresAt = 0;
-      storage?.removeItem(cooldownStorageKey);
-      update({status: 'anonymous'});
+      logoutGeneration += 1;
+      revalidationInFlight = undefined;
+      tokenInFlight = refreshInFlight = undefined;
+      presentation?.clear();
+      const pending = Promise.resolve().then(() => client.logoutAll()).then(() => { clear(); })
+        .finally(() => { if (signOutInFlight === pending) signOutInFlight = undefined; });
+      signOutInFlight = pending;
+      return pending;
     },
+    clear,
     dispose() {
       detachLifecycle();
       listeners.clear();
