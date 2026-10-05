@@ -4,6 +4,40 @@
  */
 
 export interface paths {
+    "/api/operations/me/service/teams/{id}/publications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Atomically apply the reviewed service publications batch */
+        post: operations["publishServiceAssignments"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/me/service/teams/{id}/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Atomically apply the reviewed service drafts batch */
+        post: operations["createServiceDraftBatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/operations/me/service/installation": {
         parameters: {
             query?: never;
@@ -1970,7 +2004,26 @@ export interface components {
             closedAt?: string;
             acceptedByMemberId?: string;
         };
+        ServiceVersionRef: {
+            /** Format: uuid */
+            id: string;
+            expectedVersion: number;
+        };
+        ServicePublication: {
+            items: components["schemas"]["ServiceVersionRef"][];
+        };
+        ServiceDraftBatch: {
+            /** @description Every item must target this team and explicitly set draft to true. */
+            items: components["schemas"]["ServiceCreateInput"][];
+        };
+        ServiceBatchResult: {
+            assignmentIds: string[];
+        };
         ServiceAssignment: {
+            /** @description Unpublished and visible only to authorized managers. */
+            draft?: boolean;
+            /** Format: date-time */
+            publishedAt?: string;
             /** Format: date-time */
             reminderAt?: string;
             /** @enum {string} */
@@ -2003,6 +2056,11 @@ export interface components {
             nextCursor?: string;
         };
         ServiceCreateInput: {
+            /**
+             * @description Admin editors send true; omitted preserves legacy immediate publication.
+             * @default false
+             */
+            draft: boolean;
             teamId: string;
             meetingId: string;
             occurrenceDate: string;
@@ -2973,6 +3031,146 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    publishServiceAssignments: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ServicePublication"];
+            };
+        };
+        responses: {
+            /** @description Entire batch applied or replayed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceBatchResult"];
+                };
+            };
+            /** @description Invalid or oversized batch */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Outside management scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Closed assignment or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Changed assignment or occurrence; nothing published */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Dependency unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    createServiceDraftBatch: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ServiceDraftBatch"];
+            };
+        };
+        responses: {
+            /** @description Entire batch applied or replayed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceBatchResult"];
+                };
+            };
+            /** @description Invalid or oversized batch */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Outside management scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Closed assignment or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Changed assignment or occurrence; nothing published */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Dependency unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     registerServiceInstallation: {
         parameters: {
             query?: never;
@@ -3349,6 +3547,8 @@ export interface operations {
     listServiceAssignments: {
         parameters: {
             query: {
+                /** @description Requires current fellowship responsibility; defaults to published only. */
+                includeDrafts?: boolean;
                 teamId: string;
                 from: string;
                 to: string;
@@ -3484,7 +3684,10 @@ export interface operations {
     };
     getServiceAssignment: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Requires current fellowship responsibility; defaults to published only. */
+                includeDrafts?: boolean;
+            };
             header?: never;
             path: {
                 id: string;

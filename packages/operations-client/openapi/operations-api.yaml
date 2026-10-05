@@ -13,6 +13,60 @@ servers:
   - url: /
     description: Direct service probe base.
 paths:
+  /api/operations/me/service/teams/{id}/publications:
+    post:
+      operationId: publishServiceAssignments
+      summary: Atomically apply the reviewed service publications batch
+      tags: [Service duties]
+      security: [{ gatewayPrincipal: [] }]
+      x-hhc-authorization: Current responsibility for this fellowship, rechecked on idempotent replay.
+      parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 1, maxLength: 200 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ServicePublication' }
+      responses:
+        '200':
+          description: Entire batch applied or replayed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ServiceBatchResult' }
+        '400': { description: Invalid or oversized batch }
+        '401': { description: Unauthenticated }
+        '404': { description: Outside management scope }
+        '409': { description: Closed assignment or idempotency conflict }
+        '412': { description: Changed assignment or occurrence; nothing published }
+        '503': { description: Dependency unavailable }
+  /api/operations/me/service/teams/{id}/drafts:
+    post:
+      operationId: createServiceDraftBatch
+      summary: Atomically apply the reviewed service drafts batch
+      tags: [Service duties]
+      security: [{ gatewayPrincipal: [] }]
+      x-hhc-authorization: Current responsibility for this fellowship, rechecked on idempotent replay.
+      parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 1, maxLength: 200 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ServiceDraftBatch' }
+      responses:
+        '200':
+          description: Entire batch applied or replayed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ServiceBatchResult' }
+        '400': { description: Invalid or oversized batch }
+        '401': { description: Unauthenticated }
+        '404': { description: Outside management scope }
+        '409': { description: Closed assignment or idempotency conflict }
+        '412': { description: Changed assignment or occurrence; nothing published }
+        '503': { description: Dependency unavailable }
   /api/operations/me/service/installation:
     post:
       operationId: registerServiceInstallation
@@ -252,6 +306,10 @@ paths:
       x-hhc-authorization: Effective fellowship membership; mutations additionally enforce
         current assignee or fellowship responsibility in the transaction.
       parameters:
+      - name: includeDrafts
+        in: query
+        description: Requires current fellowship responsibility; defaults to published only.
+        schema: { type: boolean, default: false }
       - name: teamId
         in: query
         required: true
@@ -349,6 +407,10 @@ paths:
       x-hhc-authorization: Effective fellowship membership; mutations additionally enforce
         current assignee or fellowship responsibility in the transaction.
       parameters:
+      - name: includeDrafts
+        in: query
+        description: Requires current fellowship responsibility; defaults to published only.
+        schema: { type: boolean, default: false }
       - name: id
         in: path
         required: true
@@ -2271,6 +2333,42 @@ components:
           format: date-time
         acceptedByMemberId:
           type: string
+    ServiceVersionRef:
+      type: object
+      additionalProperties: false
+      required: [id, expectedVersion]
+      properties:
+        id: { type: string, format: uuid }
+        expectedVersion: { type: integer, minimum: 1 }
+    ServicePublication:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items: { $ref: '#/components/schemas/ServiceVersionRef' }
+    ServiceDraftBatch:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          maxItems: 100
+          description: Every item must target this team and explicitly set draft to true.
+          items: { $ref: '#/components/schemas/ServiceCreateInput' }
+    ServiceBatchResult:
+      type: object
+      additionalProperties: false
+      required: [assignmentIds]
+      properties:
+        assignmentIds:
+          type: array
+          items: { type: string, format: uuid }
     ServiceAssignment:
       type: object
       additionalProperties: false
@@ -2292,6 +2390,8 @@ components:
       - helpOpen
       - needsAttention
       properties:
+        draft: { type: boolean, description: Unpublished and visible only to authorized managers. }
+        publishedAt: { type: string, format: date-time }
         reminderAt:
           type: string
           format: date-time
@@ -2362,6 +2462,7 @@ components:
       - occurrenceDate
       - label
       properties:
+        draft: { type: boolean, default: false, description: Admin editors send true; omitted preserves legacy immediate publication. }
         teamId:
           type: string
         meetingId:
