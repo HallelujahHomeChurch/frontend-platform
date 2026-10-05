@@ -1,12 +1,26 @@
 {
   "name": "@hallelujahhomechurch/donation-client",
-  "version": "1.0.34",
+  "version": "1.0.35",
   "license": "UNLICENSED",
   "type": "module",
-  "files": ["dist"],
-  "exports": {".": {"types": "./dist/index.d.ts", "import": "./dist/index.js"}},
-  "repository": {"type": "git", "url": "git+https://github.com/HallelujahHomeChurch/frontend-platform.git", "directory": "packages/donation-client"},
-  "publishConfig": {"registry": "https://npm.pkg.github.com", "access": "public"},
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HallelujahHomeChurch/frontend-platform.git",
+    "directory": "packages/donation-client"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "generate": "openapi-typescript openapi/donation-api.yaml -o src/generated.ts",
@@ -14,6 +28,13 @@
     "lint": "oxlint src && tsc -p tsconfig.json --noEmit",
     "test:run": "vitest run"
   },
-  "dependencies": {"openapi-fetch": "^0.15.0"},
-  "devDependencies": {"openapi-typescript": "^7.10.1", "oxlint": "^1.71.0", "typescript": "catalog:codegen", "vitest": "catalog:"}
+  "dependencies": {
+    "openapi-fetch": "^0.15.0"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.10.1",
+    "oxlint": "^1.71.0",
+    "typescript": "catalog:codegen",
+    "vitest": "catalog:"
+  }
 }

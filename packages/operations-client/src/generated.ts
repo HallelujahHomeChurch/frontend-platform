@@ -1713,8 +1713,10 @@ export interface components {
     schemas: {
         /** @enum {string} */
         ManagedEntitlementCode: "bulletin.general.zh-Hant.access" | "bulletin.general.zh-Hans.access" | "bulletin.general.en.access" | "video.meeting-recordings.access";
-        /** @description Explicit unit policy; empty denies all new grants. Omit on update to preserve current policy. Effective policies intersect all ancestors. Only global membership administrators or strict ancestor managers may update it. Existing grants remain revocable. */
+        /** @description Explicit unit policy; empty denies all new grants. Omit on update to preserve current policy. Unconfigured children inherit the nearest configured ancestor. Custom child policies may add permissions beyond their parent. Only global membership administrators or strict ancestor managers may update it. Existing grants remain revocable. */
         GrantableEntitlementCodes: components["schemas"]["ManagedEntitlementCode"][];
+        /** @description True inherits the nearest configured parent; do not send codes with true. False requires codes. Omit both fields to preserve the policy. Roots cannot inherit. */
+        InheritsGrantableEntitlements: boolean;
         /** @enum {string} */
         OperationStatus: "active" | "paused" | "archived";
         /** @enum {string} */
@@ -1722,6 +1724,7 @@ export interface components {
         /** @enum {string} */
         Visibility: "public" | "internal";
         OrgUnitInput: {
+            inheritsGrantableEntitlements?: components["schemas"]["InheritsGrantableEntitlements"];
             grantableEntitlementCodes?: components["schemas"]["GrantableEntitlementCodes"];
             kind: components["schemas"]["OrgUnitKind"];
             name: string;
@@ -1732,6 +1735,7 @@ export interface components {
             parentId?: string;
         };
         OrgUnit: {
+            inheritsGrantableEntitlements: components["schemas"]["InheritsGrantableEntitlements"];
             grantableEntitlementCodes: components["schemas"]["GrantableEntitlementCodes"];
             effectiveGrantableEntitlementCodes: components["schemas"]["GrantableEntitlementCodes"];
             /** Format: uuid */
@@ -1761,6 +1765,7 @@ export interface components {
             sendNotifications: boolean;
         };
         ManagedUnit: {
+            inheritsGrantableEntitlements: components["schemas"]["InheritsGrantableEntitlements"];
             grantableEntitlementCodes: components["schemas"]["GrantableEntitlementCodes"];
             effectiveGrantableEntitlementCodes: components["schemas"]["GrantableEntitlementCodes"];
             /** Format: uuid */
@@ -1792,12 +1797,14 @@ export interface components {
             email?: string;
         };
         ManagedUnitUpdate: {
+            inheritsGrantableEntitlements?: components["schemas"]["InheritsGrantableEntitlements"];
             grantableEntitlementCodes?: components["schemas"]["GrantableEntitlementCodes"];
             name: string;
             /** Format: email */
             email?: string;
         };
         OrgUnitBatchItem: {
+            inheritsGrantableEntitlements?: components["schemas"]["InheritsGrantableEntitlements"];
             grantableEntitlementCodes?: components["schemas"]["GrantableEntitlementCodes"];
             kind: components["schemas"]["OrgUnitKind"];
             name: string;
