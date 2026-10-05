@@ -1590,10 +1590,13 @@ components:
       enum: [bulletin.general.zh-Hant.access, bulletin.general.zh-Hans.access, bulletin.general.en.access, video.meeting-recordings.access]
     GrantableEntitlementCodes:
       type: array
-      description: Explicit unit policy; empty denies all new grants. Omit on update to preserve current policy. Effective policies intersect all ancestors. Only global membership administrators or strict ancestor managers may update it. Existing grants remain revocable.
+      description: Explicit unit policy; empty denies all new grants. Omit on update to preserve current policy. Unconfigured children inherit the nearest configured ancestor. Custom child policies may add permissions beyond their parent. Only global membership administrators or strict ancestor managers may update it. Existing grants remain revocable.
       maxItems: 4
       uniqueItems: true
       items: { $ref: '#/components/schemas/ManagedEntitlementCode' }
+    InheritsGrantableEntitlements:
+      type: boolean
+      description: 'True inherits the nearest configured parent; do not send codes with true. False requires codes. Omit both fields to preserve the policy. Roots cannot inherit.'
     OperationStatus:
       type: string
       enum: [active, paused, archived]
@@ -1608,6 +1611,7 @@ components:
       additionalProperties: false
       required: [kind, name]
       properties:
+        inheritsGrantableEntitlements: { $ref: '#/components/schemas/InheritsGrantableEntitlements' }
         grantableEntitlementCodes: { $ref: '#/components/schemas/GrantableEntitlementCodes' }
         kind: { $ref: '#/components/schemas/OrgUnitKind' }
         name: { type: string }
@@ -1617,8 +1621,9 @@ components:
     OrgUnit:
       type: object
       additionalProperties: false
-      required: [id, kind, name, status, version, updatedAt, grantableEntitlementCodes, effectiveGrantableEntitlementCodes]
+      required: [id, kind, name, status, version, updatedAt, grantableEntitlementCodes, effectiveGrantableEntitlementCodes, inheritsGrantableEntitlements]
       properties:
+        inheritsGrantableEntitlements: { $ref: '#/components/schemas/InheritsGrantableEntitlements' }
         grantableEntitlementCodes: { $ref: '#/components/schemas/GrantableEntitlementCodes' }
         effectiveGrantableEntitlementCodes: { $ref: '#/components/schemas/GrantableEntitlementCodes' }
         id: { type: string, format: uuid }
@@ -1650,8 +1655,9 @@ components:
     ManagedUnit:
       type: object
       additionalProperties: false
-      required: [id, kind, name, status, version, updatedAt, grantableEntitlementCodes, effectiveGrantableEntitlementCodes]
+      required: [id, kind, name, status, version, updatedAt, grantableEntitlementCodes, effectiveGrantableEntitlementCodes, inheritsGrantableEntitlements]
       properties:
+        inheritsGrantableEntitlements: { $ref: '#/components/schemas/InheritsGrantableEntitlements' }
         grantableEntitlementCodes: { $ref: '#/components/schemas/GrantableEntitlementCodes' }
         effectiveGrantableEntitlementCodes: { $ref: '#/components/schemas/GrantableEntitlementCodes' }
         id: { type: string, format: uuid }
@@ -1689,6 +1695,7 @@ components:
       additionalProperties: false
       required: [name]
       properties:
+        inheritsGrantableEntitlements: { $ref: '#/components/schemas/InheritsGrantableEntitlements' }
         grantableEntitlementCodes: { $ref: '#/components/schemas/GrantableEntitlementCodes' }
         name: { type: string, minLength: 1, maxLength: 200 }
         email: { type: string, format: email, maxLength: 254 }
@@ -1697,6 +1704,7 @@ components:
       additionalProperties: false
       required: [kind, name]
       properties:
+        inheritsGrantableEntitlements: { $ref: '#/components/schemas/InheritsGrantableEntitlements' }
         grantableEntitlementCodes: { $ref: '#/components/schemas/GrantableEntitlementCodes' }
         kind: { $ref: '#/components/schemas/OrgUnitKind' }
         name: { type: string }

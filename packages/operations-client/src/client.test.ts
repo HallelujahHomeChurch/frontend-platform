@@ -147,5 +147,6 @@ it('preserves an explicit empty unit policy and sends a typed video grant', asyn
   params: {path:{unitId:'unit'},header:{'Idempotency-Key':'grant'}},
   body:{memberIds:['member'],entitlementCode:'video.meeting-recordings.access',operation:'grant'}
  });
- expect(bodies).toEqual([{name:'Group',grantableEntitlementCodes:[]},{memberIds:['member'],entitlementCode:'video.meeting-recordings.access',operation:'grant'}]);
+ await client.raw.PUT('/api/operations/manage/org-units/{unitId}', {params:{path:{unitId:'unit'},header:{'If-Match':'"1"','Idempotency-Key':'inherit'}},body:{name:'Group',inheritsGrantableEntitlements:true}});
+ expect(bodies).toEqual([{name:'Group',grantableEntitlementCodes:[]},{memberIds:['member'],entitlementCode:'video.meeting-recordings.access',operation:'grant'},{name:'Group',inheritsGrantableEntitlements:true}]);
 });

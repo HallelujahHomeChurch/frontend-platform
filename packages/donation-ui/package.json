@@ -1,14 +1,49 @@
 {
   "name": "@hallelujahhomechurch/donation-ui",
-  "version": "1.0.34",
+  "version": "1.0.35",
   "license": "UNLICENSED",
   "type": "module",
-  "files": ["dist"],
-  "exports": {".": {"types": "./dist/index.d.ts", "import": "./dist/index.js"}},
-  "repository": {"type": "git", "url": "git+https://github.com/HallelujahHomeChurch/frontend-platform.git", "directory": "packages/donation-ui"},
-  "publishConfig": {"registry": "https://npm.pkg.github.com", "access": "public"},
-  "scripts": {"build": "tsc -p tsconfig.json", "lint": "tsc -p tsconfig.json --noEmit", "test:run": "vitest run"},
-  "dependencies": {"@hallelujahhomechurch/donation-client": "workspace:*", "@hallelujahhomechurch/ui": "workspace:*"},
-  "peerDependencies": {"react": "^19.0.0", "react-dom": "^19.0.0"},
-  "devDependencies": {"@testing-library/jest-dom": "catalog:", "@testing-library/react": "catalog:", "@testing-library/user-event": "catalog:", "@types/react": "catalog:", "@types/react-dom": "catalog:", "jsdom": "catalog:", "react": "catalog:", "react-dom": "catalog:", "typescript": "catalog:", "vitest": "catalog:"}
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HallelujahHomeChurch/frontend-platform.git",
+    "directory": "packages/donation-ui"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "test:run": "vitest run"
+  },
+  "dependencies": {
+    "@hallelujahhomechurch/donation-client": "workspace:*",
+    "@hallelujahhomechurch/ui": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@testing-library/user-event": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "jsdom": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
 }
