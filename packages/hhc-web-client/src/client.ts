@@ -35,6 +35,11 @@ export type BulletinWatermarkIssueInvestigationPage = {
 }
 export type ProtectedBulletin = components['schemas']['ProtectedBulletin']
 export type MemberRecording = components['schemas']['MemberRecording']
+export type RecordingCover = components['schemas']['RecordingCover']
+export type RecordingCoverList = components['schemas']['RecordingCoverList']
+export type RecordingCoverSelection = components['schemas']['RecordingCoverSelection']
+export type RecordingCoverSelectionResult = components['schemas']['RecordingCoverSelectionResult']
+export type RecordingCoverUpload = components['schemas']['RecordingCoverUpload']
 export type MemberRecordingPlayback = components['schemas']['MemberRecordingPlayback']
 export type RecordingSourceInput = components['schemas']['RecordingSourceInput']
 export type RecordingSource = components['schemas']['RecordingSource']
@@ -129,7 +134,7 @@ export function createHhcWebClient(options: {
     onRequest({ request }) {
       const token = options.getAccessToken()
       if (token) request.headers.set('Authorization', `Bearer ${token}`)
-      request.headers.set('Accept', 'application/json')
+      if(!request.headers.has('Accept')) request.headers.set('Accept', 'application/json')
       return request
     },
   })
@@ -191,6 +196,30 @@ export function createHhcWebClient(options: {
     async listMemberRecordings(signal?: AbortSignal) {
       return (await unwrap(client.GET('/member/recordings', { signal, cache: 'no-store' }))).data
     },
+    async listRecordingCovers(id:string,signal?:AbortSignal) {
+      return (await unwrap(client.GET('/admin/recordings/{id}/covers',{params:{path:{id}},signal,cache:'no-store'}))).data
+    },
+    async uploadRecordingCover(id:string,blob:Blob,key:string,signal?:AbortSignal) {
+      if(!['image/jpeg','image/png'].includes(blob.type)||blob.size<1||blob.size>5*1024*1024) throw new HhcWebApiError(422,'invalid_cover','Choose JPEG or PNG up to 5 MiB.')
+      return (await unwrap(client.POST('/admin/recordings/{id}/cover-uploads',{
+        params:{path:{id},header:{'Idempotency-Key':key}},headers:{'Content-Type':blob.type},body:'',bodySerializer:()=>blob,signal,cache:'no-store',redirect:'error',
+      }))).data
+    },
+    async setRecordingCover(id:string,version:number,selection:RecordingCoverSelection,key:string,signal?:AbortSignal) {
+      return (await unwrap(client.PUT('/admin/recordings/{id}/cover',{
+        params:{path:{id},header:{'If-Match':`"${version}"`,'Idempotency-Key':key}},body:selection,signal,cache:'no-store',
+      }))).data
+    },
+    async getRecordingCoverContent(id:string,coverId:string,signal?:AbortSignal) {
+      return unwrap(client.GET('/admin/recordings/{id}/covers/{coverId}/content',{
+        params:{path:{id,coverId}},signal,cache:'no-store',redirect:'error',parseAs:'blob',headers:{Accept:'image/jpeg'},
+      }))
+    },
+    async getMemberRecordingCover(id:string,signal?:AbortSignal) {
+      return unwrap(client.GET('/member/recordings/{id}/cover',{
+        params:{path:{id}},signal,cache:'no-store',redirect:'error',parseAs:'blob',headers:{Accept:'image/jpeg'},
+      }))
+    },
     async issueRecordingPlayback(id: string, playbackScopeId: string, expectedAssetVersionId?: string, signal?: AbortSignal) {
       return (await unwrap(client.POST('/member/recordings/{id}/playback', {
         params: { path: { id } }, body: { playbackScopeId, expectedAssetVersionId }, signal, cache: 'no-store',
@@ -213,14 +242,16 @@ export function createHhcWebClient(options: {
       }))).data
     },
     async setAdminRecordingExposure(id: string, version: number, featured: boolean, hidden: boolean) {
-      return (await unwrap(client.PATCH('/admin/recordings/{id}/exposure', {
+      await unwrap(client.PATCH('/admin/recordings/{id}/exposure', {
         params: { path: { id }, header: { 'If-Match': `"${version}"` } }, body: { featured, hidden },
-      }))).data
+      }))
+      throw new HhcWebApiError(410,'retired','Recording exposure controls are retired.')
     },
     async publishAdminRecording(id: string, version: number) {
-      return (await unwrap(client.POST('/admin/recordings/{id}/publish', {
+      const result = (await unwrap(client.POST('/admin/recordings/{id}/publish', {
         params: { path: { id }, header: { 'If-Match': `"${version}"` } }, body: {},
       }))).data
+      return 'current' in result ? result.current : result
     },
     async unpublishAdminRecording(id: string, version: number) {
       return (await unwrap(client.POST('/admin/recordings/{id}/unpublish', {

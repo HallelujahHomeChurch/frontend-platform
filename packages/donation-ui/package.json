@@ -1,6 +1,6 @@
 {
   "name": "@hallelujahhomechurch/donation-ui",
-  "version": "1.0.33",
+  "version": "1.0.34",
   "license": "UNLICENSED",
   "type": "module",
   "files": ["dist"],

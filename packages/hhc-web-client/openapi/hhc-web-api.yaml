@@ -463,6 +463,7 @@ paths:
       security: [{ daprApiToken: [], daprCallerAppId: [] }]
       servers: [{ url: / }]
       responses:
+        '409': { description: Original restriction has already been withdrawn }
         '401': { $ref: '#/components/responses/Error' }
         '422': { $ref: '#/components/responses/Error' }
         '503': { $ref: '#/components/responses/Error' }
@@ -478,6 +479,44 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BulletinWatermarkDSRActionInput'
+  /priv/bulletin-watermarks/dsr/restrictions/preview:
+    post:
+      operationId: previewWatermarkRestriction
+      summary: Preview one original watermark processing restriction
+      description: Require verified original provenance and a current preview token for withdrawal. Preserve other restrictions. Legacy or pruned origin evidence and recorded erasure disable withdrawal. Withdrawal never recreates records, jobs or assets. Retry returns a historical receipt; obtain a fresh preview for current state.
+      tags: [Private]
+      x-hhc-visibility: private
+      x-hhc-callers: [account-api]
+      x-hhc-required-headers: [Dapr-Caller-App-Id, dapr-api-token]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [] }]
+      servers: [{ url: / }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/DSRRestrictionReference' } } } }
+      responses:
+        '200': { description: Owner evidence, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/DSRRestrictionPreview' } } } } } }
+        '401': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '409': { description: Restriction evidence changed or unavailable }
+        '503': { $ref: '#/components/responses/Error' }
+  /priv/bulletin-watermarks/dsr/restrictions/withdraw:
+    post:
+      operationId: withdrawWatermarkRestriction
+      summary: Withdraw one original watermark processing restriction
+      description: Require verified original provenance and a current preview token for withdrawal. Preserve other restrictions. Legacy or pruned origin evidence and recorded erasure disable withdrawal. Withdrawal never recreates records, jobs or assets. Retry returns a historical receipt; obtain a fresh preview for current state.
+      tags: [Private]
+      x-hhc-visibility: private
+      x-hhc-callers: [account-api]
+      x-hhc-required-headers: [Dapr-Caller-App-Id, dapr-api-token]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [] }]
+      servers: [{ url: / }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/DSRRestrictionWithdrawal' } } } }
+      responses:
+        '200': { description: Owner evidence, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/DSRRestrictionWithdrawalResult' } } } } } }
+        '401': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '409': { description: Restriction evidence changed or unavailable }
+        '503': { $ref: '#/components/responses/Error' }
   /priv/account-cleanup:
     post:
       operationId: cleanupDeletedAccountWebsiteData
@@ -2561,7 +2600,7 @@ paths:
       x-hhc-callers: [api-gateway]
       x-hhc-cache: 'private, no-store'
       x-required-scopes: [cms:recordings:read]
-      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }, { daprApiToken: [], daprCallerAppId: [], trustedPrincipalId: [], trustedPrincipalType: [], trustedClientId: [], trustedCredentialId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
         '200': { description: Recording entries, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingListEnvelope' } } } }
@@ -2575,7 +2614,7 @@ paths:
       x-hhc-callers: [api-gateway]
       x-hhc-cache: 'private, no-store'
       x-required-scopes: [cms:recordings:write]
-      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }, { daprApiToken: [], daprCallerAppId: [], trustedPrincipalId: [], trustedPrincipalType: [], trustedClientId: [], trustedCredentialId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
       parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody:
@@ -2596,6 +2635,25 @@ paths:
         '503': { $ref: '#/components/responses/Error' }
   /admin/recordings/{id}:
     parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    delete:
+      operationId: deleteAdminRecording
+      summary: Delete a recording and schedule media cleanup
+      description: Human administrators only. Requires write capability and If-Match; a published recording additionally requires publish capability, checked under the recording row lock. Removes the recording from all projections and denies new playback grants immediately after commit. A durable owner command asynchronously deletes private source, HLS and preview bytes with retries. Existing playback grants may remain valid until expiry. Repeating the original accepted If-Match is safe. Audit and minimal deletion receipts are retained.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-required-scopes: [cms:recordings:write]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters: [{ $ref: '#/components/parameters/IfMatch' }]
+      responses:
+        '204': { description: Recording deleted and cleanup durably queued. }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
     get:
       operationId: getAdminRecording
       summary: Read one recording and version
@@ -2603,7 +2661,7 @@ paths:
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
       x-required-scopes: [cms:recordings:read]
-      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }, { daprApiToken: [], daprCallerAppId: [], trustedPrincipalId: [], trustedPrincipalType: [], trustedClientId: [], trustedCredentialId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
         '200': { description: Recording, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingEnvelope' } } } }
@@ -2617,7 +2675,7 @@ paths:
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
       x-required-scopes: [cms:recordings:write]
-      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }, { daprApiToken: [], daprCallerAppId: [], trustedPrincipalId: [], trustedPrincipalType: [], trustedClientId: [], trustedCredentialId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
       parameters: [{ $ref: '#/components/parameters/IfMatch' }]
       requestBody:
@@ -2642,12 +2700,14 @@ paths:
     parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
     patch:
       operationId: setAdminRecordingExposure
-      summary: Set featured and hidden flags with publish capability
+      summary: Retired recording exposure operation
+      deprecated: true
+      description: Pinning and hiding were removed. Authorized callers receive 410; use unpublish to return a published recording to draft.
       tags: [Admin]
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
       x-required-scopes: [cms:recordings:publish]
-      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }, { daprApiToken: [], daprCallerAppId: [], trustedPrincipalId: [], trustedPrincipalType: [], trustedClientId: [], trustedCredentialId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
       parameters: [{ $ref: '#/components/parameters/IfMatch' }]
       requestBody:
@@ -2660,24 +2720,36 @@ paths:
               required: [featured, hidden]
               properties: { featured: { type: boolean }, hidden: { type: boolean } }
       responses:
-        '200': { description: Updated exposure, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingEnvelope' } } } }
+        '410': {description: Pinning and hiding are retired.}
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
         '403': { $ref: '#/components/responses/AdminForbidden' }
-        '409': { $ref: '#/components/responses/Error' }
-        '412': { $ref: '#/components/responses/Error' }
-        '428': { $ref: '#/components/responses/Error' }
   /admin/recordings/{id}/publish:
     parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
     post:
       operationId: publishAdminRecording
       summary: Publish only an owner-matched, media-validated ready primary version
+      description: >-
+        A service actor must supply Idempotency-Key. Human callers without it
+        retain the RecordingEnvelope response. With a key, publication, its
+        immutable receipt, audit and first-publication notification share one
+        transaction. Replay returns the original receipt and current recording;
+        outcome state_changed never republishes, including after manual
+        unpublish or expiry. Reusing an actor-scoped key for a different recording
+        or If-Match returns 409. A new intent requires a new key; never retry 412
+        automatically with the latest version.
       tags: [Admin]
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
       x-required-scopes: [cms:recordings:publish]
-      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }, { daprApiToken: [], daprCallerAppId: [], trustedPrincipalId: [], trustedPrincipalType: [], trustedClientId: [], trustedCredentialId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
-      parameters: [{ $ref: '#/components/parameters/IfMatch' }]
+      parameters:
+        - { $ref: '#/components/parameters/IfMatch' }
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: Required for service actors; optional for human Admin compatibility. Exactly one value.
+          schema: { type: string, minLength: 1, maxLength: 128, pattern: '^[a-zA-Z0-9._:-]{1,128}$' }
       requestBody:
         required: true
         content:
@@ -2687,7 +2759,17 @@ paths:
               additionalProperties: false
               properties: {}
       responses:
-        '200': { description: Published recording, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingEnvelope' } } } }
+        '200':
+          description: Original publication receipt and current state with a key; legacy RecordingEnvelope without a key.
+          headers:
+            Cache-Control: { schema: { type: string, const: 'private, no-store' } }
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - { $ref: '#/components/schemas/RecordingPublishEnvelope' }
+                  - { $ref: '#/components/schemas/RecordingEnvelope' }
+        '400': { $ref: '#/components/responses/Error' }
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
         '403': { $ref: '#/components/responses/AdminForbidden' }
         '409': { $ref: '#/components/responses/Error' }
@@ -2703,7 +2785,7 @@ paths:
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
       x-required-scopes: [cms:recordings:publish]
-      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }, { daprApiToken: [], daprCallerAppId: [], trustedPrincipalId: [], trustedPrincipalType: [], trustedClientId: [], trustedCredentialId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
       parameters: [{ $ref: '#/components/parameters/IfMatch' }]
       responses:
@@ -2713,6 +2795,122 @@ paths:
         '409': { $ref: '#/components/responses/Error' }
         '412': { $ref: '#/components/responses/Error' }
         '428': { $ref: '#/components/responses/Error' }
+  /admin/recordings/{id}/covers:
+    get:
+      operationId: listRecordingCovers
+      summary: List owner-bound cover candidates and current selection
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:read]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }, { daprApiToken: [], daprCallerAppId: [], trustedPrincipalId: [], trustedPrincipalType: [], trustedClientId: [], trustedCredentialId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Cover status and selection, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingCoverListEnvelope' } } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/recordings/{id}/cover-uploads:
+    post:
+      operationId: uploadRecordingCover
+      summary: Upload bounded custom JPEG or PNG; never publishes
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:write]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }, { daprApiToken: [], daprCallerAppId: [], trustedPrincipalId: [], trustedPrincipalType: [], trustedClientId: [], trustedCredentialId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: Idempotency-Key, in: header, required: true, schema: { type: string, pattern: '^[a-zA-Z0-9._:-]{1,128}$' } }
+      requestBody:
+        required: true
+        description: At most 5 MiB, 24 MP and 8192 pixels per edge; backend validates and re-encodes. Published recordings additionally require cms:recordings:publish.
+        content:
+          image/jpeg: { schema: { type: string, format: binary } }
+          image/png: { schema: { type: string, format: binary } }
+      responses:
+        '202': { description: Accepted; processing is not selection, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingCoverUploadEnvelope' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/recordings/{id}/cover:
+    put:
+      operationId: setRecordingCover
+      summary: Select ready owner-bound cover with optimistic concurrency
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:write]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }, { daprApiToken: [], daprCallerAppId: [], trustedPrincipalId: [], trustedPrincipalType: [], trustedClientId: [], trustedCredentialId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: If-Match, in: header, required: true, schema: { type: string, pattern: '^"[1-9][0-9]*"$' } }
+        - { name: Idempotency-Key, in: header, schema: { type: string, pattern: '^[a-zA-Z0-9._:-]{1,128}$' }, description: 'Required for service actors and CLI; replay returns immutable receipt plus current state, never reapplies.' }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/RecordingCoverSelection' } } }
+      responses:
+        '200': { description: Selected or historical state changed; never publishes or extends expiry, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingCoverSelectionEnvelope' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/recordings/{id}/covers/{coverId}/content:
+    get:
+      operationId: getRecordingCoverContent
+      summary: Stream administrator preview without a playback grant
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:read]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }, { daprApiToken: [], daprCallerAppId: [], trustedPrincipalId: [], trustedPrincipalType: [], trustedClientId: [], trustedCredentialId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: coverId, in: path, required: true, schema: { type: string, pattern: '^[A-Za-z0-9-]{1,128}$' } }
+      responses:
+        '200': { description: Bounded private JPEG with nosniff, content: { image/jpeg: { schema: { type: string, format: binary } } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /member/recordings/{id}/cover:
+    get:
+      operationId: getMemberRecordingCover
+      summary: Stream current cover before playback after membership, legal and visibility checks
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-entitlements: [video.meeting-recordings.access]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Bounded private current JPEG without playback session or bearer URL, content: { image/jpeg: { schema: { type: string, format: binary } } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
 components:
   securitySchemes:
     daprApiToken:
@@ -2735,6 +2933,26 @@ components:
       in: header
       name: X-HHC-Auth-Provider
       description: Must be account-api.
+    trustedPrincipalId:
+      type: apiKey
+      in: header
+      name: X-HHC-Principal-ID
+      description: Sanitized service principal UUID injected by api-gateway; never accepted directly from clients.
+    trustedPrincipalType:
+      type: apiKey
+      in: header
+      name: X-HHC-Principal-Type
+      description: Must be service for the service-principal security alternative. Human identity retains trustedUserId.
+    trustedClientId:
+      type: apiKey
+      in: header
+      name: X-HHC-Client-ID
+      description: Sanitized Account client identifier injected by api-gateway.
+    trustedCredentialId:
+      type: apiKey
+      in: header
+      name: X-HHC-Credential-ID
+      description: Sanitized service credential UUID injected by api-gateway; this is an identifier, never a secret.
     trustedScopes:
       type: apiKey
       in: header
@@ -3006,86 +3224,6 @@ components:
       description: Public revalidation policy for Site Layout projections.
       schema: { type: string, const: 'public, max-age=30, must-revalidate' }
   schemas:
-    LegalScope: { type: string, enum: [common, verified-member] }
-    LegalLocale: { type: string, enum: [zh-Hant, zh-Hans, en, ja, ko], default: zh-Hant }
-    LegalVersion: { type: string, pattern: '^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$' }
-    LegalDocuments:
-      type: object
-      additionalProperties: false
-      required: [terms, privacy]
-      properties:
-        terms: { $ref: '#/components/schemas/LegalPageContentV1' }
-        privacy: { $ref: '#/components/schemas/LegalPageContentV1' }
-    LegalManifest:
-      type: object
-      additionalProperties: false
-      required: [scope, locale, termsVersion, privacyNoticeVersion, termsSHA256, privacySHA256]
-      properties:
-        scope: { $ref: '#/components/schemas/LegalScope' }
-        locale: { $ref: '#/components/schemas/LegalLocale' }
-        termsVersion: { $ref: '#/components/schemas/LegalVersion' }
-        privacyNoticeVersion: { $ref: '#/components/schemas/LegalVersion' }
-        commonTermsVersion: { $ref: '#/components/schemas/LegalVersion' }
-        commonPrivacyNoticeVersion: { $ref: '#/components/schemas/LegalVersion' }
-        termsSHA256: { type: string, pattern: '^[a-f0-9]{64}$' }
-        privacySHA256: { type: string, pattern: '^[a-f0-9]{64}$' }
-    LegalSnapshot:
-      type: object
-      additionalProperties: false
-      required: [snapshotId, manifest, documents]
-      properties:
-        snapshotId: { type: string, format: uuid }
-        manifest: { $ref: '#/components/schemas/LegalManifest' }
-        documents: { $ref: '#/components/schemas/LegalDocuments' }
-    LegalDraft:
-      type: object
-      additionalProperties: false
-      required: [scope, termsVersion, privacyNoticeVersion, translations]
-      properties:
-        scope: { $ref: '#/components/schemas/LegalScope' }
-        termsVersion: { $ref: '#/components/schemas/LegalVersion' }
-        privacyNoticeVersion: { $ref: '#/components/schemas/LegalVersion' }
-        commonTermsVersion: { $ref: '#/components/schemas/LegalVersion' }
-        commonPrivacyNoticeVersion: { $ref: '#/components/schemas/LegalVersion' }
-        version: { type: integer, format: int64, minimum: 0 }
-        translations:
-          type: object
-          additionalProperties: false
-          required: [zh-Hant, zh-Hans, en, ja, ko]
-          properties:
-            zh-Hant: { $ref: '#/components/schemas/LegalDocuments' }
-            zh-Hans: { $ref: '#/components/schemas/LegalDocuments' }
-            en: { $ref: '#/components/schemas/LegalDocuments' }
-            ja: { $ref: '#/components/schemas/LegalDocuments' }
-            ko: { $ref: '#/components/schemas/LegalDocuments' }
-    LegalCurrentInput:
-      type: object
-      additionalProperties: false
-      required: [scope, locale]
-      properties:
-        scope: { $ref: '#/components/schemas/LegalScope' }
-        locale: { $ref: '#/components/schemas/LegalLocale' }
-    LegalSnapshotInput:
-      type: object
-      additionalProperties: false
-      required: [snapshotId]
-      properties:
-        snapshotId: { type: string, format: uuid }
-    LegalSnapshotEnvelope:
-      type: object
-      required: [data]
-      properties:
-        data: { $ref: '#/components/schemas/LegalSnapshot' }
-    LegalDraftEnvelope:
-      type: object
-      required: [data]
-      properties:
-        data: { $ref: '#/components/schemas/LegalDraft' }
-    LegalSnapshotsEnvelope:
-      type: object
-      required: [data]
-      properties:
-        data: { type: array, minItems: 5, maxItems: 5, items: { $ref: '#/components/schemas/LegalSnapshot' } }
     RecordingSourceInput:
       type: object
       additionalProperties: false
@@ -3289,12 +3427,212 @@ components:
         data: { type: array, minItems: 1, maxItems: 100, items: { $ref: '#/components/schemas/SignedRecordingObject' } }
         meta: { type: object, additionalProperties: true }
         error: { type: ['null'] }
+    RecordingPublishReceipt:
+      type: object
+      additionalProperties: false
+      required: [operationKey, actorType, actorId, recordingId, assetVersionId, expectedVersion, publishedVersion, publishedAt, requestFingerprint]
+      properties:
+        operationKey: { type: string, maxLength: 128, pattern: '^[a-zA-Z0-9._:-]{1,128}$' }
+        actorType: { type: string, enum: [user, service] }
+        actorId: { type: string, format: uuid }
+        recordingId: { type: string, format: uuid }
+        assetVersionId: { type: string }
+        packageId: { type: string, pattern: '^[a-f0-9]{32}$' }
+        expectedVersion: { type: integer, format: int64, minimum: 1 }
+        publishedVersion: { type: integer, format: int64, minimum: 2 }
+        publishedAt: { type: string, format: date-time }
+        requestFingerprint: { type: string, pattern: '^[0-9a-f]{64}$', description: 'SHA-256 of the versioned canonical empty-body publication request with actor, recording, asset and expected version.' }
+    RecordingPublishResult:
+      type: object
+      additionalProperties: false
+      required: [receipt, current, outcome]
+      properties:
+        receipt: { $ref: '#/components/schemas/RecordingPublishReceipt' }
+        current: { $ref: '#/components/schemas/MemberRecording' }
+        outcome: { type: string, enum: [published, state_changed] }
+    RecordingPublishEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/RecordingPublishResult' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: ['null'] }
+    DSRRestrictionReference:
+      type: object
+      additionalProperties: false
+      required:
+      - userId
+      - originalRequestId
+      properties:
+        userId:
+          type: string
+          format: uuid
+        originalRequestId:
+          type: string
+          format: uuid
+    DSRRestrictionWithdrawal:
+      type: object
+      additionalProperties: false
+      required:
+      - requestId
+      - userId
+      - originalRequestId
+      - expectedState
+      - idempotencyKey
+      properties:
+        requestId:
+          type: string
+          format: uuid
+          description: Independent withdrawal request; must differ from the original restriction
+            request.
+        userId:
+          type: string
+          format: uuid
+        originalRequestId:
+          type: string
+          format: uuid
+        expectedState:
+          type: string
+          pattern: ^[a-f0-9]{64}$
+        idempotencyKey:
+          type: string
+          minLength: 1
+          maxLength: 200
+    DSRRestrictionPreview:
+      type: object
+      additionalProperties: false
+      required:
+      - canWithdraw
+      - activeRestrictions
+      - fencePresent
+      - stateToken
+      - reasonCodes
+      properties:
+        canWithdraw:
+          type: boolean
+        activeRestrictions:
+          type: integer
+          format: int64
+          minimum: 0
+        fencePresent:
+          type: boolean
+        stateToken:
+          type: string
+          pattern: ^[a-f0-9]{64}$
+        reasonCodes:
+          type: array
+          items:
+            type: string
+            enum:
+            - restriction_fence_absent
+            - restriction_origin_unverified
+            - subject_cleanup_recorded
+            - original_restriction_unavailable
+    DSRRestrictionWithdrawalResult:
+      type: object
+      additionalProperties: false
+      required:
+      - withdrawn
+      - fenceCleared
+      - remainingRestrictions
+      properties:
+        withdrawn:
+          type: boolean
+        fenceCleared:
+          type: boolean
+          description: Fence cleared at this receipt's transaction time; not a current-state
+            claim on later replay.
+        remainingRestrictions:
+          type: integer
+          format: int64
+          minimum: 0
+    LegalScope: { type: string, enum: [common, verified-member] }
+    LegalLocale: { type: string, enum: [zh-Hant, zh-Hans, en, ja, ko], default: zh-Hant }
+    LegalVersion: { type: string, pattern: '^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$' }
+    LegalDocuments:
+      type: object
+      additionalProperties: false
+      required: [terms, privacy]
+      properties:
+        terms: { $ref: '#/components/schemas/LegalPageContentV1' }
+        privacy: { $ref: '#/components/schemas/LegalPageContentV1' }
+    LegalManifest:
+      type: object
+      additionalProperties: false
+      required: [scope, locale, termsVersion, privacyNoticeVersion, termsSHA256, privacySHA256]
+      properties:
+        scope: { $ref: '#/components/schemas/LegalScope' }
+        locale: { $ref: '#/components/schemas/LegalLocale' }
+        termsVersion: { $ref: '#/components/schemas/LegalVersion' }
+        privacyNoticeVersion: { $ref: '#/components/schemas/LegalVersion' }
+        commonTermsVersion: { $ref: '#/components/schemas/LegalVersion' }
+        commonPrivacyNoticeVersion: { $ref: '#/components/schemas/LegalVersion' }
+        termsSHA256: { type: string, pattern: '^[a-f0-9]{64}$' }
+        privacySHA256: { type: string, pattern: '^[a-f0-9]{64}$' }
+    LegalSnapshot:
+      type: object
+      additionalProperties: false
+      required: [snapshotId, manifest, documents]
+      properties:
+        snapshotId: { type: string, format: uuid }
+        manifest: { $ref: '#/components/schemas/LegalManifest' }
+        documents: { $ref: '#/components/schemas/LegalDocuments' }
+    LegalDraft:
+      type: object
+      additionalProperties: false
+      required: [scope, termsVersion, privacyNoticeVersion, translations]
+      properties:
+        scope: { $ref: '#/components/schemas/LegalScope' }
+        termsVersion: { $ref: '#/components/schemas/LegalVersion' }
+        privacyNoticeVersion: { $ref: '#/components/schemas/LegalVersion' }
+        commonTermsVersion: { $ref: '#/components/schemas/LegalVersion' }
+        commonPrivacyNoticeVersion: { $ref: '#/components/schemas/LegalVersion' }
+        version: { type: integer, format: int64, minimum: 0 }
+        translations:
+          type: object
+          additionalProperties: false
+          required: [zh-Hant, zh-Hans, en, ja, ko]
+          properties:
+            zh-Hant: { $ref: '#/components/schemas/LegalDocuments' }
+            zh-Hans: { $ref: '#/components/schemas/LegalDocuments' }
+            en: { $ref: '#/components/schemas/LegalDocuments' }
+            ja: { $ref: '#/components/schemas/LegalDocuments' }
+            ko: { $ref: '#/components/schemas/LegalDocuments' }
+    LegalCurrentInput:
+      type: object
+      additionalProperties: false
+      required: [scope, locale]
+      properties:
+        scope: { $ref: '#/components/schemas/LegalScope' }
+        locale: { $ref: '#/components/schemas/LegalLocale' }
+    LegalSnapshotInput:
+      type: object
+      additionalProperties: false
+      required: [snapshotId]
+      properties:
+        snapshotId: { type: string, format: uuid }
+    LegalSnapshotEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/LegalSnapshot' }
+    LegalDraftEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/LegalDraft' }
+    LegalSnapshotsEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { type: array, minItems: 5, maxItems: 5, items: { $ref: '#/components/schemas/LegalSnapshot' } }
     MemberRecording:
       type: object
       additionalProperties: false
       required: [id, title, uploadedAt, expiresAt, featured, hidden, status, version]
       properties:
         id: { type: string, format: uuid }
+        selectedCoverId: { type: string, pattern: '^[A-Za-z0-9-]{1,128}$', description: Optional explicit CMS selection. An absent value may use default auto cover; member clients may lazily request the current cover endpoint. }
         title: { type: string, minLength: 1, maxLength: 180 }
         uploadedAt: { type: [string, 'null'], format: date-time }
         expiresAt: { type: [string, 'null'], format: date-time }
@@ -3307,6 +3645,83 @@ components:
         readyAt: { type: string, format: date-time }
         durationSeconds: { type: number, minimum: 0 }
         version: { type: integer, format: int64, minimum: 1 }
+    RecordingCover:
+      type: object
+      additionalProperties: false
+      required: [id, uploadId, kind, state]
+      properties:
+        id: { type: string, pattern: '^[A-Za-z0-9-]{1,128}$' }
+        uploadId: { type: string, pattern: '^[A-Za-z0-9-]{1,128}$' }
+        kind: { type: string, enum: [auto, custom] }
+        state: { type: string, enum: [uploading, pending, processing, ready, failed, expired] }
+        operationKey: { type: string, maxLength: 128, description: Management-only accepted upload key for response-loss reconciliation. }
+        error: { type: string, maxLength: 128 }
+        contentPath: { type: string, description: 'Same-origin administrator preview path, never an R2 key or bearer URL.' }
+    RecordingCoverList:
+      type: object
+      additionalProperties: false
+      required: [items, recordingVersion]
+      properties:
+        items: { type: array, maxItems: 1000, items: { $ref: '#/components/schemas/RecordingCover' } }
+        selectedCoverId: { type: string, pattern: '^[A-Za-z0-9-]{1,128}$' }
+        recordingVersion: { type: integer, format: int64, minimum: 1 }
+    RecordingCoverSelection:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [mode, candidateId]
+          properties:
+            mode: { type: string, enum: [auto] }
+            candidateId: { type: string, pattern: '^[A-Za-z0-9-]{1,128}$' }
+        - type: object
+          additionalProperties: false
+          required: [mode, uploadId]
+          properties:
+            mode: { type: string, enum: [custom] }
+            uploadId: { type: string, pattern: '^[A-Za-z0-9-]{1,128}$' }
+    RecordingCoverSelectionResult:
+      type: object
+      additionalProperties: false
+      required: [recording, coverId, outcome, receipt]
+      properties:
+        recording: { $ref: '#/components/schemas/MemberRecording' }
+        coverId: { type: string }
+        outcome: { type: string, enum: [selected, state_changed] }
+        receipt:
+          type: object
+          additionalProperties: false
+          required: [coverId, recordingVersion]
+          properties:
+            coverId: { type: string, pattern: '^[A-Za-z0-9-]{1,128}$' }
+            recordingVersion: { type: integer, format: int64, minimum: 1 }
+    RecordingCoverUpload:
+      type: object
+      additionalProperties: false
+      required: [uploadId, state]
+      properties:
+        uploadId: { type: string, pattern: '^[A-Za-z0-9-]{1,128}$' }
+        state: { type: string, enum: [uploading, pending, processing, ready, failed, expired] }
+    RecordingCoverListEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/RecordingCoverList' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: ['null'] }
+    RecordingCoverUploadEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/RecordingCoverUpload' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: ['null'] }
+    RecordingCoverSelectionEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/RecordingCoverSelectionResult' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: ['null'] }
     MemberRecordingPlayback:
       type: object
       additionalProperties: false
@@ -4316,6 +4731,7 @@ components:
         issueId: { type: string, format: uuid }
     BulletinDownloadJob:
       type: object
+      description: Ready PDFs are cached for seven days. Creating a download after cache expiry prepares a new PDF with a new issuance identity. A failed job with errorCode receipt_collision may be retried by creating a new download preparation.
       additionalProperties: false
       required: [id, operationProgress, createdAt, expiresAt]
       properties:

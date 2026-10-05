@@ -11,6 +11,18 @@ import type {
 } from './client'
 
 describe('hhc web client', () => {
+  it('uploads cover bytes without JSON encoding and selects with an immutable version key',async()=>{
+    const fetcher=vi.fn<typeof fetch>().mockImplementation(async()=>new Response(JSON.stringify({data:{},meta:{},error:null}),{headers:{'content-type':'application/json'}}))
+    const client=createHhcWebClient({baseUrl:'/api',getAccessToken:()=> 'token',fetcher})
+    await client.uploadRecordingCover('r',new Blob(['image'],{type:'image/jpeg'}),'upload-key')
+    await client.setRecordingCover('r',7,{mode:'custom',uploadId:'upload'},'select-key')
+    const requests=fetcher.mock.calls.map(call=>call[0] as Request)
+    expect(await requests[0]!.text()).toBe('image')
+    expect(requests[0]!.headers.get('Content-Type')).toBe('image/jpeg')
+    expect(requests[1]!.headers.get('If-Match')).toBe('"7"')
+    expect(requests[1]!.headers.get('Idempotency-Key')).toBe('select-key')
+    for(const request of requests){expect(request.headers.get('Authorization')).toBe('Bearer token');expect(request.cache).toBe('no-store')}
+  })
   it('keeps browser source capabilities in authenticated no-store metadata requests', async () => {
     const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({data: {}, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}}))
     const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'admin-token', fetcher})
