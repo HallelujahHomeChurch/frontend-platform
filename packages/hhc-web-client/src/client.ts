@@ -37,6 +37,9 @@ export type BulletinWatermarkIssueInvestigationPage = {
 }
 export type ProtectedBulletin = components['schemas']['ProtectedBulletin']
 export type MemberRecording = components['schemas']['MemberRecording']
+export type RecordingRetentionPolicy = components['schemas']['RecordingRetentionPolicy']
+export type RecordingRetentionPreview = components['schemas']['RecordingRetentionPreview']
+export type UpdateRecordingRetentionInput = components['schemas']['UpdateRecordingRetentionInput']
 export type RecordingCover = components['schemas']['RecordingCover']
 export type RecordingCoverList = components['schemas']['RecordingCoverList']
 export type RecordingCoverSelection = components['schemas']['RecordingCoverSelection']
@@ -178,6 +181,17 @@ export function createHhcWebClient(options: {
   }
 
   return {
+    async getRecordingRetentionPolicy(signal?:AbortSignal) {
+      return (await unwrap(client.GET('/admin/recordings/retention-policy',{signal,cache:'no-store'}))).data
+    },
+    async previewRecordingRetentionPolicy(retentionDays:number,signal?:AbortSignal) {
+      if(!Number.isInteger(retentionDays)||retentionDays<1||retentionDays>365)throw new HhcWebApiError(400,'invalid_retention','Enter 1–365 days.')
+      return (await unwrap(client.POST('/admin/recordings/retention-policy/preview',{body:{retentionDays},signal,cache:'no-store'}))).data
+    },
+    async updateRecordingRetentionPolicy(body:UpdateRecordingRetentionInput,key:string,signal?:AbortSignal) {
+      if(!Number.isInteger(body.retentionDays)||body.retentionDays<1||body.retentionDays>365||!Number.isSafeInteger(body.expectedRevision)||body.expectedRevision<1||!body.previewId||!key)throw new HhcWebApiError(400,'invalid_retention','Confirm a current retention preview.')
+      return (await unwrap(client.PUT('/admin/recordings/retention-policy',{body,params:{header:{'Idempotency-Key':key}},signal,cache:'no-store'}))).data
+    },
     async getCommonLegalSnapshot(locale: ContentLocale, signal?: AbortSignal) {
       return (await unwrap(client.GET('/legal/common', {params: {query: {locale}}, signal, cache: 'no-store'}))).data
     },

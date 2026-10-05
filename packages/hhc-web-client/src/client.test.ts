@@ -11,6 +11,19 @@ import type {
 } from './client'
 
 describe('hhc web client', () => {
+  it('previews retention without mutation then confirms the exact preview and revision',async()=>{
+    const fetcher=vi.fn<typeof fetch>().mockImplementation(async()=>new Response(JSON.stringify({data:{},meta:{},error:null})))
+    const client=createHhcWebClient({baseUrl:'/api',getAccessToken:()=> 'token',fetcher})
+    await client.getRecordingRetentionPolicy()
+    await client.previewRecordingRetentionPolicy(14)
+    await client.updateRecordingRetentionPolicy({retentionDays:14,expectedRevision:2,previewId:'preview'},'change-key')
+    const requests=fetcher.mock.calls.map(call=>call[0] as Request)
+    expect(requests.map(r=>r.method)).toEqual(['GET','POST','PUT'])
+    expect(await requests[1]!.json()).toEqual({retentionDays:14})
+    expect(await requests[2]!.json()).toEqual({retentionDays:14,expectedRevision:2,previewId:'preview'})
+    expect(requests[2]!.headers.get('Idempotency-Key')).toBe('change-key')
+    for(const r of requests)expect(r.cache).toBe('no-store')
+  })
   it('keeps recording lookup codes in a no-store POST body', async () => {
     const result = {receiptId:'receipt',recordingId:'recording',packageId:'package',userId:'member',issuedAt:'2026-10-05T00:00:00Z',expiresAt:'2027-10-05T00:00:00Z'}
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({data:result,meta:{},error:null})))

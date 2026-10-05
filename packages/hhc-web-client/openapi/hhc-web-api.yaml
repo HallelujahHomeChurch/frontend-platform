@@ -23,6 +23,70 @@ servers:
   - url: https://www.alive.org.tw/api
     description: Public and admin gateway surface; api-gateway validates browser JWTs and injects trusted identity headers.
 paths:
+  /admin/recordings/retention-policy:
+    get:
+      operationId: getRecordingRetentionPolicy
+      summary: getRecordingRetentionPolicy
+      description: Human administrators only. Policy changes require a fresh actor-bound preview, matching revision and explicit confirmation. Asset commits policy and audit atomically; issued grants keep up to one hour of byte cleanup grace.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:read]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      responses:
+        '200': {description: RecordingRetentionPolicy, content: {application/json: {schema: {$ref: '#/components/schemas/RecordingRetentionPolicyEnvelope'}}}}
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+    put:
+      operationId: updateRecordingRetentionPolicy
+      summary: updateRecordingRetentionPolicy
+      description: Human administrators only. Policy changes require a fresh actor-bound preview, matching revision and explicit confirmation. Asset commits policy and audit atomically; issued grants keep up to one hour of byte cleanup grace.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:write]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+        - {name: Idempotency-Key, in: header, required: true, schema: {type: string, minLength: 1, maxLength: 128}}
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/UpdateRecordingRetentionInput'}}}
+      responses:
+        '200': {description: RecordingRetentionPolicy, content: {application/json: {schema: {$ref: '#/components/schemas/RecordingRetentionPolicyEnvelope'}}}}
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/recordings/retention-policy/preview:
+    post:
+      operationId: previewRecordingRetentionPolicy
+      summary: previewRecordingRetentionPolicy
+      description: Human administrators only. Policy changes require a fresh actor-bound preview, matching revision and explicit confirmation. Asset commits policy and audit atomically; issued grants keep up to one hour of byte cleanup grace.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:write]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/PreviewRecordingRetentionInput'}}}
+      responses:
+        '200': {description: RecordingRetentionPreview, content: {application/json: {schema: {$ref: '#/components/schemas/RecordingRetentionPreviewEnvelope'}}}}
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
   /legal/common:
     get:
       operationId: getCommonLegalSnapshot
@@ -3252,6 +3316,53 @@ components:
       description: Public revalidation policy for Site Layout projections.
       schema: { type: string, const: 'public, max-age=30, must-revalidate' }
   schemas:
+    RecordingRetentionPolicy:
+      type: object
+      additionalProperties: false
+      required: [retentionDays, revision, activatedAt]
+      properties:
+        retentionDays: {type: integer, minimum: 1, maximum: 365}
+        revision: {type: integer, minimum: 1}
+        activatedAt: {type: [string, 'null'], format: date-time}
+    RecordingRetentionPreview:
+      type: object
+      additionalProperties: false
+      required: [previewId, retentionDays, revision, evaluatedAt, affectedCount, affectedBytes]
+      properties:
+        previewId: {type: string}
+        retentionDays: {type: integer, minimum: 1, maximum: 365}
+        revision: {type: integer, minimum: 1}
+        evaluatedAt: {type: string, format: date-time}
+        affectedCount: {type: integer, minimum: 0}
+        affectedBytes: {type: integer, minimum: 0}
+    PreviewRecordingRetentionInput:
+      type: object
+      additionalProperties: false
+      required: [retentionDays]
+      properties:
+        retentionDays: {type: integer, minimum: 1, maximum: 365}
+    UpdateRecordingRetentionInput:
+      type: object
+      additionalProperties: false
+      required: [retentionDays, expectedRevision, previewId]
+      properties:
+        retentionDays: {type: integer, minimum: 1, maximum: 365}
+        expectedRevision: {type: integer, minimum: 1}
+        previewId: {type: string, minLength: 1}
+    RecordingRetentionPolicyEnvelope:
+      type: object
+      required: [data, meta, error]
+      properties:
+        data: {$ref: '#/components/schemas/RecordingRetentionPolicy'}
+        meta: {type: object, additionalProperties: true}
+        error: {type: 'null'}
+    RecordingRetentionPreviewEnvelope:
+      type: object
+      required: [data, meta, error]
+      properties:
+        data: {$ref: '#/components/schemas/RecordingRetentionPreview'}
+        meta: {type: object, additionalProperties: true}
+        error: {type: 'null'}
     RecordingWatermarkLookupInput:
       type: object
       additionalProperties: false
@@ -3380,6 +3491,8 @@ components:
       additionalProperties: false
       required: [packageId, sessionId, recordingId, state, sizeBytes, expiresAt, confirmedObjects, nextCursor]
       properties:
+        uploadedAt: {type: string, format: date-time, description: Immutable accepted upload completion time.}
+        retentionRevision: {type: integer, format: int64, minimum: 1}
         packageId: { type: string }
         sessionId: { type: string }
         recordingId: { type: string }
