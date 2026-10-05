@@ -13,6 +13,41 @@ servers:
   - url: /
     description: Direct service probe base.
 paths:
+  /priv/operations/member-qualifications:
+    post:
+      tags: [Operations]
+      operationId: checkMemberQualification
+      summary: Check current church membership without exposing member details
+      x-hhc-visibility: private
+      x-hhc-callers: [account-api, hhc-web-api]
+      security: [{ daprCallerAppID: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [subjectId]
+              properties:
+                subjectId: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Current membership qualification, private no-store
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [subjectId, qualified, version]
+                properties:
+                  subjectId: { type: string, format: uuid }
+                  qualified: { type: boolean }
+                  version: { type: string, pattern: '^[a-f0-9]{64}$' }
+        '400': { description: Invalid request or duplicate caller }
+        '401': { description: Missing caller }
+        '403': { description: Caller not admitted }
+        '503': { description: Membership authority unavailable }
   /api/meetings:
     get:
       tags: [Operations]
@@ -989,6 +1024,7 @@ paths:
       tags: [Operations]
       operationId: listManagedMembers
       summary: List members displayed at one managed unit
+      description: Excludes the authenticated Account before pagination. Other unit leaders remain visible. Admin member lists are unchanged.
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
       parameters:
@@ -1007,6 +1043,7 @@ paths:
       tags: [Operations]
       operationId: admitManagedMember
       summary: Admit one searched Account to the target unit atomically
+      description: The authenticated Account cannot admit itself; self-targeted requests return 403, including receipt replays.
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
       parameters:
@@ -1024,6 +1061,7 @@ paths:
       tags: [Operations]
       operationId: getManagedMember
       summary: Get a narrow member view within the managed unit scope
+      description: The authenticated Account cannot access its own member management view; returns 403.
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
       parameters:
@@ -1038,6 +1076,7 @@ paths:
       tags: [Operations]
       operationId: moveManagedAffiliation
       summary: Atomically move one direct affiliation within the managed folder scope
+      description: Self-targeted requests return 403, including receipt replays.
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
       parameters:
@@ -1055,6 +1094,7 @@ paths:
       tags: [Operations]
       operationId: removeManagedAffiliation
       summary: Remove one direct affiliation with explicit final-membership confirmation
+      description: Self-targeted requests return 403, including receipt replays.
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
       parameters:
@@ -1072,12 +1112,13 @@ paths:
     get:
       tags: [Operations]
       operationId: listManagedAccountCandidates
-      summary: Search eligible Accounts without browse or directory pagination metadata
+      summary: Find an eligible Account by its full email without browse or pagination metadata
+      description: Exact email lookup excludes the authenticated Account. Admin searches remain unchanged.
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
       parameters:
         - { name: unitId, in: path, required: true, schema: { type: string, format: uuid } }
-        - { name: q, in: query, required: true, schema: { type: string, minLength: 2, maxLength: 200 } }
+        - { name: q, in: query, required: true, description: Full account email address, schema: { type: string, format: email, maxLength: 200 } }
         - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 20, default: 20 } }
       responses:
         '200': { description: Eligible candidates, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedJoinCandidateList' } } } }
@@ -1088,6 +1129,7 @@ paths:
       tags: [Operations]
       operationId: listManagedResponsibilityCandidates
       summary: Search qualified members for delegation
+      description: Excludes the authenticated Account before applying the result limit.
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
       parameters:
@@ -1103,6 +1145,7 @@ paths:
       tags: [Operations]
       operationId: listManagedResponsibilities
       summary: List active responsibilities for a strict descendant
+      description: Includes the authenticated member for read-only display. Assigning or revoking one's own responsibility is forbidden.
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
       parameters: [{ name: unitId, in: path, required: true, schema: { type: string, format: uuid } }]
@@ -1113,6 +1156,7 @@ paths:
       tags: [Operations]
       operationId: assignManagedResponsibility
       summary: Delegate responsibility for a strict descendant to a qualified member
+      description: Self-targeted requests return 403, including receipt replays.
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
       parameters:
@@ -1129,6 +1173,7 @@ paths:
       tags: [Operations]
       operationId: revokeManagedResponsibility
       summary: Revoke a responsibility on a strict descendant
+      description: Self-targeted requests return 403, including receipt replays.
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
       parameters:
@@ -1145,6 +1190,7 @@ paths:
       tags: [Operations]
       operationId: applyManagedEntitlementBatch
       summary: Atomically grant or revoke one weekly-report entitlement for up to 50 visible members
+      description: A batch containing the authenticated member returns 403 with no writes, including receipt replays. No members are silently skipped.
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
       parameters:
@@ -1174,6 +1220,7 @@ paths:
     get:
       tags: [Operations]
       operationId: listMyReservableResources
+      description: With MEMBER_LEGAL_ENFORCEMENT_ENABLED, current qualification and scoped legal evidence are required before member data or new reservations; missing evidence returns policy_acceptance_required with HTTP 428.
       summary: List resources available to the qualified member
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
@@ -1182,6 +1229,7 @@ paths:
     get:
       tags: [Operations]
       operationId: getMyResourceAvailability
+      description: With MEMBER_LEGAL_ENFORCEMENT_ENABLED, current qualification and scoped legal evidence are required before member data or new reservations; missing evidence returns policy_acceptance_required with HTTP 428.
       summary: Get privacy-safe merged Resource availability
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
@@ -1191,6 +1239,7 @@ paths:
     get:
       tags: [Operations]
       operationId: listMyResourceReservations
+      description: With MEMBER_LEGAL_ENFORCEMENT_ENABLED, current qualification and scoped legal evidence are required before member data or new reservations; missing evidence returns policy_acceptance_required with HTTP 428.
       summary: List the authenticated member's reservations
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
@@ -1198,6 +1247,7 @@ paths:
     post:
       tags: [Operations]
       operationId: createMyResourceReservation
+      description: With MEMBER_LEGAL_ENFORCEMENT_ENABLED, current qualification and scoped legal evidence are required before member data or new reservations; missing evidence returns policy_acceptance_required with HTTP 428.
       summary: Request one Resource for a half-open interval
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
@@ -1357,6 +1407,74 @@ paths:
         '401': { description: Missing caller identity }
         '403': { description: Caller is not Account API }
         '500': { description: Internal owner failure, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /priv/operations/member-details-access-check:
+    post:
+      tags: [Operations]
+      operationId: checkMemberDetailsAccess
+      summary: Check effective church membership for Account member details
+      description: Active church membership without a processing restriction. Does not grant access based on email verification, staff scopes or entitlements.
+      x-hhc-visibility: private
+      x-hhc-callers: [account-api]
+      security: [{ daprCallerAppID: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [accountUserId]
+              properties:
+                accountUserId: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Eligibility only; no member data. Cache-Control private, no-store.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [eligible]
+                properties:
+                  eligible: { type: boolean }
+        '400': { description: Invalid request or body exceeding 1024 bytes }
+        '401': { description: Missing caller identity }
+        '403': { description: Caller is not Account API }
+        '503': { description: Membership lookup unavailable, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /priv/operations/member-details-retention:
+    post:
+      tags: [Operations]
+      operationId: getMemberDetailsRetention
+      summary: Get the expired membership-gap watermark for Account retention
+      description: Latest matured deadline (ended-at plus 720 hours) of an uninterrupted membership gap. Renewing within the grace period cancels that gap; renewing later does not resurrect expired data. DSR processing restrictions do not start expiry. Missing or incomplete membership history fails closed. Account must compare record creation time and version before deleting; this is not authorization to read private data.
+      x-hhc-visibility: private
+      x-hhc-callers: [account-api]
+      security: [{ daprCallerAppID: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [accountUserId]
+              properties:
+                accountUserId: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Retention metadata only; no member data. Cache-Control private, no-store.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [expiredBefore]
+                properties:
+                  expiredBefore: { type: [string, "null"], format: date-time }
+        '400': { description: Invalid request or body exceeding 1024 bytes }
+        '401': { description: Missing caller identity }
+        '403': { description: Caller is not Account API }
+        '503': { description: Membership lookup unavailable, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
   /priv/operations/dsr/exports:
     post:
       tags: [Operations]
@@ -1384,9 +1502,43 @@ paths:
       responses:
         '200': { description: Idempotent owner action result, content: { application/json: { schema: { $ref: '#/components/schemas/DSRActionEnvelope' } } } }
         '400': { description: Invalid request or idempotency-key reuse }
+        '409': { description: Original restriction has already been withdrawn }
         '401': { description: Missing caller identity }
         '403': { description: Caller is not Account API }
         '500': { description: Internal owner failure, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /priv/operations/dsr/restrictions/preview:
+    post:
+      tags: [Operations]
+      operationId: previewOperationsRestrictionWithdrawal
+      summary: Check the original restriction and all current subject fences
+      description: Read-only Account caller contract. Legacy origin gaps and any recorded erasure or account cleanup disable withdrawal. The state token covers all restriction origins, withdrawals and the current fence. Counts cover tracked original requests only; an origin-unverified reason must never be interpreted as no restrictions.
+      x-hhc-visibility: private
+      x-hhc-callers: [account-api]
+      security: [{ daprCallerAppID: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/DSRRestrictionReference' } } } }
+      responses:
+        '200': { description: Current owner evidence, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/DSRRestrictionPreview' } } } } } }
+        '400': { description: Invalid subject or original request }
+        '401': { description: Missing caller identity }
+        '403': { description: Caller is not Account API }
+        '500': { description: Evidence unavailable }
+  /priv/operations/dsr/restrictions/withdraw:
+    post:
+      tags: [Operations]
+      operationId: withdrawOperationsRestriction
+      summary: Withdraw one proven restriction origin with state and retry protection
+      description: Recheck the preview token under the subject lock. Preserve other active restrictions. Only the last verified origin can clear the future-processing fence; never restore membership, roles, responsibilities, entitlements or deleted records. Persist an independent receipt and preserve original action results. Repeated identical requests return the historical receipt, not a new assertion of the current fence state; obtain a fresh preview to inspect current restrictions.
+      x-hhc-visibility: private
+      x-hhc-callers: [account-api]
+      security: [{ daprCallerAppID: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/DSRRestrictionWithdrawal' } } } }
+      responses:
+        '200': { description: Historical withdrawal receipt, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/DSRRestrictionWithdrawalResult' } } } } } }
+        '400': { description: Invalid bounded request }
+        '401': { description: Missing caller identity }
+        '403': { description: Caller is not Account API }
+        '409': { description: "Evidence changed or unavailable, or conflicting idempotency key" }
+        '500': { description: Owner transaction failed }
   /health:
     get:
       tags: [Operations]
@@ -1433,6 +1585,15 @@ components:
     IdempotencyKey: { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 1, maxLength: 200 } }
     IfMatch: { name: If-Match, in: header, required: true, schema: { type: string, pattern: '^"[1-9][0-9]*"$' } }
   schemas:
+    ManagedEntitlementCode:
+      type: string
+      enum: [bulletin.general.zh-Hant.access, bulletin.general.zh-Hans.access, bulletin.general.en.access, video.meeting-recordings.access]
+    GrantableEntitlementCodes:
+      type: array
+      description: Explicit unit policy; empty denies all new grants. Omit on update to preserve current policy. Effective policies intersect all ancestors. Only global membership administrators or strict ancestor managers may update it. Existing grants remain revocable.
+      maxItems: 4
+      uniqueItems: true
+      items: { $ref: '#/components/schemas/ManagedEntitlementCode' }
     OperationStatus:
       type: string
       enum: [active, paused, archived]
@@ -1447,6 +1608,7 @@ components:
       additionalProperties: false
       required: [kind, name]
       properties:
+        grantableEntitlementCodes: { $ref: '#/components/schemas/GrantableEntitlementCodes' }
         kind: { $ref: '#/components/schemas/OrgUnitKind' }
         name: { type: string }
         email: { type: string, format: email, maxLength: 254 }
@@ -1455,8 +1617,10 @@ components:
     OrgUnit:
       type: object
       additionalProperties: false
-      required: [id, kind, name, status, version, updatedAt]
+      required: [id, kind, name, status, version, updatedAt, grantableEntitlementCodes, effectiveGrantableEntitlementCodes]
       properties:
+        grantableEntitlementCodes: { $ref: '#/components/schemas/GrantableEntitlementCodes' }
+        effectiveGrantableEntitlementCodes: { $ref: '#/components/schemas/GrantableEntitlementCodes' }
         id: { type: string, format: uuid }
         kind: { $ref: '#/components/schemas/OrgUnitKind' }
         name: { type: string }
@@ -1472,8 +1636,9 @@ components:
     ManagedActions:
       type: object
       additionalProperties: false
-      required: [editUnit, createChild, archive, restore, manageMembers, manageResponsibilities, manageEntitlements, sendNotifications]
+      required: [editUnit, createChild, archive, restore, manageMembers, manageResponsibilities, manageEntitlements, sendNotifications, manageEntitlementPolicy]
       properties:
+        manageEntitlementPolicy: { type: boolean }
         editUnit: { type: boolean }
         createChild: { type: boolean }
         archive: { type: boolean }
@@ -1485,8 +1650,10 @@ components:
     ManagedUnit:
       type: object
       additionalProperties: false
-      required: [id, kind, name, status, version, updatedAt]
+      required: [id, kind, name, status, version, updatedAt, grantableEntitlementCodes, effectiveGrantableEntitlementCodes]
       properties:
+        grantableEntitlementCodes: { $ref: '#/components/schemas/GrantableEntitlementCodes' }
+        effectiveGrantableEntitlementCodes: { $ref: '#/components/schemas/GrantableEntitlementCodes' }
         id: { type: string, format: uuid }
         kind: { $ref: '#/components/schemas/OrgUnitKind' }
         name: { type: string }
@@ -1522,6 +1689,7 @@ components:
       additionalProperties: false
       required: [name]
       properties:
+        grantableEntitlementCodes: { $ref: '#/components/schemas/GrantableEntitlementCodes' }
         name: { type: string, minLength: 1, maxLength: 200 }
         email: { type: string, format: email, maxLength: 254 }
     OrgUnitBatchItem:
@@ -1529,6 +1697,7 @@ components:
       additionalProperties: false
       required: [kind, name]
       properties:
+        grantableEntitlementCodes: { $ref: '#/components/schemas/GrantableEntitlementCodes' }
         kind: { $ref: '#/components/schemas/OrgUnitKind' }
         name: { type: string }
         email: { type: string, format: email, maxLength: 254 }
@@ -1880,13 +2049,14 @@ components:
     ManagedMemberView:
       type: object
       additionalProperties: false
-      required: [memberId, displayName, email, affiliations, entitlementCodes, actions]
+      required: [memberId, displayName, email, affiliations, entitlementCodes, actions, grantableEntitlementCodes]
       properties:
+        grantableEntitlementCodes: { $ref: '#/components/schemas/GrantableEntitlementCodes' }
         memberId: { type: string, format: uuid }
         displayName: { type: string }
         email: { type: string, format: email }
         affiliations: { type: array, items: { $ref: '#/components/schemas/ManagedAffiliation' } }
-        entitlementCodes: { type: array, uniqueItems: true, items: { type: string, enum: [bulletin.general.zh-Hant.access, bulletin.general.zh-Hans.access, bulletin.general.en.access] } }
+        entitlementCodes: { type: array, uniqueItems: true, items: { $ref: '#/components/schemas/ManagedEntitlementCode' } }
         actions: { $ref: '#/components/schemas/ManagedActions' }
     ManagedResponsibilityCandidate:
       type: object
@@ -1941,7 +2111,7 @@ components:
       required: [memberIds, entitlementCode, operation]
       properties:
         memberIds: { type: array, minItems: 1, maxItems: 50, uniqueItems: true, items: { type: string, format: uuid } }
-        entitlementCode: { type: string, enum: [bulletin.general.zh-Hant.access, bulletin.general.zh-Hans.access, bulletin.general.en.access] }
+        entitlementCode: { $ref: '#/components/schemas/ManagedEntitlementCode' }
         operation: { type: string, enum: [grant, revoke] }
     ManagedEntitlementBatchResult:
       type: object
@@ -2215,8 +2385,9 @@ components:
     AccessSnapshot:
       type: object
       additionalProperties: false
-      required: [memberships, orgRoles, responsibilities, entitlements, version]
+      required: [memberDetailsEligible, memberships, orgRoles, responsibilities, entitlements, version]
       properties:
+        memberDetailsEligible: { type: boolean, description: Active church membership without a processing restriction; presentation fact only. Account must check privately on every personal-data request. }
         memberId: { type: string, format: uuid }
         churchMembership: { $ref: '#/components/schemas/ChurchMembershipSummary' }
         memberships: { type: array, items: { $ref: '#/components/schemas/MembershipSummary' } }
@@ -2264,6 +2435,41 @@ components:
         userId: { type: string, format: uuid, pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[47][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' }
         action: { type: string, enum: [restrict_processing, erase] }
         idempotencyKey: { type: string, minLength: 1, maxLength: 200 }
+    DSRRestrictionReference:
+      type: object
+      additionalProperties: false
+      required: [userId, originalRequestId]
+      properties:
+        userId: { type: string, format: uuid }
+        originalRequestId: { type: string, format: uuid }
+    DSRRestrictionPreview:
+      type: object
+      additionalProperties: false
+      required: [canWithdraw, activeRestrictions, fencePresent, stateToken, reasonCodes]
+      properties:
+        canWithdraw: { type: boolean }
+        activeRestrictions: { type: integer, format: int64, minimum: 0 }
+        fencePresent: { type: boolean }
+        stateToken: { type: string, pattern: '^[a-f0-9]{64}$' }
+        reasonCodes: { type: array, items: { type: string, enum: [restriction_fence_absent, restriction_origin_unverified, subject_cleanup_recorded, original_restriction_unavailable] } }
+    DSRRestrictionWithdrawal:
+      type: object
+      additionalProperties: false
+      required: [requestId, userId, originalRequestId, expectedState, idempotencyKey]
+      properties:
+        requestId: { type: string, format: uuid, description: Independent withdrawal request; must differ from the original restriction request. }
+        userId: { type: string, format: uuid }
+        originalRequestId: { type: string, format: uuid }
+        expectedState: { type: string, pattern: '^[a-f0-9]{64}$' }
+        idempotencyKey: { type: string, minLength: 1, maxLength: 200 }
+    DSRRestrictionWithdrawalResult:
+      type: object
+      additionalProperties: false
+      required: [withdrawn, fenceCleared, remainingRestrictions]
+      properties:
+        withdrawn: { type: boolean }
+        fenceCleared: { type: boolean, description: Fence cleared at this receipt's transaction time; not a current-state claim on later replay. }
+        remainingRestrictions: { type: integer, format: int64, minimum: 0 }
     DSRException:
       type: object
       additionalProperties: false

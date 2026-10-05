@@ -2,6 +2,7 @@ import {describe, expect, it} from 'vitest';
 import {resolveAdminAccess} from './access';
 
 const snapshot = {
+  memberDetailsEligible: false,
   memberships: [],
   responsibilities: [],
   entitlements: [],
