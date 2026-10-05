@@ -220,6 +220,34 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/LegalSnapshotEnvelope' }
+  /admin/recordings/watermark-lookups:
+    post:
+      operationId: lookupRecordingWatermark
+      summary: Resolve an exact recording code to its issuance account (not proof of the person sharing it)
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:investigate]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RecordingWatermarkLookupInput' }
+      responses:
+        '200':
+          description: Exact issuance receipt; never cached
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecordingWatermarkLookupEnvelope' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
   /admin/bulletins/watermark-lookups:
     post:
       operationId: lookupBulletinWatermark
@@ -3224,6 +3252,31 @@ components:
       description: Public revalidation policy for Site Layout projections.
       schema: { type: string, const: 'public, max-age=30, must-revalidate' }
   schemas:
+    RecordingWatermarkLookupInput:
+      type: object
+      additionalProperties: false
+      required: [recordingId, code]
+      properties:
+        recordingId: { type: string, format: uuid }
+        code: { type: string, minLength: 10, maxLength: 64 }
+    RecordingWatermarkLookupResult:
+      type: object
+      additionalProperties: false
+      required: [receiptId, recordingId, packageId, userId, issuedAt, expiresAt]
+      properties:
+        receiptId: { type: string, format: uuid }
+        recordingId: { type: string, format: uuid }
+        packageId: { type: string, pattern: '^[a-f0-9]{32}$' }
+        userId: { type: string, format: uuid }
+        issuedAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+    RecordingWatermarkLookupEnvelope:
+      type: object
+      required: [data, meta, error]
+      properties:
+        data: { $ref: '#/components/schemas/RecordingWatermarkLookupResult' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: 'null' }
     RecordingSourceInput:
       type: object
       additionalProperties: false

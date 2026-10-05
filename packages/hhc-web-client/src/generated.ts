@@ -107,6 +107,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/recordings/watermark-lookups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resolve an exact recording code to its issuance account (not proof of the person sharing it) */
+        post: operations["lookupRecordingWatermark"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/bulletins/watermark-lookups": {
         parameters: {
             query?: never;
@@ -1905,6 +1922,31 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        RecordingWatermarkLookupInput: {
+            /** Format: uuid */
+            recordingId: string;
+            code: string;
+        };
+        RecordingWatermarkLookupResult: {
+            /** Format: uuid */
+            receiptId: string;
+            /** Format: uuid */
+            recordingId: string;
+            packageId: string;
+            /** Format: uuid */
+            userId: string;
+            /** Format: date-time */
+            issuedAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        RecordingWatermarkLookupEnvelope: {
+            data: components["schemas"]["RecordingWatermarkLookupResult"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
         RecordingSourceInput: {
             /** @description MP4 basename only; bounded to 255 UTF-8 bytes by Asset. */
             fileName: string;
@@ -4678,6 +4720,36 @@ export interface operations {
             401: components["responses"]["Error"];
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    lookupRecordingWatermark: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingWatermarkLookupInput"];
+            };
+        };
+        responses: {
+            /** @description Exact issuance receipt; never cached */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingWatermarkLookupEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             503: components["responses"]["Error"];
         };
     };

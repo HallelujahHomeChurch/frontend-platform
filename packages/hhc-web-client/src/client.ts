@@ -19,6 +19,8 @@ export type ContentTranslationTargetLocale = components['schemas']['ContentTrans
 export type BulletinTranslationTargetEdition = components['schemas']['BulletinTranslationTargetEdition']
 export type BulletinStatus = components['schemas']['BulletinStatus']
 export type BulletinWatermarkLookup = components['schemas']['BulletinWatermarkLookupResult']
+export type RecordingWatermarkLookup = components['schemas']['RecordingWatermarkLookupResult']
+export type RecordingWatermarkLookupInput = components['schemas']['RecordingWatermarkLookupInput']
 export type BulletinWatermarkVersion = components['schemas']['BulletinWatermarkVersion']
 export type BulletinWatermarkInvestigationInput = Omit<components['schemas']['BulletinWatermarkInvestigationInput'], 'series'> & {series?: BulletinSeries}
 export type BulletinWatermarkInvestigation = components['schemas']['BulletinWatermarkInvestigation']
@@ -350,6 +352,9 @@ export function createHhcWebClient(options: {
     },
     async lookupBulletinWatermark(code: string, signal?: AbortSignal) {
       return (await unwrap(client.POST('/admin/bulletins/watermark-lookups', {body: {code}, signal, cache: 'no-store'}))).data
+    },
+    async lookupRecordingWatermark(input: RecordingWatermarkLookupInput, signal?: AbortSignal): Promise<RecordingWatermarkLookup> {
+      return (await unwrap(client.POST('/admin/recordings/watermark-lookups', {body:input, signal, cache:'no-store'}))).data
     },
     async listAdminBulletins(params: { page?: number; pageSize?: number; status?: BulletinStatus; query?: string; sort?: 'issueNumber' | 'date' | 'title' | 'languages' | 'status' | 'updated'; direction?: 'asc' | 'desc'; signal?: AbortSignal } = {}) {
       const envelope = await unwrap(client.GET('/admin/bulletins', {

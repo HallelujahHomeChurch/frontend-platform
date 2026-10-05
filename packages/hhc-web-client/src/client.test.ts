@@ -11,6 +11,22 @@ import type {
 } from './client'
 
 describe('hhc web client', () => {
+  it('keeps recording lookup codes in a no-store POST body', async () => {
+    const result = {receiptId:'receipt',recordingId:'recording',packageId:'package',userId:'member',issuedAt:'2026-10-05T00:00:00Z',expiresAt:'2027-10-05T00:00:00Z'}
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({data:result,meta:{},error:null})))
+    const client = createHhcWebClient({baseUrl:'/api',getAccessToken:()=> 'token',fetcher})
+    expect(await client.lookupRecordingWatermark({recordingId:'recording',code:'01234-ABCDE'})).toEqual(result)
+    const request = fetcher.mock.calls[0]![0] as Request
+    expect(request.url).toBe('http://localhost/api/admin/recordings/watermark-lookups')
+    expect(request.method).toBe('POST')
+    expect(request.cache).toBe('no-store')
+    expect(await request.json()).toEqual({recordingId:'recording',code:'01234-ABCDE'})
+  })
+  it.each([400,403,404,429,503])('preserves recording lookup error %s', async (status) => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({error:{code:'lookup_failed',message:'Lookup failed'}}),{status}))
+    const client = createHhcWebClient({baseUrl:'/api',getAccessToken:()=> 'token',fetcher})
+    await expect(client.lookupRecordingWatermark({recordingId:'recording',code:'01234-ABCDE'})).rejects.toMatchObject({status,code:'lookup_failed'})
+  })
   it('uploads cover bytes without JSON encoding and selects with an immutable version key',async()=>{
     const fetcher=vi.fn<typeof fetch>().mockImplementation(async()=>new Response(JSON.stringify({data:{},meta:{},error:null}),{headers:{'content-type':'application/json'}}))
     const client=createHhcWebClient({baseUrl:'/api',getAccessToken:()=> 'token',fetcher})
