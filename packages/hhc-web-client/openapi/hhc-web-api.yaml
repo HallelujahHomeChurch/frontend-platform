@@ -23,6 +23,70 @@ servers:
   - url: https://www.alive.org.tw/api
     description: Public and admin gateway surface; api-gateway validates browser JWTs and injects trusted identity headers.
 paths:
+  /admin/recordings/retention-policy:
+    get:
+      operationId: getRecordingRetentionPolicy
+      summary: getRecordingRetentionPolicy
+      description: Human administrators only. Policy changes require a fresh actor-bound preview, matching revision and explicit confirmation. Asset commits policy and audit atomically; issued grants keep up to one hour of byte cleanup grace.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:read]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      responses:
+        '200': {description: RecordingRetentionPolicy, content: {application/json: {schema: {$ref: '#/components/schemas/RecordingRetentionPolicyEnvelope'}}}}
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+    put:
+      operationId: updateRecordingRetentionPolicy
+      summary: updateRecordingRetentionPolicy
+      description: Human administrators only. Policy changes require a fresh actor-bound preview, matching revision and explicit confirmation. Asset commits policy and audit atomically; issued grants keep up to one hour of byte cleanup grace.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:write]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+        - {name: Idempotency-Key, in: header, required: true, schema: {type: string, minLength: 1, maxLength: 128}}
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/UpdateRecordingRetentionInput'}}}
+      responses:
+        '200': {description: RecordingRetentionPolicy, content: {application/json: {schema: {$ref: '#/components/schemas/RecordingRetentionPolicyEnvelope'}}}}
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/recordings/retention-policy/preview:
+    post:
+      operationId: previewRecordingRetentionPolicy
+      summary: previewRecordingRetentionPolicy
+      description: Human administrators only. Policy changes require a fresh actor-bound preview, matching revision and explicit confirmation. Asset commits policy and audit atomically; issued grants keep up to one hour of byte cleanup grace.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:write]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/PreviewRecordingRetentionInput'}}}
+      responses:
+        '200': {description: RecordingRetentionPreview, content: {application/json: {schema: {$ref: '#/components/schemas/RecordingRetentionPreviewEnvelope'}}}}
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
   /legal/common:
     get:
       operationId: getCommonLegalSnapshot
@@ -220,6 +284,34 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/LegalSnapshotEnvelope' }
+  /admin/recordings/watermark-lookups:
+    post:
+      operationId: lookupRecordingWatermark
+      summary: Resolve an exact recording code to its issuance account (not proof of the person sharing it)
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:investigate]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RecordingWatermarkLookupInput' }
+      responses:
+        '200':
+          description: Exact issuance receipt; never cached
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecordingWatermarkLookupEnvelope' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
   /admin/bulletins/watermark-lookups:
     post:
       operationId: lookupBulletinWatermark
@@ -3224,6 +3316,78 @@ components:
       description: Public revalidation policy for Site Layout projections.
       schema: { type: string, const: 'public, max-age=30, must-revalidate' }
   schemas:
+    RecordingRetentionPolicy:
+      type: object
+      additionalProperties: false
+      required: [retentionDays, revision, activatedAt]
+      properties:
+        retentionDays: {type: integer, minimum: 1, maximum: 365}
+        revision: {type: integer, minimum: 1}
+        activatedAt: {type: [string, 'null'], format: date-time}
+    RecordingRetentionPreview:
+      type: object
+      additionalProperties: false
+      required: [previewId, retentionDays, revision, evaluatedAt, affectedCount, affectedBytes]
+      properties:
+        previewId: {type: string}
+        retentionDays: {type: integer, minimum: 1, maximum: 365}
+        revision: {type: integer, minimum: 1}
+        evaluatedAt: {type: string, format: date-time}
+        affectedCount: {type: integer, minimum: 0}
+        affectedBytes: {type: integer, minimum: 0}
+    PreviewRecordingRetentionInput:
+      type: object
+      additionalProperties: false
+      required: [retentionDays]
+      properties:
+        retentionDays: {type: integer, minimum: 1, maximum: 365}
+    UpdateRecordingRetentionInput:
+      type: object
+      additionalProperties: false
+      required: [retentionDays, expectedRevision, previewId]
+      properties:
+        retentionDays: {type: integer, minimum: 1, maximum: 365}
+        expectedRevision: {type: integer, minimum: 1}
+        previewId: {type: string, minLength: 1}
+    RecordingRetentionPolicyEnvelope:
+      type: object
+      required: [data, meta, error]
+      properties:
+        data: {$ref: '#/components/schemas/RecordingRetentionPolicy'}
+        meta: {type: object, additionalProperties: true}
+        error: {type: 'null'}
+    RecordingRetentionPreviewEnvelope:
+      type: object
+      required: [data, meta, error]
+      properties:
+        data: {$ref: '#/components/schemas/RecordingRetentionPreview'}
+        meta: {type: object, additionalProperties: true}
+        error: {type: 'null'}
+    RecordingWatermarkLookupInput:
+      type: object
+      additionalProperties: false
+      required: [recordingId, code]
+      properties:
+        recordingId: { type: string, format: uuid }
+        code: { type: string, minLength: 10, maxLength: 64 }
+    RecordingWatermarkLookupResult:
+      type: object
+      additionalProperties: false
+      required: [receiptId, recordingId, packageId, userId, issuedAt, expiresAt]
+      properties:
+        receiptId: { type: string, format: uuid }
+        recordingId: { type: string, format: uuid }
+        packageId: { type: string, pattern: '^[a-f0-9]{32}$' }
+        userId: { type: string, format: uuid }
+        issuedAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+    RecordingWatermarkLookupEnvelope:
+      type: object
+      required: [data, meta, error]
+      properties:
+        data: { $ref: '#/components/schemas/RecordingWatermarkLookupResult' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: 'null' }
     RecordingSourceInput:
       type: object
       additionalProperties: false
@@ -3327,6 +3491,8 @@ components:
       additionalProperties: false
       required: [packageId, sessionId, recordingId, state, sizeBytes, expiresAt, confirmedObjects, nextCursor]
       properties:
+        uploadedAt: {type: string, format: date-time, description: Immutable accepted upload completion time.}
+        retentionRevision: {type: integer, format: int64, minimum: 1}
         packageId: { type: string }
         sessionId: { type: string }
         recordingId: { type: string }
@@ -3337,7 +3503,7 @@ components:
         nextCursor: { type: string, description: Last examined path; empty when this pass is complete. }
         readyAt: { type: string, format: date-time }
         mediaExpiresAt: { type: string, format: date-time }
-        renditions: { type: array, minItems: 1, maxItems: 2, items: { $ref: '#/components/schemas/RecordingRendition' } }
+        renditions: { type: array, minItems: 1, maxItems: 3, items: { $ref: '#/components/schemas/RecordingRendition' } }
     SignedRecordingObject:
       type: object
       additionalProperties: false
@@ -3370,7 +3536,7 @@ components:
         renditions:
           type: array
           minItems: 1
-          maxItems: 2
+          maxItems: 3
           items: { $ref: '#/components/schemas/RecordingRendition' }
         inventoryDigest: { type: string, pattern: '^[a-f0-9]{64}$' }
     RecordingPackageObject:
@@ -3380,7 +3546,7 @@ components:
       properties:
         path:
           type: string
-          pattern: '^(master\.m3u8|(720p|1080p)/(index\.m3u8|init\.mp4|seg-[0-9]{6}\.m4s))$'
+          pattern: '^(master\.m3u8|(480p|720p|1080p)/(index\.m3u8|init\.mp4|seg-[0-9]{6}\.m4s))$'
           description: Canonical relative path. Unique paths and every declared rendition's complete contiguous segment list are required. No URLs, encoded paths, queries or package.json.
         sizeBytes: { type: integer, format: int64, minimum: 1, maximum: 134217728, description: 'Playlists additionally have a 1048576-byte limit. Package total including inventory must be at most 10000000000 bytes.' }
         sha256: { type: string, pattern: '^[a-f0-9]{64}$' }
@@ -3389,14 +3555,14 @@ components:
       additionalProperties: false
       required: [name, width, height, frameRate, videoBitrate, audioBitrate, durationSeconds, segmentCount]
       properties:
-        name: { type: string, enum: [720p, 1080p], description: '720p is mandatory; 1080p optional. Names are unique.' }
-        width: { type: integer, minimum: 2, maximum: 1920, multipleOf: 2, description: '720p maximum width is 1280; source must never be upscaled.' }
-        height: { type: integer, minimum: 2, maximum: 1080, multipleOf: 2, description: '720p maximum height is 720. Actual dimensions are retained for smaller sources.' }
+        name: { type: string, enum: [480p, 720p, 1080p], description: '720p is mandatory for backward compatibility; 480p and 1080p optional. Names are unique; each additional rung has distinct dimensions and ordered bitrates.' }
+        width: { type: integer, minimum: 2, maximum: 1920, multipleOf: 2, description: '480p maximum width is 854; 720p maximum width is 1280; source must never be upscaled.' }
+        height: { type: integer, minimum: 2, maximum: 1080, multipleOf: 2, description: '480p maximum height is 480; 720p maximum height is 720. Actual dimensions are retained for smaller sources.' }
         frameRate: { type: number, exclusiveMinimum: 0, maximum: 30 }
         videoBitrate: { type: integer, minimum: 500000, maximum: 8000000 }
         audioBitrate: { type: integer, const: 128000 }
         durationSeconds: { type: number, exclusiveMinimum: 0, maximum: 43200 }
-        segmentCount: { type: integer, minimum: 1, maximum: 1440, description: 'ceil(durationSeconds/30); both renditions require aligned actual boundaries.' }
+        segmentCount: { type: integer, minimum: 1, maximum: 1440, description: 'ceil(durationSeconds/30); all renditions require aligned actual boundaries.' }
     RecordingPackageSignInput:
       type: object
       additionalProperties: false

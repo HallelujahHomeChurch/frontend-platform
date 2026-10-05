@@ -19,6 +19,8 @@ export type ContentTranslationTargetLocale = components['schemas']['ContentTrans
 export type BulletinTranslationTargetEdition = components['schemas']['BulletinTranslationTargetEdition']
 export type BulletinStatus = components['schemas']['BulletinStatus']
 export type BulletinWatermarkLookup = components['schemas']['BulletinWatermarkLookupResult']
+export type RecordingWatermarkLookup = components['schemas']['RecordingWatermarkLookupResult']
+export type RecordingWatermarkLookupInput = components['schemas']['RecordingWatermarkLookupInput']
 export type BulletinWatermarkVersion = components['schemas']['BulletinWatermarkVersion']
 export type BulletinWatermarkInvestigationInput = Omit<components['schemas']['BulletinWatermarkInvestigationInput'], 'series'> & {series?: BulletinSeries}
 export type BulletinWatermarkInvestigation = components['schemas']['BulletinWatermarkInvestigation']
@@ -35,6 +37,9 @@ export type BulletinWatermarkIssueInvestigationPage = {
 }
 export type ProtectedBulletin = components['schemas']['ProtectedBulletin']
 export type MemberRecording = components['schemas']['MemberRecording']
+export type RecordingRetentionPolicy = components['schemas']['RecordingRetentionPolicy']
+export type RecordingRetentionPreview = components['schemas']['RecordingRetentionPreview']
+export type UpdateRecordingRetentionInput = components['schemas']['UpdateRecordingRetentionInput']
 export type RecordingCover = components['schemas']['RecordingCover']
 export type RecordingCoverList = components['schemas']['RecordingCoverList']
 export type RecordingCoverSelection = components['schemas']['RecordingCoverSelection']
@@ -176,6 +181,17 @@ export function createHhcWebClient(options: {
   }
 
   return {
+    async getRecordingRetentionPolicy(signal?:AbortSignal) {
+      return (await unwrap(client.GET('/admin/recordings/retention-policy',{signal,cache:'no-store'}))).data
+    },
+    async previewRecordingRetentionPolicy(retentionDays:number,signal?:AbortSignal) {
+      if(!Number.isInteger(retentionDays)||retentionDays<1||retentionDays>365)throw new HhcWebApiError(400,'invalid_retention','Enter 1–365 days.')
+      return (await unwrap(client.POST('/admin/recordings/retention-policy/preview',{body:{retentionDays},signal,cache:'no-store'}))).data
+    },
+    async updateRecordingRetentionPolicy(body:UpdateRecordingRetentionInput,key:string,signal?:AbortSignal) {
+      if(!Number.isInteger(body.retentionDays)||body.retentionDays<1||body.retentionDays>365||!Number.isSafeInteger(body.expectedRevision)||body.expectedRevision<1||!body.previewId||!key)throw new HhcWebApiError(400,'invalid_retention','Confirm a current retention preview.')
+      return (await unwrap(client.PUT('/admin/recordings/retention-policy',{body,params:{header:{'Idempotency-Key':key}},signal,cache:'no-store'}))).data
+    },
     async getCommonLegalSnapshot(locale: ContentLocale, signal?: AbortSignal) {
       return (await unwrap(client.GET('/legal/common', {params: {query: {locale}}, signal, cache: 'no-store'}))).data
     },
@@ -350,6 +366,9 @@ export function createHhcWebClient(options: {
     },
     async lookupBulletinWatermark(code: string, signal?: AbortSignal) {
       return (await unwrap(client.POST('/admin/bulletins/watermark-lookups', {body: {code}, signal, cache: 'no-store'}))).data
+    },
+    async lookupRecordingWatermark(input: RecordingWatermarkLookupInput, signal?: AbortSignal): Promise<RecordingWatermarkLookup> {
+      return (await unwrap(client.POST('/admin/recordings/watermark-lookups', {body:input, signal, cache:'no-store'}))).data
     },
     async listAdminBulletins(params: { page?: number; pageSize?: number; status?: BulletinStatus; query?: string; sort?: 'issueNumber' | 'date' | 'title' | 'languages' | 'status' | 'updated'; direction?: 'asc' | 'desc'; signal?: AbortSignal } = {}) {
       const envelope = await unwrap(client.GET('/admin/bulletins', {
