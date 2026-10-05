@@ -2123,20 +2123,20 @@ export interface components {
         };
         RecordingRendition: {
             /**
-             * @description 720p is mandatory; 1080p optional. Names are unique.
+             * @description 720p is mandatory for backward compatibility; 480p and 1080p optional. Names are unique; each additional rung has distinct dimensions and ordered bitrates.
              * @enum {string}
              */
-            name: "720p" | "1080p";
-            /** @description 720p maximum width is 1280; source must never be upscaled. */
+            name: "480p" | "720p" | "1080p";
+            /** @description 480p maximum width is 854; 720p maximum width is 1280; source must never be upscaled. */
             width: number;
-            /** @description 720p maximum height is 720. Actual dimensions are retained for smaller sources. */
+            /** @description 480p maximum height is 480; 720p maximum height is 720. Actual dimensions are retained for smaller sources. */
             height: number;
             frameRate: number;
             videoBitrate: number;
             /** @constant */
             audioBitrate: 128000;
             durationSeconds: number;
-            /** @description ceil(durationSeconds/30); both renditions require aligned actual boundaries. */
+            /** @description ceil(durationSeconds/30); all renditions require aligned actual boundaries. */
             segmentCount: number;
         };
         RecordingPackageSignInput: {
