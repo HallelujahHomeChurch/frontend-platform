@@ -3662,7 +3662,7 @@ components:
       additionalProperties: false
       required: [items, recordingVersion]
       properties:
-        items: { type: array, maxItems: 500, items: { $ref: '#/components/schemas/RecordingCover' } }
+        items: { type: array, maxItems: 1000, items: { $ref: '#/components/schemas/RecordingCover' } }
         selectedCoverId: { type: string, pattern: '^[A-Za-z0-9-]{1,128}$' }
         recordingVersion: { type: integer, format: int64, minimum: 1 }
     RecordingCoverSelection:
