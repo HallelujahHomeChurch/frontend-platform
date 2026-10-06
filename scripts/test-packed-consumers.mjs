@@ -7,9 +7,14 @@ const root = resolve(import.meta.dirname, '..');
 const artifacts = resolve(root, 'artifacts');
 const temp = mkdtempSync(resolve(tmpdir(), 'hhc-package-smoke-'));
 const {version} = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
+const bulletinFixture = JSON.parse(readFileSync(resolve(root, 'scripts/testdata/bulletin/1739-typography.json'), 'utf8'));
+const bulletinModule = `import {BULLETIN_RENDERER_V1_DIGEST, type BulletinDocument} from '@hallelujahhomechurch/ui';
+export const bulletin = ${JSON.stringify(bulletinFixture.document)} as BulletinDocument;
+bulletin.layoutManifest.rendererArtifactSha256 = BULLETIN_RENDERER_V1_DIGEST;
+`;
 const tarballs = Object.fromEntries(
   readdirSync(artifacts)
-    .filter((file) => file.endsWith('-' + version + '.tgz'))
+    .filter((file) => file.startsWith('hallelujahhomechurch-') && file.endsWith('-' + version + '.tgz'))
     .map((file) => {
       const name = file.slice('hallelujahhomechurch-'.length, -('-' + version + '.tgz').length);
       const path = resolve(temp, name + '.tgz');
@@ -62,6 +67,7 @@ try {
   }, null, 2));
   write(resolve(vite, 'index.html'), '<main id="root"></main><script type="module" src="/src/main.tsx"></script>');
   write(resolve(vite, 'vite.config.ts'), "import react from '@vitejs/plugin-react';\nimport {defineConfig} from 'vite';\nexport default defineConfig({plugins: [react()]});\n");
+  write(resolve(vite, 'src/bulletin.ts'), bulletinModule);
   write(resolve(vite, 'src/main.tsx'), `import React from 'react';
 import {createRoot} from 'react-dom/client';
 import {createAccountSessionClient, createBrowserAccountAuthRuntime, type AccountSessionUser} from '@hallelujahhomechurch/account-client';
@@ -69,10 +75,12 @@ import {canAccessAdmin} from '@hallelujahhomechurch/account-client/admin-access'
 import {createHhcWebClient, type ContentStatus, type PageGroupManifest} from '@hallelujahhomechurch/hhc-web-client';
 import {createOperationsClient, type ManagedMemberView, type ManagedUnitFolder} from '@hallelujahhomechurch/operations-client';
 import {getInitialTheme} from '@hallelujahhomechurch/preferences';
+import {AccountMenu, Button, ContextMenu, BulletinDocumentRenderer} from '@hallelujahhomechurch/ui';
 import {createSandboxDonationClient} from '@hallelujahhomechurch/donation-client';
 import {DonationForm} from '@hallelujahhomechurch/donation-ui';
-import {AccountMenu, Button, ContextMenu} from '@hallelujahhomechurch/ui';
 import '@hallelujahhomechurch/ui/styles.css';
+import '@hallelujahhomechurch/ui/bulletin-paper.css';
+import {bulletin} from './bulletin';
 
 const accountUser: AccountSessionUser = {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null};
 const accountSessionClient = createAccountSessionClient();
@@ -99,7 +107,7 @@ void createHhcWebClient;
 void contentStatus;
 void groupManifest;
 void getInitialTheme;
-createRoot(document.getElementById('root')!).render(<><Button>Smoke</Button><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /><AccountMenu user={{name: accountUser.display_name, email: accountUser.email}} links={[{id: 'destination', label: 'Destination', href: 'https://example.com/destination'}]} labels={{menu: 'Account', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => {}} /></>);
+createRoot(document.getElementById('root')!).render(<><BulletinDocumentRenderer document={bulletin} mode="mobile" /><Button>Smoke</Button><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /><AccountMenu user={{name: accountUser.display_name, email: accountUser.email}} links={[{id: 'destination', label: 'Destination', href: 'https://example.com/destination'}]} labels={{menu: 'Account', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => {}} /></>);
 `);
   run(vite, 'install', '--ignore-workspace');
   run(vite, 'exec', 'node', '--input-type=module', '--eval', `
@@ -132,19 +140,22 @@ createRoot(document.getElementById('root')!).render(<><Button>Smoke</Button><Con
     pnpm: {onlyBuiltDependencies: ['sharp'], overrides: packageDependencies}
   }, null, 2));
   write(resolve(next, 'app/layout.tsx'), `import '@hallelujahhomechurch/ui/styles.css';
+import '@hallelujahhomechurch/ui/bulletin-paper.css';
 export default function Layout({children}: {children: React.ReactNode}) {
   return <html><body>{children}</body></html>;
 }
 `);
+  write(resolve(next, 'app/bulletin.ts'), bulletinModule);
   write(resolve(next, 'app/page.tsx'), `'use client';
 import {createAccountSessionClient, createBrowserAccountAuthRuntime, type AccountSessionUser} from '@hallelujahhomechurch/account-client';
 import {canAccessAdmin} from '@hallelujahhomechurch/account-client/admin-access';
 import {createHhcWebClient, type ContentStatus, type PageGroupManifest} from '@hallelujahhomechurch/hhc-web-client';
 import {createOperationsClient, type ManagedMemberView, type ManagedUnitFolder} from '@hallelujahhomechurch/operations-client';
 import {getInitialTheme} from '@hallelujahhomechurch/preferences';
+import {AccountMenu, Button, ContextMenu, BulletinDocumentRenderer} from '@hallelujahhomechurch/ui';
+import {bulletin} from './bulletin';
 import {createSandboxDonationClient} from '@hallelujahhomechurch/donation-client';
 import {DonationForm} from '@hallelujahhomechurch/donation-ui';
-import {AccountMenu, Button, ContextMenu} from '@hallelujahhomechurch/ui';
 
 const accountUser: AccountSessionUser = {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null};
 const accountSessionClient = createAccountSessionClient();
@@ -171,7 +182,7 @@ void createHhcWebClient;
 void contentStatus;
 void groupManifest;
 void getInitialTheme;
-export default function Page() { return <><Button>Smoke</Button><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /><AccountMenu user={{name: accountUser.display_name, email: accountUser.email}} links={[{id: 'destination', label: 'Destination', href: 'https://example.com/destination'}]} labels={{menu: 'Account', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => {}} /></>; }
+export default function Page() { return <><BulletinDocumentRenderer document={bulletin} mode="paper" activePage={bulletin.pages[0].id} /><Button>Smoke</Button><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /><AccountMenu user={{name: accountUser.display_name, email: accountUser.email}} links={[{id: 'destination', label: 'Destination', href: 'https://example.com/destination'}]} labels={{menu: 'Account', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => {}} /></>; }
 `);
   run(next, 'install', '--ignore-workspace');
   run(next, 'build');

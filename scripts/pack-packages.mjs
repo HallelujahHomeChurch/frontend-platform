@@ -1,4 +1,4 @@
-import {rmSync, mkdirSync} from 'node:fs';
+import {mkdirSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {spawnSync} from 'node:child_process';
 
@@ -6,8 +6,7 @@ const root = resolve(import.meta.dirname, '..');
 const artifacts = resolve(root, 'artifacts');
 const packages = ['preferences', 'account-client', 'hhc-web-client', 'operations-client', 'ui', 'donation-client', 'donation-ui'];
 
-rmSync(artifacts, {recursive: true, force: true});
-mkdirSync(artifacts);
+mkdirSync(artifacts, {recursive: true});
 
 for (const name of packages) {
   const result = spawnSync(

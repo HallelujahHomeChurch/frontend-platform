@@ -1263,9 +1263,11 @@ describe('HHC UI primitives', () => {
     const trigger = screen.getByRole('button', {name: 'Search'});
     const shell = trigger.closest('.hhc-expandable-search');
     expect(shell).toHaveAttribute('data-expanded', 'false');
+    const focus = vi.spyOn(screen.getByRole('searchbox', {name: 'Search'}), 'focus');
     await user.click(trigger);
     expect(shell).toHaveAttribute('data-expanded', 'true');
     await waitFor(() => expect(screen.getByRole('searchbox', {name: 'Search'})).toHaveFocus());
+    expect(focus).toHaveBeenCalledWith({preventScroll: true});
 
     await user.keyboard('{Escape}');
     expect(shell).toHaveAttribute('data-expanded', 'false');
@@ -1278,6 +1280,13 @@ describe('HHC UI primitives', () => {
     expect(onChange).not.toHaveBeenCalledWith('');
 
     await user.click(trigger);
+    expect(screen.getByRole('searchbox', {name: 'Search'})).toHaveValue('weekly');
+    await user.tab();
+    expect(screen.getByRole('button', {name: 'Submit search'})).toHaveFocus();
+    expect(shell).toHaveAttribute('data-expanded', 'true');
+    await user.tab();
+    expect(screen.getByRole('button', {name: 'Outside'})).toHaveFocus();
+    expect(shell).toHaveAttribute('data-expanded', 'false');
     expect(screen.getByRole('searchbox', {name: 'Search'})).toHaveValue('weekly');
   });
 
