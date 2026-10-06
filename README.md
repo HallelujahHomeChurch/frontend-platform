@@ -102,3 +102,19 @@ also expires the metadata; startup/submit checks handle suspended browser timers
 A correlated create/retry order response clears it. The Admin
 permission catalog includes the explicit `donations:sandbox:test` destination;
 other staff grants do not imply this capability.
+
+## Returning-visitor navigation
+
+`createNavigationPresentation` stores allowlisted navigation IDs separately from
+verified auth and access. Pass the store to `createBrowserAccountAuthRuntime`,
+subscribe to its display snapshot, and capture each authorization source's writer
+before starting its request. Only successful verification renews that source's
+seven-day TTL; unavailable responses must not call the writer. Never use the
+presentation snapshot for route guards, data requests, or mutations.
+
+Snapshots contain a subject ID for comparison, source timestamps, and navigation
+IDs only. Names, avatars, credentials, and private content remain live-only.
+Storage invalidation fences late writes across same-origin tabs. Cross-origin
+account changes still require background verification; the shared SSO hint is
+not identity proof. `runtime.signOut()` pauses auth work while global logout is
+pending and invalidates stale session and callback completions.
