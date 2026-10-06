@@ -240,7 +240,10 @@ export function createHhcWebClient(options: {
     async getOnlineBulletinRevision(edition: OnlineBulletinSelector, revision: number, signal?: AbortSignal) {
       return (await unwrap(client.GET('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/revisions/{revision}', {params: {path: {...edition, revision}}, cache: 'no-store', signal}))).data
     },
-    async startOnlineBulletinExtraction(edition: OnlineBulletinSelector, version: number, input: components['schemas']['OnlineBulletinExtractionInput'], signal?: AbortSignal) {
+    async startOnlineBulletinConversion(edition: operations['startOnlineBulletinConversion']['parameters']['path'], version: number, input: components['schemas']['OnlineBulletinConversionInput'], signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/conversions', {params: {path: edition, header: {'If-Match': `"${version}"`}}, body: input, cache: 'no-store', signal}))).data
+    },
+    async startOnlineBulletinExtraction(edition: operations['startOnlineBulletinExtraction']['parameters']['path'], version: number, input: components['schemas']['OnlineBulletinExtractionInput'], signal?: AbortSignal) {
       return (await unwrap(client.POST('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/extractions', {params: {path: edition, header: {'If-Match': `"${version}"`}}, body: input, cache: 'no-store', signal}))).data
     },
     async saveOnlineBulletinDraft(edition: OnlineBulletinSelector, version: number, input: OnlineBulletinDraftInput, signal?: AbortSignal) {
@@ -261,7 +264,7 @@ export function createHhcWebClient(options: {
     async restoreOnlineBulletinRevision(edition: OnlineBulletinSelector, revision: number, version: number, input: components['schemas']['OnlineBulletinRestoreInput'], signal?: AbortSignal) {
       return (await unwrap(client.POST('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/revisions/{revision}/restore', {params: {path: {...edition, revision}, header: {'If-Match': `"${version}"`}}, body: input, cache: 'no-store', signal}))).data
     },
-    async getOnlineBulletinSourcePDF(edition: OnlineBulletinSelector, signal?: AbortSignal) {
+    async getOnlineBulletinSourcePDF(edition: operations['getOnlineBulletinSourcePDF']['parameters']['path'], signal?: AbortSignal) {
       const result = await client.GET('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/source-pdf', {params: {path: edition}, headers: {Accept: 'application/pdf'}, parseAs: 'stream', cache: 'no-store', signal})
       if (result.error !== undefined || !result.response.ok) throw apiError(result.response, result.error)
       const invalid = () => new HhcWebApiError(result.response.status, 'invalid_response', 'The source PDF response is invalid.')

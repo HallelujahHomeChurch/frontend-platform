@@ -1076,6 +1076,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/bulletins/{issueId}/online/{series}/{contentLocale}/conversions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Derive an independent Simplified Chinese draft from confirmed Traditional Chinese content
+         * @description Human administrators only. Source is always the same issue general zh-Hant confirmed Local. If-Match fences the target Online version (zero before creation); the body independently fences canonical metadata and source revision/version. Identical source/configuration requests reuse the durable job. retry=true retries only failed work. Subsequent conversions produce Incoming without overwriting manual Local or publication. No PDF asset or additional grant is created.
+         */
+        post: operations["startOnlineBulletinConversion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/bulletins/{issueId}/online/{series}/{contentLocale}/comparison": {
         parameters: {
             query?: never;
@@ -2567,8 +2587,8 @@ export interface components {
             printedBodyPageCount: number;
             /** @constant */
             schemaVersion: "1";
-            /** @constant */
-            templateVersion: "v1";
+            /** @enum {string} */
+            templateVersion: "v1" | "v2";
             pages: components["schemas"]["OnlineBulletinPage"][];
             layoutManifest: components["schemas"]["OnlineBulletinLayoutManifest"];
             components: components["schemas"]["ReaderComponent"][];
@@ -2723,13 +2743,38 @@ export interface components {
             /** Format: int64 */
             revision: number;
         };
+        /** @description Latest non-superseded conversion provenance; Admin only. A resultRevision may be Incoming rather than the adopted Local baseline. stale compares the current source revision, hash and canonical metadata. */
+        OnlineBulletinDerivation: {
+            /** Format: uuid */
+            sourceDocumentId: string;
+            /** Format: int64 */
+            sourceRevision: number;
+            sourceContentHash: string;
+            /** Format: int64 */
+            sourceMetadataVersion: number;
+            converterVersion: string;
+            /** Format: int64 */
+            resultRevision: number | null;
+            convertedMetadata: null | components["schemas"]["OnlineBulletinCanonicalMetadata"];
+            stale: boolean;
+        };
+        OnlineBulletinConversionInput: {
+            /** Format: int64 */
+            canonicalVersion: number;
+            /** Format: int64 */
+            sourceOnlineVersion: number;
+            /** Format: int64 */
+            sourceRevision: number;
+            /** @default false */
+            retry: boolean;
+        };
         OnlineBulletinAdminState: {
             /** Format: uuid */
             issueId: string;
             /** @enum {string} */
             series: "general";
             /** @enum {string} */
-            contentLocale: "zh-Hant";
+            contentLocale: "zh-Hant" | "zh-Hans";
             /** Format: int64 */
             canonicalVersion: number;
             canonicalMetadata: components["schemas"]["OnlineBulletinCanonicalMetadata"];
@@ -2747,6 +2792,8 @@ export interface components {
             publishedRevision: number | null;
             /** @description Canonical metadata differs from the immutable Online publication and requires explicit republish. */
             metadataSyncPending: boolean;
+            conversion?: components["schemas"]["OnlineBulletinAdminJob"];
+            derivation?: components["schemas"]["OnlineBulletinDerivation"];
             /** @description Human confirmation matches current Local and canonical metadata. This does not itself authorize publication. */
             confirmed: boolean;
             publishedMetadata: null | components["schemas"]["OnlineBulletinCanonicalMetadata"];
@@ -2769,7 +2816,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** @enum {string} */
-            status: "queued" | "parsing" | "review_ready" | "validating" | "ready" | "failed";
+            status: "queued" | "parsing" | "converting" | "review_ready" | "validating" | "ready" | "failed";
             attempts: number;
             errorCode: string;
             reviewIssues?: components["schemas"]["OnlineBulletinReviewIssue"][];
@@ -2784,12 +2831,12 @@ export interface components {
             issueId: string;
             /** @constant */
             series: "general";
-            /** @constant */
-            contentLocale: "zh-Hant";
+            /** @enum {string} */
+            contentLocale: "zh-Hant" | "zh-Hans";
             /** @constant */
             schemaVersion: "1";
-            /** @constant */
-            templateVersion: "v1";
+            /** @enum {string} */
+            templateVersion: "v1" | "v2";
             sourceAssetChecksum: components["schemas"]["OnlineBulletinHash"];
             /** @description Must equal the saved page count. Composition preserves original page identity and fragment membership; overflow blocks publication instead of adding pages. */
             sourcePageCount: number;
@@ -2813,10 +2860,10 @@ export interface components {
         };
         /** @description Revision-owned manifest; hashes bind the authoritative isolated-worker measurement. Empty validation hashes represent a pending draft, never permission to publish. */
         OnlineBulletinLayoutManifest: {
-            /** @constant */
-            templateVersion: "v1";
-            /** @constant */
-            rendererVersion: "v1";
+            /** @enum {string} */
+            templateVersion: "v1" | "v2";
+            /** @enum {string} */
+            rendererVersion: "v1" | "v2";
             rendererArtifactSha256: components["schemas"]["OnlineBulletinHash"];
             contentHash?: components["schemas"]["OnlineBulletinHash"];
             layoutValidationHash?: components["schemas"]["OnlineBulletinHash"];
@@ -7267,7 +7314,7 @@ export interface operations {
             path: {
                 issueId: components["parameters"]["IssueID"];
                 series: "general";
-                contentLocale: "zh-Hant";
+                contentLocale: "zh-Hant" | "zh-Hans";
             };
             cookie?: never;
         };
@@ -7354,6 +7401,54 @@ export interface operations {
             503: components["responses"]["Error"];
         };
     };
+    startOnlineBulletinConversion: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                series: "general";
+                contentLocale: "zh-Hans";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnlineBulletinConversionInput"];
+            };
+        };
+        responses: {
+            /** @description Existing completed or failed conversion */
+            200: {
+                headers: {
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnlineBulletinQueuedExtractionEnvelope"];
+                };
+            };
+            /** @description Conversion queued or already running */
+            202: {
+                headers: {
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnlineBulletinQueuedExtractionEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
     getOnlineBulletinComparison: {
         parameters: {
             query?: never;
@@ -7361,7 +7456,7 @@ export interface operations {
             path: {
                 issueId: string;
                 series: "general";
-                contentLocale: "zh-Hant";
+                contentLocale: "zh-Hant" | "zh-Hans";
             };
             cookie?: never;
         };
@@ -7399,7 +7494,7 @@ export interface operations {
             path: {
                 issueId: string;
                 series: "general";
-                contentLocale: "zh-Hant";
+                contentLocale: "zh-Hant" | "zh-Hans";
             };
             cookie?: never;
         };
@@ -7443,7 +7538,7 @@ export interface operations {
             path: {
                 issueId: components["parameters"]["IssueID"];
                 series: "general";
-                contentLocale: "zh-Hant";
+                contentLocale: "zh-Hant" | "zh-Hans";
             };
             cookie?: never;
         };
@@ -7495,7 +7590,7 @@ export interface operations {
             path: {
                 issueId: components["parameters"]["IssueID"];
                 series: "general";
-                contentLocale: "zh-Hant";
+                contentLocale: "zh-Hant" | "zh-Hans";
             };
             cookie?: never;
         };
@@ -7547,7 +7642,7 @@ export interface operations {
             path: {
                 issueId: components["parameters"]["IssueID"];
                 series: "general";
-                contentLocale: "zh-Hant";
+                contentLocale: "zh-Hant" | "zh-Hans";
             };
             cookie?: never;
         };
@@ -7599,7 +7694,7 @@ export interface operations {
             path: {
                 issueId: components["parameters"]["IssueID"];
                 series: "general";
-                contentLocale: "zh-Hant";
+                contentLocale: "zh-Hant" | "zh-Hans";
             };
             cookie?: never;
         };
@@ -7651,7 +7746,7 @@ export interface operations {
             path: {
                 issueId: components["parameters"]["IssueID"];
                 series: "general";
-                contentLocale: "zh-Hant";
+                contentLocale: "zh-Hant" | "zh-Hans";
                 revision: number;
             };
             cookie?: never;
@@ -7705,7 +7800,7 @@ export interface operations {
             path: {
                 issueId: components["parameters"]["IssueID"];
                 series: "general";
-                contentLocale: "zh-Hant";
+                contentLocale: "zh-Hant" | "zh-Hans";
             };
             cookie?: never;
         };
@@ -7740,7 +7835,7 @@ export interface operations {
             path: {
                 issueId: components["parameters"]["IssueID"];
                 series: "general";
-                contentLocale: "zh-Hant";
+                contentLocale: "zh-Hant" | "zh-Hans";
                 revision: number;
             };
             cookie?: never;

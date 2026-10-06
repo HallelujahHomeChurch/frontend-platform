@@ -64,3 +64,17 @@ The Operations contract uses stable Account-bound members, one active church,
 multiple family/small-group/fellowship affiliations, scoped responsibilities,
 and direct bulletin entitlements. Qualification and validity-window fields are
 not part of the contract.
+# Bulletin ebook presentation
+
+`BulletinEbook` renders a single semantic chapter (`cover`, `body`, `worship`,
+`back`) from the same canonical document as the paper reader. Import
+`@hallelujahhomechurch/ui/bulletin-paper.css` for the existing licensed fonts
+and `@hallelujahhomechurch/ui/bulletin-ebook.css` for reflow-only styling.
+It does not alter the digest-pinned paper renderer or stored source geometry.
+
+Hosts own navigation, authorization, watermarking, and progress. Use
+`bulletinChapters` / `bulletinChapterForAnchor` for chapter membership and
+`bulletinMobileDetails` for the shared default-hidden production metadata policy.
+Search and annotation indexes must use the full canonical document, not visible
+chapters. Reveal details when targeting a hidden sentence; original sentence IDs
+and Unicode-scalar offsets remain unchanged.

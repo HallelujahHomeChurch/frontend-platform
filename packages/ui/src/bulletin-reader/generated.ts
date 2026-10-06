@@ -3,6 +3,234 @@ export type paths = Record<string, never>;
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        OnlineBulletinComparisonValue: components["schemas"]["OnlineBulletinBlock"] | components["schemas"]["OnlineBulletinComponent"] | components["schemas"]["OnlineBulletinID"][] | null;
+        OnlineBulletinComparison: {
+            /** Format: uuid */
+            documentId: string;
+            /** Format: int64 */
+            version: number;
+            /** Format: int64 */
+            canonicalVersion: number;
+            /** Format: int64 */
+            baseRevision: number;
+            /** Format: int64 */
+            localRevision: number;
+            /** Format: int64 */
+            incomingRevision: number;
+            units: {
+                componentId: string;
+                blockId: string;
+                /** @enum {string} */
+                suggestion: "same" | "local" | "incoming" | "conflict";
+                base: components["schemas"]["OnlineBulletinComparisonValue"];
+                local: components["schemas"]["OnlineBulletinComparisonValue"];
+                incoming: components["schemas"]["OnlineBulletinComparisonValue"];
+            }[];
+        };
+        OnlineBulletinCompareInput: {
+            /** Format: int64 */
+            canonicalVersion: number;
+            /** Format: int64 */
+            baseRevision: number;
+            /** Format: int64 */
+            localRevision: number;
+            /** Format: int64 */
+            incomingRevision: number;
+            choices?: ({
+                componentId: string;
+                blockId: string;
+                /** @enum {string} */
+                choice: "local" | "incoming" | "manual";
+                value?: components["schemas"]["OnlineBulletinComparisonValue"];
+            } & ({
+                /** @constant */
+                choice?: "manual";
+            } | {
+                /** @enum {unknown} */
+                choice?: "local" | "incoming";
+            }))[];
+        };
+        OnlineBulletinDraftInput: {
+            /** Format: int64 */
+            canonicalVersion: number;
+            /** @description Typed editable content only. Omit every read-only sentence source field; the server preserves source provenance by stable sentence ID. */
+            components: components["schemas"]["OnlineBulletinComponent"][];
+        };
+        OnlineBulletinSavedDraft: {
+            /** Format: uuid */
+            documentId: string;
+            /** Format: int64 */
+            version: number;
+            /** Format: int64 */
+            revision: number;
+            /** Format: uuid */
+            layoutJobId: string;
+        };
+        OnlineBulletinExtractionInput: {
+            /** Format: int64 */
+            canonicalVersion: number;
+            /** @default false */
+            retry: boolean;
+        };
+        OnlineBulletinQueuedExtractionEnvelope: {
+            data: {
+                /** Format: uuid */
+                documentId: string;
+                /** Format: int64 */
+                version: number;
+                job: components["schemas"]["OnlineBulletinAdminJob"];
+            };
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        OnlineBulletinRevisionPage: {
+            /** Format: uuid */
+            documentId: string;
+            /** Format: int64 */
+            nextBefore: number | null;
+            items: {
+                /** Format: int64 */
+                revision: number;
+                createdBy: string;
+                /** Format: date-time */
+                createdAt: string;
+                sourceAssetChecksum: string;
+                /** @description Historical worker proof exists; not current publication authority. */
+                layoutValidated: boolean;
+            }[];
+        };
+        OnlineBulletinHistoricalRevision: {
+            /** Format: uuid */
+            documentId: string;
+            /** Format: int64 */
+            revision: number;
+            document: components["schemas"]["OnlineBulletinDocument"];
+            reviewIssues: components["schemas"]["OnlineBulletinReviewIssue"][];
+            canonicalMetadata: components["schemas"]["OnlineBulletinCanonicalMetadata"];
+            createdBy: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        OnlineBulletinPublishInput: {
+            /** Format: int64 */
+            canonicalVersion: number;
+            /** Format: int64 */
+            revision: number;
+            mappings?: components["schemas"]["OnlineBulletinSentenceMapping"][];
+        };
+        OnlineBulletinSentenceMapping: {
+            fromSentenceId: string;
+            /** @enum {string} */
+            status: "unchanged" | "moved" | "split" | "merged" | "removed";
+            toSentenceIds: string[];
+        };
+        OnlineBulletinUnpublishedRevision: {
+            /** Format: uuid */
+            documentId: string;
+            /** Format: int64 */
+            version: number;
+        };
+        OnlineBulletinRestoreInput: {
+            /** Format: int64 */
+            canonicalVersion: number;
+        };
+        OnlineBulletinConfirmInput: {
+            /** Format: int64 */
+            canonicalVersion: number;
+            /** Format: int64 */
+            revision: number;
+            layoutValidationHash: string;
+            pageCount: number;
+            acceptedIssues: components["schemas"]["OnlineBulletinReviewIssue"][];
+        };
+        OnlineBulletinConfirmedRevision: {
+            /** Format: uuid */
+            documentId: string;
+            /** Format: int64 */
+            version: number;
+            /** Format: int64 */
+            revision: number;
+        };
+        /** @description Latest non-superseded conversion provenance; Admin only. A resultRevision may be Incoming rather than the adopted Local baseline. stale compares the current source revision, hash and canonical metadata. */
+        OnlineBulletinDerivation: {
+            /** Format: uuid */
+            sourceDocumentId: string;
+            /** Format: int64 */
+            sourceRevision: number;
+            sourceContentHash: string;
+            /** Format: int64 */
+            sourceMetadataVersion: number;
+            converterVersion: string;
+            /** Format: int64 */
+            resultRevision: number | null;
+            convertedMetadata: null | components["schemas"]["OnlineBulletinCanonicalMetadata"];
+            stale: boolean;
+        };
+        OnlineBulletinConversionInput: {
+            /** Format: int64 */
+            canonicalVersion: number;
+            /** Format: int64 */
+            sourceOnlineVersion: number;
+            /** Format: int64 */
+            sourceRevision: number;
+            /** @default false */
+            retry: boolean;
+        };
+        OnlineBulletinAdminState: {
+            /** Format: uuid */
+            issueId: string;
+            /** @enum {string} */
+            series: "general";
+            /** @enum {string} */
+            contentLocale: "zh-Hant" | "zh-Hans";
+            /** Format: int64 */
+            canonicalVersion: number;
+            canonicalMetadata: components["schemas"]["OnlineBulletinCanonicalMetadata"];
+            pdfStatus: components["schemas"]["BulletinVersionStatus"];
+            documentId: string;
+            /** Format: int64 */
+            version: number;
+            /** @enum {string} */
+            draftStatus: "notStarted" | "extracting" | "reviewRequired" | "ready" | "published" | "extractionFailed";
+            /** Format: int64 */
+            baseRevision: number | null;
+            /** Format: int64 */
+            incomingRevision: number | null;
+            /** Format: int64 */
+            publishedRevision: number | null;
+            /** @description Canonical metadata differs from the immutable Online publication and requires explicit republish. */
+            metadataSyncPending: boolean;
+            conversion?: components["schemas"]["OnlineBulletinAdminJob"];
+            derivation?: components["schemas"]["OnlineBulletinDerivation"];
+            /** @description Human confirmation matches current Local and canonical metadata. This does not itself authorize publication. */
+            confirmed: boolean;
+            publishedMetadata: null | components["schemas"]["OnlineBulletinCanonicalMetadata"];
+            local: null | components["schemas"]["OnlineBulletinAdminRevision"];
+            extraction: null | components["schemas"]["OnlineBulletinAdminJob"];
+            layout: null | components["schemas"]["OnlineBulletinAdminJob"];
+        };
+        OnlineBulletinAdminRevision: {
+            /** Format: int64 */
+            revision: number;
+            document: components["schemas"]["OnlineBulletinDocument"];
+            reviewIssues: components["schemas"]["OnlineBulletinReviewIssue"][];
+        };
+        OnlineBulletinReviewIssue: {
+            code: string;
+            blocking: boolean;
+            componentId?: components["schemas"]["OnlineBulletinID"];
+        };
+        OnlineBulletinAdminJob: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "queued" | "parsing" | "converting" | "review_ready" | "validating" | "ready" | "failed";
+            attempts: number;
+            errorCode: string;
+            reviewIssues?: components["schemas"]["OnlineBulletinReviewIssue"][];
+        };
         OnlineBulletinID: string;
         OnlineBulletinHash: string;
         /** @enum {string} */
@@ -13,13 +241,14 @@ export interface components {
             issueId: string;
             /** @constant */
             series: "general";
-            /** @constant */
-            contentLocale: "zh-Hant";
+            /** @enum {string} */
+            contentLocale: "zh-Hant" | "zh-Hans";
             /** @constant */
             schemaVersion: "1";
-            /** @constant */
-            templateVersion: "v1";
+            /** @enum {string} */
+            templateVersion: "v1" | "v2";
             sourceAssetChecksum: components["schemas"]["OnlineBulletinHash"];
+            /** @description Must equal the saved page count. Composition preserves original page identity and fragment membership; overflow blocks publication instead of adding pages. */
             sourcePageCount: number;
             pages: components["schemas"]["OnlineBulletinPage"][];
             layoutManifest: components["schemas"]["OnlineBulletinLayoutManifest"];
@@ -41,10 +270,10 @@ export interface components {
         };
         /** @description Revision-owned manifest; hashes bind the authoritative isolated-worker measurement. Empty validation hashes represent a pending draft, never permission to publish. */
         OnlineBulletinLayoutManifest: {
-            /** @constant */
-            templateVersion: "v1";
-            /** @constant */
-            rendererVersion: "v1";
+            /** @enum {string} */
+            templateVersion: "v1" | "v2";
+            /** @enum {string} */
+            rendererVersion: "v1" | "v2";
             rendererArtifactSha256: components["schemas"]["OnlineBulletinHash"];
             contentHash?: components["schemas"]["OnlineBulletinHash"];
             layoutValidationHash?: components["schemas"]["OnlineBulletinHash"];
@@ -104,7 +333,8 @@ export interface components {
         OnlineBulletinSentence: {
             id: components["schemas"]["OnlineBulletinID"];
             spans: components["schemas"]["OnlineBulletinSpan"][];
-            source?: {
+            /** @description Server-owned PDF provenance; forbidden in component edit requests. */
+            readonly source?: {
                 page: number;
                 box: components["schemas"]["OnlineBulletinBox"];
             };
@@ -215,6 +445,8 @@ export interface components {
             type: "backSummary" | "announcements" | "victoriesAndPrayers";
             items: components["schemas"]["OnlineBulletinItem"][];
         };
+        /** @enum {string} */
+        BulletinVersionStatus: "draft" | "publishing" | "published" | "unpublishing" | "unpublish_failed" | "unpublished";
     };
     responses: never;
     parameters: never;

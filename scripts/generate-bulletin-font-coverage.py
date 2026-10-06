@@ -8,6 +8,8 @@ from fontTools.ttLib import TTFont
 
 root = Path(__file__).resolve().parent.parent
 directory = root / "packages/ui/src/bulletin-reader"
+if "--v2" in sys.argv[2:]:
+    directory /= "v2"
 assets = json.loads((directory / "template-assets.json").read_text())
 coverage = {}
 for asset in assets:

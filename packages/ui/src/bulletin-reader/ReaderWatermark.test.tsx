@@ -3,6 +3,12 @@ import {describe, expect, it} from 'vitest';
 import {ReaderWatermark} from './ReaderWatermark.js';
 
 describe('visible reader trace overlay', () => {
+  it('uses a light trace on dark ebook surfaces without increasing opacity', () => {
+    const {container} = render(<ReaderWatermark traceCode="DEMO-0000-0000-0000" tone="dark"/>);
+    const overlay = container.querySelector<HTMLElement>('[data-reader-watermark]')!;
+    expect(decodeURIComponent(overlay.style.backgroundImage)).toContain('#e8d9c9');
+    expect(overlay.style.opacity).toBe('0.055');
+  });
   it('repeats a faint noninteractive code outside layout, copy and accessibility text', () => {
     const {container} = render(<div style={{position: 'relative'}}><p>Readable sentence.</p><ReaderWatermark traceCode="DEMO-0000-0000-0000"/></div>);
     const overlay = container.querySelector<HTMLElement>('[data-reader-watermark]')!;

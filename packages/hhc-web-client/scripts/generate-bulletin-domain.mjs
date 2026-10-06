@@ -9,6 +9,16 @@ const sourceIndex = process.argv.indexOf('--source');
 if (sourceIndex !== -1) {
   const api = parse(await readFile(process.argv[sourceIndex + 1], 'utf8'));
   const schemas = Object.fromEntries(Object.entries(api.components.schemas).filter(([name]) => name.startsWith('OnlineBulletin')));
+  // Include referenced shared enums/models so the standalone domain is valid.
+  const pending = Object.keys(schemas);
+  for (const name of pending) {
+    for (const [, dependency] of JSON.stringify(schemas[name]).matchAll(/"\$ref":"#\/components\/schemas\/([^"/]+)"/g)) {
+      if (dependency in schemas) continue;
+      if (!(dependency in api.components.schemas)) throw new Error(`Missing schema: ${dependency}`);
+      schemas[dependency] = api.components.schemas[dependency];
+      pending.push(dependency);
+    }
+  }
   await writeFile(contract, JSON.stringify({openapi: api.openapi, info: {title: 'Weekly bulletin domain', version: '1'}, paths: {}, components: {schemas}}, null, 2) + '\n');
 }
 const generated = '// Generated from hhc-web-api OpenAPI components. Do not edit.\n' + astToString(await openapiTS(contract));
