@@ -23,6 +23,70 @@ servers:
   - url: https://www.alive.org.tw/api
     description: Public and admin gateway surface; api-gateway validates browser JWTs and injects trusted identity headers.
 paths:
+  /admin/recordings/retention-policy:
+    get:
+      operationId: getRecordingRetentionPolicy
+      summary: getRecordingRetentionPolicy
+      description: Human administrators only. Policy changes require a fresh actor-bound preview, matching revision and explicit confirmation. Asset commits policy and audit atomically; issued grants keep up to one hour of byte cleanup grace.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:read]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      responses:
+        '200': {description: RecordingRetentionPolicy, content: {application/json: {schema: {$ref: '#/components/schemas/RecordingRetentionPolicyEnvelope'}}}}
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+    put:
+      operationId: updateRecordingRetentionPolicy
+      summary: updateRecordingRetentionPolicy
+      description: Human administrators only. Policy changes require a fresh actor-bound preview, matching revision and explicit confirmation. Asset commits policy and audit atomically; issued grants keep up to one hour of byte cleanup grace.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:write]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+        - {name: Idempotency-Key, in: header, required: true, schema: {type: string, minLength: 1, maxLength: 128}}
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/UpdateRecordingRetentionInput'}}}
+      responses:
+        '200': {description: RecordingRetentionPolicy, content: {application/json: {schema: {$ref: '#/components/schemas/RecordingRetentionPolicyEnvelope'}}}}
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/recordings/retention-policy/preview:
+    post:
+      operationId: previewRecordingRetentionPolicy
+      summary: previewRecordingRetentionPolicy
+      description: Human administrators only. Policy changes require a fresh actor-bound preview, matching revision and explicit confirmation. Asset commits policy and audit atomically; issued grants keep up to one hour of byte cleanup grace.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:write]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/PreviewRecordingRetentionInput'}}}
+      responses:
+        '200': {description: RecordingRetentionPreview, content: {application/json: {schema: {$ref: '#/components/schemas/RecordingRetentionPreviewEnvelope'}}}}
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
   /legal/common:
     get:
       operationId: getCommonLegalSnapshot
@@ -220,6 +284,34 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/LegalSnapshotEnvelope' }
+  /admin/recordings/watermark-lookups:
+    post:
+      operationId: lookupRecordingWatermark
+      summary: Resolve an exact recording code to its issuance account (not proof of the person sharing it)
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:investigate]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RecordingWatermarkLookupInput' }
+      responses:
+        '200':
+          description: Exact issuance receipt; never cached
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecordingWatermarkLookupEnvelope' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
   /admin/bulletins/watermark-lookups:
     post:
       operationId: lookupBulletinWatermark
@@ -3305,6 +3397,25 @@ paths:
         '503': { $ref: '#/components/responses/Error' }
   /admin/recordings/{id}:
     parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    delete:
+      operationId: deleteAdminRecording
+      summary: Delete a recording and schedule media cleanup
+      description: Human administrators only. Requires write capability and If-Match; a published recording additionally requires publish capability, checked under the recording row lock. Removes the recording from all projections and denies new playback grants immediately after commit. A durable owner command asynchronously deletes private source, HLS and preview bytes with retries. Existing playback grants may remain valid until expiry. Repeating the original accepted If-Match is safe. Audit and minimal deletion receipts are retained.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-required-scopes: [cms:recordings:write]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters: [{ $ref: '#/components/parameters/IfMatch' }]
+      responses:
+        '204': { description: Recording deleted and cleanup durably queued. }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
     get:
       operationId: getAdminRecording
       summary: Read one recording and version
@@ -3351,7 +3462,9 @@ paths:
     parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
     patch:
       operationId: setAdminRecordingExposure
-      summary: Set featured and hidden flags with publish capability
+      summary: Retired recording exposure operation
+      deprecated: true
+      description: Pinning and hiding were removed. Authorized callers receive 410; use unpublish to return a published recording to draft.
       tags: [Admin]
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
@@ -3369,12 +3482,9 @@ paths:
               required: [featured, hidden]
               properties: { featured: { type: boolean }, hidden: { type: boolean } }
       responses:
-        '200': { description: Updated exposure, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingEnvelope' } } } }
+        '410': {description: Pinning and hiding are retired.}
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
         '403': { $ref: '#/components/responses/AdminForbidden' }
-        '409': { $ref: '#/components/responses/Error' }
-        '412': { $ref: '#/components/responses/Error' }
-        '428': { $ref: '#/components/responses/Error' }
   /admin/recordings/{id}/publish:
     parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
     post:
@@ -3447,6 +3557,122 @@ paths:
         '409': { $ref: '#/components/responses/Error' }
         '412': { $ref: '#/components/responses/Error' }
         '428': { $ref: '#/components/responses/Error' }
+  /admin/recordings/{id}/covers:
+    get:
+      operationId: listRecordingCovers
+      summary: List owner-bound cover candidates and current selection
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:read]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }, { daprApiToken: [], daprCallerAppId: [], trustedPrincipalId: [], trustedPrincipalType: [], trustedClientId: [], trustedCredentialId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Cover status and selection, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingCoverListEnvelope' } } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/recordings/{id}/cover-uploads:
+    post:
+      operationId: uploadRecordingCover
+      summary: Upload bounded custom JPEG or PNG; never publishes
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:write]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }, { daprApiToken: [], daprCallerAppId: [], trustedPrincipalId: [], trustedPrincipalType: [], trustedClientId: [], trustedCredentialId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: Idempotency-Key, in: header, required: true, schema: { type: string, pattern: '^[a-zA-Z0-9._:-]{1,128}$' } }
+      requestBody:
+        required: true
+        description: At most 5 MiB, 24 MP and 8192 pixels per edge; backend validates and re-encodes. Published recordings additionally require cms:recordings:publish.
+        content:
+          image/jpeg: { schema: { type: string, format: binary } }
+          image/png: { schema: { type: string, format: binary } }
+      responses:
+        '202': { description: Accepted; processing is not selection, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingCoverUploadEnvelope' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/recordings/{id}/cover:
+    put:
+      operationId: setRecordingCover
+      summary: Select ready owner-bound cover with optimistic concurrency
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:write]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }, { daprApiToken: [], daprCallerAppId: [], trustedPrincipalId: [], trustedPrincipalType: [], trustedClientId: [], trustedCredentialId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: If-Match, in: header, required: true, schema: { type: string, pattern: '^"[1-9][0-9]*"$' } }
+        - { name: Idempotency-Key, in: header, schema: { type: string, pattern: '^[a-zA-Z0-9._:-]{1,128}$' }, description: 'Required for service actors and CLI; replay returns immutable receipt plus current state, never reapplies.' }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/RecordingCoverSelection' } } }
+      responses:
+        '200': { description: Selected or historical state changed; never publishes or extends expiry, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingCoverSelectionEnvelope' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/recordings/{id}/covers/{coverId}/content:
+    get:
+      operationId: getRecordingCoverContent
+      summary: Stream administrator preview without a playback grant
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:read]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }, { daprApiToken: [], daprCallerAppId: [], trustedPrincipalId: [], trustedPrincipalType: [], trustedClientId: [], trustedCredentialId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: coverId, in: path, required: true, schema: { type: string, pattern: '^[A-Za-z0-9-]{1,128}$' } }
+      responses:
+        '200': { description: Bounded private JPEG with nosniff, content: { image/jpeg: { schema: { type: string, format: binary } } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /member/recordings/{id}/cover:
+    get:
+      operationId: getMemberRecordingCover
+      summary: Stream current cover before playback after membership, legal and visibility checks
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-entitlements: [video.meeting-recordings.access]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Bounded private current JPEG without playback session or bearer URL, content: { image/jpeg: { schema: { type: string, format: binary } } } }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
 components:
   securitySchemes:
     daprApiToken:
@@ -5000,6 +5226,78 @@ components:
           type: array
           maxItems: 256
           items: { $ref: '#/components/schemas/OnlineBulletinItem' }
+    RecordingRetentionPolicy:
+      type: object
+      additionalProperties: false
+      required: [retentionDays, revision, activatedAt]
+      properties:
+        retentionDays: {type: integer, minimum: 1, maximum: 365}
+        revision: {type: integer, minimum: 1}
+        activatedAt: {type: [string, 'null'], format: date-time}
+    RecordingRetentionPreview:
+      type: object
+      additionalProperties: false
+      required: [previewId, retentionDays, revision, evaluatedAt, affectedCount, affectedBytes]
+      properties:
+        previewId: {type: string}
+        retentionDays: {type: integer, minimum: 1, maximum: 365}
+        revision: {type: integer, minimum: 1}
+        evaluatedAt: {type: string, format: date-time}
+        affectedCount: {type: integer, minimum: 0}
+        affectedBytes: {type: integer, minimum: 0}
+    PreviewRecordingRetentionInput:
+      type: object
+      additionalProperties: false
+      required: [retentionDays]
+      properties:
+        retentionDays: {type: integer, minimum: 1, maximum: 365}
+    UpdateRecordingRetentionInput:
+      type: object
+      additionalProperties: false
+      required: [retentionDays, expectedRevision, previewId]
+      properties:
+        retentionDays: {type: integer, minimum: 1, maximum: 365}
+        expectedRevision: {type: integer, minimum: 1}
+        previewId: {type: string, minLength: 1}
+    RecordingRetentionPolicyEnvelope:
+      type: object
+      required: [data, meta, error]
+      properties:
+        data: {$ref: '#/components/schemas/RecordingRetentionPolicy'}
+        meta: {type: object, additionalProperties: true}
+        error: {type: 'null'}
+    RecordingRetentionPreviewEnvelope:
+      type: object
+      required: [data, meta, error]
+      properties:
+        data: {$ref: '#/components/schemas/RecordingRetentionPreview'}
+        meta: {type: object, additionalProperties: true}
+        error: {type: 'null'}
+    RecordingWatermarkLookupInput:
+      type: object
+      additionalProperties: false
+      required: [recordingId, code]
+      properties:
+        recordingId: { type: string, format: uuid }
+        code: { type: string, minLength: 10, maxLength: 64 }
+    RecordingWatermarkLookupResult:
+      type: object
+      additionalProperties: false
+      required: [receiptId, recordingId, packageId, userId, issuedAt, expiresAt]
+      properties:
+        receiptId: { type: string, format: uuid }
+        recordingId: { type: string, format: uuid }
+        packageId: { type: string, pattern: '^[a-f0-9]{32}$' }
+        userId: { type: string, format: uuid }
+        issuedAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+    RecordingWatermarkLookupEnvelope:
+      type: object
+      required: [data, meta, error]
+      properties:
+        data: { $ref: '#/components/schemas/RecordingWatermarkLookupResult' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: 'null' }
     RecordingSourceInput:
       type: object
       additionalProperties: false
@@ -5103,6 +5401,8 @@ components:
       additionalProperties: false
       required: [packageId, sessionId, recordingId, state, sizeBytes, expiresAt, confirmedObjects, nextCursor]
       properties:
+        uploadedAt: {type: string, format: date-time, description: Immutable accepted upload completion time.}
+        retentionRevision: {type: integer, format: int64, minimum: 1}
         packageId: { type: string }
         sessionId: { type: string }
         recordingId: { type: string }
@@ -5113,7 +5413,7 @@ components:
         nextCursor: { type: string, description: Last examined path; empty when this pass is complete. }
         readyAt: { type: string, format: date-time }
         mediaExpiresAt: { type: string, format: date-time }
-        renditions: { type: array, minItems: 1, maxItems: 2, items: { $ref: '#/components/schemas/RecordingRendition' } }
+        renditions: { type: array, minItems: 1, maxItems: 3, items: { $ref: '#/components/schemas/RecordingRendition' } }
     SignedRecordingObject:
       type: object
       additionalProperties: false
@@ -5146,7 +5446,7 @@ components:
         renditions:
           type: array
           minItems: 1
-          maxItems: 2
+          maxItems: 3
           items: { $ref: '#/components/schemas/RecordingRendition' }
         inventoryDigest: { type: string, pattern: '^[a-f0-9]{64}$' }
     RecordingPackageObject:
@@ -5156,7 +5456,7 @@ components:
       properties:
         path:
           type: string
-          pattern: '^(master\.m3u8|(720p|1080p)/(index\.m3u8|init\.mp4|seg-[0-9]{6}\.m4s))$'
+          pattern: '^(master\.m3u8|(480p|720p|1080p)/(index\.m3u8|init\.mp4|seg-[0-9]{6}\.m4s))$'
           description: Canonical relative path. Unique paths and every declared rendition's complete contiguous segment list are required. No URLs, encoded paths, queries or package.json.
         sizeBytes: { type: integer, format: int64, minimum: 1, maximum: 134217728, description: 'Playlists additionally have a 1048576-byte limit. Package total including inventory must be at most 10000000000 bytes.' }
         sha256: { type: string, pattern: '^[a-f0-9]{64}$' }
@@ -5165,14 +5465,14 @@ components:
       additionalProperties: false
       required: [name, width, height, frameRate, videoBitrate, audioBitrate, durationSeconds, segmentCount]
       properties:
-        name: { type: string, enum: [720p, 1080p], description: '720p is mandatory; 1080p optional. Names are unique.' }
-        width: { type: integer, minimum: 2, maximum: 1920, multipleOf: 2, description: '720p maximum width is 1280; source must never be upscaled.' }
-        height: { type: integer, minimum: 2, maximum: 1080, multipleOf: 2, description: '720p maximum height is 720. Actual dimensions are retained for smaller sources.' }
+        name: { type: string, enum: [480p, 720p, 1080p], description: '720p is mandatory for backward compatibility; 480p and 1080p optional. Names are unique; each additional rung has distinct dimensions and ordered bitrates.' }
+        width: { type: integer, minimum: 2, maximum: 1920, multipleOf: 2, description: '480p maximum width is 854; 720p maximum width is 1280; source must never be upscaled.' }
+        height: { type: integer, minimum: 2, maximum: 1080, multipleOf: 2, description: '480p maximum height is 480; 720p maximum height is 720. Actual dimensions are retained for smaller sources.' }
         frameRate: { type: number, exclusiveMinimum: 0, maximum: 30 }
         videoBitrate: { type: integer, minimum: 500000, maximum: 8000000 }
         audioBitrate: { type: integer, const: 128000 }
         durationSeconds: { type: number, exclusiveMinimum: 0, maximum: 43200 }
-        segmentCount: { type: integer, minimum: 1, maximum: 1440, description: 'ceil(durationSeconds/30); both renditions require aligned actual boundaries.' }
+        segmentCount: { type: integer, minimum: 1, maximum: 1440, description: 'ceil(durationSeconds/30); all renditions require aligned actual boundaries.' }
     RecordingPackageSignInput:
       type: object
       additionalProperties: false
@@ -5408,6 +5708,7 @@ components:
       required: [id, title, uploadedAt, expiresAt, featured, hidden, status, version]
       properties:
         id: { type: string, format: uuid }
+        selectedCoverId: { type: string, pattern: '^[A-Za-z0-9-]{1,128}$', description: Optional explicit CMS selection. An absent value may use default auto cover; member clients may lazily request the current cover endpoint. }
         title: { type: string, minLength: 1, maxLength: 180 }
         uploadedAt: { type: [string, 'null'], format: date-time }
         expiresAt: { type: [string, 'null'], format: date-time }
@@ -5420,6 +5721,83 @@ components:
         readyAt: { type: string, format: date-time }
         durationSeconds: { type: number, minimum: 0 }
         version: { type: integer, format: int64, minimum: 1 }
+    RecordingCover:
+      type: object
+      additionalProperties: false
+      required: [id, uploadId, kind, state]
+      properties:
+        id: { type: string, pattern: '^[A-Za-z0-9-]{1,128}$' }
+        uploadId: { type: string, pattern: '^[A-Za-z0-9-]{1,128}$' }
+        kind: { type: string, enum: [auto, custom] }
+        state: { type: string, enum: [uploading, pending, processing, ready, failed, expired] }
+        operationKey: { type: string, maxLength: 128, description: Management-only accepted upload key for response-loss reconciliation. }
+        error: { type: string, maxLength: 128 }
+        contentPath: { type: string, description: 'Same-origin administrator preview path, never an R2 key or bearer URL.' }
+    RecordingCoverList:
+      type: object
+      additionalProperties: false
+      required: [items, recordingVersion]
+      properties:
+        items: { type: array, maxItems: 1000, items: { $ref: '#/components/schemas/RecordingCover' } }
+        selectedCoverId: { type: string, pattern: '^[A-Za-z0-9-]{1,128}$' }
+        recordingVersion: { type: integer, format: int64, minimum: 1 }
+    RecordingCoverSelection:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [mode, candidateId]
+          properties:
+            mode: { type: string, enum: [auto] }
+            candidateId: { type: string, pattern: '^[A-Za-z0-9-]{1,128}$' }
+        - type: object
+          additionalProperties: false
+          required: [mode, uploadId]
+          properties:
+            mode: { type: string, enum: [custom] }
+            uploadId: { type: string, pattern: '^[A-Za-z0-9-]{1,128}$' }
+    RecordingCoverSelectionResult:
+      type: object
+      additionalProperties: false
+      required: [recording, coverId, outcome, receipt]
+      properties:
+        recording: { $ref: '#/components/schemas/MemberRecording' }
+        coverId: { type: string }
+        outcome: { type: string, enum: [selected, state_changed] }
+        receipt:
+          type: object
+          additionalProperties: false
+          required: [coverId, recordingVersion]
+          properties:
+            coverId: { type: string, pattern: '^[A-Za-z0-9-]{1,128}$' }
+            recordingVersion: { type: integer, format: int64, minimum: 1 }
+    RecordingCoverUpload:
+      type: object
+      additionalProperties: false
+      required: [uploadId, state]
+      properties:
+        uploadId: { type: string, pattern: '^[A-Za-z0-9-]{1,128}$' }
+        state: { type: string, enum: [uploading, pending, processing, ready, failed, expired] }
+    RecordingCoverListEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/RecordingCoverList' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: ['null'] }
+    RecordingCoverUploadEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/RecordingCoverUpload' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: ['null'] }
+    RecordingCoverSelectionEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/RecordingCoverSelectionResult' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: ['null'] }
     MemberRecordingPlayback:
       type: object
       additionalProperties: false

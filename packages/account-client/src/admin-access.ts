@@ -6,11 +6,12 @@ export const staffPermissionCatalog = [
   'rbac:read', 'rbac:manage',
   'oauth:read', 'oauth:manage',
   'iam:service-principals:read', 'iam:service-principals:write', 'iam:service-principals:credentials',
-  'cms:recordings:read', 'cms:recordings:write', 'cms:recordings:publish',
+  'cms:recordings:read', 'cms:recordings:write', 'cms:recordings:publish', 'cms:recordings:investigate',
   'campaigns:read', 'campaigns:write', 'campaigns:send',
   'assets:read', 'assets:write',
   'presenter:cloud:manage', 'presenter:line:manage',
   'dsr:read', 'dsr:manage',
+  'donations:sandbox:test',
   'cms:pages:read', 'cms:pages:write', 'cms:pages:publish',
   'cms:news:read', 'cms:news:write', 'cms:news:publish',
   'cms:bulletins:read', 'cms:bulletins:write', 'cms:bulletins:publish', 'cms:bulletins:investigate',
@@ -39,12 +40,14 @@ export const adminDestinations = [
   {id: 'system-roles', path: '/access', permission: 'rbac:read'},
   {id: 'service-principals', path: '/service-principals', permission: 'iam:service-principals:read'},
   {id: 'recordings', path: '/content/recordings', permission: 'cms:recordings:read'},
+  {id: 'recording-investigations', path: '/content/recordings/investigations', permission: 'cms:recordings:investigate'},
   {id: 'oauth', path: '/oauth-clients', permission: 'oauth:read'},
   {id: 'audit', path: '/audit', permission: 'audit:read'},
   {id: 'assets', path: '/assets', permission: 'assets:read'},
   {id: 'presenter-cloud', path: '/presenter/cloud', permission: 'presenter:cloud:manage'},
   {id: 'presenter-line', path: '/presenter/line', permission: 'presenter:line:manage'},
-  {id: 'dsr', path: '/dsr', permission: 'dsr:read'}
+  {id: 'dsr', path: '/dsr', permission: 'dsr:read'},
+  {id: 'donation-sandbox', path: '/donations/sandbox', permission: 'donations:sandbox:test'}
 ] as const;
 
 export type AdminDestination = typeof adminDestinations[number];

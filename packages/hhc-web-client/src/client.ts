@@ -19,6 +19,8 @@ export type ContentTranslationTargetLocale = components['schemas']['ContentTrans
 export type BulletinTranslationTargetEdition = components['schemas']['BulletinTranslationTargetEdition']
 export type BulletinStatus = components['schemas']['BulletinStatus']
 export type BulletinWatermarkLookup = components['schemas']['BulletinWatermarkLookupResult']
+export type RecordingWatermarkLookup = components['schemas']['RecordingWatermarkLookupResult']
+export type RecordingWatermarkLookupInput = components['schemas']['RecordingWatermarkLookupInput']
 export type BulletinWatermarkVersion = components['schemas']['BulletinWatermarkVersion']
 export type BulletinWatermarkInvestigationInput = Omit<components['schemas']['BulletinWatermarkInvestigationInput'], 'series'> & {series?: BulletinSeries}
 export type BulletinWatermarkInvestigation = components['schemas']['BulletinWatermarkInvestigation']
@@ -44,6 +46,14 @@ export type BulletinReaderMutationResponse = components['schemas']['ReaderMutati
 export type BulletinReaderNote = components['schemas']['ReaderNote']
 export type BulletinReaderHighlightColor = components['schemas']['ReaderHighlightColor']
 export type MemberRecording = components['schemas']['MemberRecording']
+export type RecordingRetentionPolicy = components['schemas']['RecordingRetentionPolicy']
+export type RecordingRetentionPreview = components['schemas']['RecordingRetentionPreview']
+export type UpdateRecordingRetentionInput = components['schemas']['UpdateRecordingRetentionInput']
+export type RecordingCover = components['schemas']['RecordingCover']
+export type RecordingCoverList = components['schemas']['RecordingCoverList']
+export type RecordingCoverSelection = components['schemas']['RecordingCoverSelection']
+export type RecordingCoverSelectionResult = components['schemas']['RecordingCoverSelectionResult']
+export type RecordingCoverUpload = components['schemas']['RecordingCoverUpload']
 export type MemberRecordingPlayback = components['schemas']['MemberRecordingPlayback']
 export type RecordingSourceInput = components['schemas']['RecordingSourceInput']
 export type RecordingSource = components['schemas']['RecordingSource']
@@ -278,6 +288,17 @@ export function createHhcWebClient(options: {
       if (bytes.length < 5 || new TextDecoder().decode(bytes.subarray(0, 5)) !== '%PDF-') throw invalid()
       return {bytes: bytes.buffer, checksum, canonicalVersion}
     },
+    async getRecordingRetentionPolicy(signal?:AbortSignal) {
+      return (await unwrap(client.GET('/admin/recordings/retention-policy',{signal,cache:'no-store'}))).data
+    },
+    async previewRecordingRetentionPolicy(retentionDays:number,signal?:AbortSignal) {
+      if(!Number.isInteger(retentionDays)||retentionDays<1||retentionDays>365)throw new HhcWebApiError(400,'invalid_retention','Enter 1–365 days.')
+      return (await unwrap(client.POST('/admin/recordings/retention-policy/preview',{body:{retentionDays},signal,cache:'no-store'}))).data
+    },
+    async updateRecordingRetentionPolicy(body:UpdateRecordingRetentionInput,key:string,signal?:AbortSignal) {
+      if(!Number.isInteger(body.retentionDays)||body.retentionDays<1||body.retentionDays>365||!Number.isSafeInteger(body.expectedRevision)||body.expectedRevision<1||!body.previewId||!key)throw new HhcWebApiError(400,'invalid_retention','Confirm a current retention preview.')
+      return (await unwrap(client.PUT('/admin/recordings/retention-policy',{body,params:{header:{'Idempotency-Key':key}},signal,cache:'no-store'}))).data
+    },
     async getCommonLegalSnapshot(locale: ContentLocale, signal?: AbortSignal) {
       return (await unwrap(client.GET('/legal/common', {params: {query: {locale}}, signal, cache: 'no-store'}))).data
     },
@@ -297,6 +318,30 @@ export function createHhcWebClient(options: {
     },
     async listMemberRecordings(signal?: AbortSignal) {
       return (await unwrap(client.GET('/member/recordings', { signal, cache: 'no-store' }))).data
+    },
+    async listRecordingCovers(id:string,signal?:AbortSignal) {
+      return (await unwrap(client.GET('/admin/recordings/{id}/covers',{params:{path:{id}},signal,cache:'no-store'}))).data
+    },
+    async uploadRecordingCover(id:string,blob:Blob,key:string,signal?:AbortSignal) {
+      if(!['image/jpeg','image/png'].includes(blob.type)||blob.size<1||blob.size>5*1024*1024) throw new HhcWebApiError(422,'invalid_cover','Choose JPEG or PNG up to 5 MiB.')
+      return (await unwrap(client.POST('/admin/recordings/{id}/cover-uploads',{
+        params:{path:{id},header:{'Idempotency-Key':key}},headers:{'Content-Type':blob.type},body:'',bodySerializer:()=>blob,signal,cache:'no-store',redirect:'error',
+      }))).data
+    },
+    async setRecordingCover(id:string,version:number,selection:RecordingCoverSelection,key:string,signal?:AbortSignal) {
+      return (await unwrap(client.PUT('/admin/recordings/{id}/cover',{
+        params:{path:{id},header:{'If-Match':`"${version}"`,'Idempotency-Key':key}},body:selection,signal,cache:'no-store',
+      }))).data
+    },
+    async getRecordingCoverContent(id:string,coverId:string,signal?:AbortSignal) {
+      return unwrap(client.GET('/admin/recordings/{id}/covers/{coverId}/content',{
+        params:{path:{id,coverId}},signal,cache:'no-store',redirect:'error',parseAs:'blob',headers:{Accept:'image/jpeg'},
+      }))
+    },
+    async getMemberRecordingCover(id:string,signal?:AbortSignal) {
+      return unwrap(client.GET('/member/recordings/{id}/cover',{
+        params:{path:{id}},signal,cache:'no-store',redirect:'error',parseAs:'blob',headers:{Accept:'image/jpeg'},
+      }))
     },
     async issueRecordingPlayback(id: string, playbackScopeId: string, expectedAssetVersionId?: string, signal?: AbortSignal) {
       return (await unwrap(client.POST('/member/recordings/{id}/playback', {
@@ -320,9 +365,10 @@ export function createHhcWebClient(options: {
       }))).data
     },
     async setAdminRecordingExposure(id: string, version: number, featured: boolean, hidden: boolean) {
-      return (await unwrap(client.PATCH('/admin/recordings/{id}/exposure', {
+      await unwrap(client.PATCH('/admin/recordings/{id}/exposure', {
         params: { path: { id }, header: { 'If-Match': `"${version}"` } }, body: { featured, hidden },
-      }))).data
+      }))
+      throw new HhcWebApiError(410,'retired','Recording exposure controls are retired.')
     },
     async publishAdminRecording(id: string, version: number) {
       const data = (await unwrap(client.POST('/admin/recordings/{id}/publish', {
@@ -429,6 +475,9 @@ export function createHhcWebClient(options: {
     },
     async lookupBulletinWatermark(code: string, signal?: AbortSignal) {
       return (await unwrap(client.POST('/admin/bulletins/watermark-lookups', {body: {code}, signal, cache: 'no-store'}))).data
+    },
+    async lookupRecordingWatermark(input: RecordingWatermarkLookupInput, signal?: AbortSignal): Promise<RecordingWatermarkLookup> {
+      return (await unwrap(client.POST('/admin/recordings/watermark-lookups', {body:input, signal, cache:'no-store'}))).data
     },
     async listAdminBulletins(params: { page?: number; pageSize?: number; status?: BulletinStatus; query?: string; sort?: 'issueNumber' | 'date' | 'title' | 'languages' | 'status' | 'updated'; direction?: 'asc' | 'desc'; signal?: AbortSignal } = {}) {
       const envelope = await unwrap(client.GET('/admin/bulletins', {

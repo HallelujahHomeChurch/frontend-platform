@@ -134,3 +134,19 @@ describe('Operations client authentication', () => {
 	expect(entitlement.headers.get('idempotency-key')).toBe('grant');
   });
 });
+
+it('preserves an explicit empty unit policy and sends a typed video grant', async () => {
+ const bodies: unknown[] = [];
+ const fetcher: typeof fetch = async input => { bodies.push(await (input as Request).json()); return json({}); };
+ const client = createOperationsClient({baseUrl: '', getAccessToken: async () => 'token', refreshAfterUnauthorized: async () => null, fetcher});
+ await client.raw.PUT('/api/operations/manage/org-units/{unitId}', {
+  params: {path: {unitId: 'unit'}, header: {'If-Match':'"1"','Idempotency-Key':'policy'}},
+  body: {name:'Group',grantableEntitlementCodes:[]}
+ });
+ await client.raw.POST('/api/operations/manage/org-units/{unitId}/entitlements/batch', {
+  params: {path:{unitId:'unit'},header:{'Idempotency-Key':'grant'}},
+  body:{memberIds:['member'],entitlementCode:'video.meeting-recordings.access',operation:'grant'}
+ });
+ await client.raw.PUT('/api/operations/manage/org-units/{unitId}', {params:{path:{unitId:'unit'},header:{'If-Match':'"1"','Idempotency-Key':'inherit'}},body:{name:'Group',inheritsGrantableEntitlements:true}});
+ expect(bodies).toEqual([{name:'Group',grantableEntitlementCodes:[]},{memberIds:['member'],entitlementCode:'video.meeting-recordings.access',operation:'grant'},{name:'Group',inheritsGrantableEntitlements:true}]);
+});
