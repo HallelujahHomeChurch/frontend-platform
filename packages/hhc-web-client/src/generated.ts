@@ -3292,6 +3292,7 @@ export interface components {
             error: null;
         };
         RecordingSourceStatus: {
+            processingProgress?: components["schemas"]["RecordingProcessingProgress"];
             sourceId: string;
             /** Format: uuid */
             recordingId: string;
@@ -3375,6 +3376,7 @@ export interface components {
             mediaExpiresAt?: string;
         };
         RecordingPackageStatus: {
+            processingProgress?: components["schemas"]["RecordingProcessingProgress"];
             /**
              * Format: date-time
              * @description Immutable accepted upload completion time.
@@ -3625,6 +3627,58 @@ export interface components {
             durationSeconds?: number;
             /** Format: int64 */
             version: number;
+        };
+        /** @description Advisory attempt-scoped summary only, never proof of ready. Missing counters mean unknown. Heartbeat does not imply forward progress. */
+        RecordingProcessingProgress: {
+            attempt: number;
+            /** @enum {string} */
+            phase: "queued" | "source_finalization" | "encoding" | "package_validation" | "package_finalization";
+            /** @enum {string} */
+            rendition?: "480p" | "720p" | "1080p";
+            /** Format: int64 */
+            objectsVerified?: number;
+            /** Format: int64 */
+            objectsTotal?: number;
+            /** Format: int64 */
+            segmentsVerified?: number;
+            /** Format: int64 */
+            segmentsTotal?: number;
+            /** Format: int64 */
+            bytesVerified?: number;
+            /** Format: int64 */
+            bytesTotal?: number;
+            /** Format: date-time */
+            attemptStartedAt: string;
+            /** Format: date-time */
+            phaseStartedAt: string;
+            /** Format: date-time */
+            lastProgressAt: string;
+            /** Format: date-time */
+            heartbeatAt: string;
+        };
+        AdminRecording: {
+            id: components["schemas"]["MemberRecording"]["id"];
+            title: components["schemas"]["MemberRecording"]["title"];
+            selectedCoverId?: components["schemas"]["MemberRecording"]["selectedCoverId"];
+            uploadedAt: components["schemas"]["MemberRecording"]["uploadedAt"];
+            expiresAt: components["schemas"]["MemberRecording"]["expiresAt"];
+            featured: components["schemas"]["MemberRecording"]["featured"];
+            hidden: components["schemas"]["MemberRecording"]["hidden"];
+            status: components["schemas"]["MemberRecording"]["status"];
+            primaryAssetVersionId?: components["schemas"]["MemberRecording"]["primaryAssetVersionId"];
+            packageId?: components["schemas"]["MemberRecording"]["packageId"];
+            sourceId?: components["schemas"]["MemberRecording"]["sourceId"];
+            readyAt?: components["schemas"]["MemberRecording"]["readyAt"];
+            durationSeconds?: components["schemas"]["MemberRecording"]["durationSeconds"];
+            version: components["schemas"]["MemberRecording"]["version"];
+            processingProgress?: components["schemas"]["RecordingProcessingProgress"];
+        };
+        AdminRecordingEnvelope: {
+            data: components["schemas"]["AdminRecording"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
         };
         RecordingCover: {
             id: string;
@@ -9737,13 +9791,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Recording */
+            /** @description Recording with optional safe processing progress */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RecordingEnvelope"];
+                    "application/json": components["schemas"]["AdminRecordingEnvelope"];
                 };
             };
             401: components["responses"]["AdminUnauthorized"];
