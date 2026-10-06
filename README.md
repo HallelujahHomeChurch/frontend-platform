@@ -12,6 +12,29 @@ Shared, versioned frontend packages for HHC web applications:
 
 Packages are published to GitHub Packages from version tags.
 
+## Isolated bulletin renderer
+
+The bulletin worker uses the same compiled renderer, CSS, fixed assets and legal
+fonts as the UI. Build a new, checksum-verified bundle after `pnpm build`:
+
+```sh
+node scripts/verify-bulletin-renderer.mjs
+node scripts/package-bulletin-renderer.mjs artifacts/bulletin-renderer /path/to/verified/assets
+docker build -f tools/bulletin-renderer/Dockerfile -t hhc-bulletin-renderer:verify artifacts/bulletin-renderer
+```
+
+The image runs as a non-root user. Its CLI accepts an input JSON file and the
+bundled assets directory (`/opt/bulletin-renderer/assets`); `--compose` additionally
+produces a saved layout. Input contains the exact `submissionJSON`, its SHA-256
+`expectedContentHash`, and bounded `timeoutMs`. Output is JSON only; failures emit
+one non-content-bearing error code. Run without network, with a read-only root,
+bounded writable `/tmp`, memory/CPU limits and an external process deadline.
+
+The release workflow verifies the tag belongs to `main`, tests/scans the image,
+and publishes a tag containing both renderer hash and commit. Consumers must pin
+the registry's immutable image digest, not a mutable tag. An artifact mismatch
+must block use; an image build or local test does not freeze or publish V1.
+
 ## License
 
 The source and published packages are publicly visible but remain all rights
@@ -43,6 +66,20 @@ The Operations contract uses stable Account-bound members, one active church,
 multiple family/small-group/fellowship affiliations, scoped responsibilities,
 and direct bulletin entitlements. Qualification and validity-window fields are
 not part of the contract.
+# Bulletin ebook presentation
+
+`BulletinEbook` renders a single semantic chapter (`cover`, `body`, `worship`,
+`back`) from the same canonical document as the paper reader. Import
+`@hallelujahhomechurch/ui/bulletin-paper.css` for the existing licensed fonts
+and `@hallelujahhomechurch/ui/bulletin-ebook.css` for reflow-only styling.
+It does not alter the digest-pinned paper renderer or stored source geometry.
+
+Hosts own navigation, authorization, watermarking, and progress. Use
+`bulletinChapters` / `bulletinChapterForAnchor` for chapter membership and
+`bulletinMobileDetails` for the shared default-hidden production metadata policy.
+Search and annotation indexes must use the full canonical document, not visible
+chapters. Reveal details when targeting a hidden sentence; original sentence IDs
+and Unicode-scalar offsets remain unchanged.
 
 ## Donation Sandbox source gate
 
