@@ -192,6 +192,14 @@ describe('hhc web client', () => {
     expect(request.cache).toBe('no-store')
   })
 
+  it('preserves optional attempt-scoped progress and zero verified counts', async () => {
+    const progress = {attempt: 2, phase: 'package_validation', objectsVerified: 0, objectsTotal: 100, attemptStartedAt: '2026-10-07T00:00:00Z', phaseStartedAt: '2026-10-07T00:00:00Z', lastProgressAt: '2026-10-07T00:00:00Z', heartbeatAt: '2026-10-07T00:00:00Z'}
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(new Response(JSON.stringify({data: {id: 'rec-1', processingProgress: progress}, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}})).mockResolvedValueOnce(new Response(JSON.stringify({data: {id: 'rec-1'}, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}}))
+    const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'admin-token', fetcher})
+    expect((await client.getAdminRecording('rec-1')).processingProgress?.objectsVerified).toBe(0)
+    expect((await client.getAdminRecording('rec-1')).processingProgress).toBeUndefined()
+  })
+
   it('keeps recording grants in POST bodies and separates versioned publish requests', async () => {
     const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({data: {}, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}}))
     const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'member-token', fetcher})

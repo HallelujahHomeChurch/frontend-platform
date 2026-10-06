@@ -3426,7 +3426,7 @@ paths:
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }, { daprApiToken: [], daprCallerAppId: [], trustedPrincipalId: [], trustedPrincipalType: [], trustedClientId: [], trustedCredentialId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
-        '200': { description: Recording, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingEnvelope' } } } }
+        '200': { description: Recording with optional safe processing progress, content: { application/json: { schema: { $ref: '#/components/schemas/AdminRecordingEnvelope' } } } }
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
         '403': { $ref: '#/components/responses/AdminForbidden' }
         '404': { $ref: '#/components/responses/Error' }
@@ -5342,6 +5342,7 @@ components:
       additionalProperties: false
       required: [sourceId, recordingId, fileName, sizeBytes, checksumSHA256, blockCount, state, createdAt, expiresAt, confirmedBlocks, nextCursor]
       properties:
+        processingProgress: {$ref: '#/components/schemas/RecordingProcessingProgress'}
         sourceId: { type: string, pattern: '^[a-f0-9]{32}$' }
         recordingId: { type: string, format: uuid }
         fileName: { type: string }
@@ -5401,6 +5402,7 @@ components:
       additionalProperties: false
       required: [packageId, sessionId, recordingId, state, sizeBytes, expiresAt, confirmedObjects, nextCursor]
       properties:
+        processingProgress: {$ref: '#/components/schemas/RecordingProcessingProgress'}
         uploadedAt: {type: string, format: date-time, description: Immutable accepted upload completion time.}
         retentionRevision: {type: integer, format: int64, minimum: 1}
         packageId: { type: string }
@@ -5721,6 +5723,52 @@ components:
         readyAt: { type: string, format: date-time }
         durationSeconds: { type: number, minimum: 0 }
         version: { type: integer, format: int64, minimum: 1 }
+    RecordingProcessingProgress:
+      type: object
+      additionalProperties: false
+      description: Advisory attempt-scoped summary only, never proof of ready. Missing counters mean unknown. Heartbeat does not imply forward progress.
+      required: [attempt, phase, attemptStartedAt, phaseStartedAt, lastProgressAt, heartbeatAt]
+      properties:
+        attempt: {type: integer, minimum: 0, maximum: 3}
+        phase: {type: string, enum: [queued, source_finalization, encoding, package_validation, package_finalization]}
+        rendition: {type: string, enum: [480p, 720p, 1080p]}
+        objectsVerified: {type: integer, format: int64, minimum: 0}
+        objectsTotal: {type: integer, format: int64, minimum: 0}
+        segmentsVerified: {type: integer, format: int64, minimum: 0}
+        segmentsTotal: {type: integer, format: int64, minimum: 0}
+        bytesVerified: {type: integer, format: int64, minimum: 0}
+        bytesTotal: {type: integer, format: int64, minimum: 0}
+        attemptStartedAt: {type: string, format: date-time}
+        phaseStartedAt: {type: string, format: date-time}
+        lastProgressAt: {type: string, format: date-time}
+        heartbeatAt: {type: string, format: date-time}
+    AdminRecording:
+      type: object
+      additionalProperties: false
+      required: [id, title, uploadedAt, expiresAt, featured, hidden, status, version]
+      properties:
+        id: {$ref: '#/components/schemas/MemberRecording/properties/id'}
+        title: {$ref: '#/components/schemas/MemberRecording/properties/title'}
+        selectedCoverId: {$ref: '#/components/schemas/MemberRecording/properties/selectedCoverId'}
+        uploadedAt: {$ref: '#/components/schemas/MemberRecording/properties/uploadedAt'}
+        expiresAt: {$ref: '#/components/schemas/MemberRecording/properties/expiresAt'}
+        featured: {$ref: '#/components/schemas/MemberRecording/properties/featured'}
+        hidden: {$ref: '#/components/schemas/MemberRecording/properties/hidden'}
+        status: {$ref: '#/components/schemas/MemberRecording/properties/status'}
+        primaryAssetVersionId: {$ref: '#/components/schemas/MemberRecording/properties/primaryAssetVersionId'}
+        packageId: {$ref: '#/components/schemas/MemberRecording/properties/packageId'}
+        sourceId: {$ref: '#/components/schemas/MemberRecording/properties/sourceId'}
+        readyAt: {$ref: '#/components/schemas/MemberRecording/properties/readyAt'}
+        durationSeconds: {$ref: '#/components/schemas/MemberRecording/properties/durationSeconds'}
+        version: {$ref: '#/components/schemas/MemberRecording/properties/version'}
+        processingProgress: {$ref: '#/components/schemas/RecordingProcessingProgress'}
+    AdminRecordingEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: {$ref: '#/components/schemas/AdminRecording'}
+        meta: {type: object, additionalProperties: true}
+        error: {type: ['null']}
     RecordingCover:
       type: object
       additionalProperties: false
