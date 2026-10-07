@@ -18,7 +18,7 @@ The bulletin worker uses the same compiled renderer, CSS, fixed assets and legal
 fonts as the UI. Build a new, checksum-verified bundle after `pnpm build`:
 
 ```sh
-node scripts/verify-bulletin-renderer-v3.mjs
+node scripts/verify-bulletin-renderer-v4.mjs
 node scripts/package-bulletin-renderer.mjs artifacts/bulletin-renderer /path/to/verified/assets
 docker build -f tools/bulletin-renderer/Dockerfile -t hhc-bulletin-renderer:verify artifacts/bulletin-renderer
 ```
@@ -39,6 +39,13 @@ V3 retains the immutable V1/V2 paper templates and fonts, and improves draft
 composition and visible-glyph measurement. Previously published manifests retain
 their original renderer. Re-extract an older failing draft to propose a V3
 candidate through the existing comparison flow; do not rewrite published data.
+
+V4 retains V3's measurement and the frozen paper templates. Dense body/lyrics
+pages may use bottom whitespace down to a 24pt margin, without adding source
+pages or reducing the 12pt composition floor. Line-by-line lyrics use a 1.2
+minimum leading and cap source gaps at 6pt; prose retains 1.25 and 12pt gaps.
+V1–V3 manifests remain supported.
+Deploy V4-capable readers before producing V4 drafts.
 
 ## License
 

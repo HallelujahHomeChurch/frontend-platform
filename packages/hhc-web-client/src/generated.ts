@@ -3507,10 +3507,10 @@ export interface components {
             /** @enum {string} */
             templateVersion: "v1" | "v2";
             /**
-             * @description V3 uses the existing v1 Traditional or v2 Simplified template with adaptive composition and painted-text validation. Existing published renderer versions remain immutable.
+             * @description V3 and V4 use the existing v1 Traditional or v2 Simplified template with adaptive composition and painted-text validation. V4 permits a safe 24-point bottom margin for dense pages. Existing published renderer versions remain immutable.
              * @enum {string}
              */
-            rendererVersion: "v1" | "v2" | "v3";
+            rendererVersion: "v1" | "v2" | "v3" | "v4";
             rendererArtifactSha256: components["schemas"]["OnlineBulletinHash"];
             contentHash?: components["schemas"]["OnlineBulletinHash"];
             layoutValidationHash?: components["schemas"]["OnlineBulletinHash"];
