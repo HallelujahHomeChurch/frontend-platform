@@ -1147,8 +1147,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Derive an independent Simplified Chinese draft from confirmed Traditional Chinese content
-         * @description Human administrators only. Source is always the same issue general zh-Hant confirmed Local. If-Match fences the target Online version (zero before creation); the body independently fences canonical metadata and source revision/version. Identical source/configuration requests reuse the durable job. retry=true retries only failed work. Subsequent conversions produce Incoming without overwriting manual Local or publication. No PDF asset or additional grant is created.
+         * Synchronize Simplified Chinese content from confirmed Traditional Chinese content
+         * @description Human administrators only. Source is always the same issue general zh-Hant confirmed Local. If-Match fences the target Online version (zero before creation); the body independently fences canonical metadata and source revision/version. Identical source/configuration requests reuse the durable job; a completed legacy Incoming result is requeued under current version fences. retry=true retries only failed work. Successful conversion replaces the Simplified Local and Base, clears Incoming, and queues layout validation. Immutable history and publication are retained. Simplified content cannot be manually edited; review and publication remain independent. No PDF asset or additional grant is created.
          */
         post: operations["startOnlineBulletinConversion"];
         delete?: never;
@@ -1188,7 +1188,7 @@ export interface paths {
         put?: never;
         /**
          * Resolve three-way differences into a new Local revision
-         * @description Requires exact Online and canonical versions and all three revision pointers. Unresolved concurrent changes are rejected. Applies choices atomically, moves Base to Incoming, clears Incoming, queues fresh layout and audit, and preserves publication and PDF workflows. Manual values cannot contain source coordinates or layout proof. Unsupported structural coverage is rejected. Body capped at 8 MiB. All responses are private, no-store.
+         * @description Traditional Chinese only; Simplified manual mutations return 409 and must use conversions. Requires exact Online and canonical versions and all three revision pointers. Unresolved concurrent changes are rejected. Applies choices atomically, moves Base to Incoming, clears Incoming, queues fresh layout and audit, and preserves publication and PDF workflows. Manual values cannot contain source coordinates or layout proof. Unsupported structural coverage is rejected. Body capped at 8 MiB. All responses are private, no-store.
          */
         post: operations["applyOnlineBulletinComparison"];
         delete?: never;
@@ -1207,7 +1207,7 @@ export interface paths {
         get?: never;
         /**
          * Save typed Local component corrections and enqueue layout validation
-         * @description Creates an immutable Local revision, retaining sentence IDs and server-owned provenance. Source coordinates must be omitted from every submitted sentence; layout manifests, assets, canonical metadata copies, and validation flags cannot be submitted. Existing geometry is only a seed for isolated re-composition. Published, Base, and Incoming pointers are unchanged; no notification or publication mapping is created. All sentences must retain valid server-assigned slot coverage; unsupported structural changes are rejected, never silently clipped.
+         * @description Traditional Chinese only; Simplified manual mutations return 409 and must use conversions. Creates an immutable Local revision, retaining sentence IDs and server-owned provenance. Source coordinates must be omitted from every submitted sentence; layout manifests, assets, canonical metadata copies, and validation flags cannot be submitted. Existing geometry is only a seed for isolated re-composition. Published, Base, and Incoming pointers are unchanged; no notification or publication mapping is created. All sentences must retain valid server-assigned slot coverage; unsupported structural changes are rejected, never silently clipped.
          */
         put: operations["saveOnlineBulletinDraft"];
         post?: never;
@@ -1288,7 +1288,7 @@ export interface paths {
         put?: never;
         /**
          * Restore immutable history into a new Local draft
-         * @description Selects only server-owned history for the exact edition, preserves sentence IDs, clears prior layout and human confirmation, and queues fresh layout validation against current canonical metadata. Published, Base, Incoming and PDF state remain unchanged. No weekly notification or publication mapping is created.
+         * @description Traditional Chinese only; Simplified manual mutations return 409 and must use conversions. Selects only server-owned history for the exact edition, preserves sentence IDs, clears prior layout and human confirmation, and queues fresh layout validation against current canonical metadata. Published, Base, Incoming and PDF state remain unchanged. No weekly notification or publication mapping is created.
          */
         post: operations["restoreOnlineBulletinRevision"];
         delete?: never;
@@ -2323,10 +2323,499 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/recordings/{id}/captures": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * createRecordingCapture
+         * @description Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture bound; no service-principal upload identity in the initial OBS release. expectedVersion is the optimistic recording version; no duplicate If-Match header. liveEnabled or autoPublish=true additionally requires cms:recordings:publish. Replaying the same operationKey and original input returns the original receipt plus current state, never a second capture.
+         */
+        post: operations["createRecordingCapture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/captures/{captureId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * getRecordingCapture
+         * @description Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture bound; no service-principal upload identity in the initial OBS release.
+         */
+        get: operations["getRecordingCapture"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/captures/{captureId}/objects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * declareRecordingCapture
+         * @description Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture bound; no service-principal upload identity in the initial OBS release.
+         */
+        post: operations["declareRecordingCapture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/captures/{captureId}/sign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * signRecordingCapture
+         * @description Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture bound; no service-principal upload identity in the initial OBS release.
+         */
+        post: operations["signRecordingCapture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/captures/{captureId}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * confirmRecordingCapture
+         * @description Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture bound; no service-principal upload identity in the initial OBS release.
+         */
+        post: operations["confirmRecordingCapture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/captures/{captureId}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * stopRecordingCapture
+         * @description Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture bound; no service-principal upload identity in the initial OBS release.
+         */
+        post: operations["stopRecordingCapture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/captures/{captureId}/seal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * sealRecordingCapture
+         * @description Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture bound; no service-principal upload identity in the initial OBS release.
+         */
+        post: operations["sealRecordingCapture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/captures/{captureId}/abort": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * abortRecordingCapture
+         * @description Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture bound; no service-principal upload identity in the initial OBS release.
+         */
+        post: operations["abortRecordingCapture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/captures/{captureId}/auto-publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * cancelAutoPublishRecordingCapture
+         * @description Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture bound; no service-principal upload identity in the initial OBS release.
+         */
+        delete: operations["cancelAutoPublishRecordingCapture"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/captures/{captureId}/live": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * closeLiveRecordingCapture
+         * @description Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture bound; no service-principal upload identity in the initial OBS release.
+         */
+        delete: operations["closeLiveRecordingCapture"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/recordings/live": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * listMemberLiveRecordings
+         * @description Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture bound; no service-principal upload identity in the initial OBS release.
+         */
+        get: operations["listMemberLiveRecordings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/recordings/{id}/live/playback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * createMemberLivePlayback
+         * @description Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture bound; no service-principal upload identity in the initial OBS release.
+         */
+        post: operations["createMemberLivePlayback"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        RecordingCaptureOperationInput: {
+            operationKey: string;
+        };
+        RecordingCaptureDeclareInput: {
+            operationKey: string;
+            objects: components["schemas"]["RecordingPackageObject"][];
+        };
+        RecordingCaptureSignInput: {
+            paths: string[];
+        };
+        RecordingCaptureConfirmInput: {
+            operationKey: string;
+            paths: string[];
+        };
+        RecordingCaptureAbortInput: {
+            operationKey: string;
+            /** @enum {string} */
+            reasonCode: "user_abort" | "disk_limit" | "encoder_failure" | "capture_incomplete";
+        };
+        RecordingCaptureSealInput: {
+            operationKey: string;
+            /** @constant */
+            normalEnd: true;
+            inventory: components["schemas"]["RecordingPackageInventory"] & {
+                renditions?: unknown[];
+            };
+        };
+        RecordingCaptureReceipt: {
+            operationKey: string;
+            /** @enum {string} */
+            operation: "create" | "declare" | "confirm" | "stop" | "seal" | "abort" | "cancel_auto_publish" | "close_live";
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            acceptedAt: string;
+            captureId: string;
+        };
+        RecordingCaptureObjectStatus: {
+            path: string;
+            sizeBytes: number;
+            sha256: string;
+            /** @enum {string} */
+            state: "declared" | "queued" | "verified" | "failed";
+        };
+        RecordingLiveProgress: {
+            /** Format: int64 */
+            revision: number;
+            /** @constant */
+            firstSequence: 0;
+            lastSequence: number;
+            mediaEndSeconds: number;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            lastAdvancedAt: string | null;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            endedAt: string | null;
+            ended: boolean;
+        };
+        RecordingCaptureError: {
+            /** @enum {string} */
+            code: "capture_invalid" | "capture_unauthorized" | "capture_forbidden" | "capture_not_found" | "capture_conflict" | "capture_missing_objects" | "capture_expired" | "capture_too_large" | "capture_rate_limited" | "capture_unavailable";
+            message: string;
+        };
+        RecordingCaptureCreateInput: {
+            operationKey: string;
+            /** Format: int64 */
+            expectedVersion: number;
+            autoPublish: boolean;
+            liveEnabled: boolean;
+        };
+        RecordingCaptureStatus: {
+            captureId: string;
+            /** Format: uuid */
+            recordingId: string;
+            /** Format: int64 */
+            recordingVersion: number;
+            /** @enum {string} */
+            state: "creating" | "uploading" | "freezing" | "validating" | "ready" | "failed" | "expired" | "aborted";
+            /** @enum {string} */
+            liveState: "starting" | "live" | "recovering" | "interrupted" | "ending" | "ended" | "failed" | "expired" | "aborted";
+            liveEnabled: boolean;
+            /** @enum {string} */
+            autoPublish: "pending" | "cancelled" | "blocked" | "published";
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            expiresAt: string;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            serverNow: string;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            stopAcceptedAt: string | null;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            replayUntil: string | null;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            terminalAt: string | null;
+            terminalReason: string | null;
+            packageId: string | null;
+            /** Format: int64 */
+            declaredBytes: number;
+            /** Format: int64 */
+            declaredObjects: number;
+            objects: components["schemas"]["RecordingCaptureObjectStatus"][];
+            nextCursor: string;
+            progress: components["schemas"]["RecordingLiveProgress"];
+        };
+        RecordingCaptureResult: {
+            capture: components["schemas"]["RecordingCaptureStatus"];
+            receipt: components["schemas"]["RecordingCaptureReceipt"];
+        };
+        RecordingLivePlaybackInput: {
+            captureId: string;
+            /** Format: uuid */
+            playbackScopeId: string;
+        };
+        MemberLivePlayback: {
+            /** Format: uuid */
+            recordingId: string;
+            captureId: string;
+            /** Format: uuid */
+            playbackScopeId: string;
+            /**
+             * Format: uri
+             * @description Allowlisted media origin, exact /videos/{recordingId}/captures/{captureId}/sessions/{playbackScopeId}/master.m3u8 path.
+             */
+            mediaUrl: string;
+            /** @description Short-lived exchange credential; never log, persist, or place in URL. */
+            exchangeCredential: string;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            issuedAt: string;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            expiresAt: string;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            serverNow: string;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            captureExpiresAt: string;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            stopAcceptedAt: string | null;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            replayUntil: string | null;
+            terminalReason: string | null;
+            /** @enum {string} */
+            liveState: "starting" | "live" | "recovering" | "interrupted" | "ending" | "ended" | "failed" | "expired" | "aborted";
+            progress: components["schemas"]["RecordingLiveProgress"];
+            /** @description Reuse the existing member watermark policy; withhold credentials when required trace persistence fails. */
+            watermarkCode: string;
+        };
+        MemberLiveRecording: {
+            /** Format: uuid */
+            id: string;
+            captureId: string;
+            title: string;
+            /** @enum {string} */
+            liveState: "starting" | "live" | "recovering" | "interrupted" | "ending" | "ended" | "failed" | "expired" | "aborted";
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            stopAcceptedAt: string | null;
+            progress: components["schemas"]["RecordingLiveProgress"];
+        };
+        RecordingCaptureEnvelope: {
+            data: components["schemas"]["RecordingCaptureStatus"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        RecordingCaptureResultEnvelope: {
+            data: components["schemas"]["RecordingCaptureResult"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        RecordingCaptureSignedEnvelope: {
+            data: components["schemas"]["SignedRecordingObject"][];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        MemberLivePlaybackEnvelope: {
+            data: components["schemas"]["MemberLivePlayback"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        MemberLiveRecordingsEnvelope: {
+            data: components["schemas"]["MemberLiveRecording"][];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        RecordingCaptureErrorEnvelope: {
+            data: null;
+            meta: {
+                [key: string]: unknown;
+            };
+            error: components["schemas"]["RecordingCaptureError"];
+        };
         /** @description Dynamic sentence anchor. The canonical- ID prefix is reserved for shared canonical metadata anchors across layouts. */
         ReaderSentence: {
             id: components["schemas"]["OnlineBulletinID"];
@@ -10124,6 +10613,1148 @@ export interface operations {
             403: components["responses"]["AdminForbidden"];
             404: components["responses"]["Error"];
             503: components["responses"]["Error"];
+        };
+    };
+    createRecordingCapture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCaptureCreateInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted operation result; acceptance is not verified media readiness. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureResultEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            /** @description Rejected request. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description State/key conflict or missing objects; poll and reconcile before retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Fixed capture deadline passed; preserve local media. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Retry after the Retry-After delay. */
+            429: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Temporary dependency failure; capped backoff with jitter. */
+            503: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+        };
+    };
+    getRecordingCapture: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+                captureId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted operation result; acceptance is not verified media readiness. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            /** @description Rejected request. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description State/key conflict or missing objects; poll and reconcile before retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Fixed capture deadline passed; preserve local media. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Retry after the Retry-After delay. */
+            429: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Temporary dependency failure; capped backoff with jitter. */
+            503: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+        };
+    };
+    declareRecordingCapture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                captureId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCaptureDeclareInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted operation result; acceptance is not verified media readiness. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureResultEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            /** @description Rejected request. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description State/key conflict or missing objects; poll and reconcile before retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Fixed capture deadline passed; preserve local media. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Retry after the Retry-After delay. */
+            429: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Temporary dependency failure; capped backoff with jitter. */
+            503: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+        };
+    };
+    signRecordingCapture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                captureId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCaptureSignInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted operation result; acceptance is not verified media readiness. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureSignedEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            /** @description Rejected request. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description State/key conflict or missing objects; poll and reconcile before retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Fixed capture deadline passed; preserve local media. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Retry after the Retry-After delay. */
+            429: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Temporary dependency failure; capped backoff with jitter. */
+            503: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+        };
+    };
+    confirmRecordingCapture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                captureId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCaptureConfirmInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted operation result; acceptance is not verified media readiness. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureResultEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            /** @description Rejected request. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description State/key conflict or missing objects; poll and reconcile before retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Fixed capture deadline passed; preserve local media. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Retry after the Retry-After delay. */
+            429: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Temporary dependency failure; capped backoff with jitter. */
+            503: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+        };
+    };
+    stopRecordingCapture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                captureId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCaptureOperationInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted operation result; acceptance is not verified media readiness. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureResultEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            /** @description Rejected request. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description State/key conflict or missing objects; poll and reconcile before retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Fixed capture deadline passed; preserve local media. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Retry after the Retry-After delay. */
+            429: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Temporary dependency failure; capped backoff with jitter. */
+            503: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+        };
+    };
+    sealRecordingCapture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                captureId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCaptureSealInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted operation result; acceptance is not verified media readiness. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureResultEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            /** @description Rejected request. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description State/key conflict or missing objects; poll and reconcile before retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Fixed capture deadline passed; preserve local media. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Retry after the Retry-After delay. */
+            429: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Temporary dependency failure; capped backoff with jitter. */
+            503: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+        };
+    };
+    abortRecordingCapture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                captureId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCaptureAbortInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted operation result; acceptance is not verified media readiness. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureResultEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            /** @description Rejected request. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description State/key conflict or missing objects; poll and reconcile before retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Fixed capture deadline passed; preserve local media. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Retry after the Retry-After delay. */
+            429: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Temporary dependency failure; capped backoff with jitter. */
+            503: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+        };
+    };
+    cancelAutoPublishRecordingCapture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                captureId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCaptureOperationInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted operation result; acceptance is not verified media readiness. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureResultEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            /** @description Rejected request. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description State/key conflict or missing objects; poll and reconcile before retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Fixed capture deadline passed; preserve local media. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Retry after the Retry-After delay. */
+            429: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Temporary dependency failure; capped backoff with jitter. */
+            503: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+        };
+    };
+    closeLiveRecordingCapture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                captureId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCaptureOperationInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted operation result; acceptance is not verified media readiness. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureResultEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            /** @description Rejected request. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description State/key conflict or missing objects; poll and reconcile before retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Fixed capture deadline passed; preserve local media. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Retry after the Retry-After delay. */
+            429: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Temporary dependency failure; capped backoff with jitter. */
+            503: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+        };
+    };
+    listMemberLiveRecordings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted operation result; acceptance is not verified media readiness. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberLiveRecordingsEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            /** @description Rejected request. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description State/key conflict or missing objects; poll and reconcile before retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Fixed capture deadline passed; preserve local media. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Retry after the Retry-After delay. */
+            429: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Temporary dependency failure; capped backoff with jitter. */
+            503: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+        };
+    };
+    createMemberLivePlayback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingLivePlaybackInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted operation result; acceptance is not verified media readiness. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberLivePlaybackEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            /** @description Rejected request. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description State/key conflict or missing objects; poll and reconcile before retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Fixed capture deadline passed; preserve local media. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Retry after the Retry-After delay. */
+            429: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Temporary dependency failure; capped backoff with jitter. */
+            503: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
         };
     };
 }

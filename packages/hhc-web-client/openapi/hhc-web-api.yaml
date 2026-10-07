@@ -1709,8 +1709,8 @@ paths:
   /admin/bulletins/{issueId}/online/{series}/{contentLocale}/conversions:
     post:
       operationId: startOnlineBulletinConversion
-      summary: Derive an independent Simplified Chinese draft from confirmed Traditional Chinese content
-      description: Human administrators only. Source is always the same issue general zh-Hant confirmed Local. If-Match fences the target Online version (zero before creation); the body independently fences canonical metadata and source revision/version. Identical source/configuration requests reuse the durable job. retry=true retries only failed work. Subsequent conversions produce Incoming without overwriting manual Local or publication. No PDF asset or additional grant is created.
+      summary: Synchronize Simplified Chinese content from confirmed Traditional Chinese content
+      description: Human administrators only. Source is always the same issue general zh-Hant confirmed Local. If-Match fences the target Online version (zero before creation); the body independently fences canonical metadata and source revision/version. Identical source/configuration requests reuse the durable job; a completed legacy Incoming result is requeued under current version fences. retry=true retries only failed work. Successful conversion replaces the Simplified Local and Base, clears Incoming, and queues layout validation. Immutable history and publication are retained. Simplified content cannot be manually edited; review and publication remain independent. No PDF asset or additional grant is created.
       tags: [Admin]
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
@@ -1789,7 +1789,7 @@ paths:
     post:
       operationId: applyOnlineBulletinComparison
       summary: Resolve three-way differences into a new Local revision
-      description: Requires exact Online and canonical versions and all three revision pointers. Unresolved concurrent changes are rejected. Applies choices atomically, moves Base to Incoming, clears Incoming, queues fresh layout and audit, and preserves publication and PDF workflows. Manual values cannot contain source coordinates or layout proof. Unsupported structural coverage is rejected. Body capped at 8 MiB. All responses are private, no-store.
+      description: Traditional Chinese only; Simplified manual mutations return 409 and must use conversions. Requires exact Online and canonical versions and all three revision pointers. Unresolved concurrent changes are rejected. Applies choices atomically, moves Base to Incoming, clears Incoming, queues fresh layout and audit, and preserves publication and PDF workflows. Manual values cannot contain source coordinates or layout proof. Unsupported structural coverage is rejected. Body capped at 8 MiB. All responses are private, no-store.
       tags: [Admin]
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
@@ -1832,7 +1832,7 @@ paths:
     put:
       operationId: saveOnlineBulletinDraft
       summary: Save typed Local component corrections and enqueue layout validation
-      description: Creates an immutable Local revision, retaining sentence IDs and server-owned provenance. Source coordinates must be omitted from every submitted sentence; layout manifests, assets, canonical metadata copies, and validation flags cannot be submitted. Existing geometry is only a seed for isolated re-composition. Published, Base, and Incoming pointers are unchanged; no notification or publication mapping is created. All sentences must retain valid server-assigned slot coverage; unsupported structural changes are rejected, never silently clipped.
+      description: Traditional Chinese only; Simplified manual mutations return 409 and must use conversions. Creates an immutable Local revision, retaining sentence IDs and server-owned provenance. Source coordinates must be omitted from every submitted sentence; layout manifests, assets, canonical metadata copies, and validation flags cannot be submitted. Existing geometry is only a seed for isolated re-composition. Published, Base, and Incoming pointers are unchanged; no notification or publication mapping is created. All sentences must retain valid server-assigned slot coverage; unsupported structural changes are rejected, never silently clipped.
       tags: [Admin]
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
@@ -2020,7 +2020,7 @@ paths:
     post:
       operationId: restoreOnlineBulletinRevision
       summary: Restore immutable history into a new Local draft
-      description: Selects only server-owned history for the exact edition, preserves sentence IDs, clears prior layout and human confirmation, and queues fresh layout validation against current canonical metadata. Published, Base, Incoming and PDF state remain unchanged. No weekly notification or publication mapping is created.
+      description: Traditional Chinese only; Simplified manual mutations return 409 and must use conversions. Selects only server-owned history for the exact edition, preserves sentence IDs, clears prior layout and human confirmation, and queues fresh layout validation against current canonical metadata. Published, Base, Incoming and PDF state remain unchanged. No weekly notification or publication mapping is created.
       tags: [Admin]
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
@@ -3673,6 +3673,1133 @@ paths:
         '403': { $ref: '#/components/responses/AdminForbidden' }
         '404': { $ref: '#/components/responses/Error' }
         '503': { $ref: '#/components/responses/Error' }
+  /admin/recordings/{id}/captures:
+    post:
+      operationId: createRecordingCapture
+      summary: createRecordingCapture
+      description: Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture
+        bound; no service-principal upload identity in the initial OBS release. expectedVersion is the optimistic recording version;
+        no duplicate If-Match header. liveEnabled or autoPublish=true additionally requires cms:recordings:publish. Replaying
+        the same operationKey and original input returns the original receipt plus current state, never a second capture.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '201':
+          description: Accepted operation result; acceptance is not verified media readiness.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureResultEnvelope'
+        '400':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '409':
+          description: State/key conflict or missing objects; poll and reconcile before retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '410':
+          description: Fixed capture deadline passed; preserve local media.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '413':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '429':
+          description: Retry after the Retry-After delay.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 1
+              description: Seconds until retry.
+        '503':
+          description: Temporary dependency failure; capped backoff with jitter.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 1
+              description: Seconds until retry.
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes:
+      - cms:recordings:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordingCaptureCreateInput'
+  /admin/recordings/{id}/captures/{captureId}:
+    get:
+      operationId: getRecordingCapture
+      summary: getRecordingCapture
+      description: Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture
+        bound; no service-principal upload identity in the initial OBS release.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: captureId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[a-f0-9]{32}$
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 1000
+      responses:
+        '200':
+          description: Accepted operation result; acceptance is not verified media readiness.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureEnvelope'
+        '400':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '409':
+          description: State/key conflict or missing objects; poll and reconcile before retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '410':
+          description: Fixed capture deadline passed; preserve local media.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '413':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '429':
+          description: Retry after the Retry-After delay.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 1
+              description: Seconds until retry.
+        '503':
+          description: Temporary dependency failure; capped backoff with jitter.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 1
+              description: Seconds until retry.
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes:
+      - cms:recordings:read
+  /admin/recordings/{id}/captures/{captureId}/objects:
+    post:
+      operationId: declareRecordingCapture
+      summary: declareRecordingCapture
+      description: Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture
+        bound; no service-principal upload identity in the initial OBS release.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: captureId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[a-f0-9]{32}$
+      responses:
+        '200':
+          description: Accepted operation result; acceptance is not verified media readiness.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureResultEnvelope'
+        '400':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '409':
+          description: State/key conflict or missing objects; poll and reconcile before retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '410':
+          description: Fixed capture deadline passed; preserve local media.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '413':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '429':
+          description: Retry after the Retry-After delay.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 1
+              description: Seconds until retry.
+        '503':
+          description: Temporary dependency failure; capped backoff with jitter.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 1
+              description: Seconds until retry.
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes:
+      - cms:recordings:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordingCaptureDeclareInput'
+  /admin/recordings/{id}/captures/{captureId}/sign:
+    post:
+      operationId: signRecordingCapture
+      summary: signRecordingCapture
+      description: Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture
+        bound; no service-principal upload identity in the initial OBS release.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: captureId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[a-f0-9]{32}$
+      responses:
+        '200':
+          description: Accepted operation result; acceptance is not verified media readiness.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureSignedEnvelope'
+        '400':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '409':
+          description: State/key conflict or missing objects; poll and reconcile before retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '410':
+          description: Fixed capture deadline passed; preserve local media.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '413':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '429':
+          description: Retry after the Retry-After delay.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 1
+              description: Seconds until retry.
+        '503':
+          description: Temporary dependency failure; capped backoff with jitter.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 1
+              description: Seconds until retry.
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes:
+      - cms:recordings:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordingCaptureSignInput'
+  /admin/recordings/{id}/captures/{captureId}/confirm:
+    post:
+      operationId: confirmRecordingCapture
+      summary: confirmRecordingCapture
+      description: Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture
+        bound; no service-principal upload identity in the initial OBS release.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: captureId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[a-f0-9]{32}$
+      responses:
+        '202':
+          description: Accepted operation result; acceptance is not verified media readiness.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureResultEnvelope'
+        '400':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '409':
+          description: State/key conflict or missing objects; poll and reconcile before retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '410':
+          description: Fixed capture deadline passed; preserve local media.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '413':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '429':
+          description: Retry after the Retry-After delay.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 1
+              description: Seconds until retry.
+        '503':
+          description: Temporary dependency failure; capped backoff with jitter.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 1
+              description: Seconds until retry.
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes:
+      - cms:recordings:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordingCaptureConfirmInput'
+  /admin/recordings/{id}/captures/{captureId}/stop:
+    post:
+      operationId: stopRecordingCapture
+      summary: stopRecordingCapture
+      description: Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture
+        bound; no service-principal upload identity in the initial OBS release.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: captureId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[a-f0-9]{32}$
+      responses:
+        '200':
+          description: Accepted operation result; acceptance is not verified media readiness.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureResultEnvelope'
+        '400':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '409':
+          description: State/key conflict or missing objects; poll and reconcile before retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '410':
+          description: Fixed capture deadline passed; preserve local media.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '413':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '429':
+          description: Retry after the Retry-After delay.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 1
+              description: Seconds until retry.
+        '503':
+          description: Temporary dependency failure; capped backoff with jitter.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 1
+              description: Seconds until retry.
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes:
+      - cms:recordings:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordingCaptureOperationInput'
+  /admin/recordings/{id}/captures/{captureId}/seal:
+    post:
+      operationId: sealRecordingCapture
+      summary: sealRecordingCapture
+      description: Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture
+        bound; no service-principal upload identity in the initial OBS release.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: captureId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[a-f0-9]{32}$
+      responses:
+        '202':
+          description: Accepted operation result; acceptance is not verified media readiness.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureResultEnvelope'
+        '400':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '409':
+          description: State/key conflict or missing objects; poll and reconcile before retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '410':
+          description: Fixed capture deadline passed; preserve local media.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '413':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '429':
+          description: Retry after the Retry-After delay.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 1
+              description: Seconds until retry.
+        '503':
+          description: Temporary dependency failure; capped backoff with jitter.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 1
+              description: Seconds until retry.
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes:
+      - cms:recordings:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordingCaptureSealInput'
+  /admin/recordings/{id}/captures/{captureId}/abort:
+    post:
+      operationId: abortRecordingCapture
+      summary: abortRecordingCapture
+      description: Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture
+        bound; no service-principal upload identity in the initial OBS release.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: captureId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[a-f0-9]{32}$
+      responses:
+        '200':
+          description: Accepted operation result; acceptance is not verified media readiness.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureResultEnvelope'
+        '400':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '409':
+          description: State/key conflict or missing objects; poll and reconcile before retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '410':
+          description: Fixed capture deadline passed; preserve local media.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '413':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '429':
+          description: Retry after the Retry-After delay.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 1
+              description: Seconds until retry.
+        '503':
+          description: Temporary dependency failure; capped backoff with jitter.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 1
+              description: Seconds until retry.
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes:
+      - cms:recordings:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordingCaptureAbortInput'
+  /admin/recordings/{id}/captures/{captureId}/auto-publish:
+    delete:
+      operationId: cancelAutoPublishRecordingCapture
+      summary: cancelAutoPublishRecordingCapture
+      description: Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture
+        bound; no service-principal upload identity in the initial OBS release.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: captureId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[a-f0-9]{32}$
+      responses:
+        '200':
+          description: Accepted operation result; acceptance is not verified media readiness.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureResultEnvelope'
+        '400':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '409':
+          description: State/key conflict or missing objects; poll and reconcile before retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '410':
+          description: Fixed capture deadline passed; preserve local media.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '413':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '429':
+          description: Retry after the Retry-After delay.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 1
+              description: Seconds until retry.
+        '503':
+          description: Temporary dependency failure; capped backoff with jitter.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 1
+              description: Seconds until retry.
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes:
+      - cms:recordings:publish
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordingCaptureOperationInput'
+  /admin/recordings/{id}/captures/{captureId}/live:
+    delete:
+      operationId: closeLiveRecordingCapture
+      summary: closeLiveRecordingCapture
+      description: Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture
+        bound; no service-principal upload identity in the initial OBS release.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: captureId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[a-f0-9]{32}$
+      responses:
+        '200':
+          description: Accepted operation result; acceptance is not verified media readiness.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureResultEnvelope'
+        '400':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '409':
+          description: State/key conflict or missing objects; poll and reconcile before retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '410':
+          description: Fixed capture deadline passed; preserve local media.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '413':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '429':
+          description: Retry after the Retry-After delay.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 1
+              description: Seconds until retry.
+        '503':
+          description: Temporary dependency failure; capped backoff with jitter.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 1
+              description: Seconds until retry.
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes:
+      - cms:recordings:publish
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordingCaptureOperationInput'
+  /member/recordings/live:
+    get:
+      operationId: listMemberLiveRecordings
+      summary: listMemberLiveRecordings
+      description: Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture
+        bound; no service-principal upload identity in the initial OBS release.
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters: []
+      responses:
+        '200':
+          description: Accepted operation result; acceptance is not verified media readiness.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberLiveRecordingsEnvelope'
+        '400':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '409':
+          description: State/key conflict or missing objects; poll and reconcile before retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '410':
+          description: Fixed capture deadline passed; preserve local media.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '413':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '429':
+          description: Retry after the Retry-After delay.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 1
+              description: Seconds until retry.
+        '503':
+          description: Temporary dependency failure; capped backoff with jitter.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 1
+              description: Seconds until retry.
+  /member/recordings/{id}/live/playback:
+    post:
+      operationId: createMemberLivePlayback
+      summary: createMemberLivePlayback
+      description: Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture
+        bound; no service-principal upload identity in the initial OBS release.
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Accepted operation result; acceptance is not verified media readiness.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberLivePlaybackEnvelope'
+        '400':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '409':
+          description: State/key conflict or missing objects; poll and reconcile before retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '410':
+          description: Fixed capture deadline passed; preserve local media.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '413':
+          description: Rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+        '429':
+          description: Retry after the Retry-After delay.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 1
+              description: Seconds until retry.
+        '503':
+          description: Temporary dependency failure; capped backoff with jitter.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 1
+              description: Seconds until retry.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordingLivePlaybackInput'
+
 components:
   securitySchemes:
     daprApiToken:
@@ -3992,6 +5119,625 @@ components:
       description: Public revalidation policy for Site Layout projections.
       schema: { type: string, const: 'public, max-age=30, must-revalidate' }
   schemas:
+    RecordingCaptureOperationInput:
+      type: object
+      additionalProperties: false
+      required:
+      - operationKey
+      properties:
+        operationKey:
+          type: string
+          pattern: ^[a-zA-Z0-9._:-]{1,128}$
+    RecordingCaptureDeclareInput:
+      type: object
+      additionalProperties: false
+      required:
+      - operationKey
+      - objects
+      properties:
+        operationKey:
+          type: string
+          pattern: ^[a-zA-Z0-9._:-]{1,128}$
+        objects:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/RecordingPackageObject'
+    RecordingCaptureSignInput:
+      type: object
+      additionalProperties: false
+      required:
+      - paths
+      properties:
+        paths:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            type: string
+            pattern: ^(master\.m3u8|(480p|720p|1080p)/(index\.m3u8|init\.mp4|seg-[0-9]{6}\.m4s))$
+          uniqueItems: true
+    RecordingCaptureConfirmInput:
+      type: object
+      additionalProperties: false
+      required:
+      - operationKey
+      - paths
+      properties:
+        operationKey:
+          type: string
+          pattern: ^[a-zA-Z0-9._:-]{1,128}$
+        paths:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            type: string
+            pattern: ^(master\.m3u8|(480p|720p|1080p)/(index\.m3u8|init\.mp4|seg-[0-9]{6}\.m4s))$
+          uniqueItems: true
+    RecordingCaptureAbortInput:
+      type: object
+      additionalProperties: false
+      required:
+      - operationKey
+      - reasonCode
+      properties:
+        operationKey:
+          type: string
+          pattern: ^[a-zA-Z0-9._:-]{1,128}$
+        reasonCode:
+          type: string
+          enum:
+          - user_abort
+          - disk_limit
+          - encoder_failure
+          - capture_incomplete
+    RecordingCaptureSealInput:
+      type: object
+      additionalProperties: false
+      required:
+      - operationKey
+      - normalEnd
+      - inventory
+      properties:
+        operationKey:
+          type: string
+          pattern: ^[a-zA-Z0-9._:-]{1,128}$
+        normalEnd:
+          type: boolean
+          const: true
+        inventory:
+          allOf:
+          - $ref: '#/components/schemas/RecordingPackageInventory'
+          - type: object
+            properties:
+              renditions:
+                type: array
+                minItems: 3
+                maxItems: 3
+    RecordingCaptureReceipt:
+      type: object
+      additionalProperties: false
+      required:
+      - operationKey
+      - operation
+      - acceptedAt
+      - captureId
+      properties:
+        operationKey:
+          type: string
+          pattern: ^[a-zA-Z0-9._:-]{1,128}$
+        operation:
+          type: string
+          enum:
+          - create
+          - declare
+          - confirm
+          - stop
+          - seal
+          - abort
+          - cancel_auto_publish
+          - close_live
+        acceptedAt:
+          type: string
+          format: date-time
+          description: UTC RFC3339 timestamp emitted with Z suffix.
+        captureId:
+          type: string
+          pattern: ^[a-f0-9]{32}$
+    RecordingCaptureObjectStatus:
+      type: object
+      additionalProperties: false
+      required:
+      - path
+      - sizeBytes
+      - sha256
+      - state
+      properties:
+        path:
+          type: string
+          pattern: ^(master\.m3u8|(480p|720p|1080p)/(index\.m3u8|init\.mp4|seg-[0-9]{6}\.m4s))$
+        sizeBytes:
+          type: integer
+          minimum: 1
+          maximum: 134217728
+        sha256:
+          type: string
+          pattern: ^[a-f0-9]{64}$
+        state:
+          type: string
+          enum:
+          - declared
+          - queued
+          - verified
+          - failed
+    RecordingLiveProgress:
+      type: object
+      additionalProperties: false
+      required:
+      - revision
+      - firstSequence
+      - lastSequence
+      - mediaEndSeconds
+      - lastAdvancedAt
+      - endedAt
+      - ended
+      properties:
+        revision:
+          type: integer
+          format: int64
+          minimum: 0
+        firstSequence:
+          type: integer
+          const: 0
+        lastSequence:
+          type: integer
+          minimum: -1
+          maximum: 1439
+        mediaEndSeconds:
+          type: number
+          minimum: 0
+          maximum: 43200
+        lastAdvancedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+          description: UTC RFC3339 timestamp emitted with Z suffix.
+        endedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+          description: UTC RFC3339 timestamp emitted with Z suffix.
+        ended:
+          type: boolean
+    RecordingCaptureError:
+      type: object
+      additionalProperties: false
+      required:
+      - code
+      - message
+      properties:
+        code:
+          type: string
+          enum:
+          - capture_invalid
+          - capture_unauthorized
+          - capture_forbidden
+          - capture_not_found
+          - capture_conflict
+          - capture_missing_objects
+          - capture_expired
+          - capture_too_large
+          - capture_rate_limited
+          - capture_unavailable
+        message:
+          type: string
+    RecordingCaptureCreateInput:
+      type: object
+      additionalProperties: false
+      required:
+      - operationKey
+      - expectedVersion
+      - autoPublish
+      - liveEnabled
+      properties:
+        operationKey:
+          type: string
+          pattern: ^[a-zA-Z0-9._:-]{1,128}$
+        expectedVersion:
+          type: integer
+          format: int64
+          minimum: 1
+        autoPublish:
+          type: boolean
+        liveEnabled:
+          type: boolean
+    RecordingCaptureStatus:
+      type: object
+      additionalProperties: false
+      required:
+      - captureId
+      - recordingId
+      - recordingVersion
+      - state
+      - liveState
+      - liveEnabled
+      - autoPublish
+      - createdAt
+      - expiresAt
+      - serverNow
+      - stopAcceptedAt
+      - replayUntil
+      - terminalAt
+      - terminalReason
+      - packageId
+      - declaredBytes
+      - declaredObjects
+      - objects
+      - nextCursor
+      - progress
+      properties:
+        captureId:
+          type: string
+          pattern: ^[a-f0-9]{32}$
+        recordingId:
+          type: string
+          format: uuid
+        recordingVersion:
+          type: integer
+          format: int64
+          minimum: 1
+        state:
+          type: string
+          enum:
+          - creating
+          - uploading
+          - freezing
+          - validating
+          - ready
+          - failed
+          - expired
+          - aborted
+        liveState:
+          type: string
+          enum:
+          - starting
+          - live
+          - recovering
+          - interrupted
+          - ending
+          - ended
+          - failed
+          - expired
+          - aborted
+        liveEnabled:
+          type: boolean
+        autoPublish:
+          type: string
+          enum:
+          - pending
+          - cancelled
+          - blocked
+          - published
+        createdAt:
+          type: string
+          format: date-time
+          description: UTC RFC3339 timestamp emitted with Z suffix.
+        expiresAt:
+          type: string
+          format: date-time
+          description: UTC RFC3339 timestamp emitted with Z suffix.
+        serverNow:
+          type: string
+          format: date-time
+          description: UTC RFC3339 timestamp emitted with Z suffix.
+        stopAcceptedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+          description: UTC RFC3339 timestamp emitted with Z suffix.
+        replayUntil:
+          type:
+          - string
+          - 'null'
+          format: date-time
+          description: UTC RFC3339 timestamp emitted with Z suffix.
+        terminalAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+          description: UTC RFC3339 timestamp emitted with Z suffix.
+        terminalReason:
+          type:
+          - string
+          - 'null'
+          maxLength: 128
+        packageId:
+          type:
+          - string
+          - 'null'
+          pattern: ^[a-f0-9]{32}$
+        declaredBytes:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 10000000000
+        declaredObjects:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 10000
+        objects:
+          type: array
+          minItems: 0
+          maxItems: 1000
+          items:
+            $ref: '#/components/schemas/RecordingCaptureObjectStatus'
+        nextCursor:
+          type: string
+          maxLength: 128
+        progress:
+          $ref: '#/components/schemas/RecordingLiveProgress'
+    RecordingCaptureResult:
+      type: object
+      additionalProperties: false
+      required:
+      - capture
+      - receipt
+      properties:
+        capture:
+          $ref: '#/components/schemas/RecordingCaptureStatus'
+        receipt:
+          $ref: '#/components/schemas/RecordingCaptureReceipt'
+    RecordingLivePlaybackInput:
+      type: object
+      additionalProperties: false
+      required:
+      - captureId
+      - playbackScopeId
+      properties:
+        captureId:
+          type: string
+          pattern: ^[a-f0-9]{32}$
+        playbackScopeId:
+          type: string
+          format: uuid
+    MemberLivePlayback:
+      type: object
+      additionalProperties: false
+      required:
+      - recordingId
+      - captureId
+      - playbackScopeId
+      - mediaUrl
+      - exchangeCredential
+      - issuedAt
+      - expiresAt
+      - serverNow
+      - captureExpiresAt
+      - stopAcceptedAt
+      - replayUntil
+      - terminalReason
+      - liveState
+      - progress
+      - watermarkCode
+      properties:
+        recordingId:
+          type: string
+          format: uuid
+        captureId:
+          type: string
+          pattern: ^[a-f0-9]{32}$
+        playbackScopeId:
+          type: string
+          format: uuid
+        mediaUrl:
+          type: string
+          format: uri
+          description: Allowlisted media origin, exact /videos/{recordingId}/captures/{captureId}/sessions/{playbackScopeId}/master.m3u8
+            path.
+        exchangeCredential:
+          type: string
+          minLength: 1
+          description: Short-lived exchange credential; never log, persist, or place in URL.
+        issuedAt:
+          type: string
+          format: date-time
+          description: UTC RFC3339 timestamp emitted with Z suffix.
+        expiresAt:
+          type: string
+          format: date-time
+          description: UTC RFC3339 timestamp emitted with Z suffix.
+        serverNow:
+          type: string
+          format: date-time
+          description: UTC RFC3339 timestamp emitted with Z suffix.
+        captureExpiresAt:
+          type: string
+          format: date-time
+          description: UTC RFC3339 timestamp emitted with Z suffix.
+        stopAcceptedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+          description: UTC RFC3339 timestamp emitted with Z suffix.
+        replayUntil:
+          type:
+          - string
+          - 'null'
+          format: date-time
+          description: UTC RFC3339 timestamp emitted with Z suffix.
+        terminalReason:
+          type:
+          - string
+          - 'null'
+        liveState:
+          type: string
+          enum:
+          - starting
+          - live
+          - recovering
+          - interrupted
+          - ending
+          - ended
+          - failed
+          - expired
+          - aborted
+        progress:
+          $ref: '#/components/schemas/RecordingLiveProgress'
+        watermarkCode:
+          type: string
+          minLength: 1
+          description: Reuse the existing member watermark policy; withhold credentials when required trace persistence fails.
+    MemberLiveRecording:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - captureId
+      - title
+      - liveState
+      - createdAt
+      - stopAcceptedAt
+      - progress
+      properties:
+        id:
+          type: string
+          format: uuid
+        captureId:
+          type: string
+          pattern: ^[a-f0-9]{32}$
+        title:
+          type: string
+          maxLength: 180
+        liveState:
+          type: string
+          enum:
+          - starting
+          - live
+          - recovering
+          - interrupted
+          - ending
+          - ended
+          - failed
+          - expired
+          - aborted
+        createdAt:
+          type: string
+          format: date-time
+          description: UTC RFC3339 timestamp emitted with Z suffix.
+        stopAcceptedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+          description: UTC RFC3339 timestamp emitted with Z suffix.
+        progress:
+          $ref: '#/components/schemas/RecordingLiveProgress'
+    RecordingCaptureEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+      - data
+      - meta
+      - error
+      properties:
+        data:
+          $ref: '#/components/schemas/RecordingCaptureStatus'
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          type: 'null'
+    RecordingCaptureResultEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+      - data
+      - meta
+      - error
+      properties:
+        data:
+          $ref: '#/components/schemas/RecordingCaptureResult'
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          type: 'null'
+    RecordingCaptureSignedEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+      - data
+      - meta
+      - error
+      properties:
+        data:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/SignedRecordingObject'
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          type: 'null'
+    MemberLivePlaybackEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+      - data
+      - meta
+      - error
+      properties:
+        data:
+          $ref: '#/components/schemas/MemberLivePlayback'
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          type: 'null'
+    MemberLiveRecordingsEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+      - data
+      - meta
+      - error
+      properties:
+        data:
+          type: array
+          minItems: 0
+          maxItems: 1
+          items:
+            $ref: '#/components/schemas/MemberLiveRecording'
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          type: 'null'
+    RecordingCaptureErrorEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+      - data
+      - meta
+      - error
+      properties:
+        data:
+          type: 'null'
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          $ref: '#/components/schemas/RecordingCaptureError'
     ReaderSentence:
       description: Dynamic sentence anchor. The canonical- ID prefix is reserved for shared canonical metadata anchors across layouts.
       type: object
