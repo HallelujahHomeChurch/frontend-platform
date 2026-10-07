@@ -2170,7 +2170,7 @@ export interface paths {
         delete: operations["deleteAdminRecording"];
         options?: never;
         head?: never;
-        /** Update the title or bind a draft to its first occurrence */
+        /** Update recording title and optional plain-text description */
         patch: operations["updateAdminRecordingTitle"];
         trace?: never;
     };
@@ -4096,12 +4096,15 @@ export interface components {
         LegalSnapshotsEnvelope: {
             data: components["schemas"]["LegalSnapshot"][];
         };
+        /** @description Optional plain-text video description; Unicode code points, no HTML rendering. Omission preserves the saved value on update; an empty string clears it. */
+        RecordingDescription: string;
         MemberRecording: {
             /** Format: uuid */
             id: string;
             /** @description Optional explicit CMS selection. An absent value may use default auto cover; member clients may lazily request the current cover endpoint. */
             selectedCoverId?: string;
             title: string;
+            description?: components["schemas"]["RecordingDescription"];
             /** Format: date-time */
             uploadedAt: string | null;
             /** Format: date-time */
@@ -4151,6 +4154,7 @@ export interface components {
         AdminRecording: {
             id: components["schemas"]["MemberRecording"]["id"];
             title: components["schemas"]["MemberRecording"]["title"];
+            description?: components["schemas"]["RecordingDescription"];
             selectedCoverId?: components["schemas"]["MemberRecording"]["selectedCoverId"];
             uploadedAt: components["schemas"]["MemberRecording"]["uploadedAt"];
             expiresAt: components["schemas"]["MemberRecording"]["expiresAt"];
@@ -10340,11 +10344,12 @@ export interface operations {
             content: {
                 "application/json": {
                     title: string;
+                    description?: components["schemas"]["RecordingDescription"];
                 };
             };
         };
         responses: {
-            /** @description Updated title */
+            /** @description Updated recording metadata */
             200: {
                 headers: {
                     [name: string]: unknown;

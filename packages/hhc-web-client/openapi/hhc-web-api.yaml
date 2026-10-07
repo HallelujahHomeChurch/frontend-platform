@@ -3432,7 +3432,7 @@ paths:
         '404': { $ref: '#/components/responses/Error' }
     patch:
       operationId: updateAdminRecordingTitle
-      summary: Update the title or bind a draft to its first occurrence
+      summary: Update recording title and optional plain-text description
       tags: [Admin]
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
@@ -3450,8 +3450,9 @@ paths:
               required: [title]
               properties:
                 title: { type: string, minLength: 1, maxLength: 180 }
+                description: {$ref: '#/components/schemas/RecordingDescription'}
       responses:
-        '200': { description: Updated title, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingEnvelope' } } } }
+        '200': { description: Updated recording metadata, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingEnvelope' } } } }
         '400': { $ref: '#/components/responses/Error' }
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
         '403': { $ref: '#/components/responses/AdminForbidden' }
@@ -7450,6 +7451,11 @@ components:
       required: [data]
       properties:
         data: { type: array, minItems: 5, maxItems: 5, items: { $ref: '#/components/schemas/LegalSnapshot' } }
+    RecordingDescription:
+      type: string
+      maxLength: 5000
+      pattern: '^[^\x00]*$'
+      description: Optional plain-text video description; Unicode code points, no HTML rendering. Omission preserves the saved value on update; an empty string clears it.
     MemberRecording:
       type: object
       additionalProperties: false
@@ -7458,6 +7464,7 @@ components:
         id: { type: string, format: uuid }
         selectedCoverId: { type: string, pattern: '^[A-Za-z0-9-]{1,128}$', description: Optional explicit CMS selection. An absent value may use default auto cover; member clients may lazily request the current cover endpoint. }
         title: { type: string, minLength: 1, maxLength: 180 }
+        description: {$ref: '#/components/schemas/RecordingDescription'}
         uploadedAt: { type: [string, 'null'], format: date-time }
         expiresAt: { type: [string, 'null'], format: date-time }
         featured: { type: boolean }
@@ -7495,6 +7502,7 @@ components:
       properties:
         id: {$ref: '#/components/schemas/MemberRecording/properties/id'}
         title: {$ref: '#/components/schemas/MemberRecording/properties/title'}
+        description: {$ref: '#/components/schemas/RecordingDescription'}
         selectedCoverId: {$ref: '#/components/schemas/MemberRecording/properties/selectedCoverId'}
         uploadedAt: {$ref: '#/components/schemas/MemberRecording/properties/uploadedAt'}
         expiresAt: {$ref: '#/components/schemas/MemberRecording/properties/expiresAt'}

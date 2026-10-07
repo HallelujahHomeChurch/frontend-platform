@@ -388,9 +388,9 @@ export function createHhcWebClient(options: {
         params: { header: { 'Idempotency-Key': idempotencyKey } }, body: { title },
       }))).data
     },
-    async updateAdminRecordingTitle(id: string, version: number, title: string) {
+    async updateAdminRecordingTitle(id: string, version: number, title: string, description?:string) {
       return (await unwrap(client.PATCH('/admin/recordings/{id}', {
-        params: { path: { id }, header: { 'If-Match': `"${version}"` } }, body: { title },
+        params: { path: { id }, header: { 'If-Match': `"${version}"` } }, body: { title, ...(description!==undefined?{description}:{}) },
       }))).data
     },
     async setAdminRecordingExposure(id: string, version: number, featured: boolean, hidden: boolean) {
