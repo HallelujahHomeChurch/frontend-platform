@@ -4701,12 +4701,19 @@ paths:
                 type: integer
                 minimum: 1
               description: Seconds until retry.
+        '428':
+          description: Current member policy acceptance required.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ErrorEnvelope'}
         '503':
           description: Temporary dependency failure; capped backoff with jitter.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+                anyOf:
+                  - {$ref: '#/components/schemas/RecordingCaptureErrorEnvelope'}
+                  - {$ref: '#/components/schemas/ErrorEnvelope'}
           headers:
             Retry-After:
               schema:
@@ -4782,12 +4789,19 @@ paths:
                 type: integer
                 minimum: 1
               description: Seconds until retry.
+        '428':
+          description: Current member policy acceptance required.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ErrorEnvelope'}
         '503':
           description: Temporary dependency failure; capped backoff with jitter.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RecordingCaptureErrorEnvelope'
+                anyOf:
+                  - {$ref: '#/components/schemas/RecordingCaptureErrorEnvelope'}
+                  - {$ref: '#/components/schemas/ErrorEnvelope'}
           headers:
             Retry-After:
               schema:
@@ -5617,6 +5631,7 @@ components:
         title:
           type: string
           maxLength: 180
+        description: {$ref: '#/components/schemas/RecordingDescription'}
         liveState:
           type: string
           enum:
@@ -7495,6 +7510,15 @@ components:
         phaseStartedAt: {type: string, format: date-time}
         lastProgressAt: {type: string, format: date-time}
         heartbeatAt: {type: string, format: date-time}
+    AdminRecordingCaptureSummary:
+      type: object
+      additionalProperties: false
+      required: [captureId, liveEnabled, liveState, autoPublish]
+      properties:
+        captureId: {type: string, pattern: '^[a-f0-9]{32}$'}
+        liveEnabled: {type: boolean}
+        liveState: {$ref: '#/components/schemas/MemberLiveRecording/properties/liveState'}
+        autoPublish: {type: string, enum: [pending, published, cancelled, blocked]}
     AdminRecording:
       type: object
       additionalProperties: false
@@ -7515,6 +7539,7 @@ components:
         readyAt: {$ref: '#/components/schemas/MemberRecording/properties/readyAt'}
         durationSeconds: {$ref: '#/components/schemas/MemberRecording/properties/durationSeconds'}
         version: {$ref: '#/components/schemas/MemberRecording/properties/version'}
+        capture: {$ref: '#/components/schemas/AdminRecordingCaptureSummary'}
         processingProgress: {$ref: '#/components/schemas/RecordingProcessingProgress'}
     AdminRecordingEnvelope:
       type: object
@@ -8109,6 +8134,29 @@ components:
           type: string
           minLength: 1
           maxLength: 200
+    RecordingLiveScopeExport:
+      type: object
+      additionalProperties: false
+      required: [recordingId, captureId, playbackScopeId, registeredAt, captureExpiresAt]
+      properties:
+        recordingId: {type: string, format: uuid}
+        captureId: {type: string, pattern: '^[a-f0-9]{32}$'}
+        playbackScopeId: {type: string, format: uuid}
+        registeredAt: {type: string, format: date-time}
+        captureExpiresAt: {type: string, format: date-time}
+    RecordingWatermarkReceiptExport:
+      type: object
+      additionalProperties: false
+      required: [receiptId, code, userId, recordingId, packageId, formatVersion, issuedAt, expiresAt]
+      properties:
+        receiptId: {type: string, format: uuid}
+        code: {type: string, pattern: '^[0-9A-HJKMNP-TV-Z]{10}$'}
+        userId: {type: string, format: uuid}
+        recordingId: {type: string, format: uuid}
+        packageId: {type: string, pattern: '^[a-f0-9]{32}$', description: Immutable capture ID for live; the final VOD package retains that ID.}
+        formatVersion: {type: integer, const: 1}
+        issuedAt: {type: string, format: date-time}
+        expiresAt: {type: string, format: date-time}
     BulletinWatermarkDSRExportEnvelope:
       type: object
       additionalProperties: false
@@ -8135,7 +8183,7 @@ components:
                 properties:
                   recordType:
                     type: string
-                    enum: [bulletin_watermark_receipt, bulletin_watermark_investigation, online_reader_receipt, online_reader_validation, bulletin_reader_highlight, bulletin_reader_note, bulletin_reader_progress, bulletin_reader_migration_state, bulletin_reader_processed_mutation]
+                    enum: [bulletin_watermark_receipt, bulletin_watermark_investigation, online_reader_receipt, online_reader_validation, bulletin_reader_highlight, bulletin_reader_note, bulletin_reader_progress, bulletin_reader_migration_state, bulletin_reader_processed_mutation, recording_watermark_receipt, recording_live_scope]
                   recordKey: { type: string, maxLength: 512, description: UUID for PDF records; reader dataset prefix and account-scoped stable row key for reader records. }
                   data:
                     oneOf:
@@ -8144,6 +8192,8 @@ components:
                     - $ref: '#/components/schemas/ReaderReceiptExport'
                     - $ref: '#/components/schemas/ReaderValidationExport'
                     - $ref: '#/components/schemas/ReaderPrivateExportRow'
+                    - $ref: '#/components/schemas/RecordingWatermarkReceiptExport'
+                    - $ref: '#/components/schemas/RecordingLiveScopeExport'
             coveredDatasets:
               $ref: '#/components/schemas/ReaderDSRCoverage'
             recordCount: &id005

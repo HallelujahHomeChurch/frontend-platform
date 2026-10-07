@@ -2760,6 +2760,7 @@ export interface components {
             id: string;
             captureId: string;
             title: string;
+            description?: components["schemas"]["RecordingDescription"];
             /** @enum {string} */
             liveState: "starting" | "live" | "recovering" | "interrupted" | "ending" | "ended" | "failed" | "expired" | "aborted";
             /**
@@ -4151,6 +4152,13 @@ export interface components {
             /** Format: date-time */
             heartbeatAt: string;
         };
+        AdminRecordingCaptureSummary: {
+            captureId: string;
+            liveEnabled: boolean;
+            liveState: components["schemas"]["MemberLiveRecording"]["liveState"];
+            /** @enum {string} */
+            autoPublish: "pending" | "published" | "cancelled" | "blocked";
+        };
         AdminRecording: {
             id: components["schemas"]["MemberRecording"]["id"];
             title: components["schemas"]["MemberRecording"]["title"];
@@ -4167,6 +4175,7 @@ export interface components {
             readyAt?: components["schemas"]["MemberRecording"]["readyAt"];
             durationSeconds?: components["schemas"]["MemberRecording"]["durationSeconds"];
             version: components["schemas"]["MemberRecording"]["version"];
+            capture?: components["schemas"]["AdminRecordingCaptureSummary"];
             processingProgress?: components["schemas"]["RecordingProcessingProgress"];
         };
         AdminRecordingEnvelope: {
@@ -4518,14 +4527,42 @@ export interface components {
             userId: string;
             idempotencyKey: string;
         };
+        RecordingLiveScopeExport: {
+            /** Format: uuid */
+            recordingId: string;
+            captureId: string;
+            /** Format: uuid */
+            playbackScopeId: string;
+            /** Format: date-time */
+            registeredAt: string;
+            /** Format: date-time */
+            captureExpiresAt: string;
+        };
+        RecordingWatermarkReceiptExport: {
+            /** Format: uuid */
+            receiptId: string;
+            code: string;
+            /** Format: uuid */
+            userId: string;
+            /** Format: uuid */
+            recordingId: string;
+            /** @description Immutable capture ID for live; the final VOD package retains that ID. */
+            packageId: string;
+            /** @constant */
+            formatVersion: 1;
+            /** Format: date-time */
+            issuedAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
         BulletinWatermarkDSRExportEnvelope: {
             data: {
                 records: {
                     /** @enum {string} */
-                    recordType: "bulletin_watermark_receipt" | "bulletin_watermark_investigation" | "online_reader_receipt" | "online_reader_validation" | "bulletin_reader_highlight" | "bulletin_reader_note" | "bulletin_reader_progress" | "bulletin_reader_migration_state" | "bulletin_reader_processed_mutation";
+                    recordType: "bulletin_watermark_receipt" | "bulletin_watermark_investigation" | "online_reader_receipt" | "online_reader_validation" | "bulletin_reader_highlight" | "bulletin_reader_note" | "bulletin_reader_progress" | "bulletin_reader_migration_state" | "bulletin_reader_processed_mutation" | "recording_watermark_receipt" | "recording_live_scope";
                     /** @description UUID for PDF records; reader dataset prefix and account-scoped stable row key for reader records. */
                     recordKey: string;
-                    data: components["schemas"]["BulletinWatermarkReceipt"] | components["schemas"]["BulletinWatermarkInvestigationHistory"] | components["schemas"]["ReaderReceiptExport"] | components["schemas"]["ReaderValidationExport"] | components["schemas"]["ReaderPrivateExportRow"];
+                    data: components["schemas"]["BulletinWatermarkReceipt"] | components["schemas"]["BulletinWatermarkInvestigationHistory"] | components["schemas"]["ReaderReceiptExport"] | components["schemas"]["ReaderValidationExport"] | components["schemas"]["ReaderPrivateExportRow"] | components["schemas"]["RecordingWatermarkReceiptExport"] | components["schemas"]["RecordingLiveScopeExport"];
                 }[];
                 coveredDatasets?: components["schemas"]["ReaderDSRCoverage"];
                 recordCount: number;
@@ -11643,6 +11680,15 @@ export interface operations {
                     "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
                 };
             };
+            /** @description Current member policy acceptance required. */
+            428: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
             /** @description Retry after the Retry-After delay. */
             429: {
                 headers: {
@@ -11662,7 +11708,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"] | components["schemas"]["ErrorEnvelope"];
                 };
             };
         };
@@ -11738,6 +11784,15 @@ export interface operations {
                     "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
                 };
             };
+            /** @description Current member policy acceptance required. */
+            428: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
             /** @description Retry after the Retry-After delay. */
             429: {
                 headers: {
@@ -11757,7 +11812,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"] | components["schemas"]["ErrorEnvelope"];
                 };
             };
         };
