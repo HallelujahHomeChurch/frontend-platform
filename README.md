@@ -18,7 +18,7 @@ The bulletin worker uses the same compiled renderer, CSS, fixed assets and legal
 fonts as the UI. Build a new, checksum-verified bundle after `pnpm build`:
 
 ```sh
-node scripts/verify-bulletin-renderer.mjs
+node scripts/verify-bulletin-renderer-v3.mjs
 node scripts/package-bulletin-renderer.mjs artifacts/bulletin-renderer /path/to/verified/assets
 docker build -f tools/bulletin-renderer/Dockerfile -t hhc-bulletin-renderer:verify artifacts/bulletin-renderer
 ```
@@ -34,6 +34,11 @@ The release workflow verifies the tag belongs to `main`, tests/scans the image,
 and publishes a tag containing both renderer hash and commit. Consumers must pin
 the registry's immutable image digest, not a mutable tag. An artifact mismatch
 must block use; an image build or local test does not freeze or publish V1.
+
+V3 retains the immutable V1/V2 paper templates and fonts, and improves draft
+composition and visible-glyph measurement. Previously published manifests retain
+their original renderer. Re-extract an older failing draft to propose a V3
+candidate through the existing comparison flow; do not rewrite published data.
 
 ## License
 

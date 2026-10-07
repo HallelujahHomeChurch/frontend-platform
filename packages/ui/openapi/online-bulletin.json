@@ -1090,8 +1090,10 @@
             "type": "string",
             "enum": [
               "v1",
-              "v2"
-            ]
+              "v2",
+              "v3"
+            ],
+            "description": "V3 uses the existing v1 Traditional or v2 Simplified template with adaptive composition and painted-text validation. Existing published renderer versions remain immutable."
           },
           "rendererArtifactSha256": {
             "$ref": "#/components/schemas/OnlineBulletinHash"
