@@ -5,9 +5,13 @@ import {execFileSync, spawnSync} from 'node:child_process';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {test} from 'node:test';
-import {measureBulletinLayout} from './measure-bulletin-layout.mjs';
-import * as layoutRunner from './measure-bulletin-layout.mjs';
-import {BULLETIN_RENDERER_V1_DIGEST} from '../packages/ui/dist/bulletin-reader/artifact.js';
+const v3=process.env.HHC_TEST_RENDERER_V3==='1';
+const script=v3?'scripts/measure-bulletin-layout-v3.mjs':'scripts/measure-bulletin-layout.mjs';
+const layoutRunner=await import(`../${script}`);
+const {measureBulletinLayout}=layoutRunner;
+const {BULLETIN_RENDERER_V1_DIGEST:legacyDigest}=await import('../packages/ui/dist/bulletin-reader/artifact.js');
+const {BULLETIN_RENDERER_V3_DIGEST:newDigest}=await import('../packages/ui/dist/bulletin-reader/v3/artifact.js');
+const BULLETIN_RENDERER_V1_DIGEST=v3?newDigest:legacyDigest;
 
 const assetsDirectory = process.env.HHC_BULLETIN_TEMPLATE_DIR;
 const hash = value => createHash('sha256').update(value).digest('hex');
@@ -17,7 +21,7 @@ async function fixture(text = '這是一句測試。') {
     issueId: '00000000-0000-4000-8000-000000000001', series: 'general', contentLocale: 'zh-Hant', schemaVersion: '1', templateVersion: 'v1', sourceAssetChecksum: 'a'.repeat(64), sourcePageCount: 4,
     pages: [{id: 'p', width: 595.32, height: 841.92}],
     components: [{id: 'c', type: 'backSummary', items: [{id: 'i', blocks: [{id: 'b', style: {fontSize: 16, lineHeight: 24, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0}, sentences: [{id: 's', spans: [{text, fontRole: 'body'}]}]}]}]}],
-    layoutManifest: {templateVersion: 'v1', rendererVersion: 'v1', rendererArtifactSha256: BULLETIN_RENDERER_V1_DIGEST, assets: assets.filter(asset => asset.kind === 'font').map(asset => ({url: asset.url, sha256: asset.sha256, kind: 'font', fontRole: asset.roles[0]})), pages: [{pageId: 'p', slots: [{id: 'slot', componentId: 'c', blockId: 'b', box: {x: .1, y: .1, width: .8, height: .1}, fragments: [{sentenceId: 's', start: 0, end: Array.from(text).length}]}]}]},
+    layoutManifest: {templateVersion: 'v1', rendererVersion: v3?'v3':'v1', rendererArtifactSha256: BULLETIN_RENDERER_V1_DIGEST, assets: assets.filter(asset => asset.kind === 'font').map(asset => ({url: asset.url, sha256: asset.sha256, kind: 'font', fontRole: asset.roles[0]})), pages: [{pageId: 'p', slots: [{id: 'slot', componentId: 'c', blockId: 'b', box: {x: .1, y: .1, width: .8, height: .1}, fragments: [{sentenceId: 's', start: 0, end: Array.from(text).length}]}]}]},
   };
   const submissionJSON = JSON.stringify({document, canonicalMetadata: {title: '原始主題', subtitle: '', issueNumber: 1739, date: '2026-09-20'}});
   return {submissionJSON, expectedContentHash: hash(submissionJSON), assetsDirectory};
@@ -29,7 +33,7 @@ test('worker CLI composes the same anchored document and emits only a JSON resul
     const input = await fixture();
     const path = join(directory, 'input.json');
     await writeFile(path, JSON.stringify(input), {mode: 0o600});
-    const result = JSON.parse(execFileSync(process.execPath, ['scripts/measure-bulletin-layout.mjs', '--compose', path, assetsDirectory], {encoding: 'utf8', maxBuffer: 16 * 1024 * 1024}));
+    const result = JSON.parse(execFileSync(process.execPath, [script, '--compose', path, assetsDirectory], {encoding: 'utf8', maxBuffer: 16 * 1024 * 1024}));
     assert.deepEqual(JSON.parse(result.submissionJSON).document.components, JSON.parse(input.submissionJSON).document.components);
     assert.equal(hash(result.submissionJSON), result.expectedContentHash);
     assert.equal(result.measurement.contentHash, result.expectedContentHash);
@@ -43,7 +47,7 @@ test('worker CLI rejects oversized or malformed requests without exposing input 
     const path = join(directory, 'private-member-content.json');
     for (const input of ['private-member-content', ' '.repeat(16 * 1024 * 1024 + 1)]) {
       await writeFile(path, input, {mode: 0o600});
-      const result = spawnSync(process.execPath, ['scripts/measure-bulletin-layout.mjs', '--compose', path, '/private-assets'], {encoding: 'utf8'});
+      const result = spawnSync(process.execPath, [script, '--compose', path, '/private-assets'], {encoding: 'utf8'});
       assert.equal(result.status, 1);
       assert.equal(result.stdout, '');
       assert.equal(result.stderr, 'layout_runner_failed\n');
@@ -62,6 +66,17 @@ test('canonical metadata belongs to the same content identity as the page text',
 });
 test('rejects unavailable glyphs instead of measuring a platform fallback font', {skip: !assetsDirectory}, async () => {
   await assert.rejects(measureBulletinLayout(await fixture('測試🫠')), /missing_glyph/);
+});
+
+test('hanging whitespace does not reject fitting ink, but visible overflow still fails', {skip: !assetsDirectory||!v3}, async () => {
+  const input=await fixture('測試 ');
+  const submission=JSON.parse(input.submissionJSON);
+  const block=submission.document.components[0].items[0].blocks[0];
+  block.style={...block.style,fontSize:14,lineHeight:18};
+  submission.document.layoutManifest.pages[0].slots[0].box.width=28/submission.document.pages[0].width;
+  const submissionJSON=JSON.stringify(submission);
+  const result=await measureBulletinLayout({...input,submissionJSON,expectedContentHash:hash(submissionJSON)});
+  assert.deepEqual(result.overflow,[]);
 });
 test('verified hymn stars use their immutable symbol font and Unicode scalar anchors', {skip: !assetsDirectory}, async () => {
   const input = await fixture('★\u{1f7cb}');
@@ -269,6 +284,7 @@ test('controlled full-page diagnostics preserve geometry and surface every unres
   for (const [issue, pageCount, blockCount] of [[1739, 12, 495], [1740, 16, 679]]) {
     const submission = JSON.parse(await readFile(new URL(`./testdata/bulletin/${issue}-typography.json`, import.meta.url), 'utf8'));
     submission.document.layoutManifest.rendererArtifactSha256 = BULLETIN_RENDERER_V1_DIGEST;
+    submission.document.layoutManifest.rendererVersion = v3?'v3':'v1';
     submission.document.layoutManifest.assets = JSON.parse((await fixture()).submissionJSON).document.layoutManifest.assets;
     const slots = submission.document.layoutManifest.pages.flatMap(page => page.slots);
     assert.equal(slots.length, blockCount);

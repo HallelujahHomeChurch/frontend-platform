@@ -20,6 +20,18 @@ function fixture(): Document {
 }
 
 describe('immutable shared bulletin renderer', () => {
+  it.each(['v1','v2'] as const)('renders V3 with the frozen %s template without rewriting stored identities', templateVersion => {
+    const document=fixture();
+    document.templateVersion=templateVersion;
+    document.contentLocale=templateVersion==='v2'?'zh-Hans':'zh-Hant';
+    Object.assign(document.layoutManifest,{templateVersion,rendererVersion:'v3',rendererArtifactSha256:UI.BULLETIN_RENDERER_V3_DIGEST});
+    const original=structuredClone(document);
+    const {container}=render(<UI.BulletinDocumentRenderer document={document} mode="paper"/>);
+    expect(container.querySelector('[data-sentence-id="s"]')).toHaveTextContent('𠮷你');
+    expect(document).toEqual(original);
+    document.layoutManifest.rendererArtifactSha256='0'.repeat(64);
+    expect(()=>UI.requireBulletinRenderer(document.layoutManifest)).toThrow('update_required');
+  });
   it('keeps the summary frame outside selectable text without inward scroll ornaments', () => {
     const document = fixture();
     document.layoutManifest.pages[0].fixedSlots = [{id: 'native-scroll', element: 'summaryFrame', box: {x: 75.75/595.32, y: 11.25/841.92, width: 486.4/595.32, height: 187.2/841.92}, style: {fontSize: 6, lineHeight: 6, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0}}];

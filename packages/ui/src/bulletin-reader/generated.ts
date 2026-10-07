@@ -272,8 +272,11 @@ export interface components {
         OnlineBulletinLayoutManifest: {
             /** @enum {string} */
             templateVersion: "v1" | "v2";
-            /** @enum {string} */
-            rendererVersion: "v1" | "v2";
+            /**
+             * @description V3 uses the existing v1 Traditional or v2 Simplified template with adaptive composition and painted-text validation. Existing published renderer versions remain immutable.
+             * @enum {string}
+             */
+            rendererVersion: "v1" | "v2" | "v3";
             rendererArtifactSha256: components["schemas"]["OnlineBulletinHash"];
             contentHash?: components["schemas"]["OnlineBulletinHash"];
             layoutValidationHash?: components["schemas"]["OnlineBulletinHash"];
