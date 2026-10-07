@@ -2054,6 +2054,8 @@ export interface components {
             members: components["schemas"]["MemberCreateInput"][];
         };
         UnitMemberBatchInput: {
+            /** @description Optional access granted atomically with admission; constrained by the target unit policy even for global staff */
+            entitlementCodes?: ("bulletin.general.zh-Hant.access" | "bulletin.general.zh-Hans.access" | "bulletin.general.en.access" | "video.meeting-recordings.access")[];
             accountUserIds: string[];
         };
         AccountIDBatch: {
@@ -2067,6 +2069,8 @@ export interface components {
             state: "available" | "already_joined";
         };
         JoinCandidatePage: {
+            /** @description Actor-authorized admission choices for this target; omitted by older servers */
+            grantableEntitlementCodes?: ("bulletin.general.zh-Hant.access" | "bulletin.general.zh-Hans.access" | "bulletin.general.en.access" | "video.meeting-recordings.access")[];
             items: components["schemas"]["JoinCandidate"][];
             page: number;
             nextPage?: number;
@@ -2134,6 +2138,8 @@ export interface components {
             memberId: string;
         };
         ManagedAdmissionInput: {
+            /** @description Optional access granted atomically with admission; constrained by the target unit policy even for global staff */
+            entitlementCodes?: ("bulletin.general.zh-Hant.access" | "bulletin.general.zh-Hans.access" | "bulletin.general.en.access" | "video.meeting-recordings.access")[];
             /** Format: uuid */
             accountUserId: string;
         };

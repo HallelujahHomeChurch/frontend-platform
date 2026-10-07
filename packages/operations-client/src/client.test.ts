@@ -150,3 +150,19 @@ it('preserves an explicit empty unit policy and sends a typed video grant', asyn
  await client.raw.PUT('/api/operations/manage/org-units/{unitId}', {params:{path:{unitId:'unit'},header:{'If-Match':'"1"','Idempotency-Key':'inherit'}},body:{name:'Group',inheritsGrantableEntitlements:true}});
  expect(bodies).toEqual([{name:'Group',grantableEntitlementCodes:[]},{memberIds:['member'],entitlementCode:'video.meeting-recordings.access',operation:'grant'},{name:'Group',inheritsGrantableEntitlements:true}]);
 });
+
+it('carries admission entitlements through both existing routes with stable keys', async () => {
+ const bodies: unknown[]=[];
+ const keys: (string|null)[]=[];
+ const client=createOperationsClient({baseUrl:'',getAccessToken:async()=>'token',refreshAfterUnauthorized:async()=>null,fetcher:async input=>{
+  const request=input as Request; bodies.push(await request.json()); keys.push(request.headers.get('Idempotency-Key')); return json({});
+ }});
+ await client.raw.POST('/api/operations/manage/org-units/{unitId}/members',{
+  params:{path:{unitId:'unit'},header:{'Idempotency-Key':'account-admit'}},body:{accountUserId:'account',entitlementCodes:['bulletin.general.zh-Hant.access']}
+ });
+ await client.raw.POST('/api/admin/operations/org-units/{id}/members/batch',{
+  params:{path:{id:'unit'},header:{'Idempotency-Key':'admin-admit'}},body:{accountUserIds:['account'],entitlementCodes:['video.meeting-recordings.access']}
+ });
+ expect(bodies).toEqual([{accountUserId:'account',entitlementCodes:['bulletin.general.zh-Hant.access']},{accountUserIds:['account'],entitlementCodes:['video.meeting-recordings.access']}]);
+ expect(keys).toEqual(['account-admit','admin-admit']);
+});
