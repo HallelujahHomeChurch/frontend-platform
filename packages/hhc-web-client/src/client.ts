@@ -57,6 +57,10 @@ export type RecordingCoverSelection = components['schemas']['RecordingCoverSelec
 export type RecordingCoverSelectionResult = components['schemas']['RecordingCoverSelectionResult']
 export type RecordingCoverUpload = components['schemas']['RecordingCoverUpload']
 export type MemberRecordingPlayback = components['schemas']['MemberRecordingPlayback']
+export type MemberLivePlayback = components['schemas']['MemberLivePlayback']
+export type MemberLiveRecording = components['schemas']['MemberLiveRecording']
+export type RecordingCaptureStatus = components['schemas']['RecordingCaptureStatus']
+export type RecordingCaptureResult = components['schemas']['RecordingCaptureResult']
 export type RecordingSourceInput = components['schemas']['RecordingSourceInput']
 export type RecordingSource = components['schemas']['RecordingSource']
 export type RecordingSourceStatus = components['schemas']['RecordingSourceStatus']
@@ -318,6 +322,29 @@ export function createHhcWebClient(options: {
       if (!Number.isSafeInteger(version) || version < 1) throw new Error('Invalid legal publication version')
       return (await unwrap(client.POST('/admin/legal/{scope}/publish', {params: {path: {scope}, header: {'If-Match': `"${version}"`}}, cache: 'no-store'}))).data
     },
+    async listMemberLivestreams(signal?: AbortSignal) {
+      return (await unwrap(client.GET('/member/recordings/live', {signal, cache: 'no-store'}))).data
+    },
+    async issueLiveRecordingPlayback(id: string, captureId: string, playbackScopeId: string, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/member/recordings/{id}/live/playback', {
+        params: {path: {id}}, body: {captureId, playbackScopeId}, signal, cache: 'no-store',
+      }))).data
+    },
+    async getRecordingCapture(id: string, captureId: string, options: {cursor?: string; limit?: number; signal?: AbortSignal} = {}) {
+      return (await unwrap(client.GET('/admin/recordings/{id}/captures/{captureId}', {
+        params: {path: {id, captureId}, query: {cursor: options.cursor, limit: options.limit}}, signal: options.signal, cache: 'no-store',
+      }))).data
+    },
+    async closeRecordingLive(id: string, captureId: string, operationKey: string, signal?: AbortSignal) {
+      return (await unwrap(client.DELETE('/admin/recordings/{id}/captures/{captureId}/live', {
+        params: {path: {id, captureId}}, body: {operationKey}, signal, cache: 'no-store',
+      }))).data
+    },
+    async cancelRecordingAutoPublish(id: string, captureId: string, operationKey: string, signal?: AbortSignal) {
+      return (await unwrap(client.DELETE('/admin/recordings/{id}/captures/{captureId}/auto-publish', {
+        params: {path: {id, captureId}}, body: {operationKey}, signal, cache: 'no-store',
+      }))).data
+    },
     async listMemberRecordings(signal?: AbortSignal) {
       return (await unwrap(client.GET('/member/recordings', { signal, cache: 'no-store' }))).data
     },
@@ -361,9 +388,9 @@ export function createHhcWebClient(options: {
         params: { header: { 'Idempotency-Key': idempotencyKey } }, body: { title },
       }))).data
     },
-    async updateAdminRecordingTitle(id: string, version: number, title: string) {
+    async updateAdminRecordingTitle(id: string, version: number, title: string, description?:string) {
       return (await unwrap(client.PATCH('/admin/recordings/{id}', {
-        params: { path: { id }, header: { 'If-Match': `"${version}"` } }, body: { title },
+        params: { path: { id }, header: { 'If-Match': `"${version}"` } }, body: { title, ...(description!==undefined?{description}:{}) },
       }))).data
     },
     async setAdminRecordingExposure(id: string, version: number, featured: boolean, hidden: boolean) {

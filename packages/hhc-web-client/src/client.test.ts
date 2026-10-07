@@ -222,6 +222,16 @@ describe('hhc web client', () => {
     expect(JSON.parse(await update!.text())).toEqual({title: '整理標題'})
     expect(update!.headers.get('If-Match')).toBe('"2"')
   })
+  it('preserves omitted descriptions and sends an explicit empty string to clear',async()=>{
+    const fetcher=vi.fn<typeof fetch>().mockImplementation(async()=>new Response(JSON.stringify({data:{},meta:{},error:null}),{headers:{'Content-Type':'application/json'}}))
+    const client=createHhcWebClient({baseUrl:'/api',getAccessToken:()=> 'admin-token',fetcher})
+    await client.updateAdminRecordingTitle('rec-1',2,'Title','😀\nPlain text')
+    await client.updateAdminRecordingTitle('rec-1',3,'Title','')
+    const requests=fetcher.mock.calls.map(call=>call[0] as Request)
+    expect(JSON.parse(await requests[0]!.text())).toEqual({title:'Title',description:'😀\nPlain text'})
+    expect(JSON.parse(await requests[1]!.text())).toEqual({title:'Title',description:''})
+    expect(requests[1]!.headers.get('If-Match')).toBe('"3"')
+  })
   it('uploads one-to-five private documents for an issue and reads its creator-owned job', async () => {
     const response = (data: unknown) => new Response(JSON.stringify({data, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}})
     const fetcher = vi.fn<typeof fetch>()
