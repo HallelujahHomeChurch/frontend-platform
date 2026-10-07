@@ -5,12 +5,14 @@ import {execFileSync, spawnSync} from 'node:child_process';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {test} from 'node:test';
-const v3=process.env.HHC_TEST_RENDERER_V3==='1';
-const script=v3?'scripts/measure-bulletin-layout-v3.mjs':'scripts/measure-bulletin-layout.mjs';
+const v4=process.env.HHC_TEST_RENDERER_V4==='1';
+const v3=v4||process.env.HHC_TEST_RENDERER_V3==='1';
+const script=v4?'scripts/measure-bulletin-layout-v4.mjs':v3?'scripts/measure-bulletin-layout-v3.mjs':'scripts/measure-bulletin-layout.mjs';
 const layoutRunner=await import(`../${script}`);
 const {measureBulletinLayout}=layoutRunner;
 const {BULLETIN_RENDERER_V1_DIGEST:legacyDigest}=await import('../packages/ui/dist/bulletin-reader/artifact.js');
-const {BULLETIN_RENDERER_V3_DIGEST:newDigest}=await import('../packages/ui/dist/bulletin-reader/v3/artifact.js');
+const {BULLETIN_RENDERER_V3_DIGEST:thirdDigest}=await import('../packages/ui/dist/bulletin-reader/v3/artifact.js');
+const newDigest=v4?(await import('../packages/ui/dist/bulletin-reader/v4/artifact.js')).BULLETIN_RENDERER_V4_DIGEST:thirdDigest;
 const BULLETIN_RENDERER_V1_DIGEST=v3?newDigest:legacyDigest;
 
 const assetsDirectory = process.env.HHC_BULLETIN_TEMPLATE_DIR;
@@ -21,7 +23,7 @@ async function fixture(text = '這是一句測試。') {
     issueId: '00000000-0000-4000-8000-000000000001', series: 'general', contentLocale: 'zh-Hant', schemaVersion: '1', templateVersion: 'v1', sourceAssetChecksum: 'a'.repeat(64), sourcePageCount: 4,
     pages: [{id: 'p', width: 595.32, height: 841.92}],
     components: [{id: 'c', type: 'backSummary', items: [{id: 'i', blocks: [{id: 'b', style: {fontSize: 16, lineHeight: 24, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0}, sentences: [{id: 's', spans: [{text, fontRole: 'body'}]}]}]}]}],
-    layoutManifest: {templateVersion: 'v1', rendererVersion: v3?'v3':'v1', rendererArtifactSha256: BULLETIN_RENDERER_V1_DIGEST, assets: assets.filter(asset => asset.kind === 'font').map(asset => ({url: asset.url, sha256: asset.sha256, kind: 'font', fontRole: asset.roles[0]})), pages: [{pageId: 'p', slots: [{id: 'slot', componentId: 'c', blockId: 'b', box: {x: .1, y: .1, width: .8, height: .1}, fragments: [{sentenceId: 's', start: 0, end: Array.from(text).length}]}]}]},
+    layoutManifest: {templateVersion: 'v1', rendererVersion: v4?'v4':v3?'v3':'v1', rendererArtifactSha256: BULLETIN_RENDERER_V1_DIGEST, assets: assets.filter(asset => asset.kind === 'font').map(asset => ({url: asset.url, sha256: asset.sha256, kind: 'font', fontRole: asset.roles[0]})), pages: [{pageId: 'p', slots: [{id: 'slot', componentId: 'c', blockId: 'b', box: {x: .1, y: .1, width: .8, height: .1}, fragments: [{sentenceId: 's', start: 0, end: Array.from(text).length}]}]}]},
   };
   const submissionJSON = JSON.stringify({document, canonicalMetadata: {title: '原始主題', subtitle: '', issueNumber: 1739, date: '2026-09-20'}});
   return {submissionJSON, expectedContentHash: hash(submissionJSON), assetsDirectory};
@@ -284,7 +286,7 @@ test('controlled full-page diagnostics preserve geometry and surface every unres
   for (const [issue, pageCount, blockCount] of [[1739, 12, 495], [1740, 16, 679]]) {
     const submission = JSON.parse(await readFile(new URL(`./testdata/bulletin/${issue}-typography.json`, import.meta.url), 'utf8'));
     submission.document.layoutManifest.rendererArtifactSha256 = BULLETIN_RENDERER_V1_DIGEST;
-    submission.document.layoutManifest.rendererVersion = v3?'v3':'v1';
+    submission.document.layoutManifest.rendererVersion = v4?'v4':v3?'v3':'v1';
     submission.document.layoutManifest.assets = JSON.parse((await fixture()).submissionJSON).document.layoutManifest.assets;
     const slots = submission.document.layoutManifest.pages.flatMap(page => page.slots);
     assert.equal(slots.length, blockCount);
@@ -349,6 +351,23 @@ test('body composition reclaims excessive gaps without adding pages or changing 
 
 test('oversized text fails closed instead of adding source pages', {skip: !assetsDirectory}, async () => {
   await assert.rejects(layoutRunner.composeBulletinBodyLayout(await fixture('禱告。'.repeat(600))), /page_requires_edit/);
+});
+
+test('dense Letter lyrics use safe bottom whitespace without shrinking below 12pt or adding pages', {skip: !assetsDirectory || !v4}, async () => {
+  const input=await fixture('詩歌');
+  const submission=JSON.parse(input.submissionJSON), d=submission.document;
+  d.pages=[{id:'p',width:612,height:792}];
+  const blocks=Array.from({length:45},(_,i)=>({id:`b${i}`,style:{fontSize:12,lineHeight:14,align:'left'},sentences:[{id:`s${i}`,spans:[{text:'測試歌詞',fontRole:'body'}]}]}));
+  d.components=[{id:'c',type:'hymnLyrics',hymnLyrics:{hymns:[{id:'h',title:blocks[0],sections:[{id:'verse',kind:'verse',lines:blocks.slice(1)}]}]}}];
+  d.layoutManifest.pages=[{pageId:'p',slots:blocks.map((block,i)=>({id:`slot${i}`,componentId:'c',blockId:block.id,box:{x:.55,y:(107.5+14*i+(i>=15?13:0)+(i>=29?13:0))/792,width:.4,height:12/792},fragments:[{sentenceId:`s${i}`,start:0,end:4}]}))}];
+  const submissionJSON=JSON.stringify(submission);
+  const result=await layoutRunner.composeBulletinBodyLayout({...input,submissionJSON,expectedContentHash:hash(submissionJSON)});
+  const composed=JSON.parse(result.submissionJSON).document;
+  assert.equal(composed.pages.length,1);
+  assert.deepEqual(result.measurement.overflow,[]);
+  assert.ok(result.measurement.pages[0].slots.every(s=>s.box.y+s.box.height<=768.1));
+  assert.ok(composed.components[0].hymnLyrics.hymns[0].sections[0].lines.every(b=>b.style.fontSize>=12));
+  assert.deepEqual(composed.layoutManifest.pages[0].slots.map(s=>s.fragments),d.layoutManifest.pages[0].slots.map(s=>s.fragments));
 });
 
 test('an oversized cover rejects composition instead of silently adding another cover page', {skip: !assetsDirectory}, async () => {

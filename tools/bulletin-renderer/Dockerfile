@@ -14,6 +14,6 @@ COPY packages ./packages
 COPY scripts ./scripts
 COPY assets ./assets
 COPY LICENSE ./LICENSE
-RUN node scripts/verify-bulletin-renderer.mjs && node scripts/verify-bulletin-renderer.mjs --v2
+RUN node scripts/verify-bulletin-renderer-v4.mjs
 USER 65532:65532
 ENTRYPOINT ["node", "/opt/bulletin-renderer/scripts/measure-bulletin-layout.mjs"]
