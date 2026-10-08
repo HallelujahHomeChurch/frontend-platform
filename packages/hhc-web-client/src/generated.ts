@@ -1148,7 +1148,7 @@ export interface paths {
         put?: never;
         /**
          * Synchronize Simplified Chinese content from confirmed Traditional Chinese content
-         * @description Human administrators only. Source is always the same issue general zh-Hant confirmed Local. If-Match fences the target Online version (zero before creation); the body independently fences canonical metadata and source revision/version. Identical source/configuration requests reuse the durable job; a completed legacy Incoming result is requeued under current version fences. retry=true retries only failed work. Successful conversion replaces the Simplified Local and Base, clears Incoming, and queues layout validation. Immutable history and publication are retained. Simplified content cannot be manually edited; review and publication remain independent. No PDF asset or additional grant is created.
+         * @description Human administrators only. Source is always the same issue general zh-Hant confirmed Local. If-Match fences the target Online version (zero before creation); the body independently fences canonical metadata and source revision/version. Identical source/configuration requests reuse the durable job; a completed legacy Incoming result is requeued under current version fences. retry=true retries failed conversion work, or only failed layout validation when conversion is review_ready and its result is still the current saved Local. A layout-only retry preserves the revision and conversion job, returns that review_ready job with the incremented target version, and queues a new layout job visible through the state endpoint. Successful conversion replaces the Simplified Local and Base, clears Incoming, and queues layout validation. Immutable history and publication are retained. Simplified content cannot be manually edited; review and publication remain independent. No PDF asset or additional grant is created.
          */
         post: operations["startOnlineBulletinConversion"];
         delete?: never;
@@ -2958,6 +2958,12 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
         };
+        /** @description Missing highlight is an opaque consumed-entry tombstone; it prevents migration from resurrecting discarded private text. */
+        ReaderHighlightHistoryEntry: {
+            /** Format: uuid */
+            id: string;
+            highlight?: components["schemas"]["ReaderHighlight"];
+        };
         ReaderNote: {
             ranges?: components["schemas"]["ReaderNoteRange"][];
             /** Format: uuid */
@@ -3001,6 +3007,8 @@ export interface components {
             appliedRevision: number;
             currentRevision: number;
             highlights: components["schemas"]["ReaderHighlight"][];
+            /** @description Private retained source selections that no longer locate current text. Entries are not active highlights and never imply a current anchor. Omitted on legacy states. */
+            highlightHistory?: components["schemas"]["ReaderHighlightHistoryEntry"][];
             notes: components["schemas"]["ReaderNote"][];
             progress: components["schemas"]["ReaderProgress"] | null;
             conflicts: components["schemas"]["ReaderMigrationConflict"][];
@@ -3045,7 +3053,7 @@ export interface components {
             documentRevision: number;
             baseVersion?: number;
             /** @enum {string} */
-            kind: "setHighlight" | "clearHighlight" | "createNote" | "editNote" | "deleteNote" | "setProgress" | "resolveHighlightMigrationConflict";
+            kind: "setHighlight" | "clearHighlight" | "restoreHighlight" | "discardHighlightHistory" | "createNote" | "editNote" | "deleteNote" | "reanchorNote" | "setProgress" | "resolveHighlightMigrationConflict";
             payload: {
                 [key: string]: unknown;
             };
@@ -3084,6 +3092,16 @@ export interface components {
             };
         } | {
             /** @constant */
+            kind: "reanchorNote";
+            /** @description Explicitly select a new range for a note with unavailable anchors. Requires the current note baseVersion and documentRevision. Preserves note identity, original quote and text; ranges use current server-validated Unicode scalar offsets. A stale note returns note_conflict. */
+            payload: {
+                /** Format: uuid */
+                noteId: string;
+                sentenceIds: components["schemas"]["ReaderAnchorIDs"];
+                ranges: components["schemas"]["ReaderTextRanges"];
+            };
+        } | {
+            /** @constant */
             kind: "deleteNote";
             payload: {
                 /** Format: uuid */
@@ -3096,6 +3114,23 @@ export interface components {
                 pageId?: string;
                 componentId?: string;
                 sentenceId?: string;
+            };
+        } | {
+            /** @constant */
+            kind: "restoreHighlight";
+            payload: {
+                /** Format: uuid */
+                historyId: string;
+                sentenceIds: components["schemas"]["ReaderAnchorIDs"];
+                ranges: components["schemas"]["ReaderTextRanges"];
+                color: components["schemas"]["ReaderHighlightColor"];
+            };
+        } | {
+            /** @constant */
+            kind: "discardHighlightHistory";
+            payload: {
+                /** Format: uuid */
+                historyId: string;
             };
         } | {
             /** @constant */
@@ -3458,6 +3493,10 @@ export interface components {
             code: string;
             blocking: boolean;
             componentId?: components["schemas"]["OnlineBulletinID"];
+            blockId?: components["schemas"]["OnlineBulletinID"];
+            sentenceId?: components["schemas"]["OnlineBulletinID"];
+            /** @description One-based original PDF page, never the composed online page index. Omitted when no exact source page is available. */
+            sourcePage?: number;
         };
         OnlineBulletinAdminJob: {
             /** Format: uuid */
@@ -3945,7 +3984,7 @@ export interface components {
             /** @constant */
             audioBitrate: 128000;
             durationSeconds: number;
-            /** @description ceil(durationSeconds/30); all renditions require aligned actual boundaries. */
+            /** @description Actual number of contiguous media segments, including a legal short final segment; validated against playlists and decoded media, not inferred from duration. All renditions require aligned actual boundaries. */
             segmentCount: number;
         };
         RecordingPackageSignInput: {

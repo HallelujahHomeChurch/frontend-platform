@@ -1,6 +1,6 @@
 {
   "name": "hhc-frontend-platform",
-  "version": "1.0.45",
+  "version": "1.0.46",
   "private": true,
   "license": "UNLICENSED",
   "packageManager": "pnpm@10.12.1",

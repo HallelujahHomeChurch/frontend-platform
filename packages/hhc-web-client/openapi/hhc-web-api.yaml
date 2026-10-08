@@ -1710,7 +1710,7 @@ paths:
     post:
       operationId: startOnlineBulletinConversion
       summary: Synchronize Simplified Chinese content from confirmed Traditional Chinese content
-      description: Human administrators only. Source is always the same issue general zh-Hant confirmed Local. If-Match fences the target Online version (zero before creation); the body independently fences canonical metadata and source revision/version. Identical source/configuration requests reuse the durable job; a completed legacy Incoming result is requeued under current version fences. retry=true retries only failed work. Successful conversion replaces the Simplified Local and Base, clears Incoming, and queues layout validation. Immutable history and publication are retained. Simplified content cannot be manually edited; review and publication remain independent. No PDF asset or additional grant is created.
+      description: Human administrators only. Source is always the same issue general zh-Hant confirmed Local. If-Match fences the target Online version (zero before creation); the body independently fences canonical metadata and source revision/version. Identical source/configuration requests reuse the durable job; a completed legacy Incoming result is requeued under current version fences. retry=true retries failed conversion work, or only failed layout validation when conversion is review_ready and its result is still the current saved Local. A layout-only retry preserves the revision and conversion job, returns that review_ready job with the incremented target version, and queues a new layout job visible through the state endpoint. Successful conversion replaces the Simplified Local and Base, clears Incoming, and queues layout validation. Immutable history and publication are retained. Simplified content cannot be manually edited; review and publication remain independent. No PDF asset or additional grant is created.
       tags: [Admin]
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
@@ -6016,6 +6016,14 @@ components:
         active: { type: boolean }
         version: { type: integer, minimum: 1 }
         updatedAt: { type: string, format: date-time }
+    ReaderHighlightHistoryEntry:
+      type: object
+      additionalProperties: false
+      description: Missing highlight is an opaque consumed-entry tombstone; it prevents migration from resurrecting discarded private text.
+      required: [id]
+      properties:
+        id: { type: string, format: uuid }
+        highlight: { $ref: '#/components/schemas/ReaderHighlight' }
     ReaderNote:
       type: object
       additionalProperties: false
@@ -6064,6 +6072,10 @@ components:
         appliedRevision: { type: integer, minimum: 1 }
         currentRevision: { type: integer, minimum: 1 }
         highlights: { type: array, items: { $ref: '#/components/schemas/ReaderHighlight' } }
+        highlightHistory:
+          type: array
+          description: Private retained source selections that no longer locate current text. Entries are not active highlights and never imply a current anchor. Omitted on legacy states.
+          items: { $ref: '#/components/schemas/ReaderHighlightHistoryEntry' }
         notes: { type: array, items: { $ref: '#/components/schemas/ReaderNote' } }
         progress: { oneOf: [{ $ref: '#/components/schemas/ReaderProgress' }, { type: 'null' }] }
         conflicts: { type: array, items: { $ref: '#/components/schemas/ReaderMigrationConflict' } }
@@ -6123,7 +6135,7 @@ components:
             createdAt: { type: string, format: date-time }
             documentRevision: { type: integer, minimum: 1, maximum: 9007199254740991 }
             baseVersion: { type: integer, minimum: 1 }
-            kind: { type: string, enum: [setHighlight, clearHighlight, createNote, editNote, deleteNote, setProgress, resolveHighlightMigrationConflict] }
+            kind: { type: string, enum: [setHighlight, clearHighlight, restoreHighlight, discardHighlightHistory, createNote, editNote, deleteNote, reanchorNote, setProgress, resolveHighlightMigrationConflict] }
             payload: { type: object, additionalProperties: true }
         - oneOf:
             - required: [kind, payload]
@@ -6174,6 +6186,18 @@ components:
                     text: { type: string, minLength: 1, maxLength: 10000 }
             - required: [kind, payload, baseVersion]
               properties:
+                kind: { const: reanchorNote }
+                payload:
+                  description: Explicitly select a new range for a note with unavailable anchors. Requires the current note baseVersion and documentRevision. Preserves note identity, original quote and text; ranges use current server-validated Unicode scalar offsets. A stale note returns note_conflict.
+                  type: object
+                  additionalProperties: false
+                  required: [noteId, sentenceIds, ranges]
+                  properties:
+                    noteId: { type: string, format: uuid }
+                    sentenceIds: { $ref: '#/components/schemas/ReaderAnchorIDs' }
+                    ranges: { $ref: '#/components/schemas/ReaderTextRanges' }
+            - required: [kind, payload, baseVersion]
+              properties:
                 kind: { const: deleteNote }
                 payload:
                   type: object
@@ -6191,6 +6215,29 @@ components:
                     pageId: { type: string, maxLength: 128 }
                     componentId: { type: string, maxLength: 128 }
                     sentenceId: { type: string, maxLength: 128 }
+              not: { required: [baseVersion] }
+            - required: [kind, payload]
+              properties:
+                kind: { const: restoreHighlight }
+                payload:
+                  type: object
+                  additionalProperties: false
+                  required: [historyId, sentenceIds, ranges, color]
+                  properties:
+                    historyId: { type: string, format: uuid }
+                    sentenceIds: { $ref: '#/components/schemas/ReaderAnchorIDs' }
+                    ranges: { $ref: '#/components/schemas/ReaderTextRanges' }
+                    color: { $ref: '#/components/schemas/ReaderHighlightColor' }
+              not: { required: [baseVersion] }
+            - required: [kind, payload]
+              properties:
+                kind: { const: discardHighlightHistory }
+                payload:
+                  type: object
+                  additionalProperties: false
+                  required: [historyId]
+                  properties:
+                    historyId: { type: string, format: uuid }
               not: { required: [baseVersion] }
             - required: [kind, payload]
               properties:
@@ -6617,6 +6664,13 @@ components:
         code: { type: string, pattern: '^[a-z0-9_]{1,64}$' }
         blocking: { type: boolean }
         componentId: { $ref: '#/components/schemas/OnlineBulletinID' }
+        blockId: { $ref: '#/components/schemas/OnlineBulletinID' }
+        sentenceId: { $ref: '#/components/schemas/OnlineBulletinID' }
+        sourcePage:
+          description: One-based original PDF page, never the composed online page index. Omitted when no exact source page is available.
+          type: integer
+          minimum: 1
+          maximum: 40
     OnlineBulletinAdminJob:
       type: object
       additionalProperties: false
@@ -7241,7 +7295,7 @@ components:
         videoBitrate: { type: integer, minimum: 500000, maximum: 8000000 }
         audioBitrate: { type: integer, const: 128000 }
         durationSeconds: { type: number, exclusiveMinimum: 0, maximum: 43200 }
-        segmentCount: { type: integer, minimum: 1, maximum: 1440, description: 'ceil(durationSeconds/30); all renditions require aligned actual boundaries.' }
+        segmentCount: { type: integer, minimum: 1, maximum: 1440, description: 'Actual number of contiguous media segments, including a legal short final segment; validated against playlists and decoded media, not inferred from duration. All renditions require aligned actual boundaries.' }
     RecordingPackageSignInput:
       type: object
       additionalProperties: false
