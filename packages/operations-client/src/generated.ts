@@ -38,6 +38,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/operations/me/service/push-config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get browser push availability and public application server key */
+        get: operations["getServicePushConfig"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/operations/me/service/installation": {
         parameters: {
             query?: never;
@@ -1951,15 +1968,45 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ServicePushConfig: {
+            enabled: boolean;
+            /** @description Base64url P-256 VAPID public key, present only when enabled. */
+            publicKey?: string;
+        };
+        ServiceWebSubscription: {
+            /**
+             * Format: uri
+             * @description HTTPS endpoint on the supported FCM, Apple, Mozilla or WNS push hosts; custom ports and userinfo are rejected.
+             */
+            endpoint: string;
+            keys: {
+                p256dh: string;
+                auth: string;
+            };
+        };
         ServiceInstallation: {
             /** Format: uuid */
             id: string;
             secret: string;
             token?: string;
             /** @enum {string} */
-            platform?: "ios" | "android";
+            platform?: "ios" | "android" | "web";
+            subscription?: components["schemas"]["ServiceWebSubscription"];
             revoke?: boolean;
-        };
+        } & ({
+            /** @constant */
+            revoke: true;
+        } | {
+            /** @enum {unknown} */
+            platform: "ios" | "android";
+            /** @constant */
+            revoke?: false;
+        } | {
+            /** @constant */
+            platform: "web";
+            /** @constant */
+            revoke?: false;
+        });
         ServiceAcknowledgement: {
             ok: boolean;
         };
@@ -3182,6 +3229,47 @@ export interface operations {
             };
             /** @description Changed assignment or occurrence; nothing published */
             412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Dependency unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getServicePushConfig: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Browser push configuration; private no-store response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServicePushConfig"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Resource unavailable or outside scope */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

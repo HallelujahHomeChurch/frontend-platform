@@ -67,6 +67,23 @@ paths:
         '409': { description: Closed assignment or idempotency conflict }
         '412': { description: Changed assignment or occurrence; nothing published }
         '503': { description: Dependency unavailable }
+  /api/operations/me/service/push-config:
+    get:
+      operationId: getServicePushConfig
+      summary: Get browser push availability and public application server key
+      tags: [Service duties]
+      security: [{ gatewayPrincipal: [] }]
+      x-hhc-authorization: Current authenticated Account eligibility; no private subscription data is returned.
+      responses:
+        '200':
+          description: Browser push configuration; private no-store response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServicePushConfig'
+        '401': { description: Unauthenticated }
+        '404': { description: Resource unavailable or outside scope }
+        '503': { description: Dependency unavailable }
   /api/operations/me/service/installation:
     post:
       operationId: registerServiceInstallation
@@ -2197,12 +2214,54 @@ components:
     IdempotencyKey: { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 1, maxLength: 200 } }
     IfMatch: { name: If-Match, in: header, required: true, schema: { type: string, pattern: '^"[1-9][0-9]*"$' } }
   schemas:
+    ServicePushConfig:
+      type: object
+      additionalProperties: false
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
+        publicKey:
+          type: string
+          description: Base64url P-256 VAPID public key, present only when enabled.
+          minLength: 87
+          maxLength: 87
+    ServiceWebSubscription:
+      type: object
+      additionalProperties: false
+      required: [endpoint, keys]
+      properties:
+        endpoint:
+          type: string
+          format: uri
+          maxLength: 2048
+          description: HTTPS endpoint on the supported FCM, Apple, Mozilla or WNS push hosts; custom ports and userinfo are rejected.
+        keys:
+          type: object
+          additionalProperties: false
+          required: [p256dh, auth]
+          properties:
+            p256dh: { type: string, minLength: 87, maxLength: 87, pattern: '^[A-Za-z0-9_-]+$' }
+            auth: { type: string, minLength: 22, maxLength: 22, pattern: '^[A-Za-z0-9_-]+$' }
     ServiceInstallation:
       type: object
       additionalProperties: false
       required:
       - id
       - secret
+      oneOf:
+      - required: [revoke]
+        properties:
+          revoke: { const: true }
+      - required: [platform, token]
+        properties:
+          platform: { enum: [ios, android] }
+          revoke: { const: false }
+        not: { required: [subscription] }
+      - required: [platform, subscription]
+        properties:
+          platform: { const: web }
+          revoke: { const: false }
+        not: { required: [token] }
       properties:
         id: &id002
           type: string
@@ -2221,6 +2280,9 @@ components:
           enum:
           - ios
           - android
+          - web
+        subscription:
+          $ref: '#/components/schemas/ServiceWebSubscription'
         revoke: &id001
           type: boolean
     ServiceAcknowledgement:
