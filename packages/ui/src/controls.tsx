@@ -265,12 +265,12 @@ export function ExpandableSearchField({label, submitLabel, clearLabel, placehold
   }, [value]);
 
   useEffect(() => {
-    if (isExpanded) inputRef.current?.focus();
+    if (isExpanded) inputRef.current?.focus({preventScroll: true});
   }, [isExpanded]);
 
   function collapse({restoreFocus = false} = {}) {
     setExpanded(false);
-    if (restoreFocus) triggerRef.current?.focus();
+    if (restoreFocus) triggerRef.current?.focus({preventScroll: true});
   }
 
   function submit() {
@@ -297,6 +297,9 @@ export function ExpandableSearchField({label, submitLabel, clearLabel, placehold
       ref={rootRef}
       className={`hhc-expandable-search${mobileBehavior === 'header-overlay' ? ' hhc-expandable-search--header-overlay' : ''}`}
       data-expanded={isExpanded}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) collapse();
+      }}
     >
       <SearchField
         aria-label={label}
@@ -323,7 +326,7 @@ export function ExpandableSearchField({label, submitLabel, clearLabel, placehold
               setQuery('');
               onChange?.('');
               onClear?.();
-              inputRef.current?.focus();
+              inputRef.current?.focus({preventScroll: true});
             }}
           >×</AriaButton>
         ) : null}

@@ -10,6 +10,10 @@ import {
 } from './admin-access';
 
 describe('Admin destination projection', () => {
+  it('keeps recording investigation independent from recording editors and weekly investigators', () => {
+    expect(authorizedAdminDestinations(['cms:recordings:investigate'])).toEqual([{id:'recording-investigations',path:'/content/recordings/investigations',permission:'cms:recordings:investigate'}]);
+    expect(authorizedAdminDestinations(['cms:recordings:write','cms:bulletins:investigate']).some(({id}) => id === 'recording-investigations')).toBe(false);
+  });
   it('projects the dedicated Sandbox permission without granting it to other staff', () => {
     expect(authorizedAdminDestinations(['donations:sandbox:test'])).toEqual([
       {id: 'donation-sandbox', path: '/donations/sandbox', permission: 'donations:sandbox:test'}

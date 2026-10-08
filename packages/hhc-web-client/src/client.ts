@@ -1,6 +1,6 @@
 import createClient from 'openapi-fetch'
 
-import type { components, paths } from './generated.js'
+import type { components, operations, paths } from './generated.js'
 
 export type LegalScope = components['schemas']['LegalScope']
 export type LegalSnapshot = components['schemas']['LegalSnapshot']
@@ -19,6 +19,8 @@ export type ContentTranslationTargetLocale = components['schemas']['ContentTrans
 export type BulletinTranslationTargetEdition = components['schemas']['BulletinTranslationTargetEdition']
 export type BulletinStatus = components['schemas']['BulletinStatus']
 export type BulletinWatermarkLookup = components['schemas']['BulletinWatermarkLookupResult']
+export type RecordingWatermarkLookup = components['schemas']['RecordingWatermarkLookupResult']
+export type RecordingWatermarkLookupInput = components['schemas']['RecordingWatermarkLookupInput']
 export type BulletinWatermarkVersion = components['schemas']['BulletinWatermarkVersion']
 export type BulletinWatermarkInvestigationInput = Omit<components['schemas']['BulletinWatermarkInvestigationInput'], 'series'> & {series?: BulletinSeries}
 export type BulletinWatermarkInvestigation = components['schemas']['BulletinWatermarkInvestigation']
@@ -34,8 +36,31 @@ export type BulletinWatermarkIssueInvestigationPage = {
   nextCursor?: string
 }
 export type ProtectedBulletin = components['schemas']['ProtectedBulletin']
+export type MemberOnlineDocument = components['schemas']['ReaderDocument']
+export type OnlineBulletinAccess = components['schemas']['ReaderAccessEnvelope']['data']
+export type OnlineBulletinDiscovery = components['schemas']['ReaderDiscoveryEnvelope']['data']
+export type BulletinReaderState = components['schemas']['ReaderPrivateState']
+export type BulletinReaderStateResponse = components['schemas']['ReaderStateEnvelope']['data']
+export type BulletinReaderMutation = components['schemas']['ReaderMutation']
+export type BulletinReaderMutationResponse = components['schemas']['ReaderMutationEnvelope']['data']
+export type BulletinReaderNote = components['schemas']['ReaderNote']
+export type BulletinReaderHighlightColor = components['schemas']['ReaderHighlightColor']
 export type MemberRecording = components['schemas']['MemberRecording']
+export type AdminRecording = components['schemas']['AdminRecording']
+export type RecordingProcessingProgress = components['schemas']['RecordingProcessingProgress']
+export type RecordingRetentionPolicy = components['schemas']['RecordingRetentionPolicy']
+export type RecordingRetentionPreview = components['schemas']['RecordingRetentionPreview']
+export type UpdateRecordingRetentionInput = components['schemas']['UpdateRecordingRetentionInput']
+export type RecordingCover = components['schemas']['RecordingCover']
+export type RecordingCoverList = components['schemas']['RecordingCoverList']
+export type RecordingCoverSelection = components['schemas']['RecordingCoverSelection']
+export type RecordingCoverSelectionResult = components['schemas']['RecordingCoverSelectionResult']
+export type RecordingCoverUpload = components['schemas']['RecordingCoverUpload']
 export type MemberRecordingPlayback = components['schemas']['MemberRecordingPlayback']
+export type MemberLivePlayback = components['schemas']['MemberLivePlayback']
+export type MemberLiveRecording = components['schemas']['MemberLiveRecording']
+export type RecordingCaptureStatus = components['schemas']['RecordingCaptureStatus']
+export type RecordingCaptureResult = components['schemas']['RecordingCaptureResult']
 export type RecordingSourceInput = components['schemas']['RecordingSourceInput']
 export type RecordingSource = components['schemas']['RecordingSource']
 export type RecordingSourceStatus = components['schemas']['RecordingSourceStatus']
@@ -47,6 +72,16 @@ export type BulletinDownloadJob = components['schemas']['BulletinDownloadJob']
 export type BulletinIssue = components['schemas']['BulletinIssue']
 export type BulletinVersion = components['schemas']['BulletinVersion']
 export type BulletinRevision = components['schemas']['BulletinRevision']
+export type OnlineBulletinSelector = operations['getOnlineBulletinState']['parameters']['path']
+export type OnlineBulletinState = components['schemas']['OnlineBulletinAdminState']
+export type OnlineBulletinDraftInput = components['schemas']['OnlineBulletinDraftInput']
+export type OnlineBulletinCompareInput = components['schemas']['OnlineBulletinCompareInput']
+export type OnlineBulletinComparison = components['schemas']['OnlineBulletinComparison']
+export type OnlineBulletinConfirmInput = components['schemas']['OnlineBulletinConfirmInput']
+export type OnlineBulletinPublishInput = components['schemas']['OnlineBulletinPublishInput']
+export type OnlineBulletinReviewIssue = components['schemas']['OnlineBulletinReviewIssue']
+export type OnlineBulletinComponent = components['schemas']['OnlineBulletinComponent']
+export type OnlineBulletinDocument = components['schemas']['OnlineBulletinDocument']
 export type PageMeta = components['schemas']['PageMeta']
 export type UploadTarget = components['schemas']['UploadTarget']
 export type CreatedBulletinUpload = components['schemas']['CreatedUpload']
@@ -105,13 +140,19 @@ export class HhcWebApiError extends Error {
   readonly status: number
   readonly code: string
   readonly contentId?: string
+  readonly currentVersion?: number
+  readonly canonicalVersion?: number
+  readonly bulletinUnavailable: boolean
 
-  constructor(status: number, code: string, message: string, contentId?: string) {
+  constructor(status: number, code: string, message: string, contentId?: string, versions?: {currentVersion?: number; canonicalVersion?: number}, bulletinUnavailable = false) {
     super(message)
     this.name = 'HhcWebApiError'
     this.status = status
     this.code = code
     this.contentId = contentId
+    this.currentVersion = versions?.currentVersion
+    this.canonicalVersion = versions?.canonicalVersion
+    this.bulletinUnavailable = bulletinUnavailable
   }
 }
 
@@ -129,7 +170,7 @@ export function createHhcWebClient(options: {
     onRequest({ request }) {
       const token = options.getAccessToken()
       if (token) request.headers.set('Authorization', `Bearer ${token}`)
-      request.headers.set('Accept', 'application/json')
+      if (!request.headers.has('Accept')) request.headers.set('Accept', 'application/json')
       return request
     },
   })
@@ -171,6 +212,99 @@ export function createHhcWebClient(options: {
   }
 
   return {
+    async getReaderState({issueId, series, locale, fromRevision, signal}: {issueId: string; series: BulletinSeries; locale: BulletinLocale; fromRevision?: number; signal?: AbortSignal}): Promise<BulletinReaderStateResponse> {
+      return (await unwrap(client.GET('/member/bulletins/{issueID}/versions/{locale}/online/reader/state', {params: {path: {issueID: issueId, locale}, query: {series, fromRevision}}, cache: 'no-store', signal}))).data
+    },
+    async applyReaderMutations({issueId, series, locale, mutations, signal}: {issueId: string; series: BulletinSeries; locale: BulletinLocale; mutations: BulletinReaderMutation[]; signal?: AbortSignal}): Promise<BulletinReaderMutationResponse> {
+      return (await unwrap(client.POST('/member/bulletins/{issueID}/versions/{locale}/online/reader/mutations', {params: {path: {issueID: issueId, locale}, query: {series}}, body: {mutations}, cache: 'no-store', signal}))).data
+    },
+    async listOnlineBulletinDiscovery(params: {series: BulletinSeries; offset?: number; limit?: number; issueNumber?: number; signal?: AbortSignal} & ({locale: BulletinLocale; locales?: never} | {locales: readonly BulletinLocale[]; locale?: never})) {
+      const {signal, locales, ...selectors} = params
+      const query = {...selectors, locales: locales?.join(',')}
+      return (await unwrap(client.GET('/member/bulletins/online', {params: {query}, cache: 'no-store', signal}))).data
+    },
+    async openOnlineBulletin(params: {issueId: string; series: BulletinSeries; locale: BulletinLocale; signal?: AbortSignal} & components['schemas']['ReaderAccessInput']): Promise<OnlineBulletinAccess> {
+      const {issueId, series, locale, signal, ...body} = params
+      const result = await client.POST('/member/bulletins/{issueID}/versions/{locale}/online/access', {params: {path: {issueID: issueId, locale}, query: {series}}, body, cache: 'no-store', parseAs: 'stream', signal})
+      if (result.error !== undefined || !result.response.ok) throw apiError(result.response, result.error)
+      const invalid = () => new HhcWebApiError(result.response.status, 'invalid_response', 'The reader response is invalid.')
+      const hash = result.response.headers.get('X-HHC-Content-SHA256') ?? ''
+      if (!result.data || !/^[a-f0-9]{64}$/.test(hash) || result.response.headers.get('Content-Type')?.split(';')[0]?.trim().toLowerCase() !== 'application/json') {
+        await result.data?.cancel()
+        throw invalid()
+      }
+      const bytes = await readBoundedBytes(result.response, result.data, 9 * 1024 * 1024)
+      signal?.throwIfAborted()
+      const digest = [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))].map(value => value.toString(16).padStart(2, '0')).join('')
+      signal?.throwIfAborted()
+      if (digest !== hash) throw invalid()
+      let envelope: components['schemas']['ReaderAccessEnvelope']
+      try { envelope = JSON.parse(new TextDecoder('utf-8', {fatal: true}).decode(bytes)) }
+      catch { throw invalid() }
+      if (!envelope || envelope.error !== null || !envelope.data?.document || !envelope.data.access) throw invalid()
+      return envelope.data
+    },
+    async getOnlineBulletinState(edition: OnlineBulletinSelector, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/bulletins/{issueId}/online/{series}/{contentLocale}', {params: {path: edition}, cache: 'no-store', signal}))).data
+    },
+    async getOnlineBulletinComparison(edition: OnlineBulletinSelector, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/comparison', {params: {path: edition}, cache: 'no-store', signal}))).data
+    },
+    async listOnlineBulletinRevisions(edition: OnlineBulletinSelector, options: {before?: number; limit?: number; signal?: AbortSignal} = {}) {
+      return (await unwrap(client.GET('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/revisions', {params: {path: edition, query: {before: options.before, limit: options.limit}}, cache: 'no-store', signal: options.signal}))).data
+    },
+    async getOnlineBulletinRevision(edition: OnlineBulletinSelector, revision: number, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/revisions/{revision}', {params: {path: {...edition, revision}}, cache: 'no-store', signal}))).data
+    },
+    async startOnlineBulletinConversion(edition: operations['startOnlineBulletinConversion']['parameters']['path'], version: number, input: components['schemas']['OnlineBulletinConversionInput'], signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/conversions', {params: {path: edition, header: {'If-Match': `"${version}"`}}, body: input, cache: 'no-store', signal}))).data
+    },
+    async startOnlineBulletinExtraction(edition: operations['startOnlineBulletinExtraction']['parameters']['path'], version: number, input: components['schemas']['OnlineBulletinExtractionInput'], signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/extractions', {params: {path: edition, header: {'If-Match': `"${version}"`}}, body: input, cache: 'no-store', signal}))).data
+    },
+    async saveOnlineBulletinDraft(edition: OnlineBulletinSelector, version: number, input: OnlineBulletinDraftInput, signal?: AbortSignal) {
+      return (await unwrap(client.PUT('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/draft', {params: {path: edition, header: {'If-Match': `"${version}"`}}, body: input, cache: 'no-store', signal}))).data
+    },
+    async applyOnlineBulletinComparison(edition: OnlineBulletinSelector, version: number, input: OnlineBulletinCompareInput, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/compare', {params: {path: edition, header: {'If-Match': `"${version}"`}}, body: input, cache: 'no-store', signal}))).data
+    },
+    async confirmOnlineBulletin(edition: OnlineBulletinSelector, version: number, input: OnlineBulletinConfirmInput, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/confirm', {params: {path: edition, header: {'If-Match': `"${version}"`}}, body: input, cache: 'no-store', signal}))).data
+    },
+    async publishOnlineBulletin(edition: OnlineBulletinSelector, version: number, input: OnlineBulletinPublishInput, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/publish', {params: {path: edition, header: {'If-Match': `"${version}"`}}, body: input, cache: 'no-store', signal}))).data
+    },
+    async unpublishOnlineBulletin(edition: OnlineBulletinSelector, version: number, input: components['schemas']['OnlineBulletinRestoreInput'], signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/unpublish', {params: {path: edition, header: {'If-Match': `"${version}"`}}, body: input, cache: 'no-store', signal}))).data
+    },
+    async restoreOnlineBulletinRevision(edition: OnlineBulletinSelector, revision: number, version: number, input: components['schemas']['OnlineBulletinRestoreInput'], signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/revisions/{revision}/restore', {params: {path: {...edition, revision}, header: {'If-Match': `"${version}"`}}, body: input, cache: 'no-store', signal}))).data
+    },
+    async getOnlineBulletinSourcePDF(edition: operations['getOnlineBulletinSourcePDF']['parameters']['path'], signal?: AbortSignal) {
+      const result = await client.GET('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/source-pdf', {params: {path: edition}, headers: {Accept: 'application/pdf'}, parseAs: 'stream', cache: 'no-store', signal})
+      if (result.error !== undefined || !result.response.ok) throw apiError(result.response, result.error)
+      const invalid = () => new HhcWebApiError(result.response.status, 'invalid_response', 'The source PDF response is invalid.')
+      const checksum = result.response.headers.get('X-HHC-Source-SHA256') ?? ''
+      const canonicalVersion = Number(result.response.headers.get('X-HHC-Source-Version'))
+      if (!result.data || result.response.headers.get('Content-Type')?.split(';')[0]?.trim().toLowerCase() !== 'application/pdf' || !/^[a-f0-9]{64}$/.test(checksum) || !Number.isSafeInteger(canonicalVersion) || canonicalVersion < 1) {
+        await result.data?.cancel()
+        throw invalid()
+      }
+      const bytes = await readBoundedBytes(result.response, result.data, 20 * 1024 * 1024)
+      if (bytes.length < 5 || new TextDecoder().decode(bytes.subarray(0, 5)) !== '%PDF-') throw invalid()
+      return {bytes: bytes.buffer, checksum, canonicalVersion}
+    },
+    async getRecordingRetentionPolicy(signal?:AbortSignal) {
+      return (await unwrap(client.GET('/admin/recordings/retention-policy',{signal,cache:'no-store'}))).data
+    },
+    async previewRecordingRetentionPolicy(retentionDays:number,signal?:AbortSignal) {
+      if(!Number.isInteger(retentionDays)||retentionDays<1||retentionDays>365)throw new HhcWebApiError(400,'invalid_retention','Enter 1–365 days.')
+      return (await unwrap(client.POST('/admin/recordings/retention-policy/preview',{body:{retentionDays},signal,cache:'no-store'}))).data
+    },
+    async updateRecordingRetentionPolicy(body:UpdateRecordingRetentionInput,key:string,signal?:AbortSignal) {
+      if(!Number.isInteger(body.retentionDays)||body.retentionDays<1||body.retentionDays>365||!Number.isSafeInteger(body.expectedRevision)||body.expectedRevision<1||!body.previewId||!key)throw new HhcWebApiError(400,'invalid_retention','Confirm a current retention preview.')
+      return (await unwrap(client.PUT('/admin/recordings/retention-policy',{body,params:{header:{'Idempotency-Key':key}},signal,cache:'no-store'}))).data
+    },
     async getCommonLegalSnapshot(locale: ContentLocale, signal?: AbortSignal) {
       return (await unwrap(client.GET('/legal/common', {params: {query: {locale}}, signal, cache: 'no-store'}))).data
     },
@@ -188,8 +322,63 @@ export function createHhcWebClient(options: {
       if (!Number.isSafeInteger(version) || version < 1) throw new Error('Invalid legal publication version')
       return (await unwrap(client.POST('/admin/legal/{scope}/publish', {params: {path: {scope}, header: {'If-Match': `"${version}"`}}, cache: 'no-store'}))).data
     },
+    async listMemberLivestreams(signal?: AbortSignal) {
+      return (await unwrap(client.GET('/member/recordings/live', {signal, cache: 'no-store'}))).data
+    },
+    async issueLiveRecordingPlayback(id: string, captureId: string, playbackScopeId: string, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/member/recordings/{id}/live/playback', {
+        params: {path: {id}}, body: {captureId, playbackScopeId}, signal, cache: 'no-store',
+      }))).data
+    },
+    async getRecordingCapture(id: string, captureId: string, options: {cursor?: string; limit?: number; signal?: AbortSignal} = {}) {
+      return (await unwrap(client.GET('/admin/recordings/{id}/captures/{captureId}', {
+        params: {path: {id, captureId}, query: {cursor: options.cursor, limit: options.limit}}, signal: options.signal, cache: 'no-store',
+      }))).data
+    },
+    async closeRecordingLive(id: string, captureId: string, operationKey: string, signal?: AbortSignal) {
+      return (await unwrap(client.DELETE('/admin/recordings/{id}/captures/{captureId}/live', {
+        params: {path: {id, captureId}}, body: {operationKey}, signal, cache: 'no-store',
+      }))).data
+    },
+    async cancelRecordingAutoPublish(id: string, captureId: string, operationKey: string, signal?: AbortSignal) {
+      return (await unwrap(client.DELETE('/admin/recordings/{id}/captures/{captureId}/auto-publish', {
+        params: {path: {id, captureId}}, body: {operationKey}, signal, cache: 'no-store',
+      }))).data
+    },
+    async listMemberRecordingsPage(options: {limit?: number; cursor?: string; signal?: AbortSignal} = {}) {
+      const result = await unwrap(client.GET('/member/recordings', {
+        params: {query: {limit: options.limit ?? 12, cursor: options.cursor}}, signal: options.signal, cache: 'no-store',
+      }))
+      const cursor = result.meta.nextCursor
+      if (cursor !== null && typeof cursor !== 'string') throw new HhcWebApiError(502, 'invalid_response', 'Recording pagination is unavailable.')
+      return {items: result.data, nextCursor: cursor}
+    },
     async listMemberRecordings(signal?: AbortSignal) {
       return (await unwrap(client.GET('/member/recordings', { signal, cache: 'no-store' }))).data
+    },
+    async listRecordingCovers(id:string,signal?:AbortSignal) {
+      return (await unwrap(client.GET('/admin/recordings/{id}/covers',{params:{path:{id}},signal,cache:'no-store'}))).data
+    },
+    async uploadRecordingCover(id:string,blob:Blob,key:string,signal?:AbortSignal) {
+      if(!['image/jpeg','image/png'].includes(blob.type)||blob.size<1||blob.size>5*1024*1024) throw new HhcWebApiError(422,'invalid_cover','Choose JPEG or PNG up to 5 MiB.')
+      return (await unwrap(client.POST('/admin/recordings/{id}/cover-uploads',{
+        params:{path:{id},header:{'Idempotency-Key':key}},headers:{'Content-Type':blob.type},body:'',bodySerializer:()=>blob,signal,cache:'no-store',redirect:'error',
+      }))).data
+    },
+    async setRecordingCover(id:string,version:number,selection:RecordingCoverSelection,key:string,signal?:AbortSignal) {
+      return (await unwrap(client.PUT('/admin/recordings/{id}/cover',{
+        params:{path:{id},header:{'If-Match':`"${version}"`,'Idempotency-Key':key}},body:selection,signal,cache:'no-store',
+      }))).data
+    },
+    async getRecordingCoverContent(id:string,coverId:string,signal?:AbortSignal) {
+      return unwrap(client.GET('/admin/recordings/{id}/covers/{coverId}/content',{
+        params:{path:{id,coverId}},signal,cache:'no-store',redirect:'error',parseAs:'blob',headers:{Accept:'image/jpeg'},
+      }))
+    },
+    async getMemberRecordingCover(id:string,signal?:AbortSignal) {
+      return unwrap(client.GET('/member/recordings/{id}/cover',{
+        params:{path:{id}},signal,cache:'no-store',redirect:'error',parseAs:'blob',headers:{Accept:'image/jpeg'},
+      }))
     },
     async issueRecordingPlayback(id: string, playbackScopeId: string, expectedAssetVersionId?: string, signal?: AbortSignal) {
       return (await unwrap(client.POST('/member/recordings/{id}/playback', {
@@ -207,20 +396,24 @@ export function createHhcWebClient(options: {
         params: { header: { 'Idempotency-Key': idempotencyKey } }, body: { title },
       }))).data
     },
-    async updateAdminRecordingTitle(id: string, version: number, title: string) {
+    async updateAdminRecordingTitle(id: string, version: number, title: string, description?:string) {
       return (await unwrap(client.PATCH('/admin/recordings/{id}', {
-        params: { path: { id }, header: { 'If-Match': `"${version}"` } }, body: { title },
+        params: { path: { id }, header: { 'If-Match': `"${version}"` } }, body: { title, ...(description!==undefined?{description}:{}) },
       }))).data
     },
     async setAdminRecordingExposure(id: string, version: number, featured: boolean, hidden: boolean) {
-      return (await unwrap(client.PATCH('/admin/recordings/{id}/exposure', {
+      await unwrap(client.PATCH('/admin/recordings/{id}/exposure', {
         params: { path: { id }, header: { 'If-Match': `"${version}"` } }, body: { featured, hidden },
-      }))).data
+      }))
+      throw new HhcWebApiError(410,'retired','Recording exposure controls are retired.')
     },
     async publishAdminRecording(id: string, version: number) {
-      return (await unwrap(client.POST('/admin/recordings/{id}/publish', {
+      const data = (await unwrap(client.POST('/admin/recordings/{id}/publish', {
         params: { path: { id }, header: { 'If-Match': `"${version}"` } }, body: {},
       }))).data
+      // No Idempotency-Key is sent by this human-admin compatibility method.
+      if ('receipt' in data) throw new HhcWebApiError(200, 'invalid_response', 'Unexpected keyed publication response.')
+      return data
     },
     async unpublishAdminRecording(id: string, version: number) {
       return (await unwrap(client.POST('/admin/recordings/{id}/unpublish', {
@@ -320,6 +513,9 @@ export function createHhcWebClient(options: {
     async lookupBulletinWatermark(code: string, signal?: AbortSignal) {
       return (await unwrap(client.POST('/admin/bulletins/watermark-lookups', {body: {code}, signal, cache: 'no-store'}))).data
     },
+    async lookupRecordingWatermark(input: RecordingWatermarkLookupInput, signal?: AbortSignal): Promise<RecordingWatermarkLookup> {
+      return (await unwrap(client.POST('/admin/recordings/watermark-lookups', {body:input, signal, cache:'no-store'}))).data
+    },
     async listAdminBulletins(params: { page?: number; pageSize?: number; status?: BulletinStatus; query?: string; sort?: 'issueNumber' | 'date' | 'title' | 'languages' | 'status' | 'updated'; direction?: 'asc' | 'desc'; signal?: AbortSignal } = {}) {
       const envelope = await unwrap(client.GET('/admin/bulletins', {
         params: { query: { page: params.page, pageSize: params.pageSize, status: params.status, q: params.query, sort: params.sort, direction: params.direction } },
@@ -379,10 +575,17 @@ export function createHhcWebClient(options: {
         body: { ...edition, notifySubscribers: options.notifySubscribers },
       }))).data
     },
-    async unpublishBulletin(issueId: string, version: number, edition: BulletinEdition) {
+    async unpublishBulletin(issueId: string, version: number, edition: BulletinEdition, options?: { unpublishOnline: true; onlineVersion: number }) {
+      let body: components['schemas']['BulletinUnpublishInput'] = { ...edition, notifySubscribers: false, unpublishOnline: false }
+      if (options?.unpublishOnline) {
+        if (edition.series !== 'general' || edition.locale !== 'zh-Hant' || !Number.isSafeInteger(options.onlineVersion) || options.onlineVersion < 1) {
+          throw new HhcWebApiError(400, 'invalid_request', 'Paired unpublish requires a supported edition and Online version.')
+        }
+        body = { series: 'general', locale: 'zh-Hant', notifySubscribers: false, unpublishOnline: true, onlineVersion: options.onlineVersion }
+      }
       return (await unwrap(client.POST('/admin/bulletins/{issueId}/unpublish', {
         params: { path: { issueId }, header: { 'If-Match': `"${version}"` } },
-        body: { ...edition, notifySubscribers: false },
+        body,
       }))).data
     },
     async previewBulletinNotification(issueId: string, series: BulletinSeries, signal?: AbortSignal) {
@@ -600,15 +803,47 @@ function apiError(response: Response, value: unknown) {
   const error = value && typeof value === 'object' && 'error' in value
     ? (value as { error?: { code?: string; message?: string; contentId?: string } }).error
     : undefined
+  const meta = value && typeof value === 'object' && 'meta' in value && value.meta && typeof value.meta === 'object'
+    ? value.meta as {currentVersion?: unknown; canonicalVersion?: unknown}
+    : undefined
+  const version = (value: unknown) => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : undefined
   return new HhcWebApiError(
     response.status,
     error?.code ?? 'request_failed',
     (error?.message ?? response.statusText) || 'Request failed.',
     typeof error?.contentId === 'string' ? error.contentId : undefined,
+    {currentVersion: version(meta?.currentVersion), canonicalVersion: version(meta?.canonicalVersion)},
+    response.status === 404 && error?.code === 'not_found' && response.headers.get('X-HHC-Bulletin-Access') === 'unavailable',
   )
 }
 
 export type HhcWebClient = ReturnType<typeof createHhcWebClient>
+
+async function readBoundedBytes(response: Response, stream: ReadableStream<Uint8Array>, maximum: number): Promise<Uint8Array<ArrayBuffer>> {
+  const invalid = () => new HhcWebApiError(response.status, 'invalid_response', 'The response bytes are invalid.')
+  const length = response.headers.get('Content-Length')
+  if (length !== null && (!/^\d+$/.test(length) || Number(length) > maximum)) {
+    await stream.cancel()
+    throw invalid()
+  }
+  const reader = stream.getReader()
+  const chunks: Uint8Array[] = []
+  let size = 0
+  try {
+    for (;;) {
+      const chunk = await reader.read()
+      if (chunk.done) break
+      size += chunk.value.byteLength
+      if (size > maximum) { await reader.cancel(); throw invalid() }
+      chunks.push(chunk.value)
+    }
+  } finally { reader.releaseLock() }
+  if (length !== null && Number(length) !== size) throw invalid()
+  const bytes = new Uint8Array(size)
+  let offset = 0
+  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength }
+  return bytes
+}
 
 function absoluteBaseUrl(value: string) {
   const base = value.replace(/\/$/, '')

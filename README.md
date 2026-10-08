@@ -12,6 +12,41 @@ Shared, versioned frontend packages for HHC web applications:
 
 Packages are published to GitHub Packages from version tags.
 
+## Isolated bulletin renderer
+
+The bulletin worker uses the same compiled renderer, CSS, fixed assets and legal
+fonts as the UI. Build a new, checksum-verified bundle after `pnpm build`:
+
+```sh
+node scripts/verify-bulletin-renderer-v5.mjs
+node scripts/package-bulletin-renderer.mjs artifacts/bulletin-renderer /path/to/verified/assets
+docker build -f tools/bulletin-renderer/Dockerfile -t hhc-bulletin-renderer:verify artifacts/bulletin-renderer
+```
+
+The image runs as a non-root user. Its CLI accepts an input JSON file and the
+bundled assets directory (`/opt/bulletin-renderer/assets`); `--compose` additionally
+produces a saved layout. Input contains the exact `submissionJSON`, its SHA-256
+`expectedContentHash`, and bounded `timeoutMs`. Output is JSON only; failures emit
+one non-content-bearing error code. Run without network, with a read-only root,
+bounded writable `/tmp`, memory/CPU limits and an external process deadline.
+
+The release workflow verifies the tag belongs to `main`, tests/scans the image,
+and publishes a tag containing both renderer hash and commit. Consumers must pin
+the registry's immutable image digest, not a mutable tag. An artifact mismatch
+must block use; an image build or local test does not freeze or publish V1.
+
+V3 retains the immutable V1/V2 paper templates and fonts, and improves draft
+composition and visible-glyph measurement. Previously published manifests retain
+their original renderer. Re-extract an older failing draft to propose a V3
+candidate through the existing comparison flow; do not rewrite published data.
+
+V4 retains V3's measurement and the frozen paper templates. Dense body/lyrics
+pages may use bottom whitespace down to a 24pt margin, without adding source
+pages or reducing the 12pt composition floor. Line-by-line lyrics use a 1.2
+minimum leading and cap source gaps at 6pt; prose retains 1.25 and 12pt gaps.
+V1–V3 manifests remain supported.
+Deploy V4-capable readers before producing V4 drafts.
+
 ## License
 
 The source and published packages are publicly visible but remain all rights
@@ -43,6 +78,26 @@ The Operations contract uses stable Account-bound members, one active church,
 multiple family/small-group/fellowship affiliations, scoped responsibilities,
 and direct bulletin entitlements. Qualification and validity-window fields are
 not part of the contract.
+# Bulletin ebook presentation
+
+Renderer V5 keeps V1–V4 immutable and uses a 24pt cover bottom margin so complete
+weekly verses fit without truncation, smaller type, or an extra cover page.
+Install 1.0.43 in both readers before enabling the V5 extractor producer.
+Verify with `node scripts/verify-bulletin-renderer-v5.mjs`; the native regression
+suite uses `HHC_TEST_RENDERER_V5=1`.
+
+`BulletinEbook` renders a single semantic chapter (`cover`, `body`, `worship`,
+`back`) from the same canonical document as the paper reader. Import
+`@hallelujahhomechurch/ui/bulletin-paper.css` for the existing licensed fonts
+and `@hallelujahhomechurch/ui/bulletin-ebook.css` for reflow-only styling.
+It does not alter the digest-pinned paper renderer or stored source geometry.
+
+Hosts own navigation, authorization, watermarking, and progress. Use
+`bulletinChapters` / `bulletinChapterForAnchor` for chapter membership and
+`bulletinMobileDetails` for the shared default-hidden production metadata policy.
+Search and annotation indexes must use the full canonical document, not visible
+chapters. Reveal details when targeting a hidden sentence; original sentence IDs
+and Unicode-scalar offsets remain unchanged.
 
 ## Donation Sandbox source gate
 
@@ -65,3 +120,19 @@ also expires the metadata; startup/submit checks handle suspended browser timers
 A correlated create/retry order response clears it. The Admin
 permission catalog includes the explicit `donations:sandbox:test` destination;
 other staff grants do not imply this capability.
+
+## Returning-visitor navigation
+
+`createNavigationPresentation` stores allowlisted navigation IDs separately from
+verified auth and access. Pass the store to `createBrowserAccountAuthRuntime`,
+subscribe to its display snapshot, and capture each authorization source's writer
+before starting its request. Only successful verification renews that source's
+seven-day TTL; unavailable responses must not call the writer. Never use the
+presentation snapshot for route guards, data requests, or mutations.
+
+Snapshots contain a subject ID for comparison, source timestamps, and navigation
+IDs only. Names, avatars, credentials, and private content remain live-only.
+Storage invalidation fences late writes across same-origin tabs. Cross-origin
+account changes still require background verification; the shared SSO hint is
+not identity proof. `runtime.signOut()` pauses auth work while global logout is
+pending and invalidates stale session and callback completions.

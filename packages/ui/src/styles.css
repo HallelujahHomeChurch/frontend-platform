@@ -1,7 +1,7 @@
 @layer hhc.tokens, hhc.base, hhc.components;
 
 @layer hhc.tokens {
-  :root {
+  :root, [data-theme='light'] {
     --hhc-canvas: #fbf5eb;
     --hhc-surface: #fffdf9;
     --hhc-surface-raised: #ffffff;
@@ -27,7 +27,7 @@
     --hhc-shadow-raised: 0 12px 32px rgb(55 45 43 / 12%);
   }
 
-  :root[data-theme='dark'] {
+  :root[data-theme='dark'], [data-theme='dark'] {
     --hhc-canvas: #1d1a19;
     --hhc-surface: #282321;
     --hhc-surface-raised: #312a27;
@@ -331,3 +331,5 @@
     .hhc-dialog__footer { flex-wrap: wrap; }
   }
 }
+
+.hhc-load-more {display:flex; justify-content:center; min-height:44px;}

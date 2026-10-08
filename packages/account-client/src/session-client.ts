@@ -58,17 +58,30 @@ export interface AccountAccessToken {
   expiresIn: number;
 }
 
+export type AccountRequestEndpoint = 'csrf' | 'access_token' | 'refresh' | 'session' | 'logout' | 'logout_all' | 'oauth_token' | 'unknown';
+export type AccountDecodeStage = 'content_type' | 'json' | 'schema';
+export type AccountRequestMetadata = {
+  requestId?: string;
+  retryAt?: number;
+  endpoint?: AccountRequestEndpoint;
+  method?: string;
+  decodeStage?: AccountDecodeStage;
+};
+
 export class AccountSessionError extends Error {
   readonly status: number;
   readonly code?: string;
   readonly requestId?: string;
   readonly retryAt?: number;
+  readonly endpoint?: AccountRequestEndpoint;
+  readonly method?: string;
+  readonly decodeStage?: AccountDecodeStage;
 
   constructor(
     status: number,
     code?: string,
     message = 'Account session request failed',
-    metadata: {requestId?: string; retryAt?: number} = {}
+    metadata: AccountRequestMetadata = {}
   ) {
     super(message);
     this.name = 'AccountSessionError';
@@ -76,6 +89,9 @@ export class AccountSessionError extends Error {
     this.code = code;
     this.requestId = metadata.requestId;
     this.retryAt = metadata.retryAt;
+    this.endpoint = metadata.endpoint;
+    this.method = metadata.method;
+    this.decodeStage = metadata.decodeStage;
   }
 }
 
@@ -95,21 +111,23 @@ export function createAccountSessionClient({
   let csrfValue: string | undefined;
   let csrfInFlight: Promise<string> | undefined;
 
-  async function request(path: string, init: RequestInit) {
+  async function request(path: string, init: RequestInit, validate?: (body: unknown) => boolean, invalidCode = 'INVALID_RESPONSE') {
     const response = await fetcher(`${normalizedBaseUrl}${path}`, {
       ...init,
       credentials: 'include',
       headers: {'accept': 'application/json', ...init.headers}
     });
-    const body = await readJson(response, now());
-    if (!response.ok) throw responseError(response, body, now());
+    const metadata: AccountRequestMetadata = {...accountResponseMetadata(response, now()), endpoint: endpointFor(path), method: init.method ?? 'GET'};
+    const body = await readJson(response, metadata, Boolean(validate));
+    if (!response.ok) throw responseError(response, body, metadata);
+    if (validate && !validate(body)) throw new AccountSessionError(response.status, invalidCode, undefined, {...metadata, decodeStage: 'schema'});
     return body;
   }
 
   function csrfToken(): Promise<string> {
     if (csrfValue) return Promise.resolve(csrfValue);
     if (csrfInFlight) return csrfInFlight;
-    csrfInFlight = request('/csrf-token', {method: 'GET', cache: 'no-store'})
+    csrfInFlight = request('/csrf-token', {method: 'GET', cache: 'no-store'}, body => isRecord(body) && typeof body.csrf_token === 'string' && body.csrf_token.length > 0, 'CSRF_TOKEN_REQUIRED')
       .then((body) => {
         const token = isRecord(body) && typeof body.csrf_token === 'string' ? body.csrf_token : '';
         if (!token) throw new AccountSessionError(200, 'CSRF_TOKEN_REQUIRED');
@@ -120,18 +138,18 @@ export function createAccountSessionClient({
     return csrfInFlight;
   }
 
-  async function protectedRequest(path: string, init: RequestInit = {}, retried = false): Promise<unknown> {
+  async function protectedRequest(path: string, init: RequestInit = {}, retried = false, validate?: (body: unknown) => boolean): Promise<unknown> {
     const token = await csrfToken();
     try {
       return await request(path, {
         ...init,
         method: init.method ?? 'POST',
         headers: {...init.headers, 'x-csrf-token': token}
-      });
+      }, validate);
     } catch (error) {
       if (retried || !isCsrfRejection(error)) throw error;
       csrfValue = undefined;
-      return protectedRequest(path, init, true);
+      return protectedRequest(path, init, true, validate);
     }
   }
 
@@ -144,20 +162,20 @@ export function createAccountSessionClient({
 
   return {
     async getSession(): Promise<AccountSession> {
-      const body = await request('/session', {method: 'GET', cache: 'no-store'});
+      const body = await request('/session', {method: 'GET', cache: 'no-store'}, isAccountSession);
       if (!isAccountSession(body)) throw new AccountSessionError(200, 'INVALID_RESPONSE');
       return body;
     },
 
     async issueAccessToken(): Promise<AccountAccessToken> {
-      return readAccessToken(await protectedRequest('/session/access-token'));
+      return readAccessToken(await protectedRequest('/session/access-token', {}, false, isAccessToken));
     },
 
     async refreshAccessToken(): Promise<AccountAccessToken> {
       return readAccessToken(await protectedRequest('/refresh', {
         headers: {'content-type': 'application/json'},
         body: '{}'
-      }));
+      }, false, isAccessToken));
     },
 
     async logout(): Promise<void> {
@@ -200,29 +218,32 @@ export async function resolveAccountAuth(client: AccountSessionReader): Promise<
   }
 }
 
-async function readJson(response: Response, currentTime: number): Promise<unknown> {
+async function readJson(response: Response, metadata: AccountRequestMetadata, requiresJson: boolean): Promise<unknown> {
   const contentType = response.headers.get('content-type') ?? '';
-  if (!contentType.includes('application/json')) return undefined;
+  if (!contentType.includes('application/json')) {
+    if (response.ok && requiresJson) throw new AccountSessionError(response.status, 'INVALID_RESPONSE', undefined, {...metadata, decodeStage: 'content_type'});
+    return undefined;
+  }
   try {
     return await response.json();
   } catch {
-    throw new AccountSessionError(response.status, 'INVALID_RESPONSE', undefined, responseMetadata(response, currentTime));
+    throw new AccountSessionError(response.status, 'INVALID_RESPONSE', undefined, {...metadata, decodeStage: 'json'});
   }
 }
 
-function responseError(response: Response, body: unknown, currentTime: number): AccountSessionError {
+function responseError(response: Response, body: unknown, metadata: AccountRequestMetadata): AccountSessionError {
   const error = isRecord(body) ? body : {};
   return new AccountSessionError(
     response.status,
     typeof error.error_code === 'string' ? error.error_code : undefined,
     typeof error.message === 'string' ? error.message : undefined,
-    responseMetadata(response, currentTime)
+    metadata
   );
 }
 
-function responseMetadata(response: Response, currentTime: number) {
+export function accountResponseMetadata(response: Response, currentTime = Date.now()) {
   return {
-    requestId: response.headers.get('x-request-id') ?? undefined,
+    requestId: safeRequestId(response.headers.get('x-hhc-request-id') ?? response.headers.get('x-request-id')),
     retryAt: response.status === 429
       ? retryAtFrom(response.headers.get('retry-after'), currentTime)
       : undefined
@@ -272,4 +293,25 @@ function isCsrfRejection(error: unknown): boolean {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
+}
+
+
+function safeRequestId(value: string | null): string | undefined {
+  return value && /^[A-Za-z0-9._:-]{1,128}$/.test(value) ? value : undefined;
+}
+
+function endpointFor(path: string): AccountRequestEndpoint {
+  switch (path) {
+    case '/csrf-token': return 'csrf';
+    case '/session/access-token': return 'access_token';
+    case '/refresh': return 'refresh';
+    case '/session': return 'session';
+    case '/session/logout': return 'logout';
+    case '/session/logout-all': return 'logout_all';
+    default: return 'unknown';
+  }
+}
+
+function isAccessToken(body: unknown): boolean {
+  return isRecord(body) && typeof body.access_token === 'string' && typeof body.expires_in === 'number';
 }

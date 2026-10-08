@@ -4,6 +4,50 @@
  */
 
 export interface paths {
+    "/admin/recordings/retention-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * getRecordingRetentionPolicy
+         * @description Human administrators only. Policy changes require a fresh actor-bound preview, matching revision and explicit confirmation. Asset commits policy and audit atomically; issued grants keep up to one hour of byte cleanup grace.
+         */
+        get: operations["getRecordingRetentionPolicy"];
+        /**
+         * updateRecordingRetentionPolicy
+         * @description Human administrators only. Policy changes require a fresh actor-bound preview, matching revision and explicit confirmation. Asset commits policy and audit atomically; issued grants keep up to one hour of byte cleanup grace.
+         */
+        put: operations["updateRecordingRetentionPolicy"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/retention-policy/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * previewRecordingRetentionPolicy
+         * @description Human administrators only. Policy changes require a fresh actor-bound preview, matching revision and explicit confirmation. Asset commits policy and audit atomically; issued grants keep up to one hour of byte cleanup grace.
+         */
+        post: operations["previewRecordingRetentionPolicy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/legal/common": {
         parameters: {
             query?: never;
@@ -101,6 +145,23 @@ export interface paths {
         put?: never;
         /** resolveLegalSnapshot */
         post: operations["resolveLegalSnapshot"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/watermark-lookups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resolve an exact recording code to its issuance account (not proof of the person sharing it) */
+        post: operations["lookupRecordingWatermark"];
         delete?: never;
         options?: never;
         head?: never;
@@ -224,6 +285,46 @@ export interface paths {
         put?: never;
         /** Process Account-owned watermark DSR action */
         post: operations["applyBulletinWatermarkDSRAction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/priv/bulletin-watermarks/dsr/restrictions/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview one original watermark processing restriction
+         * @description Require verified original provenance and a current preview token for withdrawal. Preserve other restrictions. Legacy or pruned origin evidence and recorded erasure disable withdrawal. Withdrawal never recreates records, jobs or assets. Retry returns a historical receipt; obtain a fresh preview for current state.
+         */
+        post: operations["previewWatermarkRestriction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/priv/bulletin-watermarks/dsr/restrictions/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Withdraw one original watermark processing restriction
+         * @description Require verified original provenance and a current preview token for withdrawal. Preserve other restrictions. Legacy or pruned origin evidence and recorded erasure disable withdrawal. Withdrawal never recreates records, jobs or assets. Retry returns a historical receipt; obtain a fresh preview for current state.
+         */
+        post: operations["withdrawWatermarkRestriction"];
         delete?: never;
         options?: never;
         head?: never;
@@ -603,6 +704,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/member/bulletins/online": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Discover the authorized union of published PDF and Online editions
+         * @description Pages distinct issues once across the requested authorized languages, then returns every matching edition for those issues. Total, offset and limit count issues, not edition rows. Either locale (default zh-Hant) or locales may be supplied, never both. Every requested edition is authorized before any content lookup; one denial fails the entire request without partial disclosure.
+         */
+        get: operations["discoverOnlineBulletins"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/bulletins/{issueID}/versions/{locale}/online/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Issue authorized structured content with a durable reader receipt
+         * @description Rechecks the exact PDF entitlement on every request. Content is returned only after receipt commit. Same account and clientRequestId replay the original validation window; changed inputs conflict. Receipt reuse requires the same account, document and published revision. Retained published revisions remain readable only while the edition is published. No full-content GET exists. Seven-day offline validity is independent of the fixed 365-day receipt retention.
+         */
+        post: operations["openOnlineBulletin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/bulletins/{issueID}/versions/{locale}/online/reader/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read and migrate the authorized account's private reader state
+         * @description Rechecks the exact PDF entitlement before lookup. Migrates through retained published checkpoints only; draft saves do not count. Optional direct sentence mappings are bounded to 8 MiB, not by transition count. Missing or corrupt history returns mapping_history_unavailable without modifying private data. No account ID is accepted from the client.
+         */
+        get: operations["getBulletinReaderState"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/bulletins/{issueID}/versions/{locale}/online/reader/mutations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Apply an ordered private reader mutation batch
+         * @description Same download entitlement and current publication are required even for replay. Maximum body 1 MiB, 100 operations, 500 anchors per action/note, and 10000 Unicode code points per note. Validation/persistence failure rolls back the whole batch. Terminal results and canonical payload fingerprints are retained for 91 days. Unseen operations older than 90 days return recovery_required. revision_changed is nonterminal and retains the mutation ID for mapped retry. Reusing a terminal ID with a different payload returns mutation_id_conflict. Client creation time is not authorization; values more than five minutes ahead of the server are rejected.
+         */
+        post: operations["mutateBulletinReader"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/member/bulletins/latest": {
         parameters: {
             query?: never;
@@ -916,6 +1097,266 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/bulletins/{issueId}/online/{series}/{contentLocale}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read independent Online editing and publication state
+         * @description Returns one consistent edition snapshot, current canonical metadata, frozen published metadata, Local content, and bounded background job status. Before first extraction version is zero and documentId is empty. ETag is the Online version, not the canonical issue version. No leases, source asset IDs, or raw extraction snapshots are exposed.
+         */
+        get: operations["getOnlineBulletinState"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/online/{series}/{contentLocale}/extractions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Queue current source extraction or explicitly retry a failed job
+         * @description Source asset and checksum are verified server-side. Initial If-Match is the quoted Online version zero; later calls use the current Online ETag. canonicalVersion independently fences PDF or metadata replacement. Identical source/template/extractor identities reuse the existing job without another audit mutation. retry=true resets only a failed job without an immutable snapshot. Re-upload never overwrites Base, Local, Incoming, or publication. A superseded completed snapshot cannot be rerun; edit or restore the existing revision instead.
+         */
+        post: operations["startOnlineBulletinExtraction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/online/{series}/{contentLocale}/conversions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Synchronize Simplified Chinese content from confirmed Traditional Chinese content
+         * @description Human administrators only. Source is always the same issue general zh-Hant confirmed Local. If-Match fences the target Online version (zero before creation); the body independently fences canonical metadata and source revision/version. Identical source/configuration requests reuse the durable job; a completed legacy Incoming result is requeued under current version fences. retry=true retries failed conversion work, or only failed layout validation when conversion is review_ready and its result is still the current saved Local. A layout-only retry preserves the revision and conversion job, returns that review_ready job with the incremented target version, and queues a new layout job visible through the state endpoint. Successful conversion replaces the Simplified Local and Base, clears Incoming, and queues layout validation. Immutable history and publication are retained. Simplified content cannot be manually edited; review and publication remain independent. No PDF asset or additional grant is created.
+         */
+        post: operations["startOnlineBulletinConversion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/online/{series}/{contentLocale}/comparison": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read a consistent Base Local Incoming comparison
+         * @description Returns server-owned comparison values and revision pointers from one snapshot. Suggestions are same, local, incoming or conflict; ambiguous changes require an explicit choice. Reading requires durable audit. All responses are private, no-store.
+         */
+        get: operations["getOnlineBulletinComparison"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/online/{series}/{contentLocale}/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve three-way differences into a new Local revision
+         * @description Traditional Chinese only; Simplified manual mutations return 409 and must use conversions. Requires exact Online and canonical versions and all three revision pointers. Unresolved concurrent changes are rejected. Applies choices atomically, moves Base to Incoming, clears Incoming, queues fresh layout and audit, and preserves publication and PDF workflows. Manual values cannot contain source coordinates or layout proof. Unsupported structural coverage is rejected. Body capped at 8 MiB. All responses are private, no-store.
+         */
+        post: operations["applyOnlineBulletinComparison"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/online/{series}/{contentLocale}/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Save typed Local component corrections and enqueue layout validation
+         * @description Traditional Chinese only; Simplified manual mutations return 409 and must use conversions. Creates an immutable Local revision, retaining sentence IDs and server-owned provenance. Source coordinates must be omitted from every submitted sentence; layout manifests, assets, canonical metadata copies, and validation flags cannot be submitted. Existing geometry is only a seed for isolated re-composition. Published, Base, and Incoming pointers are unchanged; no notification or publication mapping is created. All sentences must retain valid server-assigned slot coverage; unsupported structural changes are rejected, never silently clipped.
+         */
+        put: operations["saveOnlineBulletinDraft"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/online/{series}/{contentLocale}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publish the confirmed immutable Online revision
+         * @description Atomically verifies current canonical and Online CAS, matching published PDF, exact worker layout evidence and human confirmation. Mappings describe explicit structural decisions from the last publication only; unresolved replacements block publication. No weekly notification. Repeating the current publication with fresh CAS and no mappings is a no-op.
+         */
+        post: operations["publishOnlineBulletin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/online/{series}/{contentLocale}/unpublish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unpublish Online without changing the PDF
+         * @description Clears only the Online published pointer. Retains all immutable history, confirmation, mappings and PDF state. No weekly notification. Already-unpublished with fresh CAS is a no-op.
+         */
+        post: operations["unpublishOnlineBulletin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/online/{series}/{contentLocale}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm the exact measured Local version after human review
+         * @description Records immutable human confirmation without publishing or notifying. Every review finding must be explicitly accepted; hard validation, unassigned content, exclusion errors, unknown issue codes and missing layout evidence cannot be waived. Revision, canonicalVersion, layout hash and displayed page count must match the current server-owned worker result. Later edits invalidate confirmation by changing Local or canonical metadata.
+         */
+        post: operations["confirmOnlineBulletin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/online/{series}/{contentLocale}/revisions/{revision}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restore immutable history into a new Local draft
+         * @description Traditional Chinese only; Simplified manual mutations return 409 and must use conversions. Selects only server-owned history for the exact edition, preserves sentence IDs, clears prior layout and human confirmation, and queues fresh layout validation against current canonical metadata. Published, Base, Incoming and PDF state remain unchanged. No weekly notification or publication mapping is created.
+         */
+        post: operations["restoreOnlineBulletinRevision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/online/{series}/{contentLocale}/revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List immutable Online history using bounded keyset pagination
+         * @description Returns revision summaries only, newest first. Follow nextBefore as the next request's before value; null means the end. Read audit must commit before returning history. No source asset IDs or private worker evidence is exposed.
+         */
+        get: operations["listOnlineBulletinRevisions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/online/{series}/{contentLocale}/revisions/{revision}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read one immutable Online revision with its historical metadata
+         * @description Uses frozen publication or original worker metadata, never current CMS metadata. History preview is read-only and is not authority to publish or reuse old confirmation. Durable read audit is required; source asset IDs, raw extraction snapshots and leases are withheld.
+         */
+        get: operations["getOnlineBulletinRevision"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/{issueId}/online/{series}/{contentLocale}/source-pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Preview the current private source PDF for Online editing
+         * @description Returns the complete current edition PDF only, capped at 20 MiB. Range is ignored. Ownership, clean scan, MIME and SHA-256 are verified and the temporary service grant is revoked before any PDF bytes are returned. Historical revision assets and public or SAS URLs are never exposed.
+         */
+        get: operations["getOnlineBulletinSourcePDF"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/bulletins": {
         parameters: {
             query?: never;
@@ -943,10 +1384,16 @@ export interface paths {
         };
         /** Get admin bulletin */
         get: operations["getAdminBulletin"];
-        /** Update bulletin issue */
+        /**
+         * Update bulletin issue
+         * @description Existing PDF mutation guards remain in force. Changing issue number or date forks every affected existing Online Local into a new draft and queues layout validation in the same transaction. Immutable Online publication metadata remains unchanged until explicit republish.
+         */
         put: operations["updateBulletinIssue"];
         post?: never;
-        /** Delete bulletin */
+        /**
+         * Delete bulletin
+         * @description Returns 409 with code online_document_exists while any Online document history exists. Online history cannot be permanently removed through this operation.
+         */
         delete: operations["deleteBulletin"];
         options?: never;
         head?: never;
@@ -978,10 +1425,16 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Update bulletin version */
+        /**
+         * Update bulletin version
+         * @description Changing title or subtitle invalidates only this edition's Online Local proof and human confirmation, creates a new draft and queues layout validation. Other editions and immutable Online publication metadata remain unchanged. Existing PDF mutation guards remain in force.
+         */
         put: operations["updateBulletinVersion"];
         post?: never;
-        /** Delete bulletin version */
+        /**
+         * Delete bulletin version
+         * @description Returns 409 with code online_document_exists while the exact series and content-locale edition has Online document history. Other editions are unaffected.
+         */
         delete: operations["deleteBulletinVersion"];
         options?: never;
         head?: never;
@@ -1031,7 +1484,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Complete bulletin upload */
+        /**
+         * Complete bulletin upload
+         * @description Replacing PDF bytes does not overwrite Online Local or publication. Changed canonical title or subtitle forks only the affected Online Local for fresh layout validation; re-extraction is a separate action producing Incoming.
+         */
         post: operations["completeBulletinUpload"];
         delete?: never;
         options?: never;
@@ -1065,7 +1521,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Unpublish bulletin */
+        /**
+         * Unpublish bulletin
+         * @description By default removes only the PDF projection and retains Online publication. Admin reads Online state to show a warning and an unchecked simultaneous-unpublish option. Only explicit unpublishOnline=true with the current onlineVersion clears the matching Online pointer synchronously in the same transaction; either CAS or audit failure rolls back both. Historical Online revisions and private annotations are retained. Existing PDF asset revocation remains asynchronous.
+         */
         post: operations["unpublishBulletin"];
         delete?: never;
         options?: never;
@@ -1150,7 +1609,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Restore bulletin revision */
+        /**
+         * Restore bulletin revision
+         * @description Restored canonical metadata forks affected Online Local drafts for fresh validation while preserving immutable Online publication metadata. Restoration cannot remove an edition with Online history; this returns 409 online_document_exists.
+         */
         post: operations["restoreBulletinRevision"];
         delete?: never;
         options?: never;
@@ -1475,7 +1937,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List recent published recordings after membership and video entitlement checks */
+        /**
+         * List recent published recordings after membership and video entitlement checks
+         * @description Without limit, retains the legacy array response. With limit, returns uploadedAt DESC and id DESC keyset batches and meta.nextCursor (null at exhaustion). Empty batches may still carry a cursor when media is no longer available; continue until nextCursor is null. Every batch rechecks current visibility and ready media.
+         */
         get: operations["listMemberRecordings"];
         put?: never;
         post?: never;
@@ -1701,10 +2166,14 @@ export interface paths {
         get: operations["getAdminRecording"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete a recording and schedule media cleanup
+         * @description Human administrators only. Requires write capability and If-Match; a published recording additionally requires publish capability, checked under the recording row lock. Removes the recording from all projections and denies new playback grants immediately after commit. A durable owner command asynchronously deletes private source, HLS and preview bytes with retries. Existing playback grants may remain valid until expiry. Repeating the original accepted If-Match is safe. Audit and minimal deletion receipts are retained.
+         */
+        delete: operations["deleteAdminRecording"];
         options?: never;
         head?: never;
-        /** Update the title or bind a draft to its first occurrence */
+        /** Update recording title and optional plain-text description */
         patch: operations["updateAdminRecordingTitle"];
         trace?: never;
     };
@@ -1723,7 +2192,11 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Set featured and hidden flags with publish capability */
+        /**
+         * Retired recording exposure operation
+         * @deprecated
+         * @description Pinning and hiding were removed. Authorized callers receive 410; use unpublish to return a published recording to draft.
+         */
         patch: operations["setAdminRecordingExposure"];
         trace?: never;
     };
@@ -1738,7 +2211,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Publish only an owner-matched, media-validated ready primary version */
+        /**
+         * Publish only an owner-matched, media-validated ready primary version
+         * @description A service actor must supply Idempotency-Key. Human callers without it retain the RecordingEnvelope response. With a key, publication, its immutable receipt, audit and first-publication notification share one transaction. Replay returns the original receipt and current recording; outcome state_changed never republishes, including after manual unpublish or expiry. Reusing an actor-scoped key for a different recording or If-Match returns 409. A new intent requires a new key; never retry 412 automatically with the latest version.
+         */
         post: operations["publishAdminRecording"];
         delete?: never;
         options?: never;
@@ -1765,70 +2241,1550 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/recordings/{id}/covers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List owner-bound cover candidates and current selection */
+        get: operations["listRecordingCovers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/cover-uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload bounded custom JPEG or PNG; never publishes */
+        post: operations["uploadRecordingCover"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/cover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Select ready owner-bound cover with optimistic concurrency */
+        put: operations["setRecordingCover"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/covers/{coverId}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stream administrator preview without a playback grant */
+        get: operations["getRecordingCoverContent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/recordings/{id}/cover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stream current cover before playback after membership, legal and visibility checks */
+        get: operations["getMemberRecordingCover"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/captures": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * createRecordingCapture
+         * @description Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture bound; no service-principal upload identity in the initial OBS release. expectedVersion is the optimistic recording version; no duplicate If-Match header. liveEnabled or autoPublish=true additionally requires cms:recordings:publish. Replaying the same operationKey and original input returns the original receipt plus current state, never a second capture.
+         */
+        post: operations["createRecordingCapture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/captures/{captureId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * getRecordingCapture
+         * @description Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture bound; no service-principal upload identity in the initial OBS release.
+         */
+        get: operations["getRecordingCapture"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/captures/{captureId}/objects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * declareRecordingCapture
+         * @description Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture bound; no service-principal upload identity in the initial OBS release.
+         */
+        post: operations["declareRecordingCapture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/captures/{captureId}/sign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * signRecordingCapture
+         * @description Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture bound; no service-principal upload identity in the initial OBS release.
+         */
+        post: operations["signRecordingCapture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/captures/{captureId}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * confirmRecordingCapture
+         * @description Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture bound; no service-principal upload identity in the initial OBS release.
+         */
+        post: operations["confirmRecordingCapture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/captures/{captureId}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * stopRecordingCapture
+         * @description Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture bound; no service-principal upload identity in the initial OBS release.
+         */
+        post: operations["stopRecordingCapture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/captures/{captureId}/seal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * sealRecordingCapture
+         * @description Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture bound; no service-principal upload identity in the initial OBS release.
+         */
+        post: operations["sealRecordingCapture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/captures/{captureId}/abort": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * abortRecordingCapture
+         * @description Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture bound; no service-principal upload identity in the initial OBS release.
+         */
+        post: operations["abortRecordingCapture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/captures/{captureId}/auto-publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * cancelAutoPublishRecordingCapture
+         * @description Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture bound; no service-principal upload identity in the initial OBS release.
+         */
+        delete: operations["cancelAutoPublishRecordingCapture"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/captures/{captureId}/live": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * closeLiveRecordingCapture
+         * @description Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture bound; no service-principal upload identity in the initial OBS release.
+         */
+        delete: operations["closeLiveRecordingCapture"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/recordings/live": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * listMemberLiveRecordings
+         * @description Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture bound; no service-principal upload identity in the initial OBS release.
+         */
+        get: operations["listMemberLiveRecordings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/recordings/{id}/live/playback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * createMemberLivePlayback
+         * @description Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture bound; no service-principal upload identity in the initial OBS release.
+         */
+        post: operations["createMemberLivePlayback"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** @enum {string} */
-        LegalScope: "common" | "verified-member";
-        /**
-         * @default zh-Hant
-         * @enum {string}
-         */
-        LegalLocale: "zh-Hant" | "zh-Hans" | "en" | "ja" | "ko";
-        LegalVersion: string;
-        LegalDocuments: {
-            terms: components["schemas"]["LegalPageContentV1"];
-            privacy: components["schemas"]["LegalPageContentV1"];
+        RecordingCaptureOperationInput: {
+            operationKey: string;
         };
-        LegalManifest: {
-            scope: components["schemas"]["LegalScope"];
-            locale: components["schemas"]["LegalLocale"];
-            termsVersion: components["schemas"]["LegalVersion"];
-            privacyNoticeVersion: components["schemas"]["LegalVersion"];
-            commonTermsVersion?: components["schemas"]["LegalVersion"];
-            commonPrivacyNoticeVersion?: components["schemas"]["LegalVersion"];
-            termsSHA256: string;
-            privacySHA256: string;
+        RecordingCaptureDeclareInput: {
+            operationKey: string;
+            objects: components["schemas"]["RecordingPackageObject"][];
         };
-        LegalSnapshot: {
-            /** Format: uuid */
-            snapshotId: string;
-            manifest: components["schemas"]["LegalManifest"];
-            documents: components["schemas"]["LegalDocuments"];
+        RecordingCaptureSignInput: {
+            paths: string[];
         };
-        LegalDraft: {
-            scope: components["schemas"]["LegalScope"];
-            termsVersion: components["schemas"]["LegalVersion"];
-            privacyNoticeVersion: components["schemas"]["LegalVersion"];
-            commonTermsVersion?: components["schemas"]["LegalVersion"];
-            commonPrivacyNoticeVersion?: components["schemas"]["LegalVersion"];
-            /** Format: int64 */
-            version?: number;
-            translations: {
-                "zh-Hant": components["schemas"]["LegalDocuments"];
-                "zh-Hans": components["schemas"]["LegalDocuments"];
-                en: components["schemas"]["LegalDocuments"];
-                ja: components["schemas"]["LegalDocuments"];
-                ko: components["schemas"]["LegalDocuments"];
+        RecordingCaptureConfirmInput: {
+            operationKey: string;
+            paths: string[];
+        };
+        RecordingCaptureAbortInput: {
+            operationKey: string;
+            /** @enum {string} */
+            reasonCode: "user_abort" | "disk_limit" | "encoder_failure" | "capture_incomplete";
+        };
+        RecordingCaptureSealInput: {
+            operationKey: string;
+            /** @constant */
+            normalEnd: true;
+            inventory: components["schemas"]["RecordingPackageInventory"] & {
+                renditions?: unknown[];
             };
         };
-        LegalCurrentInput: {
-            scope: components["schemas"]["LegalScope"];
-            locale: components["schemas"]["LegalLocale"];
+        RecordingCaptureReceipt: {
+            operationKey: string;
+            /** @enum {string} */
+            operation: "create" | "declare" | "confirm" | "stop" | "seal" | "abort" | "cancel_auto_publish" | "close_live";
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            acceptedAt: string;
+            captureId: string;
         };
-        LegalSnapshotInput: {
+        RecordingCaptureObjectStatus: {
+            path: string;
+            sizeBytes: number;
+            sha256: string;
+            /** @enum {string} */
+            state: "declared" | "queued" | "verified" | "failed";
+        };
+        RecordingLiveProgress: {
+            /** Format: int64 */
+            revision: number;
+            /** @constant */
+            firstSequence: 0;
+            lastSequence: number;
+            mediaEndSeconds: number;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            lastAdvancedAt: string | null;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            endedAt: string | null;
+            ended: boolean;
+        };
+        RecordingCaptureError: {
+            /** @enum {string} */
+            code: "capture_invalid" | "capture_unauthorized" | "capture_forbidden" | "capture_not_found" | "capture_conflict" | "capture_missing_objects" | "capture_expired" | "capture_too_large" | "capture_rate_limited" | "capture_unavailable";
+            message: string;
+        };
+        RecordingCaptureCreateInput: {
+            operationKey: string;
+            /** Format: int64 */
+            expectedVersion: number;
+            autoPublish: boolean;
+            liveEnabled: boolean;
+        };
+        RecordingCaptureStatus: {
+            captureId: string;
             /** Format: uuid */
-            snapshotId: string;
+            recordingId: string;
+            /** Format: int64 */
+            recordingVersion: number;
+            /** @enum {string} */
+            state: "creating" | "uploading" | "freezing" | "validating" | "ready" | "failed" | "expired" | "aborted";
+            /** @enum {string} */
+            liveState: "starting" | "live" | "recovering" | "interrupted" | "ending" | "ended" | "failed" | "expired" | "aborted";
+            liveEnabled: boolean;
+            /** @enum {string} */
+            autoPublish: "pending" | "cancelled" | "blocked" | "published";
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            expiresAt: string;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            serverNow: string;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            stopAcceptedAt: string | null;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            replayUntil: string | null;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            terminalAt: string | null;
+            terminalReason: string | null;
+            packageId: string | null;
+            /** Format: int64 */
+            declaredBytes: number;
+            /** Format: int64 */
+            declaredObjects: number;
+            objects: components["schemas"]["RecordingCaptureObjectStatus"][];
+            nextCursor: string;
+            progress: components["schemas"]["RecordingLiveProgress"];
         };
-        LegalSnapshotEnvelope: {
-            data: components["schemas"]["LegalSnapshot"];
+        RecordingCaptureResult: {
+            capture: components["schemas"]["RecordingCaptureStatus"];
+            receipt: components["schemas"]["RecordingCaptureReceipt"];
         };
-        LegalDraftEnvelope: {
-            data: components["schemas"]["LegalDraft"];
+        RecordingLivePlaybackInput: {
+            captureId: string;
+            /** Format: uuid */
+            playbackScopeId: string;
         };
-        LegalSnapshotsEnvelope: {
-            data: components["schemas"]["LegalSnapshot"][];
+        MemberLivePlayback: {
+            /** Format: uuid */
+            recordingId: string;
+            captureId: string;
+            /** Format: uuid */
+            playbackScopeId: string;
+            /**
+             * Format: uri
+             * @description Allowlisted media origin, exact /videos/{recordingId}/captures/{captureId}/sessions/{playbackScopeId}/master.m3u8 path.
+             */
+            mediaUrl: string;
+            /** @description Short-lived exchange credential; never log, persist, or place in URL. */
+            exchangeCredential: string;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            issuedAt: string;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            expiresAt: string;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            serverNow: string;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            captureExpiresAt: string;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            stopAcceptedAt: string | null;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            replayUntil: string | null;
+            terminalReason: string | null;
+            /** @enum {string} */
+            liveState: "starting" | "live" | "recovering" | "interrupted" | "ending" | "ended" | "failed" | "expired" | "aborted";
+            progress: components["schemas"]["RecordingLiveProgress"];
+            /** @description Reuse the existing member watermark policy; withhold credentials when required trace persistence fails. */
+            watermarkCode: string;
+        };
+        MemberLiveRecording: {
+            /** Format: uuid */
+            id: string;
+            captureId: string;
+            title: string;
+            description?: components["schemas"]["RecordingDescription"];
+            /** @enum {string} */
+            liveState: "starting" | "live" | "recovering" | "interrupted" | "ending" | "ended" | "failed" | "expired" | "aborted";
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description UTC RFC3339 timestamp emitted with Z suffix.
+             */
+            stopAcceptedAt: string | null;
+            progress: components["schemas"]["RecordingLiveProgress"];
+        };
+        RecordingCaptureEnvelope: {
+            data: components["schemas"]["RecordingCaptureStatus"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        RecordingCaptureResultEnvelope: {
+            data: components["schemas"]["RecordingCaptureResult"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        RecordingCaptureSignedEnvelope: {
+            data: components["schemas"]["SignedRecordingObject"][];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        MemberLivePlaybackEnvelope: {
+            data: components["schemas"]["MemberLivePlayback"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        MemberLiveRecordingsEnvelope: {
+            data: components["schemas"]["MemberLiveRecording"][];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        RecordingCaptureErrorEnvelope: {
+            data: null;
+            meta: {
+                [key: string]: unknown;
+            };
+            error: components["schemas"]["RecordingCaptureError"];
+        };
+        /** @description Dynamic sentence anchor. The canonical- ID prefix is reserved for shared canonical metadata anchors across layouts. */
+        ReaderSentence: {
+            id: components["schemas"]["OnlineBulletinID"];
+            spans: components["schemas"]["OnlineBulletinSpan"][];
+        };
+        ReaderBlock: {
+            id: components["schemas"]["OnlineBulletinID"];
+            style: components["schemas"]["OnlineBulletinParagraphStyle"];
+            sentences: components["schemas"]["ReaderSentence"][];
+        };
+        ReaderItem: {
+            id: components["schemas"]["OnlineBulletinID"];
+            title?: components["schemas"]["ReaderBlock"];
+            blocks: components["schemas"]["ReaderBlock"][];
+        };
+        ReaderCover: {
+            welcome: components["schemas"]["ReaderBlock"][];
+            worship: components["schemas"]["ReaderItem"][];
+            work: components["schemas"]["ReaderItem"][];
+            wordQuestions: components["schemas"]["ReaderItem"][];
+            weeklyVerses: components["schemas"]["ReaderBlock"][];
+        };
+        ReaderBodySection: {
+            /**
+             * @description Unknown creates a blocking review issue.
+             * @enum {string}
+             */
+            kind: "sermon" | "testimony" | "teaching" | "reflection" | "unknown";
+            header?: components["schemas"]["ReaderBodyHeader"];
+            title: components["schemas"]["ReaderBlock"];
+            subtitle?: components["schemas"]["ReaderBlock"];
+            contributors?: {
+                /** @enum {string} */
+                role: "speaker" | "transcriber" | "editor" | "author";
+                name: components["schemas"]["ReaderBlock"];
+            }[];
+            blocks: components["schemas"]["ReaderBlock"][];
+        };
+        /** @description First body section only. Source lecture date is independent of canonical issue publication date; all fields use sentence anchors. Missing contributor roles block publication review. */
+        ReaderBodyHeader: {
+            lectureDate: components["schemas"]["ReaderBlock"];
+            contributors: {
+                /** @enum {string} */
+                role: "speaker" | "transcriber" | "editor";
+                name: components["schemas"]["ReaderBlock"];
+            }[];
+        };
+        ReaderHymnLyrics: {
+            hymns: {
+                id: components["schemas"]["OnlineBulletinID"];
+                number?: components["schemas"]["ReaderBlock"];
+                title: components["schemas"]["ReaderBlock"];
+                sourceLabel?: components["schemas"]["ReaderBlock"];
+                sections: {
+                    id: components["schemas"]["OnlineBulletinID"];
+                    /** @enum {string} */
+                    kind: "verse" | "chorus" | "bridge";
+                    lines: components["schemas"]["ReaderBlock"][];
+                }[];
+            }[];
+        };
+        ReaderComponent: components["schemas"]["ReaderCoverComponent"] | components["schemas"]["ReaderBodyComponent"] | components["schemas"]["ReaderHymnComponent"] | components["schemas"]["ReaderBackComponent"];
+        ReaderCoverComponent: {
+            id: components["schemas"]["OnlineBulletinID"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "cover";
+            cover: components["schemas"]["ReaderCover"];
+        };
+        ReaderBodyComponent: {
+            id: components["schemas"]["OnlineBulletinID"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "bodySection";
+            bodySection: components["schemas"]["ReaderBodySection"];
+        };
+        ReaderHymnComponent: {
+            id: components["schemas"]["OnlineBulletinID"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "hymnLyrics";
+            hymnLyrics: components["schemas"]["ReaderHymnLyrics"];
+        };
+        ReaderBackComponent: {
+            id: components["schemas"]["OnlineBulletinID"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "backSummary" | "announcements" | "victoriesAndPrayers";
+            items: components["schemas"]["ReaderItem"][];
+        };
+        /** @enum {string} */
+        ReaderHighlightColor: "yellow" | "red" | "blue";
+        ReaderAnchorIDs: components["schemas"]["OnlineBulletinID"][];
+        /** @description Half-open Unicode scalar offsets into the trusted published sentence; start must be less than end. DOM UTF-16 offsets are not accepted. */
+        ReaderTextRange: {
+            sentenceId: components["schemas"]["OnlineBulletinID"];
+            start: number;
+            end: number;
+        };
+        /** @description One continuous range in semantic order; exactly one entry for each sentenceIds item. Omit for legacy whole-sentence behavior; null and empty are invalid. */
+        ReaderTextRanges: components["schemas"]["ReaderTextRange"][];
+        ReaderHighlightSegment: {
+            start: number;
+            end: number;
+            color: components["schemas"]["ReaderHighlightColor"];
+        };
+        ReaderNoteRange: {
+            sentenceId: components["schemas"]["OnlineBulletinID"];
+            start: number;
+            end: number;
+            /** @description Complete server-derived source sentence used to verify offsets on revision migration. The parent note quote contains only selected text. */
+            quote: string;
+        };
+        ReaderPrivateAnchor: {
+            sentenceId: string;
+            quote: string;
+            componentId: string;
+            pageId: string;
+        };
+        ReaderHighlight: {
+            /** @description Authoritative sorted non-overlapping ranges. When omitted, legacy color covers the complete sentence. When present, top-level color is only the first segment color. */
+            segments?: components["schemas"]["ReaderHighlightSegment"][];
+            sentenceId: components["schemas"]["OnlineBulletinID"];
+            color: components["schemas"]["ReaderHighlightColor"];
+            quote: string;
+            active: boolean;
+            version: number;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        /** @description Missing highlight is an opaque consumed-entry tombstone; it prevents migration from resurrecting discarded private text. */
+        ReaderHighlightHistoryEntry: {
+            /** Format: uuid */
+            id: string;
+            highlight?: components["schemas"]["ReaderHighlight"];
+        };
+        ReaderNote: {
+            ranges?: components["schemas"]["ReaderNoteRange"][];
+            /** Format: uuid */
+            id: string;
+            text: string;
+            sentenceIds: components["schemas"]["OnlineBulletinID"][];
+            inactiveAnchors: components["schemas"]["ReaderPrivateAnchor"][];
+            quote: string;
+            version: number;
+            deleted: boolean;
+            /** @description Oversized automatic split retains private text/quote without truncation; explicit re-anchoring is required. */
+            reanchorRequired: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        ReaderProgress: {
+            pageId: string;
+            componentId: string;
+            sentenceId: string;
+            /** Format: date-time */
+            recordedAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        ReaderMigrationConflict: {
+            /** Format: uuid */
+            id: string;
+            sentenceIds: components["schemas"]["ReaderAnchorIDs"];
+            sources: components["schemas"]["ReaderHighlight"][];
+        };
+        ReaderPrivateState: {
+            /**
+             * Format: uuid
+             * @description Trusted response binding only; never accepted as a mutation input.
+             */
+            readonly accountId: string;
+            /** Format: uuid */
+            documentId: string;
+            appliedRevision: number;
+            currentRevision: number;
+            highlights: components["schemas"]["ReaderHighlight"][];
+            /** @description Private retained source selections that no longer locate current text. Entries are not active highlights and never imply a current anchor. Omitted on legacy states. */
+            highlightHistory?: components["schemas"]["ReaderHighlightHistoryEntry"][];
+            notes: components["schemas"]["ReaderNote"][];
+            progress: components["schemas"]["ReaderProgress"] | null;
+            conflicts: components["schemas"]["ReaderMigrationConflict"][];
+        };
+        ReaderStateEnvelope: {
+            data: {
+                state: components["schemas"]["ReaderPrivateState"];
+                fromRevision?: number;
+                mappings?: {
+                    fromSentenceId: components["schemas"]["OnlineBulletinID"];
+                    toSentenceIds: components["schemas"]["OnlineBulletinID"][];
+                }[];
+            };
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        ReaderMutationResult: {
+            /** Format: uuid */
+            mutationId: string;
+            /** @enum {string} */
+            status: "applied" | "revision_changed" | "recovery_required" | "note_conflict" | "migration_conflict" | "conflict_not_found";
+            revision: number;
+            note?: components["schemas"]["ReaderNote"];
+        };
+        ReaderMutationEnvelope: {
+            data: {
+                state: components["schemas"]["ReaderPrivateState"];
+                results: components["schemas"]["ReaderMutationResult"][];
+            };
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        ReaderMutation: {
+            /** Format: uuid */
+            mutationId: string;
+            /** Format: date-time */
+            createdAt: string;
+            documentRevision: number;
+            baseVersion?: number;
+            /** @enum {string} */
+            kind: "setHighlight" | "clearHighlight" | "restoreHighlight" | "discardHighlightHistory" | "createNote" | "editNote" | "deleteNote" | "reanchorNote" | "setProgress" | "resolveHighlightMigrationConflict";
+            payload: {
+                [key: string]: unknown;
+            };
+        } & ({
+            /** @constant */
+            kind: "setHighlight";
+            payload: {
+                ranges?: components["schemas"]["ReaderTextRanges"];
+                sentenceIds: components["schemas"]["ReaderAnchorIDs"];
+                color: components["schemas"]["ReaderHighlightColor"];
+            };
+        } | {
+            /** @constant */
+            kind: "clearHighlight";
+            payload: {
+                ranges?: components["schemas"]["ReaderTextRanges"];
+                sentenceIds: components["schemas"]["ReaderAnchorIDs"];
+            };
+        } | {
+            /** @constant */
+            kind: "createNote";
+            payload: {
+                ranges?: components["schemas"]["ReaderTextRanges"];
+                /** Format: uuid */
+                noteId: string;
+                sentenceIds: components["schemas"]["ReaderAnchorIDs"];
+                text: string;
+            };
+        } | {
+            /** @constant */
+            kind: "editNote";
+            payload: {
+                /** Format: uuid */
+                noteId: string;
+                text: string;
+            };
+        } | {
+            /** @constant */
+            kind: "reanchorNote";
+            /** @description Explicitly select a new range for a note with unavailable anchors. Requires the current note baseVersion and documentRevision. Preserves note identity, original quote and text; ranges use current server-validated Unicode scalar offsets. A stale note returns note_conflict. */
+            payload: {
+                /** Format: uuid */
+                noteId: string;
+                sentenceIds: components["schemas"]["ReaderAnchorIDs"];
+                ranges: components["schemas"]["ReaderTextRanges"];
+            };
+        } | {
+            /** @constant */
+            kind: "deleteNote";
+            payload: {
+                /** Format: uuid */
+                noteId: string;
+            };
+        } | {
+            /** @constant */
+            kind: "setProgress";
+            payload: {
+                pageId?: string;
+                componentId?: string;
+                sentenceId?: string;
+            };
+        } | {
+            /** @constant */
+            kind: "restoreHighlight";
+            payload: {
+                /** Format: uuid */
+                historyId: string;
+                sentenceIds: components["schemas"]["ReaderAnchorIDs"];
+                ranges: components["schemas"]["ReaderTextRanges"];
+                color: components["schemas"]["ReaderHighlightColor"];
+            };
+        } | {
+            /** @constant */
+            kind: "discardHighlightHistory";
+            payload: {
+                /** Format: uuid */
+                historyId: string;
+            };
+        } | {
+            /** @constant */
+            kind: "resolveHighlightMigrationConflict";
+            payload: {
+                /** Format: uuid */
+                conflictId: string;
+                chosenColor: components["schemas"]["ReaderHighlightColor"];
+                currentRevision: number;
+            };
+        });
+        /** @description At most 4096 encoded bytes. Each client request UUID is account-bound and immutable for the receipt retention period. */
+        ReaderAccessInput: {
+            /** Format: uuid */
+            clientRequestId: string;
+            revision?: number;
+            /** Format: uuid */
+            receiptId?: string;
+        };
+        /** @description Current PDF action identity, never a private asset URL. */
+        ReaderPDFAction: {
+            /** Format: uuid */
+            issueId: string;
+            series: components["schemas"]["BulletinSeries"];
+            locale: components["schemas"]["BulletinLocale"];
+        };
+        ReaderReceiptExport: {
+            /** Format: uuid */
+            receiptId: string;
+            /** Format: uuid */
+            accountId: string;
+            /** Format: uuid */
+            documentId: string;
+            /** Format: uuid */
+            issueId: string;
+            series: components["schemas"]["BulletinSeries"];
+            contentLocale: components["schemas"]["BulletinLocale"];
+            revision: number;
+            /** @constant */
+            channel: "online_reader";
+            privacyNoticeVersion: string;
+            /** Format: date-time */
+            issuedAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        ReaderValidationExport: {
+            /** Format: uuid */
+            clientRequestId: string;
+            /** Format: uuid */
+            accountId: string;
+            /** Format: uuid */
+            receiptId: string;
+            requestHash: components["schemas"]["OnlineBulletinHash"];
+            /** Format: date-time */
+            validatedAt: string;
+            /** Format: date-time */
+            offlineValidUntil: string;
+        };
+        ReaderDiscoveryItem: {
+            /** Format: uuid */
+            issueId: string;
+            /** @description Current canonical route identity, independent of the frozen publication metadata. */
+            issueNumber: number | null;
+            /** Format: date */
+            issueDate: string;
+            series: components["schemas"]["BulletinSeries"];
+            contentLocale: components["schemas"]["BulletinLocale"];
+            canonicalMetadata: components["schemas"]["OnlineBulletinCanonicalMetadata"];
+            /** Format: uuid */
+            documentId?: string;
+            onlineRevision: number | null;
+            pdfPublished: boolean;
+            download?: components["schemas"]["ReaderPDFAction"];
+        };
+        ReaderDiscoveryEnvelope: {
+            data: {
+                items: components["schemas"]["ReaderDiscoveryItem"][];
+                total: number;
+                offset: number;
+                limit: number;
+            };
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        ReaderAccessEnvelope: {
+            data: {
+                document: components["schemas"]["ReaderDocument"];
+                access: components["schemas"]["ReaderAccess"];
+            };
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        ReaderAccess: {
+            /** Format: uuid */
+            accountId: string;
+            /** Format: uuid */
+            documentId: string;
+            series: components["schemas"]["BulletinSeries"];
+            contentLocale: components["schemas"]["BulletinLocale"];
+            revision: number;
+            currentRevision: number;
+            /** Format: uuid */
+            receiptId: string;
+            /** @description Opaque formatted visible code; never account identity. */
+            traceCode: string;
+            /** Format: date-time */
+            validatedAt: string;
+            /**
+             * Format: date-time
+             * @description Exactly 604800 seconds after validatedAt.
+             */
+            offlineValidUntil: string;
+        };
+        ReaderDocument: {
+            /** Format: uuid */
+            issueId: string;
+            /** Format: uuid */
+            documentId: string;
+            series: components["schemas"]["BulletinSeries"];
+            contentLocale: components["schemas"]["BulletinLocale"];
+            revision: number;
+            canonicalMetadata: components["schemas"]["OnlineBulletinCanonicalMetadata"];
+            metadataSyncPending: boolean;
+            pdfPublished: boolean;
+            download?: components["schemas"]["ReaderPDFAction"];
+            content: components["schemas"]["ReaderContent"];
+        };
+        /** @description Closed published rendering projection with no extraction provenance. Layout proof binds the original worker measurement; it is not a hash of this redacted DTO. Verify the response byte digest separately. */
+        ReaderContent: {
+            /** @description Visible printed body issue-summary count, independent of HTML pagination. */
+            printedBodyPageCount: number;
+            /** @constant */
+            schemaVersion: "1";
+            /** @enum {string} */
+            templateVersion: "v1" | "v2";
+            pages: components["schemas"]["OnlineBulletinPage"][];
+            layoutManifest: components["schemas"]["OnlineBulletinLayoutManifest"];
+            components: components["schemas"]["ReaderComponent"][];
+        };
+        OnlineBulletinComparisonValue: components["schemas"]["OnlineBulletinBlock"] | components["schemas"]["OnlineBulletinComponent"] | components["schemas"]["OnlineBulletinID"][] | null;
+        OnlineBulletinComparison: {
+            /** Format: uuid */
+            documentId: string;
+            /** Format: int64 */
+            version: number;
+            /** Format: int64 */
+            canonicalVersion: number;
+            /** Format: int64 */
+            baseRevision: number;
+            /** Format: int64 */
+            localRevision: number;
+            /** Format: int64 */
+            incomingRevision: number;
+            units: {
+                componentId: string;
+                blockId: string;
+                /** @enum {string} */
+                suggestion: "same" | "local" | "incoming" | "conflict";
+                base: components["schemas"]["OnlineBulletinComparisonValue"];
+                local: components["schemas"]["OnlineBulletinComparisonValue"];
+                incoming: components["schemas"]["OnlineBulletinComparisonValue"];
+            }[];
+        };
+        OnlineBulletinCompareInput: {
+            /** Format: int64 */
+            canonicalVersion: number;
+            /** Format: int64 */
+            baseRevision: number;
+            /** Format: int64 */
+            localRevision: number;
+            /** Format: int64 */
+            incomingRevision: number;
+            choices?: ({
+                componentId: string;
+                blockId: string;
+                /** @enum {string} */
+                choice: "local" | "incoming" | "manual";
+                value?: components["schemas"]["OnlineBulletinComparisonValue"];
+            } & ({
+                /** @constant */
+                choice?: "manual";
+            } | {
+                /** @enum {unknown} */
+                choice?: "local" | "incoming";
+            }))[];
+        };
+        OnlineBulletinDraftInput: {
+            /** Format: int64 */
+            canonicalVersion: number;
+            /** @description Typed editable content only. Omit every read-only sentence source field; the server preserves source provenance by stable sentence ID. */
+            components: components["schemas"]["OnlineBulletinComponent"][];
+        };
+        OnlineBulletinSavedDraft: {
+            /** Format: uuid */
+            documentId: string;
+            /** Format: int64 */
+            version: number;
+            /** Format: int64 */
+            revision: number;
+            /** Format: uuid */
+            layoutJobId: string;
+        };
+        OnlineBulletinExtractionInput: {
+            /** Format: int64 */
+            canonicalVersion: number;
+            /** @default false */
+            retry: boolean;
+        };
+        OnlineBulletinQueuedExtractionEnvelope: {
+            data: {
+                /** Format: uuid */
+                documentId: string;
+                /** Format: int64 */
+                version: number;
+                job: components["schemas"]["OnlineBulletinAdminJob"];
+            };
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        OnlineBulletinRevisionPage: {
+            /** Format: uuid */
+            documentId: string;
+            /** Format: int64 */
+            nextBefore: number | null;
+            items: {
+                /** Format: int64 */
+                revision: number;
+                createdBy: string;
+                /** Format: date-time */
+                createdAt: string;
+                sourceAssetChecksum: string;
+                /** @description Historical worker proof exists; not current publication authority. */
+                layoutValidated: boolean;
+            }[];
+        };
+        OnlineBulletinHistoricalRevision: {
+            /** Format: uuid */
+            documentId: string;
+            /** Format: int64 */
+            revision: number;
+            document: components["schemas"]["OnlineBulletinDocument"];
+            reviewIssues: components["schemas"]["OnlineBulletinReviewIssue"][];
+            canonicalMetadata: components["schemas"]["OnlineBulletinCanonicalMetadata"];
+            createdBy: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        OnlineBulletinPublishInput: {
+            /** Format: int64 */
+            canonicalVersion: number;
+            /** Format: int64 */
+            revision: number;
+            mappings?: components["schemas"]["OnlineBulletinSentenceMapping"][];
+        };
+        OnlineBulletinSentenceMapping: {
+            fromSentenceId: string;
+            /** @enum {string} */
+            status: "unchanged" | "moved" | "split" | "merged" | "removed";
+            toSentenceIds: string[];
+        };
+        OnlineBulletinUnpublishedRevision: {
+            /** Format: uuid */
+            documentId: string;
+            /** Format: int64 */
+            version: number;
+        };
+        OnlineBulletinRestoreInput: {
+            /** Format: int64 */
+            canonicalVersion: number;
+        };
+        OnlineBulletinConfirmInput: {
+            /** Format: int64 */
+            canonicalVersion: number;
+            /** Format: int64 */
+            revision: number;
+            layoutValidationHash: string;
+            pageCount: number;
+            acceptedIssues: components["schemas"]["OnlineBulletinReviewIssue"][];
+        };
+        OnlineBulletinConfirmedRevision: {
+            /** Format: uuid */
+            documentId: string;
+            /** Format: int64 */
+            version: number;
+            /** Format: int64 */
+            revision: number;
+        };
+        /** @description Latest non-superseded conversion provenance; Admin only. A resultRevision may be Incoming rather than the adopted Local baseline. stale compares the current source revision, hash and canonical metadata. */
+        OnlineBulletinDerivation: {
+            /** Format: uuid */
+            sourceDocumentId: string;
+            /** Format: int64 */
+            sourceRevision: number;
+            sourceContentHash: string;
+            /** Format: int64 */
+            sourceMetadataVersion: number;
+            converterVersion: string;
+            /** Format: int64 */
+            resultRevision: number | null;
+            convertedMetadata: null | components["schemas"]["OnlineBulletinCanonicalMetadata"];
+            stale: boolean;
+        };
+        OnlineBulletinConversionInput: {
+            /** Format: int64 */
+            canonicalVersion: number;
+            /** Format: int64 */
+            sourceOnlineVersion: number;
+            /** Format: int64 */
+            sourceRevision: number;
+            /** @default false */
+            retry: boolean;
+        };
+        OnlineBulletinAdminState: {
+            /** Format: uuid */
+            issueId: string;
+            /** @enum {string} */
+            series: "general";
+            /** @enum {string} */
+            contentLocale: "zh-Hant" | "zh-Hans";
+            /** Format: int64 */
+            canonicalVersion: number;
+            canonicalMetadata: components["schemas"]["OnlineBulletinCanonicalMetadata"];
+            pdfStatus: components["schemas"]["BulletinVersionStatus"];
+            documentId: string;
+            /** Format: int64 */
+            version: number;
+            /** @enum {string} */
+            draftStatus: "notStarted" | "extracting" | "reviewRequired" | "ready" | "published" | "extractionFailed";
+            /** Format: int64 */
+            baseRevision: number | null;
+            /** Format: int64 */
+            incomingRevision: number | null;
+            /** Format: int64 */
+            publishedRevision: number | null;
+            /** @description Canonical metadata differs from the immutable Online publication and requires explicit republish. */
+            metadataSyncPending: boolean;
+            conversion?: components["schemas"]["OnlineBulletinAdminJob"];
+            derivation?: components["schemas"]["OnlineBulletinDerivation"];
+            /** @description Human confirmation matches current Local and canonical metadata. This does not itself authorize publication. */
+            confirmed: boolean;
+            publishedMetadata: null | components["schemas"]["OnlineBulletinCanonicalMetadata"];
+            local: null | components["schemas"]["OnlineBulletinAdminRevision"];
+            extraction: null | components["schemas"]["OnlineBulletinAdminJob"];
+            layout: null | components["schemas"]["OnlineBulletinAdminJob"];
+        };
+        OnlineBulletinAdminRevision: {
+            /** Format: int64 */
+            revision: number;
+            document: components["schemas"]["OnlineBulletinDocument"];
+            reviewIssues: components["schemas"]["OnlineBulletinReviewIssue"][];
+        };
+        OnlineBulletinReviewIssue: {
+            code: string;
+            blocking: boolean;
+            componentId?: components["schemas"]["OnlineBulletinID"];
+            blockId?: components["schemas"]["OnlineBulletinID"];
+            sentenceId?: components["schemas"]["OnlineBulletinID"];
+            /** @description One-based original PDF page, never the composed online page index. Omitted when no exact source page is available. */
+            sourcePage?: number;
+        };
+        OnlineBulletinAdminJob: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "queued" | "parsing" | "converting" | "review_ready" | "validating" | "ready" | "failed";
+            attempts: number;
+            errorCode: string;
+            reviewIssues?: components["schemas"]["OnlineBulletinReviewIssue"][];
+        };
+        OnlineBulletinID: string;
+        OnlineBulletinHash: string;
+        /** @enum {string} */
+        OnlineBulletinFontRole: "body" | "scripture" | "emphasis" | "reference" | "foreignText" | "symbol";
+        /** @description Typed immutable content. Canonical issue metadata and mutable source asset IDs are intentionally absent. Maximum encoded size is 8 MiB; server also validates references, total collection limits and fragment coverage. */
+        OnlineBulletinDocument: {
+            /** Format: uuid */
+            issueId: string;
+            /** @constant */
+            series: "general";
+            /** @enum {string} */
+            contentLocale: "zh-Hant" | "zh-Hans";
+            /** @constant */
+            schemaVersion: "1";
+            /** @enum {string} */
+            templateVersion: "v1" | "v2";
+            sourceAssetChecksum: components["schemas"]["OnlineBulletinHash"];
+            /** @description Must equal the saved page count. Composition preserves original page identity and fragment membership; overflow blocks publication instead of adding pages. */
+            sourcePageCount: number;
+            pages: components["schemas"]["OnlineBulletinPage"][];
+            layoutManifest: components["schemas"]["OnlineBulletinLayoutManifest"];
+            components: components["schemas"]["OnlineBulletinComponent"][];
+        };
+        OnlineBulletinPage: {
+            id: components["schemas"]["OnlineBulletinID"];
+            /** @description PDF points. */
+            width: number;
+            /** @description PDF points. */
+            height: number;
+        };
+        /** @description Normalized page-relative rectangle. Server additionally rejects any edge exceeding the page boundary. */
+        OnlineBulletinBox: {
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+        };
+        /** @description Revision-owned manifest; hashes bind the authoritative isolated-worker measurement. Empty validation hashes represent a pending draft, never permission to publish. */
+        OnlineBulletinLayoutManifest: {
+            /** @enum {string} */
+            templateVersion: "v1" | "v2";
+            /**
+             * @description Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. Existing published renderer versions remain immutable.
+             * @enum {string}
+             */
+            rendererVersion: "v1" | "v2" | "v3" | "v4" | "v5";
+            rendererArtifactSha256: components["schemas"]["OnlineBulletinHash"];
+            contentHash?: components["schemas"]["OnlineBulletinHash"];
+            layoutValidationHash?: components["schemas"]["OnlineBulletinHash"];
+            assets: components["schemas"]["OnlineBulletinAsset"][];
+            pages: components["schemas"]["OnlineBulletinLayoutPage"][];
+        };
+        /** @description Code-owned permanent self-hosted asset, never an executable URL. Filename includes its exact SHA-256. */
+        OnlineBulletinAsset: {
+            url: string;
+            sha256: components["schemas"]["OnlineBulletinHash"];
+            /** @enum {string} */
+            kind: "font" | "decoration";
+            fontRole?: components["schemas"]["OnlineBulletinFontRole"];
+        };
+        OnlineBulletinLayoutPage: {
+            pageId: components["schemas"]["OnlineBulletinID"];
+            fixedSlots?: components["schemas"]["OnlineBulletinFixedSlot"][];
+            slots: components["schemas"]["OnlineBulletinSlot"][];
+        };
+        OnlineBulletinSlot: {
+            id: components["schemas"]["OnlineBulletinID"];
+            componentId: components["schemas"]["OnlineBulletinID"];
+            blockId: components["schemas"]["OnlineBulletinID"];
+            box: components["schemas"]["OnlineBulletinBox"];
+            continuationOf?: components["schemas"]["OnlineBulletinID"];
+            fragments: components["schemas"]["OnlineBulletinFragment"][];
+        };
+        /** @description Template-owned geometry for a fixed label or canonical metadata reference. It contains no editable text or executable URL. */
+        OnlineBulletinFixedSlot: {
+            id: components["schemas"]["OnlineBulletinID"];
+            /** @enum {string} */
+            element: "title" | "subtitle" | "date" | "issueNumber" | "pageNumber" | "masthead" | "vision" | "visionMission" | "visionFellowship" | "visionCommitment" | "pastor" | "contact" | "scanHint" | "websiteQRLabel" | "youtubeQRLabel" | "streamQRLabel" | "welcomeLabel" | "worshipLabel" | "workLabel" | "wordLabel" | "verseLabel" | "hymnLabel" | "summaryLabel" | "summarySidebarTitle" | "summarySidebarTagline" | "announcementsLabel" | "prayersLabel" | "titleLabel" | "speakerLabel" | "speakerSeparator" | "lectureDateMarker" | "bodyIssueSummary" | "bodySpeakerLabel" | "transcriberLabel" | "editorLabel" | "authorLabel" | "logo" | "backgroundLogo" | "websiteQR" | "youtubeQR" | "streamQR" | "topRule" | "footerRule" | "summaryFrame" | "announcementsFrame" | "prayersFrame";
+            box: components["schemas"]["OnlineBulletinBox"];
+            style: components["schemas"]["OnlineBulletinParagraphStyle"];
+        };
+        /** @description Read-only snapshot of existing CMS fields, separate from editable document content. */
+        OnlineBulletinCanonicalMetadata: {
+            title: string;
+            subtitle: string;
+            issueNumber: number;
+            /** Format: date */
+            date: string;
+        };
+        /** @description Half-open offsets in Unicode code points, not UTF-8 bytes or UTF-16 units. Coverage must be complete and non-overlapping in reading order. */
+        OnlineBulletinFragment: {
+            sentenceId: components["schemas"]["OnlineBulletinID"];
+            start: number;
+            end: number;
+        };
+        OnlineBulletinSpan: {
+            text: string;
+            fontRole: components["schemas"]["OnlineBulletinFontRole"];
+            /** @description Optional source PDF-point size for mixed-size inline runs. Missing or null inherits the block size; mobile retains the proportional em ratio. */
+            fontSize?: number | null;
+        };
+        /** @description Dynamic sentence anchor. The canonical- ID prefix is reserved for shared canonical metadata anchors across layouts. */
+        OnlineBulletinSentence: {
+            id: components["schemas"]["OnlineBulletinID"];
+            spans: components["schemas"]["OnlineBulletinSpan"][];
+            /** @description Server-owned PDF provenance; forbidden in component edit requests. */
+            readonly source?: {
+                page: number;
+                box: components["schemas"]["OnlineBulletinBox"];
+            };
+        };
+        /** @description Font size and line height in PDF points. Indents and spacing in em units; negative first-line indentation supports hanging paragraphs. */
+        OnlineBulletinParagraphStyle: {
+            fontSize: number;
+            lineHeight: number;
+            /** @description Explicit source tracking in em; omitted means zero. Never adjusted automatically to fit edits. */
+            letterSpacing?: number;
+            /** @enum {string} */
+            align?: "left" | "center" | "right" | "justify";
+            indent: number;
+            firstLineIndent: number;
+            spaceBefore: number;
+            spaceAfter: number;
+        };
+        OnlineBulletinBlock: {
+            id: components["schemas"]["OnlineBulletinID"];
+            style: components["schemas"]["OnlineBulletinParagraphStyle"];
+            sentences: components["schemas"]["OnlineBulletinSentence"][];
+        };
+        OnlineBulletinItem: {
+            id: components["schemas"]["OnlineBulletinID"];
+            title?: components["schemas"]["OnlineBulletinBlock"];
+            blocks: components["schemas"]["OnlineBulletinBlock"][];
+        };
+        OnlineBulletinCover: {
+            welcome: components["schemas"]["OnlineBulletinBlock"][];
+            worship: components["schemas"]["OnlineBulletinItem"][];
+            work: components["schemas"]["OnlineBulletinItem"][];
+            wordQuestions: components["schemas"]["OnlineBulletinItem"][];
+            weeklyVerses: components["schemas"]["OnlineBulletinBlock"][];
+        };
+        OnlineBulletinBodySection: {
+            /**
+             * @description Unknown creates a blocking review issue.
+             * @enum {string}
+             */
+            kind: "sermon" | "testimony" | "teaching" | "reflection" | "unknown";
+            header?: components["schemas"]["OnlineBulletinBodyHeader"];
+            title: components["schemas"]["OnlineBulletinBlock"];
+            subtitle?: components["schemas"]["OnlineBulletinBlock"];
+            contributors?: {
+                /** @enum {string} */
+                role: "speaker" | "transcriber" | "editor" | "author";
+                name: components["schemas"]["OnlineBulletinBlock"];
+            }[];
+            blocks: components["schemas"]["OnlineBulletinBlock"][];
+        };
+        /** @description First body section only. Source lecture date is independent of canonical issue publication date; all fields use sentence anchors. Missing contributor roles block publication review. */
+        OnlineBulletinBodyHeader: {
+            lectureDate: components["schemas"]["OnlineBulletinBlock"];
+            contributors: {
+                /** @enum {string} */
+                role: "speaker" | "transcriber" | "editor";
+                name: components["schemas"]["OnlineBulletinBlock"];
+            }[];
+        };
+        OnlineBulletinHymnLyrics: {
+            hymns: {
+                id: components["schemas"]["OnlineBulletinID"];
+                number?: components["schemas"]["OnlineBulletinBlock"];
+                title: components["schemas"]["OnlineBulletinBlock"];
+                sourceLabel?: components["schemas"]["OnlineBulletinBlock"];
+                sections: {
+                    id: components["schemas"]["OnlineBulletinID"];
+                    /** @enum {string} */
+                    kind: "verse" | "chorus" | "bridge";
+                    lines: components["schemas"]["OnlineBulletinBlock"][];
+                }[];
+            }[];
+        };
+        OnlineBulletinComponent: components["schemas"]["OnlineBulletinCoverComponent"] | components["schemas"]["OnlineBulletinBodyComponent"] | components["schemas"]["OnlineBulletinHymnComponent"] | components["schemas"]["OnlineBulletinBackComponent"];
+        OnlineBulletinCoverComponent: {
+            id: components["schemas"]["OnlineBulletinID"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "cover";
+            cover: components["schemas"]["OnlineBulletinCover"];
+        };
+        OnlineBulletinBodyComponent: {
+            id: components["schemas"]["OnlineBulletinID"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "bodySection";
+            bodySection: components["schemas"]["OnlineBulletinBodySection"];
+        };
+        OnlineBulletinHymnComponent: {
+            id: components["schemas"]["OnlineBulletinID"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "hymnLyrics";
+            hymnLyrics: components["schemas"]["OnlineBulletinHymnLyrics"];
+        };
+        OnlineBulletinBackComponent: {
+            id: components["schemas"]["OnlineBulletinID"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "backSummary" | "announcements" | "victoriesAndPrayers";
+            items: components["schemas"]["OnlineBulletinItem"][];
+        };
+        RecordingRetentionPolicy: {
+            retentionDays: number;
+            revision: number;
+            /** Format: date-time */
+            activatedAt: string | null;
+        };
+        RecordingRetentionPreview: {
+            previewId: string;
+            retentionDays: number;
+            revision: number;
+            /** Format: date-time */
+            evaluatedAt: string;
+            affectedCount: number;
+            affectedBytes: number;
+        };
+        PreviewRecordingRetentionInput: {
+            retentionDays: number;
+        };
+        UpdateRecordingRetentionInput: {
+            retentionDays: number;
+            expectedRevision: number;
+            previewId: string;
+        };
+        RecordingRetentionPolicyEnvelope: {
+            data: components["schemas"]["RecordingRetentionPolicy"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        RecordingRetentionPreviewEnvelope: {
+            data: components["schemas"]["RecordingRetentionPreview"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        RecordingWatermarkLookupInput: {
+            /** Format: uuid */
+            recordingId: string;
+            code: string;
+        };
+        RecordingWatermarkLookupResult: {
+            /** Format: uuid */
+            receiptId: string;
+            /** Format: uuid */
+            recordingId: string;
+            packageId: string;
+            /** Format: uuid */
+            userId: string;
+            /** Format: date-time */
+            issuedAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        RecordingWatermarkLookupEnvelope: {
+            data: components["schemas"]["RecordingWatermarkLookupResult"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
         };
         RecordingSourceInput: {
             /** @description MP4 basename only; bounded to 255 UTF-8 bytes by Asset. */
@@ -1871,6 +3827,7 @@ export interface components {
             error: null;
         };
         RecordingSourceStatus: {
+            processingProgress?: components["schemas"]["RecordingProcessingProgress"];
             sourceId: string;
             /** Format: uuid */
             recordingId: string;
@@ -1954,6 +3911,14 @@ export interface components {
             mediaExpiresAt?: string;
         };
         RecordingPackageStatus: {
+            processingProgress?: components["schemas"]["RecordingProcessingProgress"];
+            /**
+             * Format: date-time
+             * @description Immutable accepted upload completion time.
+             */
+            uploadedAt?: string;
+            /** Format: int64 */
+            retentionRevision?: number;
             packageId: string;
             sessionId: string;
             recordingId: string;
@@ -2006,20 +3971,20 @@ export interface components {
         };
         RecordingRendition: {
             /**
-             * @description 720p is mandatory; 1080p optional. Names are unique.
+             * @description 720p is mandatory for backward compatibility; 480p and 1080p optional. Names are unique; each additional rung has distinct dimensions and ordered bitrates.
              * @enum {string}
              */
-            name: "720p" | "1080p";
-            /** @description 720p maximum width is 1280; source must never be upscaled. */
+            name: "480p" | "720p" | "1080p";
+            /** @description 480p maximum width is 854; 720p maximum width is 1280; source must never be upscaled. */
             width: number;
-            /** @description 720p maximum height is 720. Actual dimensions are retained for smaller sources. */
+            /** @description 480p maximum height is 480; 720p maximum height is 720. Actual dimensions are retained for smaller sources. */
             height: number;
             frameRate: number;
             videoBitrate: number;
             /** @constant */
             audioBitrate: 128000;
             durationSeconds: number;
-            /** @description ceil(durationSeconds/30); both renditions require aligned actual boundaries. */
+            /** @description Actual number of contiguous media segments, including a legal short final segment; validated against playlists and decoded media, not inferred from duration. All renditions require aligned actual boundaries. */
             segmentCount: number;
         };
         RecordingPackageSignInput: {
@@ -2047,10 +4012,142 @@ export interface components {
             };
             error?: null;
         };
+        RecordingPublishReceipt: {
+            operationKey: string;
+            /** @enum {string} */
+            actorType: "user" | "service";
+            /** Format: uuid */
+            actorId: string;
+            /** Format: uuid */
+            recordingId: string;
+            assetVersionId: string;
+            packageId?: string;
+            /** Format: int64 */
+            expectedVersion: number;
+            /** Format: int64 */
+            publishedVersion: number;
+            /** Format: date-time */
+            publishedAt: string;
+            /** @description SHA-256 of the versioned canonical empty-body publication request with actor, recording, asset and expected version. */
+            requestFingerprint: string;
+        };
+        RecordingPublishResult: {
+            receipt: components["schemas"]["RecordingPublishReceipt"];
+            current: components["schemas"]["MemberRecording"];
+            /** @enum {string} */
+            outcome: "published" | "state_changed";
+        };
+        RecordingPublishEnvelope: {
+            data: components["schemas"]["RecordingPublishResult"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
+        };
+        DSRRestrictionReference: {
+            /** Format: uuid */
+            userId: string;
+            /** Format: uuid */
+            originalRequestId: string;
+        };
+        DSRRestrictionWithdrawal: {
+            /**
+             * Format: uuid
+             * @description Independent withdrawal request; must differ from the original restriction request.
+             */
+            requestId: string;
+            /** Format: uuid */
+            userId: string;
+            /** Format: uuid */
+            originalRequestId: string;
+            expectedState: string;
+            idempotencyKey: string;
+        };
+        DSRRestrictionPreview: {
+            canWithdraw: boolean;
+            /** Format: int64 */
+            activeRestrictions: number;
+            fencePresent: boolean;
+            stateToken: string;
+            reasonCodes: ("restriction_fence_absent" | "restriction_origin_unverified" | "subject_cleanup_recorded" | "original_restriction_unavailable")[];
+        };
+        DSRRestrictionWithdrawalResult: {
+            withdrawn: boolean;
+            /** @description Fence cleared at this receipt's transaction time; not a current-state claim on later replay. */
+            fenceCleared: boolean;
+            /** Format: int64 */
+            remainingRestrictions: number;
+        };
+        /** @enum {string} */
+        LegalScope: "common" | "verified-member";
+        /**
+         * @default zh-Hant
+         * @enum {string}
+         */
+        LegalLocale: "zh-Hant" | "zh-Hans" | "en" | "ja" | "ko";
+        LegalVersion: string;
+        LegalDocuments: {
+            terms: components["schemas"]["LegalPageContentV1"];
+            privacy: components["schemas"]["LegalPageContentV1"];
+        };
+        LegalManifest: {
+            scope: components["schemas"]["LegalScope"];
+            locale: components["schemas"]["LegalLocale"];
+            termsVersion: components["schemas"]["LegalVersion"];
+            privacyNoticeVersion: components["schemas"]["LegalVersion"];
+            commonTermsVersion?: components["schemas"]["LegalVersion"];
+            commonPrivacyNoticeVersion?: components["schemas"]["LegalVersion"];
+            termsSHA256: string;
+            privacySHA256: string;
+        };
+        LegalSnapshot: {
+            /** Format: uuid */
+            snapshotId: string;
+            manifest: components["schemas"]["LegalManifest"];
+            documents: components["schemas"]["LegalDocuments"];
+        };
+        LegalDraft: {
+            scope: components["schemas"]["LegalScope"];
+            termsVersion: components["schemas"]["LegalVersion"];
+            privacyNoticeVersion: components["schemas"]["LegalVersion"];
+            commonTermsVersion?: components["schemas"]["LegalVersion"];
+            commonPrivacyNoticeVersion?: components["schemas"]["LegalVersion"];
+            /** Format: int64 */
+            version?: number;
+            translations: {
+                "zh-Hant": components["schemas"]["LegalDocuments"];
+                "zh-Hans": components["schemas"]["LegalDocuments"];
+                en: components["schemas"]["LegalDocuments"];
+                ja: components["schemas"]["LegalDocuments"];
+                ko: components["schemas"]["LegalDocuments"];
+            };
+        };
+        LegalCurrentInput: {
+            scope: components["schemas"]["LegalScope"];
+            locale: components["schemas"]["LegalLocale"];
+        };
+        LegalSnapshotInput: {
+            /** Format: uuid */
+            snapshotId: string;
+        };
+        LegalSnapshotEnvelope: {
+            data: components["schemas"]["LegalSnapshot"];
+        };
+        LegalDraftEnvelope: {
+            data: components["schemas"]["LegalDraft"];
+        };
+        LegalSnapshotsEnvelope: {
+            data: components["schemas"]["LegalSnapshot"][];
+        };
+        /** @description Optional plain-text video description; Unicode code points, no HTML rendering. Omission preserves the saved value on update; an empty string clears it. */
+        RecordingDescription: string;
         MemberRecording: {
             /** Format: uuid */
             id: string;
+            /** @description Optional explicit CMS selection. An absent value may use default auto cover; member clients may lazily request the current cover endpoint. */
+            selectedCoverId?: string;
             title: string;
+            description?: components["schemas"]["RecordingDescription"];
             /** Format: date-time */
             uploadedAt: string | null;
             /** Format: date-time */
@@ -2068,6 +4165,132 @@ export interface components {
             durationSeconds?: number;
             /** Format: int64 */
             version: number;
+        };
+        /** @description Advisory attempt-scoped summary only, never proof of ready. Missing counters mean unknown. Heartbeat does not imply forward progress. */
+        RecordingProcessingProgress: {
+            attempt: number;
+            /** @enum {string} */
+            phase: "queued" | "source_finalization" | "encoding" | "package_validation" | "package_finalization";
+            /** @enum {string} */
+            rendition?: "480p" | "720p" | "1080p";
+            /** Format: int64 */
+            objectsVerified?: number;
+            /** Format: int64 */
+            objectsTotal?: number;
+            /** Format: int64 */
+            segmentsVerified?: number;
+            /** Format: int64 */
+            segmentsTotal?: number;
+            /** Format: int64 */
+            bytesVerified?: number;
+            /** Format: int64 */
+            bytesTotal?: number;
+            /** Format: date-time */
+            attemptStartedAt: string;
+            /** Format: date-time */
+            phaseStartedAt: string;
+            /** Format: date-time */
+            lastProgressAt: string;
+            /** Format: date-time */
+            heartbeatAt: string;
+        };
+        AdminRecordingCaptureSummary: {
+            captureId: string;
+            liveEnabled: boolean;
+            liveState: components["schemas"]["MemberLiveRecording"]["liveState"];
+            /** @enum {string} */
+            autoPublish: "pending" | "published" | "cancelled" | "blocked";
+        };
+        AdminRecording: {
+            id: components["schemas"]["MemberRecording"]["id"];
+            title: components["schemas"]["MemberRecording"]["title"];
+            description?: components["schemas"]["RecordingDescription"];
+            selectedCoverId?: components["schemas"]["MemberRecording"]["selectedCoverId"];
+            uploadedAt: components["schemas"]["MemberRecording"]["uploadedAt"];
+            expiresAt: components["schemas"]["MemberRecording"]["expiresAt"];
+            featured: components["schemas"]["MemberRecording"]["featured"];
+            hidden: components["schemas"]["MemberRecording"]["hidden"];
+            status: components["schemas"]["MemberRecording"]["status"];
+            primaryAssetVersionId?: components["schemas"]["MemberRecording"]["primaryAssetVersionId"];
+            packageId?: components["schemas"]["MemberRecording"]["packageId"];
+            sourceId?: components["schemas"]["MemberRecording"]["sourceId"];
+            readyAt?: components["schemas"]["MemberRecording"]["readyAt"];
+            durationSeconds?: components["schemas"]["MemberRecording"]["durationSeconds"];
+            version: components["schemas"]["MemberRecording"]["version"];
+            capture?: components["schemas"]["AdminRecordingCaptureSummary"];
+            processingProgress?: components["schemas"]["RecordingProcessingProgress"];
+        };
+        AdminRecordingEnvelope: {
+            data: components["schemas"]["AdminRecording"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
+        };
+        RecordingCover: {
+            id: string;
+            uploadId: string;
+            /** @enum {string} */
+            kind: "auto" | "custom";
+            /** @enum {string} */
+            state: "uploading" | "pending" | "processing" | "ready" | "failed" | "expired";
+            /** @description Management-only accepted upload key for response-loss reconciliation. */
+            operationKey?: string;
+            error?: string;
+            /** @description Same-origin administrator preview path, never an R2 key or bearer URL. */
+            contentPath?: string;
+        };
+        RecordingCoverList: {
+            items: components["schemas"]["RecordingCover"][];
+            selectedCoverId?: string;
+            /** Format: int64 */
+            recordingVersion: number;
+        };
+        RecordingCoverSelection: {
+            /** @enum {string} */
+            mode: "auto";
+            candidateId: string;
+        } | {
+            /** @enum {string} */
+            mode: "custom";
+            uploadId: string;
+        };
+        RecordingCoverSelectionResult: {
+            recording: components["schemas"]["MemberRecording"];
+            coverId: string;
+            /** @enum {string} */
+            outcome: "selected" | "state_changed";
+            receipt: {
+                coverId: string;
+                /** Format: int64 */
+                recordingVersion: number;
+            };
+        };
+        RecordingCoverUpload: {
+            uploadId: string;
+            /** @enum {string} */
+            state: "uploading" | "pending" | "processing" | "ready" | "failed" | "expired";
+        };
+        RecordingCoverListEnvelope: {
+            data: components["schemas"]["RecordingCoverList"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
+        };
+        RecordingCoverUploadEnvelope: {
+            data: components["schemas"]["RecordingCoverUpload"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
+        };
+        RecordingCoverSelectionEnvelope: {
+            data: components["schemas"]["RecordingCoverSelectionResult"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
         };
         MemberRecordingPlayback: {
             /** Format: uri */
@@ -2091,6 +4314,9 @@ export interface components {
         RecordingListEnvelope: {
             data: components["schemas"]["MemberRecording"][];
             meta: {
+                /** @description Present for limit-based requests; null when no more candidates remain. */
+                nextCursor?: string | null;
+            } & {
                 [key: string]: unknown;
             };
             error?: null;
@@ -2279,6 +4505,9 @@ export interface components {
             code: string;
         };
         BulletinWatermarkLookupResult: {
+            series?: components["schemas"]["BulletinSeries"];
+            /** @enum {string} */
+            channel?: "pdf" | "online_reader";
             /** Format: uuid */
             receiptId: string;
             /** Format: uuid */
@@ -2343,21 +4572,61 @@ export interface components {
             userId: string;
             idempotencyKey: string;
         };
+        RecordingLiveScopeExport: {
+            /** Format: uuid */
+            recordingId: string;
+            captureId: string;
+            /** Format: uuid */
+            playbackScopeId: string;
+            /** Format: date-time */
+            registeredAt: string;
+            /** Format: date-time */
+            captureExpiresAt: string;
+        };
+        RecordingWatermarkReceiptExport: {
+            /** Format: uuid */
+            receiptId: string;
+            code: string;
+            /** Format: uuid */
+            userId: string;
+            /** Format: uuid */
+            recordingId: string;
+            /** @description Immutable capture ID for live; the final VOD package retains that ID. */
+            packageId: string;
+            /** @constant */
+            formatVersion: 1;
+            /** Format: date-time */
+            issuedAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
         BulletinWatermarkDSRExportEnvelope: {
             data: {
                 records: {
                     /** @enum {string} */
-                    recordType: "bulletin_watermark_receipt" | "bulletin_watermark_investigation";
-                    /** Format: uuid */
+                    recordType: "bulletin_watermark_receipt" | "bulletin_watermark_investigation" | "online_reader_receipt" | "online_reader_validation" | "bulletin_reader_highlight" | "bulletin_reader_note" | "bulletin_reader_progress" | "bulletin_reader_migration_state" | "bulletin_reader_processed_mutation" | "recording_watermark_receipt" | "recording_live_scope";
+                    /** @description UUID for PDF records; reader dataset prefix and account-scoped stable row key for reader records. */
                     recordKey: string;
-                    data: components["schemas"]["BulletinWatermarkReceipt"] | components["schemas"]["BulletinWatermarkInvestigationHistory"];
+                    data: components["schemas"]["BulletinWatermarkReceipt"] | components["schemas"]["BulletinWatermarkInvestigationHistory"] | components["schemas"]["ReaderReceiptExport"] | components["schemas"]["ReaderValidationExport"] | components["schemas"]["ReaderPrivateExportRow"] | components["schemas"]["RecordingWatermarkReceiptExport"] | components["schemas"]["RecordingLiveScopeExport"];
                 }[];
+                coveredDatasets?: components["schemas"]["ReaderDSRCoverage"];
                 recordCount: number;
                 nextCursor?: string;
                 exceptions: Record<string, never>[];
             };
             meta?: Record<string, never>;
             error?: Record<string, never> | null;
+        };
+        /** @description Present only for coverage=reader-v1; lists all datasets covered even when no rows exist. Completion still requires status completed and remainingCount zero; exports must exhaust nextCursor. */
+        ReaderDSRCoverage: ("bulletin_watermark_receipt" | "bulletin_watermark_investigation" | "online_reader_receipt" | "online_reader_validation" | "bulletin_reader_highlight" | "bulletin_reader_note" | "bulletin_reader_progress" | "bulletin_reader_migration_state" | "bulletin_reader_processed_mutation")[];
+        /** @description Subject-scoped persisted reader row. Dataset-specific fields include private quote/body/anchors, migration conflicts, progress, or processed results; never exposed through CMS or trace lookup. */
+        ReaderPrivateExportRow: {
+            /** Format: uuid */
+            account_id: string;
+            /** Format: uuid */
+            document_id: string;
+        } & {
+            [key: string]: unknown;
         };
         BulletinWatermarkDSRActionEnvelope: {
             data: {
@@ -2369,6 +4638,7 @@ export interface components {
                 status: "pending" | "completed";
                 recordCount: number;
                 remainingCount: number;
+                coveredDatasets?: components["schemas"]["ReaderDSRCoverage"];
                 reasonCodes: string[];
             };
             meta?: Record<string, never>;
@@ -2699,6 +4969,7 @@ export interface components {
             /** Format: uuid */
             issueId: string;
         };
+        /** @description Ready PDFs are cached for seven days. Creating a download after cache expiry prepares a new PDF with a new issuance identity. A failed job with errorCode receipt_collision may be retried by creating a new download preparation. */
         BulletinDownloadJob: {
             /** Format: uuid */
             id: string;
@@ -2833,6 +5104,32 @@ export interface components {
             processingStatus: "pending" | "ready" | "not_required" | "failed";
             retryable: boolean;
         };
+        BulletinUnpublishInput: {
+            /** @default general */
+            series: components["schemas"]["BulletinSeries"];
+            locale: components["schemas"]["BulletinLocale"];
+            /**
+             * @deprecated
+             * @description Ignored for backwards compatibility.
+             * @default false
+             */
+            notifySubscribers: boolean;
+            /** @default false */
+            unpublishOnline: boolean;
+            /** Format: int64 */
+            onlineVersion?: number;
+        } & ({
+            /** @constant */
+            unpublishOnline: true;
+            /** @constant */
+            series?: "general";
+            /** @constant */
+            locale?: "zh-Hant";
+        } | {
+            /** @constant */
+            unpublishOnline?: false;
+            onlineVersion?: unknown;
+        });
         PublicationInput: {
             /** @default general */
             series: components["schemas"]["BulletinSeries"];
@@ -3782,6 +6079,17 @@ export interface components {
         };
     };
     responses: {
+        /** @description Generic not_found for denied, missing or unpublished edition. Only this owner marker together with typed not_found is terminal; an unrelated router or gateway 404 must not purge offline data. */
+        ReaderUnavailable: {
+            headers: {
+                "X-HHC-Bulletin-Access"?: "unavailable";
+                "Cache-Control"?: "private, no-store";
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorEnvelope"];
+            };
+        };
         /** @description Service process is healthy or ready. */
         Health: {
             headers: {
@@ -4205,6 +6513,91 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getRecordingRetentionPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description RecordingRetentionPolicy */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingRetentionPolicyEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    updateRecordingRetentionPolicy: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRecordingRetentionInput"];
+            };
+        };
+        responses: {
+            /** @description RecordingRetentionPolicy */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingRetentionPolicyEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    previewRecordingRetentionPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreviewRecordingRetentionInput"];
+            };
+        };
+        responses: {
+            /** @description RecordingRetentionPreview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingRetentionPreviewEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
     getCommonLegalSnapshot: {
         parameters: {
             query?: {
@@ -4411,6 +6804,36 @@ export interface operations {
             503: components["responses"]["Error"];
         };
     };
+    lookupRecordingWatermark: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingWatermarkLookupInput"];
+            };
+        };
+        responses: {
+            /** @description Exact issuance receipt; never cached */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingWatermarkLookupEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
     lookupBulletinWatermark: {
         parameters: {
             query?: never;
@@ -4601,7 +7024,10 @@ export interface operations {
     };
     applyBulletinWatermarkDSRExport: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Request explicit reader dataset coverage. Omitted for legacy response compatibility. */
+                coverage?: "reader-v1";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -4628,7 +7054,10 @@ export interface operations {
     };
     applyBulletinWatermarkDSRAction: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Request explicit reader dataset coverage. Account must require every dataset before completion. */
+                coverage?: "reader-v1";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -4649,6 +7078,85 @@ export interface operations {
                 };
             };
             401: components["responses"]["Error"];
+            /** @description Original restriction has already been withdrawn */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    previewWatermarkRestriction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DSRRestrictionReference"];
+            };
+        };
+        responses: {
+            /** @description Owner evidence */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["DSRRestrictionPreview"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            /** @description Restriction evidence changed or unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    withdrawWatermarkRestriction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DSRRestrictionWithdrawal"];
+            };
+        };
+        responses: {
+            /** @description Owner evidence */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["DSRRestrictionWithdrawalResult"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            /** @description Restriction evidence changed or unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             422: components["responses"]["Error"];
             503: components["responses"]["Error"];
         };
@@ -5268,6 +7776,175 @@ export interface operations {
             503: components["responses"]["Error"];
         };
     };
+    discoverOnlineBulletins: {
+        parameters: {
+            query?: {
+                series?: components["parameters"]["BulletinSeries"];
+                locale?: components["parameters"]["BulletinLocale"];
+                /** @description One to three distinct comma-separated languages, mutually exclusive with locale. */
+                locales?: string;
+                offset?: number;
+                limit?: number;
+                issueNumber?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One authoritative union page */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReaderDiscoveryEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            404: components["responses"]["ReaderUnavailable"];
+            503: components["responses"]["Error"];
+        };
+    };
+    openOnlineBulletin: {
+        parameters: {
+            query?: {
+                series?: components["parameters"]["BulletinSeries"];
+            };
+            header?: never;
+            path: {
+                issueID: string;
+                locale: components["schemas"]["BulletinLocale"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReaderAccessInput"];
+            };
+        };
+        responses: {
+            /** @description Committed receipt and source-free content; verify exact response bytes before decoding or persisting */
+            200: {
+                headers: {
+                    /** @description Lowercase SHA-256 of exact UTF-8 response body bytes */
+                    "X-HHC-Content-SHA256"?: components["schemas"]["OnlineBulletinHash"];
+                    "Cache-Control"?: "private, no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReaderAccessEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            404: components["responses"]["ReaderUnavailable"];
+            /** @description Request, receipt or revision conflict; retry with a new clientRequestId and valid revision */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            503: components["responses"]["Error"];
+        };
+    };
+    getBulletinReaderState: {
+        parameters: {
+            query: {
+                series: components["schemas"]["BulletinSeries"];
+                fromRevision?: number;
+            };
+            header?: never;
+            path: {
+                issueID: string;
+                locale: components["schemas"]["BulletinLocale"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Account-scoped state and optional direct mappings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReaderStateEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            404: components["responses"]["ReaderUnavailable"];
+            /** @description mapping_history_unavailable; retain local changes */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            503: components["responses"]["Error"];
+        };
+    };
+    mutateBulletinReader: {
+        parameters: {
+            query: {
+                series: components["schemas"]["BulletinSeries"];
+            };
+            header?: never;
+            path: {
+                issueID: string;
+                locale: components["schemas"]["BulletinLocale"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    mutations: components["schemas"]["ReaderMutation"][];
+                };
+            };
+        };
+        responses: {
+            /** @description Ordered results and current account state */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReaderMutationEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            404: components["responses"]["ReaderUnavailable"];
+            /** @description mutation_id_conflict or mapping_history_unavailable; retain local changes */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description request_too_large; no operations applied */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            503: components["responses"]["Error"];
+        };
+    };
     getLatestProtectedBulletin: {
         parameters: {
             query?: {
@@ -5667,6 +8344,596 @@ export interface operations {
             428: components["responses"]["Error"];
         };
     };
+    getOnlineBulletinState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                series: "general";
+                contentLocale: "zh-Hant" | "zh-Hans";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Independent Online state, including an unstarted edition */
+            200: {
+                headers: {
+                    "Cache-Control"?: "private, no-store";
+                    /** @description Quoted Online version; zero before first extraction */
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OnlineBulletinAdminState"];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    startOnlineBulletinExtraction: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                series: "general";
+                contentLocale: "zh-Hant";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnlineBulletinExtractionInput"];
+            };
+        };
+        responses: {
+            /** @description Existing completed or failed job, not automatically retried */
+            200: {
+                headers: {
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnlineBulletinQueuedExtractionEnvelope"];
+                };
+            };
+            /** @description Extraction queued or already running; read state for progress */
+            202: {
+                headers: {
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnlineBulletinQueuedExtractionEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            /** @description Version conflict includes meta.currentVersion and meta.canonicalVersion; other conflicts reject retrying an active or immutable job */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    startOnlineBulletinConversion: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                series: "general";
+                contentLocale: "zh-Hans";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnlineBulletinConversionInput"];
+            };
+        };
+        responses: {
+            /** @description Existing completed or failed conversion */
+            200: {
+                headers: {
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnlineBulletinQueuedExtractionEnvelope"];
+                };
+            };
+            /** @description Conversion queued or already running */
+            202: {
+                headers: {
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnlineBulletinQueuedExtractionEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getOnlineBulletinComparison: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                issueId: string;
+                series: "general";
+                contentLocale: "zh-Hant" | "zh-Hans";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Consistent three-way comparison */
+            200: {
+                headers: {
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OnlineBulletinComparison"];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    applyOnlineBulletinComparison: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                issueId: string;
+                series: "general";
+                contentLocale: "zh-Hant" | "zh-Hans";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnlineBulletinCompareInput"];
+            };
+        };
+        responses: {
+            /** @description Saved immutable Local awaiting fresh layout validation */
+            200: {
+                headers: {
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OnlineBulletinSavedDraft"];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    saveOnlineBulletinDraft: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                series: "general";
+                contentLocale: "zh-Hant" | "zh-Hans";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnlineBulletinDraftInput"];
+            };
+        };
+        responses: {
+            /** @description Saved immutable draft awaiting isolated layout validation */
+            200: {
+                headers: {
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OnlineBulletinSavedDraft"];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            /** @description Stale Online or canonical version; meta.currentVersion and meta.canonicalVersion identify current state */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    publishOnlineBulletin: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                series: "general";
+                contentLocale: "zh-Hant" | "zh-Hans";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnlineBulletinPublishInput"];
+            };
+        };
+        responses: {
+            /** @description Online publish committed independently */
+            200: {
+                headers: {
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OnlineBulletinConfirmedRevision"];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            /** @description Publication gate failed or CAS conflict; version conflicts include meta.currentVersion and meta.canonicalVersion */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    unpublishOnlineBulletin: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                series: "general";
+                contentLocale: "zh-Hant" | "zh-Hans";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnlineBulletinRestoreInput"];
+            };
+        };
+        responses: {
+            /** @description Online unpublish committed independently */
+            200: {
+                headers: {
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OnlineBulletinUnpublishedRevision"];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            /** @description Publication gate failed or CAS conflict; version conflicts include meta.currentVersion and meta.canonicalVersion */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    confirmOnlineBulletin: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                series: "general";
+                contentLocale: "zh-Hant" | "zh-Hans";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnlineBulletinConfirmInput"];
+            };
+        };
+        responses: {
+            /** @description Confirmed current Local; PDF and Online publication unchanged */
+            200: {
+                headers: {
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OnlineBulletinConfirmedRevision"];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            /** @description Incomplete review or missing/stale proof; version conflicts include meta.currentVersion and meta.canonicalVersion */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    restoreOnlineBulletinRevision: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                series: "general";
+                contentLocale: "zh-Hant" | "zh-Hans";
+                revision: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnlineBulletinRestoreInput"];
+            };
+        };
+        responses: {
+            /** @description Restored as new immutable Local awaiting validation */
+            200: {
+                headers: {
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OnlineBulletinSavedDraft"];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            /** @description Stale Online or canonical version; meta.currentVersion and meta.canonicalVersion identify current state */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listOnlineBulletinRevisions: {
+        parameters: {
+            query?: {
+                before?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                series: "general";
+                contentLocale: "zh-Hant" | "zh-Hans";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bounded history summaries */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OnlineBulletinRevisionPage"];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getOnlineBulletinRevision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                series: "general";
+                contentLocale: "zh-Hant" | "zh-Hans";
+                revision: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Immutable content and historical canonical metadata */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OnlineBulletinHistoricalRevision"];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getOnlineBulletinSourcePDF: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                issueId: components["parameters"]["IssueID"];
+                series: "general";
+                contentLocale: "zh-Hant";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Verified complete source PDF */
+            200: {
+                headers: {
+                    "Cache-Control"?: "private, no-store";
+                    "X-HHC-Source-SHA256"?: string;
+                    /** @description Current canonical issue version */
+                    "X-HHC-Source-Version"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
     listAdminBulletins: {
         parameters: {
             query?: {
@@ -5979,12 +9246,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: components["requestBodies"]["PublicationInput"];
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulletinUnpublishInput"];
+            };
+        };
         responses: {
             200: components["responses"]["BulletinIssue"];
+            400: components["responses"]["Error"];
             401: components["responses"]["AdminUnauthorized"];
             403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
             412: components["responses"]["Error"];
+            503: components["responses"]["Error"];
         };
     };
     previewBulletinNotification: {
@@ -6667,7 +9941,12 @@ export interface operations {
     };
     listMemberRecordings: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Enable batched reads; required when cursor is supplied. */
+                limit?: number;
+                /** @description Opaque nextCursor from the previous batch; requires limit. */
+                cursor?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -6683,6 +9962,7 @@ export interface operations {
                     "application/json": components["schemas"]["RecordingListEnvelope"];
                 };
             };
+            400: components["responses"]["Error"];
             401: components["responses"]["AdminUnauthorized"];
             403: components["responses"]["AdminForbidden"];
             404: components["responses"]["Error"];
@@ -7095,18 +10375,46 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Recording */
+            /** @description Recording with optional safe processing progress */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RecordingEnvelope"];
+                    "application/json": components["schemas"]["AdminRecordingEnvelope"];
                 };
             };
             401: components["responses"]["AdminUnauthorized"];
             403: components["responses"]["AdminForbidden"];
             404: components["responses"]["Error"];
+        };
+    };
+    deleteAdminRecording: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recording deleted and cleanup durably queued. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
         };
     };
     updateAdminRecordingTitle: {
@@ -7124,11 +10432,12 @@ export interface operations {
             content: {
                 "application/json": {
                     title: string;
+                    description?: components["schemas"]["RecordingDescription"];
                 };
             };
         };
         responses: {
-            /** @description Updated title */
+            /** @description Updated recording metadata */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -7165,20 +10474,15 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Updated exposure */
-            200: {
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            /** @description Pinning and hiding are retired. */
+            410: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["RecordingEnvelope"];
-                };
+                content?: never;
             };
-            401: components["responses"]["AdminUnauthorized"];
-            403: components["responses"]["AdminForbidden"];
-            409: components["responses"]["Error"];
-            412: components["responses"]["Error"];
-            428: components["responses"]["Error"];
         };
     };
     publishAdminRecording: {
@@ -7186,6 +10490,8 @@ export interface operations {
             query?: never;
             header: {
                 "If-Match": components["parameters"]["IfMatch"];
+                /** @description Required for service actors; optional for human Admin compatibility. Exactly one value. */
+                "Idempotency-Key"?: string;
             };
             path: {
                 id: string;
@@ -7198,15 +10504,17 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Published recording */
+            /** @description Original publication receipt and current state with a key; legacy RecordingEnvelope without a key. */
             200: {
                 headers: {
+                    "Cache-Control"?: "private, no-store";
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RecordingEnvelope"];
+                    "application/json": components["schemas"]["RecordingPublishEnvelope"] | components["schemas"]["RecordingEnvelope"];
                 };
             };
+            400: components["responses"]["Error"];
             401: components["responses"]["AdminUnauthorized"];
             403: components["responses"]["AdminForbidden"];
             409: components["responses"]["Error"];
@@ -7242,6 +10550,1322 @@ export interface operations {
             409: components["responses"]["Error"];
             412: components["responses"]["Error"];
             428: components["responses"]["Error"];
+        };
+    };
+    listRecordingCovers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cover status and selection */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCoverListEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    uploadRecordingCover: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** @description At most 5 MiB, 24 MP and 8192 pixels per edge; backend validates and re-encodes. Published recordings additionally require cms:recordings:publish. */
+        requestBody: {
+            content: {
+                "image/jpeg": string;
+                "image/png": string;
+            };
+        };
+        responses: {
+            /** @description Accepted; processing is not selection */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCoverUploadEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            413: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    setRecordingCover: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+                /** @description Required for service actors and CLI; replay returns immutable receipt plus current state, never reapplies. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCoverSelection"];
+            };
+        };
+        responses: {
+            /** @description Selected or historical state changed; never publishes or extends expiry */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCoverSelectionEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getRecordingCoverContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                coverId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bounded private JPEG with nosniff */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getMemberRecordingCover: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bounded private current JPEG without playback session or bearer URL */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    createRecordingCapture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCaptureCreateInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted operation result; acceptance is not verified media readiness. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureResultEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            /** @description Rejected request. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description State/key conflict or missing objects; poll and reconcile before retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Fixed capture deadline passed; preserve local media. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Retry after the Retry-After delay. */
+            429: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Temporary dependency failure; capped backoff with jitter. */
+            503: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+        };
+    };
+    getRecordingCapture: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+                captureId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted operation result; acceptance is not verified media readiness. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            /** @description Rejected request. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description State/key conflict or missing objects; poll and reconcile before retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Fixed capture deadline passed; preserve local media. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Retry after the Retry-After delay. */
+            429: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Temporary dependency failure; capped backoff with jitter. */
+            503: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+        };
+    };
+    declareRecordingCapture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                captureId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCaptureDeclareInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted operation result; acceptance is not verified media readiness. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureResultEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            /** @description Rejected request. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description State/key conflict or missing objects; poll and reconcile before retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Fixed capture deadline passed; preserve local media. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Retry after the Retry-After delay. */
+            429: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Temporary dependency failure; capped backoff with jitter. */
+            503: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+        };
+    };
+    signRecordingCapture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                captureId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCaptureSignInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted operation result; acceptance is not verified media readiness. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureSignedEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            /** @description Rejected request. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description State/key conflict or missing objects; poll and reconcile before retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Fixed capture deadline passed; preserve local media. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Retry after the Retry-After delay. */
+            429: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Temporary dependency failure; capped backoff with jitter. */
+            503: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+        };
+    };
+    confirmRecordingCapture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                captureId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCaptureConfirmInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted operation result; acceptance is not verified media readiness. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureResultEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            /** @description Rejected request. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description State/key conflict or missing objects; poll and reconcile before retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Fixed capture deadline passed; preserve local media. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Retry after the Retry-After delay. */
+            429: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Temporary dependency failure; capped backoff with jitter. */
+            503: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+        };
+    };
+    stopRecordingCapture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                captureId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCaptureOperationInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted operation result; acceptance is not verified media readiness. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureResultEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            /** @description Rejected request. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description State/key conflict or missing objects; poll and reconcile before retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Fixed capture deadline passed; preserve local media. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Retry after the Retry-After delay. */
+            429: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Temporary dependency failure; capped backoff with jitter. */
+            503: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+        };
+    };
+    sealRecordingCapture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                captureId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCaptureSealInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted operation result; acceptance is not verified media readiness. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureResultEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            /** @description Rejected request. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description State/key conflict or missing objects; poll and reconcile before retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Fixed capture deadline passed; preserve local media. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Retry after the Retry-After delay. */
+            429: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Temporary dependency failure; capped backoff with jitter. */
+            503: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+        };
+    };
+    abortRecordingCapture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                captureId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCaptureAbortInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted operation result; acceptance is not verified media readiness. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureResultEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            /** @description Rejected request. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description State/key conflict or missing objects; poll and reconcile before retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Fixed capture deadline passed; preserve local media. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Retry after the Retry-After delay. */
+            429: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Temporary dependency failure; capped backoff with jitter. */
+            503: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+        };
+    };
+    cancelAutoPublishRecordingCapture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                captureId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCaptureOperationInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted operation result; acceptance is not verified media readiness. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureResultEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            /** @description Rejected request. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description State/key conflict or missing objects; poll and reconcile before retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Fixed capture deadline passed; preserve local media. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Retry after the Retry-After delay. */
+            429: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Temporary dependency failure; capped backoff with jitter. */
+            503: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+        };
+    };
+    closeLiveRecordingCapture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                captureId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCaptureOperationInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted operation result; acceptance is not verified media readiness. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureResultEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            /** @description Rejected request. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description State/key conflict or missing objects; poll and reconcile before retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Fixed capture deadline passed; preserve local media. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Retry after the Retry-After delay. */
+            429: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Temporary dependency failure; capped backoff with jitter. */
+            503: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+        };
+    };
+    listMemberLiveRecordings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted operation result; acceptance is not verified media readiness. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberLiveRecordingsEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            /** @description Rejected request. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description State/key conflict or missing objects; poll and reconcile before retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Fixed capture deadline passed; preserve local media. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Current member policy acceptance required. */
+            428: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Retry after the Retry-After delay. */
+            429: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Temporary dependency failure; capped backoff with jitter. */
+            503: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"] | components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    createMemberLivePlayback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingLivePlaybackInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted operation result; acceptance is not verified media readiness. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberLivePlaybackEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            /** @description Rejected request. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description State/key conflict or missing objects; poll and reconcile before retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Fixed capture deadline passed; preserve local media. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Rejected request. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Current member policy acceptance required. */
+            428: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Retry after the Retry-After delay. */
+            429: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"];
+                };
+            };
+            /** @description Temporary dependency failure; capped backoff with jitter. */
+            503: {
+                headers: {
+                    /** @description Seconds until retry. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureErrorEnvelope"] | components["schemas"]["ErrorEnvelope"];
+                };
+            };
         };
     };
 }

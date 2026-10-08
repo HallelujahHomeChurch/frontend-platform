@@ -1,6 +1,6 @@
 {
   "name": "@hallelujahhomechurch/ui",
-  "version": "1.0.32",
+  "version": "1.0.46",
   "license": "UNLICENSED",
   "type": "module",
   "sideEffects": [
@@ -14,7 +14,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./styles.css": "./dist/styles.css"
+    "./styles.css": "./dist/styles.css",
+    "./bulletin-paper.css": "./dist/bulletin-reader/paper.css",
+    "./bulletin-paper-v2.css": "./dist/bulletin-reader/v2/paper.css",
+    "./bulletin-ebook.css": "./dist/bulletin-reader/ebook.css"
   },
   "repository": {
     "type": "git",
@@ -26,7 +29,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json && cp src/styles.css dist/styles.css",
+    "build": "tsc -p tsconfig.json && cp src/styles.css dist/styles.css && cp src/bulletin-reader/paper.css dist/bulletin-reader/paper.css && cp src/bulletin-reader/v2/paper.css dist/bulletin-reader/v2/paper.css && cp src/bulletin-reader/ebook.css dist/bulletin-reader/ebook.css",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "test": "vitest",

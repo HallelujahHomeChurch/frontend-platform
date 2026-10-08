@@ -1,0 +1,1885 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Weekly bulletin domain",
+    "version": "1"
+  },
+  "paths": {},
+  "components": {
+    "schemas": {
+      "OnlineBulletinComparisonValue": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/OnlineBulletinBlock"
+          },
+          {
+            "$ref": "#/components/schemas/OnlineBulletinComponent"
+          },
+          {
+            "type": "array",
+            "maxItems": 256,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinID"
+            }
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "OnlineBulletinComparison": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "documentId",
+          "version",
+          "canonicalVersion",
+          "baseRevision",
+          "localRevision",
+          "incomingRevision",
+          "units"
+        ],
+        "properties": {
+          "documentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "canonicalVersion": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "baseRevision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "localRevision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "incomingRevision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "units": {
+            "type": "array",
+            "maxItems": 65536,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "componentId",
+                "blockId",
+                "suggestion",
+                "base",
+                "local",
+                "incoming"
+              ],
+              "properties": {
+                "componentId": {
+                  "type": "string",
+                  "maxLength": 128
+                },
+                "blockId": {
+                  "type": "string",
+                  "maxLength": 128
+                },
+                "suggestion": {
+                  "type": "string",
+                  "enum": [
+                    "same",
+                    "local",
+                    "incoming",
+                    "conflict"
+                  ]
+                },
+                "base": {
+                  "$ref": "#/components/schemas/OnlineBulletinComparisonValue"
+                },
+                "local": {
+                  "$ref": "#/components/schemas/OnlineBulletinComparisonValue"
+                },
+                "incoming": {
+                  "$ref": "#/components/schemas/OnlineBulletinComparisonValue"
+                }
+              }
+            }
+          }
+        }
+      },
+      "OnlineBulletinCompareInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "canonicalVersion",
+          "baseRevision",
+          "localRevision",
+          "incomingRevision"
+        ],
+        "properties": {
+          "canonicalVersion": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "baseRevision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "localRevision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "incomingRevision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "choices": {
+            "type": "array",
+            "maxItems": 65536,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "componentId",
+                "blockId",
+                "choice"
+              ],
+              "properties": {
+                "componentId": {
+                  "type": "string",
+                  "maxLength": 128
+                },
+                "blockId": {
+                  "type": "string",
+                  "maxLength": 128
+                },
+                "choice": {
+                  "type": "string",
+                  "enum": [
+                    "local",
+                    "incoming",
+                    "manual"
+                  ]
+                },
+                "value": {
+                  "$ref": "#/components/schemas/OnlineBulletinComparisonValue"
+                }
+              },
+              "oneOf": [
+                {
+                  "properties": {
+                    "choice": {
+                      "const": "manual"
+                    }
+                  },
+                  "required": [
+                    "value"
+                  ]
+                },
+                {
+                  "properties": {
+                    "choice": {
+                      "enum": [
+                        "local",
+                        "incoming"
+                      ]
+                    }
+                  },
+                  "not": {
+                    "properties": {
+                      "value": {}
+                    },
+                    "required": [
+                      "value"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "OnlineBulletinDraftInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "canonicalVersion",
+          "components"
+        ],
+        "properties": {
+          "canonicalVersion": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "components": {
+            "description": "Typed editable content only. Omit every read-only sentence source field; the server preserves source provenance by stable sentence ID.",
+            "type": "array",
+            "minItems": 6,
+            "maxItems": 256,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinComponent"
+            }
+          }
+        }
+      },
+      "OnlineBulletinSavedDraft": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "documentId",
+          "version",
+          "revision",
+          "layoutJobId"
+        ],
+        "properties": {
+          "documentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "revision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "layoutJobId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "OnlineBulletinExtractionInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "canonicalVersion"
+        ],
+        "properties": {
+          "canonicalVersion": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "retry": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      },
+      "OnlineBulletinQueuedExtractionEnvelope": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta",
+          "error"
+        ],
+        "properties": {
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "documentId",
+              "version",
+              "job"
+            ],
+            "properties": {
+              "documentId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "version": {
+                "type": "integer",
+                "format": "int64",
+                "minimum": 1
+              },
+              "job": {
+                "$ref": "#/components/schemas/OnlineBulletinAdminJob"
+              }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "error": {
+            "type": "null"
+          }
+        }
+      },
+      "OnlineBulletinRevisionPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "documentId",
+          "items",
+          "nextBefore"
+        ],
+        "properties": {
+          "documentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nextBefore": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 1
+          },
+          "items": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "revision",
+                "createdBy",
+                "createdAt",
+                "sourceAssetChecksum",
+                "layoutValidated"
+              ],
+              "properties": {
+                "revision": {
+                  "type": "integer",
+                  "format": "int64",
+                  "minimum": 1
+                },
+                "createdBy": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "sourceAssetChecksum": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "layoutValidated": {
+                  "type": "boolean",
+                  "description": "Historical worker proof exists; not current publication authority."
+                }
+              }
+            }
+          }
+        }
+      },
+      "OnlineBulletinHistoricalRevision": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "documentId",
+          "revision",
+          "document",
+          "reviewIssues",
+          "canonicalMetadata",
+          "createdBy",
+          "createdAt"
+        ],
+        "properties": {
+          "documentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "document": {
+            "$ref": "#/components/schemas/OnlineBulletinDocument"
+          },
+          "reviewIssues": {
+            "type": "array",
+            "maxItems": 4096,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinReviewIssue"
+            }
+          },
+          "canonicalMetadata": {
+            "$ref": "#/components/schemas/OnlineBulletinCanonicalMetadata"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "OnlineBulletinPublishInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "canonicalVersion",
+          "revision"
+        ],
+        "properties": {
+          "canonicalVersion": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "revision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "mappings": {
+            "type": "array",
+            "maxItems": 65536,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinSentenceMapping"
+            }
+          }
+        }
+      },
+      "OnlineBulletinSentenceMapping": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "fromSentenceId",
+          "status",
+          "toSentenceIds"
+        ],
+        "properties": {
+          "fromSentenceId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "unchanged",
+              "moved",
+              "split",
+              "merged",
+              "removed"
+            ]
+          },
+          "toSentenceIds": {
+            "type": "array",
+            "maxItems": 1024,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,128}$"
+            }
+          }
+        }
+      },
+      "OnlineBulletinUnpublishedRevision": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "documentId",
+          "version"
+        ],
+        "properties": {
+          "documentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          }
+        }
+      },
+      "OnlineBulletinRestoreInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "canonicalVersion"
+        ],
+        "properties": {
+          "canonicalVersion": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          }
+        }
+      },
+      "OnlineBulletinConfirmInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "canonicalVersion",
+          "revision",
+          "layoutValidationHash",
+          "pageCount",
+          "acceptedIssues"
+        ],
+        "properties": {
+          "canonicalVersion": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "revision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "layoutValidationHash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "pageCount": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 80
+          },
+          "acceptedIssues": {
+            "type": "array",
+            "maxItems": 4096,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinReviewIssue"
+            }
+          }
+        }
+      },
+      "OnlineBulletinConfirmedRevision": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "documentId",
+          "version",
+          "revision"
+        ],
+        "properties": {
+          "documentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "revision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          }
+        }
+      },
+      "OnlineBulletinDerivation": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Latest non-superseded conversion provenance; Admin only. A resultRevision may be Incoming rather than the adopted Local baseline. stale compares the current source revision, hash and canonical metadata.",
+        "required": [
+          "sourceDocumentId",
+          "sourceRevision",
+          "sourceContentHash",
+          "sourceMetadataVersion",
+          "converterVersion",
+          "resultRevision",
+          "convertedMetadata",
+          "stale"
+        ],
+        "properties": {
+          "sourceDocumentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sourceRevision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "sourceContentHash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "sourceMetadataVersion": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "converterVersion": {
+            "type": "string"
+          },
+          "resultRevision": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 1
+          },
+          "convertedMetadata": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OnlineBulletinCanonicalMetadata"
+              }
+            ]
+          },
+          "stale": {
+            "type": "boolean"
+          }
+        }
+      },
+      "OnlineBulletinConversionInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "canonicalVersion",
+          "sourceOnlineVersion",
+          "sourceRevision"
+        ],
+        "properties": {
+          "canonicalVersion": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "sourceOnlineVersion": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "sourceRevision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "retry": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      },
+      "OnlineBulletinAdminState": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "issueId",
+          "series",
+          "contentLocale",
+          "canonicalVersion",
+          "canonicalMetadata",
+          "pdfStatus",
+          "documentId",
+          "version",
+          "draftStatus",
+          "baseRevision",
+          "local",
+          "incomingRevision",
+          "publishedRevision",
+          "publishedMetadata",
+          "metadataSyncPending",
+          "confirmed",
+          "extraction",
+          "layout"
+        ],
+        "properties": {
+          "issueId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "series": {
+            "type": "string",
+            "enum": [
+              "general"
+            ]
+          },
+          "contentLocale": {
+            "type": "string",
+            "enum": [
+              "zh-Hant",
+              "zh-Hans"
+            ]
+          },
+          "canonicalVersion": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "canonicalMetadata": {
+            "$ref": "#/components/schemas/OnlineBulletinCanonicalMetadata"
+          },
+          "pdfStatus": {
+            "$ref": "#/components/schemas/BulletinVersionStatus"
+          },
+          "documentId": {
+            "type": "string",
+            "pattern": "^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?$"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "draftStatus": {
+            "type": "string",
+            "enum": [
+              "notStarted",
+              "extracting",
+              "reviewRequired",
+              "ready",
+              "published",
+              "extractionFailed"
+            ]
+          },
+          "baseRevision": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 1
+          },
+          "incomingRevision": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 1
+          },
+          "publishedRevision": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 1
+          },
+          "metadataSyncPending": {
+            "type": "boolean",
+            "description": "Canonical metadata differs from the immutable Online publication and requires explicit republish."
+          },
+          "conversion": {
+            "$ref": "#/components/schemas/OnlineBulletinAdminJob"
+          },
+          "derivation": {
+            "$ref": "#/components/schemas/OnlineBulletinDerivation"
+          },
+          "confirmed": {
+            "type": "boolean",
+            "description": "Human confirmation matches current Local and canonical metadata. This does not itself authorize publication."
+          },
+          "publishedMetadata": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OnlineBulletinCanonicalMetadata"
+              }
+            ]
+          },
+          "local": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OnlineBulletinAdminRevision"
+              }
+            ]
+          },
+          "extraction": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OnlineBulletinAdminJob"
+              }
+            ]
+          },
+          "layout": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OnlineBulletinAdminJob"
+              }
+            ]
+          }
+        }
+      },
+      "OnlineBulletinAdminRevision": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "revision",
+          "document",
+          "reviewIssues"
+        ],
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "document": {
+            "$ref": "#/components/schemas/OnlineBulletinDocument"
+          },
+          "reviewIssues": {
+            "type": "array",
+            "maxItems": 4096,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinReviewIssue"
+            }
+          }
+        }
+      },
+      "OnlineBulletinReviewIssue": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "blocking"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]{1,64}$"
+          },
+          "blocking": {
+            "type": "boolean"
+          },
+          "componentId": {
+            "$ref": "#/components/schemas/OnlineBulletinID"
+          }
+        }
+      },
+      "OnlineBulletinAdminJob": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "status",
+          "attempts",
+          "errorCode"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "parsing",
+              "converting",
+              "review_ready",
+              "validating",
+              "ready",
+              "failed"
+            ]
+          },
+          "attempts": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "errorCode": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]{0,64}$"
+          },
+          "reviewIssues": {
+            "type": "array",
+            "maxItems": 4096,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinReviewIssue"
+            }
+          }
+        }
+      },
+      "OnlineBulletinID": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,128}$"
+      },
+      "OnlineBulletinHash": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      },
+      "OnlineBulletinFontRole": {
+        "type": "string",
+        "enum": [
+          "body",
+          "scripture",
+          "emphasis",
+          "reference",
+          "foreignText",
+          "symbol"
+        ]
+      },
+      "OnlineBulletinDocument": {
+        "description": "Typed immutable content. Canonical issue metadata and mutable source asset IDs are intentionally absent. Maximum encoded size is 8 MiB; server also validates references, total collection limits and fragment coverage.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "issueId",
+          "series",
+          "contentLocale",
+          "schemaVersion",
+          "templateVersion",
+          "sourceAssetChecksum",
+          "sourcePageCount",
+          "pages",
+          "layoutManifest",
+          "components"
+        ],
+        "properties": {
+          "issueId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "series": {
+            "type": "string",
+            "const": "general"
+          },
+          "contentLocale": {
+            "type": "string",
+            "enum": [
+              "zh-Hant",
+              "zh-Hans"
+            ]
+          },
+          "schemaVersion": {
+            "type": "string",
+            "const": "1"
+          },
+          "templateVersion": {
+            "type": "string",
+            "enum": [
+              "v1",
+              "v2"
+            ]
+          },
+          "sourceAssetChecksum": {
+            "$ref": "#/components/schemas/OnlineBulletinHash"
+          },
+          "sourcePageCount": {
+            "type": "integer",
+            "minimum": 4,
+            "maximum": 40,
+            "description": "Must equal the saved page count. Composition preserves original page identity and fragment membership; overflow blocks publication instead of adding pages."
+          },
+          "pages": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 40,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinPage"
+            }
+          },
+          "layoutManifest": {
+            "$ref": "#/components/schemas/OnlineBulletinLayoutManifest"
+          },
+          "components": {
+            "type": "array",
+            "minItems": 6,
+            "maxItems": 256,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinComponent"
+            }
+          }
+        }
+      },
+      "OnlineBulletinPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "width",
+          "height"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/OnlineBulletinID"
+          },
+          "width": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 2000,
+            "description": "PDF points."
+          },
+          "height": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 2000,
+            "description": "PDF points."
+          }
+        }
+      },
+      "OnlineBulletinBox": {
+        "description": "Normalized page-relative rectangle. Server additionally rejects any edge exceeding the page boundary.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "x",
+          "y",
+          "width",
+          "height"
+        ],
+        "properties": {
+          "x": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "y": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "width": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 1
+          },
+          "height": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 1
+          }
+        }
+      },
+      "OnlineBulletinLayoutManifest": {
+        "description": "Revision-owned manifest; hashes bind the authoritative isolated-worker measurement. Empty validation hashes represent a pending draft, never permission to publish.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "templateVersion",
+          "rendererVersion",
+          "rendererArtifactSha256",
+          "assets",
+          "pages"
+        ],
+        "properties": {
+          "templateVersion": {
+            "type": "string",
+            "enum": [
+              "v1",
+              "v2"
+            ]
+          },
+          "rendererVersion": {
+            "type": "string",
+            "enum": [
+              "v1",
+              "v2",
+              "v3",
+              "v4",
+              "v5"
+            ],
+            "description": "Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. Existing published renderer versions remain immutable."
+          },
+          "rendererArtifactSha256": {
+            "$ref": "#/components/schemas/OnlineBulletinHash"
+          },
+          "contentHash": {
+            "$ref": "#/components/schemas/OnlineBulletinHash"
+          },
+          "layoutValidationHash": {
+            "$ref": "#/components/schemas/OnlineBulletinHash"
+          },
+          "assets": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 64,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinAsset"
+            }
+          },
+          "pages": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 40,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinLayoutPage"
+            }
+          }
+        }
+      },
+      "OnlineBulletinAsset": {
+        "description": "Code-owned permanent self-hosted asset, never an executable URL. Filename includes its exact SHA-256.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "url",
+          "sha256",
+          "kind"
+        ],
+        "properties": {
+          "url": {
+            "type": "string",
+            "pattern": "^/assets/weekly/v[12]/[a-zA-Z0-9_-]*[0-9a-f]{64}\\.(woff2|png|svg|webp)$"
+          },
+          "sha256": {
+            "$ref": "#/components/schemas/OnlineBulletinHash"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "font",
+              "decoration"
+            ]
+          },
+          "fontRole": {
+            "$ref": "#/components/schemas/OnlineBulletinFontRole"
+          }
+        }
+      },
+      "OnlineBulletinLayoutPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "pageId",
+          "slots"
+        ],
+        "properties": {
+          "pageId": {
+            "$ref": "#/components/schemas/OnlineBulletinID"
+          },
+          "fixedSlots": {
+            "type": "array",
+            "maxItems": 128,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinFixedSlot"
+            }
+          },
+          "slots": {
+            "type": "array",
+            "maxItems": 50000,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinSlot"
+            }
+          }
+        }
+      },
+      "OnlineBulletinSlot": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "componentId",
+          "blockId",
+          "box",
+          "fragments"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/OnlineBulletinID"
+          },
+          "componentId": {
+            "$ref": "#/components/schemas/OnlineBulletinID"
+          },
+          "blockId": {
+            "$ref": "#/components/schemas/OnlineBulletinID"
+          },
+          "box": {
+            "$ref": "#/components/schemas/OnlineBulletinBox"
+          },
+          "continuationOf": {
+            "$ref": "#/components/schemas/OnlineBulletinID"
+          },
+          "fragments": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 1024,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinFragment"
+            }
+          }
+        }
+      },
+      "OnlineBulletinFixedSlot": {
+        "description": "Template-owned geometry for a fixed label or canonical metadata reference. It contains no editable text or executable URL.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "element",
+          "box",
+          "style"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/OnlineBulletinID"
+          },
+          "element": {
+            "type": "string",
+            "enum": [
+              "title",
+              "subtitle",
+              "date",
+              "issueNumber",
+              "pageNumber",
+              "masthead",
+              "vision",
+              "visionMission",
+              "visionFellowship",
+              "visionCommitment",
+              "pastor",
+              "contact",
+              "scanHint",
+              "websiteQRLabel",
+              "youtubeQRLabel",
+              "streamQRLabel",
+              "welcomeLabel",
+              "worshipLabel",
+              "workLabel",
+              "wordLabel",
+              "verseLabel",
+              "hymnLabel",
+              "summaryLabel",
+              "summarySidebarTitle",
+              "summarySidebarTagline",
+              "announcementsLabel",
+              "prayersLabel",
+              "titleLabel",
+              "speakerLabel",
+              "speakerSeparator",
+              "lectureDateMarker",
+              "bodyIssueSummary",
+              "bodySpeakerLabel",
+              "transcriberLabel",
+              "editorLabel",
+              "authorLabel",
+              "logo",
+              "backgroundLogo",
+              "websiteQR",
+              "youtubeQR",
+              "streamQR",
+              "topRule",
+              "footerRule",
+              "summaryFrame",
+              "announcementsFrame",
+              "prayersFrame"
+            ]
+          },
+          "box": {
+            "$ref": "#/components/schemas/OnlineBulletinBox"
+          },
+          "style": {
+            "$ref": "#/components/schemas/OnlineBulletinParagraphStyle"
+          }
+        }
+      },
+      "OnlineBulletinCanonicalMetadata": {
+        "description": "Read-only snapshot of existing CMS fields, separate from editable document content.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "subtitle",
+          "issueNumber",
+          "date"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "subtitle": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "issueNumber": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "OnlineBulletinFragment": {
+        "description": "Half-open offsets in Unicode code points, not UTF-8 bytes or UTF-16 units. Coverage must be complete and non-overlapping in reading order.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sentenceId",
+          "start",
+          "end"
+        ],
+        "properties": {
+          "sentenceId": {
+            "$ref": "#/components/schemas/OnlineBulletinID"
+          },
+          "start": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4095
+          },
+          "end": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4096
+          }
+        }
+      },
+      "OnlineBulletinSpan": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "text",
+          "fontRole"
+        ],
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "fontRole": {
+            "$ref": "#/components/schemas/OnlineBulletinFontRole"
+          },
+          "fontSize": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 6,
+            "maximum": 96,
+            "description": "Optional source PDF-point size for mixed-size inline runs. Missing or null inherits the block size; mobile retains the proportional em ratio."
+          }
+        }
+      },
+      "OnlineBulletinSentence": {
+        "description": "Dynamic sentence anchor. The canonical- ID prefix is reserved for shared canonical metadata anchors across layouts.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "spans"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/OnlineBulletinID"
+          },
+          "spans": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 32,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinSpan"
+            }
+          },
+          "source": {
+            "readOnly": true,
+            "description": "Server-owned PDF provenance; forbidden in component edit requests.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "page",
+              "box"
+            ],
+            "properties": {
+              "page": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 40
+              },
+              "box": {
+                "$ref": "#/components/schemas/OnlineBulletinBox"
+              }
+            }
+          }
+        }
+      },
+      "OnlineBulletinParagraphStyle": {
+        "description": "Font size and line height in PDF points. Indents and spacing in em units; negative first-line indentation supports hanging paragraphs.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "fontSize",
+          "lineHeight",
+          "indent",
+          "firstLineIndent",
+          "spaceBefore",
+          "spaceAfter"
+        ],
+        "properties": {
+          "fontSize": {
+            "type": "number",
+            "minimum": 6,
+            "maximum": 96
+          },
+          "lineHeight": {
+            "type": "number",
+            "minimum": 6,
+            "maximum": 192
+          },
+          "letterSpacing": {
+            "type": "number",
+            "minimum": -0.5,
+            "maximum": 1,
+            "description": "Explicit source tracking in em; omitted means zero. Never adjusted automatically to fit edits."
+          },
+          "align": {
+            "type": "string",
+            "enum": [
+              "left",
+              "center",
+              "right",
+              "justify"
+            ]
+          },
+          "indent": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "firstLineIndent": {
+            "type": "number",
+            "minimum": -20,
+            "maximum": 20
+          },
+          "spaceBefore": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "spaceAfter": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 20
+          }
+        }
+      },
+      "OnlineBulletinBlock": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "style",
+          "sentences"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/OnlineBulletinID"
+          },
+          "style": {
+            "$ref": "#/components/schemas/OnlineBulletinParagraphStyle"
+          },
+          "sentences": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 1024,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinSentence"
+            }
+          }
+        }
+      },
+      "OnlineBulletinItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "blocks"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/OnlineBulletinID"
+          },
+          "title": {
+            "$ref": "#/components/schemas/OnlineBulletinBlock"
+          },
+          "blocks": {
+            "type": "array",
+            "maxItems": 4096,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinBlock"
+            }
+          }
+        }
+      },
+      "OnlineBulletinCover": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "welcome",
+          "worship",
+          "work",
+          "wordQuestions",
+          "weeklyVerses"
+        ],
+        "properties": {
+          "welcome": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 4096,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinBlock"
+            }
+          },
+          "worship": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 256,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinItem"
+            }
+          },
+          "work": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 256,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinItem"
+            }
+          },
+          "wordQuestions": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 256,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinItem"
+            }
+          },
+          "weeklyVerses": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 4096,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinBlock"
+            }
+          }
+        }
+      },
+      "OnlineBulletinBodySection": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "title",
+          "blocks"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "sermon",
+              "testimony",
+              "teaching",
+              "reflection",
+              "unknown"
+            ],
+            "description": "Unknown creates a blocking review issue."
+          },
+          "header": {
+            "$ref": "#/components/schemas/OnlineBulletinBodyHeader"
+          },
+          "title": {
+            "$ref": "#/components/schemas/OnlineBulletinBlock"
+          },
+          "subtitle": {
+            "$ref": "#/components/schemas/OnlineBulletinBlock"
+          },
+          "contributors": {
+            "type": "array",
+            "maxItems": 32,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "role",
+                "name"
+              ],
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "speaker",
+                    "transcriber",
+                    "editor",
+                    "author"
+                  ]
+                },
+                "name": {
+                  "$ref": "#/components/schemas/OnlineBulletinBlock"
+                }
+              }
+            }
+          },
+          "blocks": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 4096,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinBlock"
+            }
+          }
+        }
+      },
+      "OnlineBulletinBodyHeader": {
+        "description": "First body section only. Source lecture date is independent of canonical issue publication date; all fields use sentence anchors. Missing contributor roles block publication review.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "lectureDate",
+          "contributors"
+        ],
+        "properties": {
+          "lectureDate": {
+            "$ref": "#/components/schemas/OnlineBulletinBlock"
+          },
+          "contributors": {
+            "type": "array",
+            "maxItems": 3,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "role",
+                "name"
+              ],
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "speaker",
+                    "transcriber",
+                    "editor"
+                  ]
+                },
+                "name": {
+                  "$ref": "#/components/schemas/OnlineBulletinBlock"
+                }
+              }
+            }
+          }
+        }
+      },
+      "OnlineBulletinHymnLyrics": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "hymns"
+        ],
+        "properties": {
+          "hymns": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 32,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "title",
+                "sections"
+              ],
+              "properties": {
+                "id": {
+                  "$ref": "#/components/schemas/OnlineBulletinID"
+                },
+                "number": {
+                  "$ref": "#/components/schemas/OnlineBulletinBlock"
+                },
+                "title": {
+                  "$ref": "#/components/schemas/OnlineBulletinBlock"
+                },
+                "sourceLabel": {
+                  "$ref": "#/components/schemas/OnlineBulletinBlock"
+                },
+                "sections": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 64,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "id",
+                      "kind",
+                      "lines"
+                    ],
+                    "properties": {
+                      "id": {
+                        "$ref": "#/components/schemas/OnlineBulletinID"
+                      },
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "verse",
+                          "chorus",
+                          "bridge"
+                        ]
+                      },
+                      "lines": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 4096,
+                        "items": {
+                          "$ref": "#/components/schemas/OnlineBulletinBlock"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "OnlineBulletinComponent": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/OnlineBulletinCoverComponent"
+          },
+          {
+            "$ref": "#/components/schemas/OnlineBulletinBodyComponent"
+          },
+          {
+            "$ref": "#/components/schemas/OnlineBulletinHymnComponent"
+          },
+          {
+            "$ref": "#/components/schemas/OnlineBulletinBackComponent"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "cover": "#/components/schemas/OnlineBulletinCoverComponent",
+            "bodySection": "#/components/schemas/OnlineBulletinBodyComponent",
+            "hymnLyrics": "#/components/schemas/OnlineBulletinHymnComponent",
+            "backSummary": "#/components/schemas/OnlineBulletinBackComponent",
+            "announcements": "#/components/schemas/OnlineBulletinBackComponent",
+            "victoriesAndPrayers": "#/components/schemas/OnlineBulletinBackComponent"
+          }
+        }
+      },
+      "OnlineBulletinCoverComponent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type",
+          "cover"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/OnlineBulletinID"
+          },
+          "type": {
+            "type": "string",
+            "const": "cover"
+          },
+          "cover": {
+            "$ref": "#/components/schemas/OnlineBulletinCover"
+          }
+        }
+      },
+      "OnlineBulletinBodyComponent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type",
+          "bodySection"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/OnlineBulletinID"
+          },
+          "type": {
+            "type": "string",
+            "const": "bodySection"
+          },
+          "bodySection": {
+            "$ref": "#/components/schemas/OnlineBulletinBodySection"
+          }
+        }
+      },
+      "OnlineBulletinHymnComponent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type",
+          "hymnLyrics"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/OnlineBulletinID"
+          },
+          "type": {
+            "type": "string",
+            "const": "hymnLyrics"
+          },
+          "hymnLyrics": {
+            "$ref": "#/components/schemas/OnlineBulletinHymnLyrics"
+          }
+        }
+      },
+      "OnlineBulletinBackComponent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type",
+          "items"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/OnlineBulletinID"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "backSummary",
+              "announcements",
+              "victoriesAndPrayers"
+            ]
+          },
+          "items": {
+            "type": "array",
+            "maxItems": 256,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinItem"
+            }
+          }
+        }
+      },
+      "BulletinVersionStatus": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "publishing",
+          "published",
+          "unpublishing",
+          "unpublish_failed",
+          "unpublished"
+        ]
+      }
+    }
+  }
+}

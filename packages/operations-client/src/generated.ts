@@ -2094,12 +2094,20 @@ export interface components {
             readAt?: string;
         };
         /** @enum {string} */
+        ManagedEntitlementCode: "bulletin.general.zh-Hant.access" | "bulletin.general.zh-Hans.access" | "bulletin.general.en.access" | "video.meeting-recordings.access";
+        /** @description Explicit unit policy; empty denies all new grants. Omit on update to preserve current policy. Unconfigured children inherit the nearest configured ancestor. Custom child policies may add permissions beyond their parent. Only global membership administrators or strict ancestor managers may update it. Existing grants remain revocable. */
+        GrantableEntitlementCodes: components["schemas"]["ManagedEntitlementCode"][];
+        /** @description True inherits the nearest configured parent; do not send codes with true. False requires codes. Omit both fields to preserve the policy. Roots cannot inherit. */
+        InheritsGrantableEntitlements: boolean;
+        /** @enum {string} */
         OperationStatus: "active" | "paused" | "archived";
         /** @enum {string} */
         OrgUnitKind: "church" | "family" | "small_group" | "fellowship";
         /** @enum {string} */
         Visibility: "public" | "internal";
         OrgUnitInput: {
+            inheritsGrantableEntitlements?: components["schemas"]["InheritsGrantableEntitlements"];
+            grantableEntitlementCodes?: components["schemas"]["GrantableEntitlementCodes"];
             kind: components["schemas"]["OrgUnitKind"];
             name: string;
             /** Format: email */
@@ -2109,6 +2117,9 @@ export interface components {
             parentId?: string;
         };
         OrgUnit: {
+            inheritsGrantableEntitlements: components["schemas"]["InheritsGrantableEntitlements"];
+            grantableEntitlementCodes: components["schemas"]["GrantableEntitlementCodes"];
+            effectiveGrantableEntitlementCodes: components["schemas"]["GrantableEntitlementCodes"];
             /** Format: uuid */
             id: string;
             kind: components["schemas"]["OrgUnitKind"];
@@ -2125,6 +2136,7 @@ export interface components {
         };
         OrgUnitList: components["schemas"]["OrgUnit"][];
         ManagedActions: {
+            manageEntitlementPolicy: boolean;
             editUnit: boolean;
             createChild: boolean;
             archive: boolean;
@@ -2135,6 +2147,9 @@ export interface components {
             sendNotifications: boolean;
         };
         ManagedUnit: {
+            inheritsGrantableEntitlements: components["schemas"]["InheritsGrantableEntitlements"];
+            grantableEntitlementCodes: components["schemas"]["GrantableEntitlementCodes"];
+            effectiveGrantableEntitlementCodes: components["schemas"]["GrantableEntitlementCodes"];
             /** Format: uuid */
             id: string;
             kind: components["schemas"]["OrgUnitKind"];
@@ -2164,11 +2179,15 @@ export interface components {
             email?: string;
         };
         ManagedUnitUpdate: {
+            inheritsGrantableEntitlements?: components["schemas"]["InheritsGrantableEntitlements"];
+            grantableEntitlementCodes?: components["schemas"]["GrantableEntitlementCodes"];
             name: string;
             /** Format: email */
             email?: string;
         };
         OrgUnitBatchItem: {
+            inheritsGrantableEntitlements?: components["schemas"]["InheritsGrantableEntitlements"];
+            grantableEntitlementCodes?: components["schemas"]["GrantableEntitlementCodes"];
             kind: components["schemas"]["OrgUnitKind"];
             name: string;
             /** Format: email */
@@ -2417,6 +2436,8 @@ export interface components {
             members: components["schemas"]["MemberCreateInput"][];
         };
         UnitMemberBatchInput: {
+            /** @description Optional access granted atomically with admission; constrained by the target unit policy even for global staff */
+            entitlementCodes?: ("bulletin.general.zh-Hant.access" | "bulletin.general.zh-Hans.access" | "bulletin.general.en.access" | "video.meeting-recordings.access")[];
             accountUserIds: string[];
         };
         AccountIDBatch: {
@@ -2430,6 +2451,8 @@ export interface components {
             state: "available" | "already_joined";
         };
         JoinCandidatePage: {
+            /** @description Actor-authorized admission choices for this target; omitted by older servers */
+            grantableEntitlementCodes?: ("bulletin.general.zh-Hant.access" | "bulletin.general.zh-Hans.access" | "bulletin.general.en.access" | "video.meeting-recordings.access")[];
             items: components["schemas"]["JoinCandidate"][];
             page: number;
             nextPage?: number;
@@ -2459,13 +2482,14 @@ export interface components {
             version: number;
         };
         ManagedMemberView: {
+            grantableEntitlementCodes: components["schemas"]["GrantableEntitlementCodes"];
             /** Format: uuid */
             memberId: string;
             displayName: string;
             /** Format: email */
             email: string;
             affiliations: components["schemas"]["ManagedAffiliation"][];
-            entitlementCodes: ("bulletin.general.zh-Hant.access" | "bulletin.general.zh-Hans.access" | "bulletin.general.en.access")[];
+            entitlementCodes: components["schemas"]["ManagedEntitlementCode"][];
             actions: components["schemas"]["ManagedActions"];
         };
         ManagedResponsibilityCandidate: {
@@ -2496,6 +2520,8 @@ export interface components {
             memberId: string;
         };
         ManagedAdmissionInput: {
+            /** @description Optional access granted atomically with admission; constrained by the target unit policy even for global staff */
+            entitlementCodes?: ("bulletin.general.zh-Hant.access" | "bulletin.general.zh-Hans.access" | "bulletin.general.en.access" | "video.meeting-recordings.access")[];
             /** Format: uuid */
             accountUserId: string;
         };
@@ -2507,8 +2533,7 @@ export interface components {
         };
         ManagedEntitlementBatchInput: {
             memberIds: string[];
-            /** @enum {string} */
-            entitlementCode: "bulletin.general.zh-Hant.access" | "bulletin.general.zh-Hans.access" | "bulletin.general.en.access";
+            entitlementCode: components["schemas"]["ManagedEntitlementCode"];
             /** @enum {string} */
             operation: "grant" | "revoke";
         };

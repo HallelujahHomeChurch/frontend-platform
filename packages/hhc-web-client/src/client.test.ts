@@ -11,6 +11,141 @@ import type {
 } from './client'
 
 describe('hhc web client', () => {
+  it('rejects a keyed publication receipt on the unkeyed human publication method', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json({data: {receipt: {}, current: {id: 'rec-1'}, outcome: 'state_changed'}, meta: {}, error: null}))
+    const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'admin-token', fetcher})
+    await expect(client.publishAdminRecording('rec-1', 1)).rejects.toMatchObject({code: 'invalid_response'})
+  })
+  it('uses independent Online CAS and no-store for every editor operation', async () => {
+    const fetcher=vi.fn<typeof fetch>().mockImplementation(async()=>new Response(JSON.stringify({data:{},meta:{},error:null}),{headers:{'Content-Type':'application/json'}}))
+    const client=createHhcWebClient({baseUrl:'/api',getAccessToken:()=> 'admin-token',fetcher})
+    const edition={issueId:'issue-1',series:'general',contentLocale:'zh-Hant'} as const
+    const controller=new AbortController()
+    await client.getOnlineBulletinState(edition,controller.signal)
+    await client.getOnlineBulletinComparison(edition,controller.signal)
+    await client.listOnlineBulletinRevisions(edition,{before:9,limit:20,signal:controller.signal})
+    await client.getOnlineBulletinRevision(edition,2,controller.signal)
+    await client.startOnlineBulletinExtraction(edition,0,{canonicalVersion:5,retry:true},controller.signal)
+    await client.saveOnlineBulletinDraft(edition,3,{canonicalVersion:5,components:[]},controller.signal)
+    await client.applyOnlineBulletinComparison(edition,3,{canonicalVersion:5,baseRevision:1,localRevision:2,incomingRevision:3,choices:[]},controller.signal)
+    await client.confirmOnlineBulletin(edition,3,{canonicalVersion:5,revision:2,pageCount:4,layoutValidationHash:'a'.repeat(64),acceptedIssues:[]},controller.signal)
+    await client.restoreOnlineBulletinRevision(edition,1,3,{canonicalVersion:5},controller.signal)
+    await client.publishOnlineBulletin(edition,3,{canonicalVersion:5,revision:2},controller.signal)
+    await client.unpublishOnlineBulletin(edition,3,{canonicalVersion:5},controller.signal)
+    const requests=fetcher.mock.calls.map(call=>call[0] as Request)
+    expect(requests.map(request=>request.method)).toEqual(['GET','GET','GET','GET','POST','PUT','POST','POST','POST','POST','POST'])
+    expect(requests.map(request=>new URL(request.url).pathname.replace('/api/admin/bulletins/issue-1/online/general/zh-Hant',''))).toEqual(['','/comparison','/revisions','/revisions/2','/extractions','/draft','/compare','/confirm','/revisions/1/restore','/publish','/unpublish'])
+    expect(requests[2]!.url).toContain('before=9&limit=20')
+    for(const [index,request] of requests.entries()) {
+      expect(request.cache).toBe('no-store')
+      expect(request.headers.get('Authorization')).toBe('Bearer admin-token')
+      if(index>=4) {
+        expect(request.headers.get('If-Match')).toBe(index===4?'"0"':'"3"')
+        expect(await request.json()).toMatchObject({canonicalVersion:5})
+      }
+    }
+    controller.abort()
+    expect(requests.every(request=>request.signal.aborted)).toBe(true)
+  })
+
+  it('preserves conflict versions for explicit editor recovery',async()=>{
+    const fetcher=vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({data:null,meta:{currentVersion:8,canonicalVersion:6},error:{code:'version_conflict',message:'Conflict'}}),{status:409,headers:{'Content-Type':'application/json'}}))
+    const client=createHhcWebClient({baseUrl:'/api',getAccessToken:()=> 'admin-token',fetcher})
+    await expect(client.saveOnlineBulletinDraft({issueId:'issue-1',series:'general',contentLocale:'zh-Hant'},3,{canonicalVersion:5,components:[]})).rejects.toMatchObject({status:409,code:'version_conflict',currentVersion:8,canonicalVersion:6})
+    expect(fetcher).toHaveBeenCalledTimes(1)
+  })
+
+  it('reads a bounded protected PDF with source provenance',async()=>{
+    const fetcher=vi.fn<typeof fetch>().mockResolvedValue(new Response('%PDF-1.7 test',{headers:{'Content-Type':'application/pdf','X-HHC-Source-SHA256':'a'.repeat(64),'X-HHC-Source-Version':'5'}}))
+    const client=createHhcWebClient({baseUrl:'/api',getAccessToken:()=> 'admin-token',fetcher})
+    const result=await client.getOnlineBulletinSourcePDF({issueId:'issue-1',series:'general',contentLocale:'zh-Hant'})
+    expect(new TextDecoder().decode(result.bytes)).toBe('%PDF-1.7 test')
+    expect(result).toMatchObject({checksum:'a'.repeat(64),canonicalVersion:5})
+    const request=fetcher.mock.calls[0]![0] as Request
+    expect(request.headers.get('Accept')).toBe('application/pdf')
+    expect(request.cache).toBe('no-store')
+  })
+
+  it('rejects invalid, oversized, and truncated source PDFs', async () => {
+    const headers = {'Content-Type':'application/pdf','X-HHC-Source-SHA256':'a'.repeat(64),'X-HHC-Source-Version':'5'}
+    const responses = [
+      new Response('%PDF-test', {headers:{...headers,'Content-Type':'text/html'}}),
+      new Response('%PDF-test', {headers:{...headers,'X-HHC-Source-SHA256':'bad'}}),
+      new Response('%PDF-test', {headers:{...headers,'X-HHC-Source-Version':'0'}}),
+      new Response('%PDF-test', {headers:{...headers,'Content-Length':String(20*1024*1024+1)}}),
+      new Response('%PDF-test', {headers:{...headers,'Content-Length':'100'}}),
+      new Response('not a pdf', {headers}),
+      new Response(new Uint8Array(20*1024*1024+1), {headers}),
+    ]
+    for (const response of responses) {
+      const fetcher=vi.fn<typeof fetch>().mockResolvedValue(response)
+      const client=createHhcWebClient({baseUrl:'/api',getAccessToken:()=> 'token',fetcher})
+      await expect(client.getOnlineBulletinSourcePDF({issueId:'issue-1',series:'general',contentLocale:'zh-Hant'})).rejects.toMatchObject({code:'invalid_response'})
+      expect(fetcher).toHaveBeenCalledTimes(1)
+    }
+  })
+
+  it.each([401, 503])('preserves source PDF HTTP %i without retry', async status => {
+    const fetcher=vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({error:{code:'unavailable',message:'Unavailable'}}),{status,headers:{'Content-Type':'application/json'}}))
+    const client=createHhcWebClient({baseUrl:'/api',getAccessToken:()=> 'token',fetcher})
+    await expect(client.getOnlineBulletinSourcePDF({issueId:'issue-1',series:'general',contentLocale:'zh-Hant'})).rejects.toMatchObject({status,code:'unavailable'})
+    expect(fetcher).toHaveBeenCalledTimes(1)
+  })
+
+  it('only pairs PDF and Online unpublish after explicit versioned choice',async()=>{
+    const fetcher=vi.fn<typeof fetch>().mockImplementation(async()=>new Response(JSON.stringify({data:{},meta:{},error:null}),{headers:{'Content-Type':'application/json'}}))
+    const client=createHhcWebClient({baseUrl:'/api',getAccessToken:()=> 'admin-token',fetcher})
+    await client.unpublishBulletin('issue-1',5,{series:'general',locale:'zh-Hant'})
+    await client.unpublishBulletin('issue-1',5,{series:'general',locale:'zh-Hant'},{unpublishOnline:true,onlineVersion:3})
+    const requests=fetcher.mock.calls.map(call=>call[0] as Request)
+    expect(await requests[0]!.json()).toMatchObject({unpublishOnline:false})
+    expect(await requests[1]!.json()).toMatchObject({unpublishOnline:true,onlineVersion:3})
+    expect(requests[1]!.headers.get('If-Match')).toBe('"5"')
+    await expect(client.unpublishBulletin('issue-1',5,{series:'general',locale:'en'},{unpublishOnline:true,onlineVersion:3})).rejects.toMatchObject({code:'invalid_request'})
+    expect(fetcher).toHaveBeenCalledTimes(2)
+  })
+
+  it('previews retention without mutation then confirms the exact preview and revision',async()=>{
+    const fetcher=vi.fn<typeof fetch>().mockImplementation(async()=>new Response(JSON.stringify({data:{},meta:{},error:null})))
+    const client=createHhcWebClient({baseUrl:'/api',getAccessToken:()=> 'token',fetcher})
+    await client.getRecordingRetentionPolicy()
+    await client.previewRecordingRetentionPolicy(14)
+    await client.updateRecordingRetentionPolicy({retentionDays:14,expectedRevision:2,previewId:'preview'},'change-key')
+    const requests=fetcher.mock.calls.map(call=>call[0] as Request)
+    expect(requests.map(r=>r.method)).toEqual(['GET','POST','PUT'])
+    expect(await requests[1]!.json()).toEqual({retentionDays:14})
+    expect(await requests[2]!.json()).toEqual({retentionDays:14,expectedRevision:2,previewId:'preview'})
+    expect(requests[2]!.headers.get('Idempotency-Key')).toBe('change-key')
+    for(const r of requests)expect(r.cache).toBe('no-store')
+  })
+  it('keeps recording lookup codes in a no-store POST body', async () => {
+    const result = {receiptId:'receipt',recordingId:'recording',packageId:'package',userId:'member',issuedAt:'2026-10-05T00:00:00Z',expiresAt:'2027-10-05T00:00:00Z'}
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({data:result,meta:{},error:null})))
+    const client = createHhcWebClient({baseUrl:'/api',getAccessToken:()=> 'token',fetcher})
+    expect(await client.lookupRecordingWatermark({recordingId:'recording',code:'01234-ABCDE'})).toEqual(result)
+    const request = fetcher.mock.calls[0]![0] as Request
+    expect(request.url).toBe('http://localhost/api/admin/recordings/watermark-lookups')
+    expect(request.method).toBe('POST')
+    expect(request.cache).toBe('no-store')
+    expect(await request.json()).toEqual({recordingId:'recording',code:'01234-ABCDE'})
+  })
+  it.each([400,403,404,429,503])('preserves recording lookup error %s', async (status) => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({error:{code:'lookup_failed',message:'Lookup failed'}}),{status}))
+    const client = createHhcWebClient({baseUrl:'/api',getAccessToken:()=> 'token',fetcher})
+    await expect(client.lookupRecordingWatermark({recordingId:'recording',code:'01234-ABCDE'})).rejects.toMatchObject({status,code:'lookup_failed'})
+  })
+  it('uploads cover bytes without JSON encoding and selects with an immutable version key',async()=>{
+    const fetcher=vi.fn<typeof fetch>().mockImplementation(async()=>new Response(JSON.stringify({data:{},meta:{},error:null}),{headers:{'content-type':'application/json'}}))
+    const client=createHhcWebClient({baseUrl:'/api',getAccessToken:()=> 'token',fetcher})
+    await client.uploadRecordingCover('r',new Blob(['image'],{type:'image/jpeg'}),'upload-key')
+    await client.setRecordingCover('r',7,{mode:'custom',uploadId:'upload'},'select-key')
+    const requests=fetcher.mock.calls.map(call=>call[0] as Request)
+    expect(await requests[0]!.text()).toBe('image')
+    expect(requests[0]!.headers.get('Content-Type')).toBe('image/jpeg')
+    expect(requests[1]!.headers.get('If-Match')).toBe('"7"')
+    expect(requests[1]!.headers.get('Idempotency-Key')).toBe('select-key')
+    for(const request of requests){expect(request.headers.get('Authorization')).toBe('Bearer token');expect(request.cache).toBe('no-store')}
+  })
   it('keeps browser source capabilities in authenticated no-store metadata requests', async () => {
     const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({data: {}, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}}))
     const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'admin-token', fetcher})
@@ -57,6 +192,14 @@ describe('hhc web client', () => {
     expect(request.cache).toBe('no-store')
   })
 
+  it('preserves optional attempt-scoped progress and zero verified counts', async () => {
+    const progress = {attempt: 2, phase: 'package_validation', objectsVerified: 0, objectsTotal: 100, attemptStartedAt: '2026-10-07T00:00:00Z', phaseStartedAt: '2026-10-07T00:00:00Z', lastProgressAt: '2026-10-07T00:00:00Z', heartbeatAt: '2026-10-07T00:00:00Z'}
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(new Response(JSON.stringify({data: {id: 'rec-1', processingProgress: progress}, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}})).mockResolvedValueOnce(new Response(JSON.stringify({data: {id: 'rec-1'}, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}}))
+    const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'admin-token', fetcher})
+    expect((await client.getAdminRecording('rec-1')).processingProgress?.objectsVerified).toBe(0)
+    expect((await client.getAdminRecording('rec-1')).processingProgress).toBeUndefined()
+  })
+
   it('keeps recording grants in POST bodies and separates versioned publish requests', async () => {
     const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({data: {}, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}}))
     const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'member-token', fetcher})
@@ -78,6 +221,16 @@ describe('hhc web client', () => {
     expect(JSON.parse(await create!.text())).toEqual({title: '主日聚會'})
     expect(JSON.parse(await update!.text())).toEqual({title: '整理標題'})
     expect(update!.headers.get('If-Match')).toBe('"2"')
+  })
+  it('preserves omitted descriptions and sends an explicit empty string to clear',async()=>{
+    const fetcher=vi.fn<typeof fetch>().mockImplementation(async()=>new Response(JSON.stringify({data:{},meta:{},error:null}),{headers:{'Content-Type':'application/json'}}))
+    const client=createHhcWebClient({baseUrl:'/api',getAccessToken:()=> 'admin-token',fetcher})
+    await client.updateAdminRecordingTitle('rec-1',2,'Title','😀\nPlain text')
+    await client.updateAdminRecordingTitle('rec-1',3,'Title','')
+    const requests=fetcher.mock.calls.map(call=>call[0] as Request)
+    expect(JSON.parse(await requests[0]!.text())).toEqual({title:'Title',description:'😀\nPlain text'})
+    expect(JSON.parse(await requests[1]!.text())).toEqual({title:'Title',description:''})
+    expect(requests[1]!.headers.get('If-Match')).toBe('"3"')
   })
   it('uploads one-to-five private documents for an issue and reads its creator-owned job', async () => {
     const response = (data: unknown) => new Response(JSON.stringify({data, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}})
