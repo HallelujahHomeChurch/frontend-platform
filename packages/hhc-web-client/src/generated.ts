@@ -1937,7 +1937,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List recent published recordings after membership and video entitlement checks */
+        /**
+         * List recent published recordings after membership and video entitlement checks
+         * @description Without limit, retains the legacy array response. With limit, returns uploadedAt DESC and id DESC keyset batches and meta.nextCursor (null at exhaustion). Empty batches may still carry a cursor when media is no longer available; continue until nextCursor is null. Every batch rechecks current visibility and ready media.
+         */
         get: operations["listMemberRecordings"];
         put?: never;
         post?: never;
@@ -4272,6 +4275,9 @@ export interface components {
         RecordingListEnvelope: {
             data: components["schemas"]["MemberRecording"][];
             meta: {
+                /** @description Present for limit-based requests; null when no more candidates remain. */
+                nextCursor?: string | null;
+            } & {
                 [key: string]: unknown;
             };
             error?: null;
@@ -9896,7 +9902,12 @@ export interface operations {
     };
     listMemberRecordings: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Enable batched reads; required when cursor is supplied. */
+                limit?: number;
+                /** @description Opaque nextCursor from the previous batch; requires limit. */
+                cursor?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -9912,6 +9923,7 @@ export interface operations {
                     "application/json": components["schemas"]["RecordingListEnvelope"];
                 };
             };
+            400: components["responses"]["Error"];
             401: components["responses"]["AdminUnauthorized"];
             403: components["responses"]["AdminForbidden"];
             404: components["responses"]["Error"];

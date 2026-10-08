@@ -3068,8 +3068,13 @@ paths:
       x-hhc-callers: [api-gateway]
       x-hhc-cache: 'private, no-store'
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      description: Without limit, retains the legacy array response. With limit, returns uploadedAt DESC and id DESC keyset batches and meta.nextCursor (null at exhaustion). Empty batches may still carry a cursor when media is no longer available; continue until nextCursor is null. Every batch rechecks current visibility and ready media.
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 }, description: Enable batched reads; required when cursor is supplied. }
+        - { name: cursor, in: query, schema: { type: string, maxLength: 256 }, description: Opaque nextCursor from the previous batch; requires limit. }
       responses:
         '200': { description: Authorized recent recordings, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingListEnvelope' } } } }
+        '400': { $ref: '#/components/responses/Error' }
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
         '403': { $ref: '#/components/responses/AdminForbidden' }
         '404': { $ref: '#/components/responses/Error' }
@@ -7649,7 +7654,11 @@ components:
       required: [data, meta]
       properties:
         data: { type: array, items: { $ref: '#/components/schemas/MemberRecording' } }
-        meta: { type: object, additionalProperties: true }
+        meta:
+          type: object
+          additionalProperties: true
+          properties:
+            nextCursor: { type: [string, 'null'], maxLength: 256, description: Present for limit-based requests; null when no more candidates remain. }
         error: { type: ['null'] }
     RecordingPlaybackEnvelope:
       type: object

@@ -331,3 +331,5 @@
     .hhc-dialog__footer { flex-wrap: wrap; }
   }
 }
+
+.hhc-load-more {display:flex; justify-content:center; min-height:44px;}
