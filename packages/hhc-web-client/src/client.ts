@@ -345,6 +345,14 @@ export function createHhcWebClient(options: {
         params: {path: {id, captureId}}, body: {operationKey}, signal, cache: 'no-store',
       }))).data
     },
+    async listMemberRecordingsPage(options: {limit?: number; cursor?: string; signal?: AbortSignal} = {}) {
+      const result = await unwrap(client.GET('/member/recordings', {
+        params: {query: {limit: options.limit ?? 12, cursor: options.cursor}}, signal: options.signal, cache: 'no-store',
+      }))
+      const cursor = result.meta.nextCursor
+      if (cursor !== null && typeof cursor !== 'string') throw new HhcWebApiError(502, 'invalid_response', 'Recording pagination is unavailable.')
+      return {items: result.data, nextCursor: cursor}
+    },
     async listMemberRecordings(signal?: AbortSignal) {
       return (await unwrap(client.GET('/member/recordings', { signal, cache: 'no-store' }))).data
     },
