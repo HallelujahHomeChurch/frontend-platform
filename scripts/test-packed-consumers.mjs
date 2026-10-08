@@ -74,7 +74,7 @@ import {createAccountSessionClient, createBrowserAccountAuthRuntime, type Accoun
 import {canAccessAdmin} from '@hallelujahhomechurch/account-client/admin-access';
 import {createHhcWebClient, type ContentStatus, type PageGroupManifest} from '@hallelujahhomechurch/hhc-web-client';
 import {createOperationsClient, type ManagedMemberView, type ManagedUnitFolder} from '@hallelujahhomechurch/operations-client';
-import {getInitialTheme} from '@hallelujahhomechurch/preferences';
+import {getInitialTheme, readAnonymousStatementDismissal, writeAnonymousStatementDismissal, statementRefKey} from '@hallelujahhomechurch/preferences';
 import {AccountMenu, Button, ContextMenu, BulletinDocumentRenderer} from '@hallelujahhomechurch/ui';
 import {createSandboxDonationClient} from '@hallelujahhomechurch/donation-client';
 import {DonationForm} from '@hallelujahhomechurch/donation-ui';
@@ -97,6 +97,10 @@ async function checkUnitManagement(folder: ManagedUnitFolder, member: ManagedMem
   await operationsClient.raw.POST('/api/operations/manage/org-units/{unitId}/entitlements/batch', {params: {path: {unitId: folder.unit.id}, header: {'Idempotency-Key': 'grant'}}, body: {memberIds: [member.memberId], entitlementCode: 'bulletin.general.zh-Hant.access', operation: 'grant'}});
 }
 void checkUnitManagement;
+const statementRef = {statementId: '00000000-0000-4000-8000-000000000001', publishedVersion: 7};
+void readAnonymousStatementDismissal(statementRef); void writeAnonymousStatementDismissal(statementRef); void statementRefKey(statementRef);
+const statementClient = createHhcWebClient({baseUrl: '/api', getAccessToken: authRuntime.getAccessToken, refreshAfterUnauthorized: authRuntime.refreshAfterUnauthorized});
+void statementClient.getStatementDismissal(statementRef); void statementClient.dismissStatement(statementRef);
 const contentStatus: ContentStatus = 'pending_removal';
 const groupManifest: PageGroupManifest = {pageId: '00000000-0000-0000-0000-000000000001', pageSourceVersion: 1, pageTargetVersion: 2, childModule: 'history', items: [], sha256: 'a'.repeat(64)};
 void createAccountSessionClient;
@@ -151,7 +155,7 @@ import {createAccountSessionClient, createBrowserAccountAuthRuntime, type Accoun
 import {canAccessAdmin} from '@hallelujahhomechurch/account-client/admin-access';
 import {createHhcWebClient, type ContentStatus, type PageGroupManifest} from '@hallelujahhomechurch/hhc-web-client';
 import {createOperationsClient, type ManagedMemberView, type ManagedUnitFolder} from '@hallelujahhomechurch/operations-client';
-import {getInitialTheme} from '@hallelujahhomechurch/preferences';
+import {getInitialTheme, readAnonymousStatementDismissal, writeAnonymousStatementDismissal, statementRefKey} from '@hallelujahhomechurch/preferences';
 import {AccountMenu, Button, ContextMenu, BulletinDocumentRenderer} from '@hallelujahhomechurch/ui';
 import {bulletin} from './bulletin';
 import {createSandboxDonationClient} from '@hallelujahhomechurch/donation-client';
@@ -172,6 +176,10 @@ async function checkUnitManagement(folder: ManagedUnitFolder, member: ManagedMem
   await operationsClient.raw.POST('/api/operations/manage/org-units/{unitId}/entitlements/batch', {params: {path: {unitId: folder.unit.id}, header: {'Idempotency-Key': 'grant'}}, body: {memberIds: [member.memberId], entitlementCode: 'bulletin.general.zh-Hant.access', operation: 'grant'}});
 }
 void checkUnitManagement;
+const statementRef = {statementId: '00000000-0000-4000-8000-000000000001', publishedVersion: 7};
+void readAnonymousStatementDismissal(statementRef); void writeAnonymousStatementDismissal(statementRef); void statementRefKey(statementRef);
+const statementClient = createHhcWebClient({baseUrl: '/api', getAccessToken: authRuntime.getAccessToken, refreshAfterUnauthorized: authRuntime.refreshAfterUnauthorized});
+void statementClient.getStatementDismissal(statementRef); void statementClient.dismissStatement(statementRef);
 const contentStatus: ContentStatus = 'pending_removal';
 const groupManifest: PageGroupManifest = {pageId: '00000000-0000-0000-0000-000000000001', pageSourceVersion: 1, pageTargetVersion: 2, childModule: 'history', items: [], sha256: 'a'.repeat(64)};
 void createAccountSessionClient;

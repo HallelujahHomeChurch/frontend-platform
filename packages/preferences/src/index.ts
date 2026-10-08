@@ -243,3 +243,5 @@ export {createAnalyticsController} from './analytics.js';
 export type {AnalyticsSink, SafeAnalyticsEvent, SafeAnalyticsRoute} from './analytics.js';
 
 export {analyticsMessages} from './analytics-copy.js';
+
+export {statementRefKey, readAnonymousStatementDismissal, writeAnonymousStatementDismissal} from './statement-dismissal.js';

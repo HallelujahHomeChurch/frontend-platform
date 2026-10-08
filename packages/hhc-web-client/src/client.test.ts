@@ -713,7 +713,7 @@ describe('hhc web client', () => {
 
     const listRequest = fetcher.mock.calls[0]?.[0] as Request
     expect(listRequest.url).toBe('http://localhost/api/admin/content/news?q=alpha&sort=displayDate&direction=asc')
-    const deleteRequest = fetcher.mock.calls[1]?.[0] as Request
+    const deleteRequest = fetcher.mock.calls[1][0] as Request
     expect(deleteRequest.url).toBe('http://localhost/api/admin/content/news/news-1')
     expect(deleteRequest.method).toBe('DELETE')
     expect(deleteRequest.headers.get('If-Match')).toBe('"2"')
@@ -1042,3 +1042,29 @@ it('keeps legal reads private and publication version checked', async () => {
  expect(read!.url).toBe('http://localhost/api/member/legal/current?locale=en');expect(read!.cache).toBe('no-store');
  expect(publish!.url).toBe('http://localhost/api/admin/legal/verified-member/publish');expect(publish!.headers.get('If-Match')).toBe('"3"');
 });
+
+describe('statement dismissal client',()=>{
+ it('reads and writes exact published versions using the authenticated transport',async()=>{
+  const ref={statementId:'018f0000-0000-7000-8000-000000000001',publishedVersion:7}
+  const fetcher=vi.fn<typeof fetch>().mockImplementation(async()=>Response.json({data:{...ref,dismissed:true},meta:{},error:null}))
+  const client=createHhcWebClient({baseUrl:'https://www.alive.org.tw/api',getAccessToken:()=> 'fixture-token',fetcher})
+  const controller=new AbortController()
+  expect(await client.getStatementDismissal(ref,controller.signal)).toEqual({...ref,dismissed:true})
+  expect(await client.dismissStatement(ref,controller.signal)).toEqual({...ref,dismissed:true})
+  const requests=fetcher.mock.calls.map(call=>call[0] as Request)
+  expect(requests[0]?.url).toContain(`/api/me/statements/${ref.statementId}/dismissal?publishedVersion=7`)
+  expect(requests.map(r=>r.method)).toEqual(['GET','PUT'])
+  expect(requests.every(r=>r.headers.get('Authorization')==='Bearer fixture-token'&&r.cache==='no-store')).toBe(true)
+  expect(await requests[1]?.json()).toEqual({publishedVersion:7})
+ })
+ it('preserves version conflicts and refreshes rejected tokens',async()=>{
+  const ref={statementId:'018f0000-0000-7000-8000-000000000001',publishedVersion:7}
+  const fetcher=vi.fn<typeof fetch>().mockResolvedValueOnce(Response.json({error:{code:'unauthorized',message:'expired'}},{status:401})).mockResolvedValueOnce(Response.json({error:{code:'statement_version_changed',message:'changed'}},{status:409}))
+  let token='expired'
+  const refresh=vi.fn(async()=>{token='fresh';return token})
+  const client=createHhcWebClient({baseUrl:'https://www.alive.org.tw/api',getAccessToken:()=> token,refreshAfterUnauthorized:refresh,fetcher})
+  await expect(client.dismissStatement(ref)).rejects.toMatchObject({status:409,code:'statement_version_changed'})
+  expect(refresh).toHaveBeenCalledWith('expired')
+  expect((fetcher.mock.calls[1][0] as Request).headers.get('Authorization')).toBe('Bearer fresh')
+ })
+})
