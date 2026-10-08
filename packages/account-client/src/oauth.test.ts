@@ -1,4 +1,4 @@
-import {describe, expect, it} from 'vitest';
+import {describe, expect, it, vi} from 'vitest';
 import {
   buildAuthorizeUrl,
   claimOAuthRecovery,
@@ -170,4 +170,18 @@ describe('browser OAuth helpers', () => {
     expect(claimOAuthRecovery(options)).toBe(true);
     expect(claimOAuthRecovery(options)).toBe(false);
   });
+});
+
+
+it.each([
+  ['<html>token=private</html>', 'text/html', 'content_type'],
+  ['{"access_token":"private",', 'application/json', 'json'],
+  ['{"email":"private@example.test"}', 'application/json', 'schema'],
+])('correlates invalid OAuth decoding without replay or payload: %s', async (body, contentType, decodeStage) => {
+  const transaction = await createOAuthTransaction('/');
+  const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(body, {headers: {'content-type': contentType, 'x-hhc-request-id': 'callback-request'}}));
+  const error = await exchangeAuthorizationCode({authorizeBaseUrl: '/api/account/v1', clientId: 'web', redirectUri: 'https://www.alive.org.tw/callback', scope: 'openid'}, transaction, 'one-use-code', fetcher).catch(error => error);
+  expect(error).toMatchObject({status: 200, endpoint: 'oauth_token', method: 'POST', decodeStage, requestId: 'callback-request'});
+  expect(fetcher).toHaveBeenCalledOnce();
+  expect(JSON.stringify(error)).not.toMatch(/private|one-use-code/);
 });

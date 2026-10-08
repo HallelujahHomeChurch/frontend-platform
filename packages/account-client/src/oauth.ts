@@ -1,3 +1,5 @@
+import {AccountSessionError, accountResponseMetadata, type AccountRequestMetadata} from './session-client.js';
+
 export interface OAuthTransaction {
   state: string;
   codeVerifier: string;
@@ -121,11 +123,17 @@ export async function exchangeAuthorizationCode(
     }).toString()
   });
 
-  if (!response.ok) throw new Error(`OAuth token exchange failed (${response.status})`);
-
-  const body: unknown = await response.json();
+  const metadata: AccountRequestMetadata = {...accountResponseMetadata(response), endpoint: 'oauth_token', method: 'POST'};
+  if (!response.ok) throw new AccountSessionError(response.status, 'OAUTH_TOKEN_EXCHANGE_FAILED', `OAuth token exchange failed (${response.status})`, metadata);
+  const invalidMessage = 'OAuth token exchange returned an invalid response';
+  if (!response.headers.get('content-type')?.includes('application/json')) {
+    throw new AccountSessionError(response.status, 'INVALID_RESPONSE', invalidMessage, {...metadata, decodeStage: 'content_type'});
+  }
+  let body: unknown;
+  try { body = await response.json(); }
+  catch { throw new AccountSessionError(response.status, 'INVALID_RESPONSE', invalidMessage, {...metadata, decodeStage: 'json'}); }
   if (!isRecord(body) || typeof body.access_token !== 'string' || body.access_token.length === 0) {
-    throw new Error('OAuth token exchange returned an invalid response');
+    throw new AccountSessionError(response.status, 'INVALID_RESPONSE', invalidMessage, {...metadata, decodeStage: 'schema'});
   }
   return body as unknown as OAuthTokenResponse;
 }
