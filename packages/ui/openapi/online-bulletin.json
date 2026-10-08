@@ -1092,9 +1092,10 @@
               "v1",
               "v2",
               "v3",
-              "v4"
+              "v4",
+              "v5"
             ],
-            "description": "V3 and V4 use the existing v1 Traditional or v2 Simplified template with adaptive composition and painted-text validation. V4 permits a safe 24-point bottom margin for dense pages. Existing published renderer versions remain immutable."
+            "description": "Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. Existing published renderer versions remain immutable."
           },
           "rendererArtifactSha256": {
             "$ref": "#/components/schemas/OnlineBulletinHash"

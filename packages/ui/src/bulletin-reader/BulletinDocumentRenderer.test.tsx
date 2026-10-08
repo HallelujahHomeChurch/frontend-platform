@@ -20,12 +20,12 @@ function fixture(): Document {
 }
 
 describe('immutable shared bulletin renderer', () => {
-  it.each(['v1','v2'] as const)('renders V3/V4 with the frozen %s template without rewriting stored identities', templateVersion => {
-    for (const rendererVersion of ['v3', 'v4'] as const) {
+  it.each(['v1','v2'] as const)('renders V3/V4/V5 with the frozen %s template without rewriting stored identities', templateVersion => {
+    for (const rendererVersion of ['v3', 'v4', 'v5'] as const) {
     const document=fixture();
     document.templateVersion=templateVersion;
     document.contentLocale=templateVersion==='v2'?'zh-Hans':'zh-Hant';
-    Object.assign(document.layoutManifest,{templateVersion,rendererVersion,rendererArtifactSha256:rendererVersion==='v4'?UI.BULLETIN_RENDERER_V4_DIGEST:UI.BULLETIN_RENDERER_V3_DIGEST});
+    Object.assign(document.layoutManifest,{templateVersion,rendererVersion,rendererArtifactSha256:rendererVersion==='v5'?UI.BULLETIN_RENDERER_V5_DIGEST:rendererVersion==='v4'?UI.BULLETIN_RENDERER_V4_DIGEST:UI.BULLETIN_RENDERER_V3_DIGEST});
     const original=structuredClone(document);
     const {container}=render(<UI.BulletinDocumentRenderer document={document} mode="paper"/>);
     expect(container.querySelector('[data-sentence-id="s"]')).toHaveTextContent('𠮷你');
