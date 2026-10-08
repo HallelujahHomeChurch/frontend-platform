@@ -10,6 +10,8 @@ import {
 import {
   AccountSessionError,
   type AccountAccessToken,
+  type AccountRequestEndpoint,
+  type AccountDecodeStage,
   type AccountIdentitySession,
   resolveAccountAuth,
   type AccountSessionClient
@@ -28,6 +30,9 @@ export type AccountAuthEvent = {
   errorCode?: string;
   requestId?: string;
   retryAt?: number;
+  endpoint?: AccountRequestEndpoint;
+  method?: string;
+  decodeStage?: AccountDecodeStage;
 };
 
 export type BrowserOAuthConfig = {
@@ -93,7 +98,10 @@ export function createBrowserAccountAuthRuntime({
       status: error.status,
       errorCode: error.code,
       requestId: error.requestId,
-      retryAt: error.retryAt
+      retryAt: error.retryAt,
+      endpoint: error.endpoint,
+      method: error.method,
+      decodeStage: error.decodeStage
     } : {};
     onEvent?.({stage, outcome, ...metadata});
   }

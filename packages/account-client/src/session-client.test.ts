@@ -111,3 +111,29 @@ describe('auth response classification', () => {
       .toMatchObject({status: 429, code: 'rate', requestId: 'req', retryAt: 2});
   });
 });
+
+
+describe('safe decode diagnostics', () => {
+  it.each(['csrf', 'access_token', 'refresh', 'session'] as const)('correlates %s invalid responses without exposing payloads', async endpoint => {
+    for (const [payload, contentType, stage] of [
+      ['<html>token=secret</html>', 'text/html', 'content_type'],
+      ['{"token":"secret",', 'application/json', 'json'],
+      ['{"token":"secret"}', 'application/json', 'schema'],
+    ]) {
+      const fetcher = vi.fn<typeof fetch>();
+      if (endpoint === 'access_token' || endpoint === 'refresh') fetcher.mockResolvedValueOnce(jsonResponse({csrf_token: 'csrf'}));
+      fetcher.mockResolvedValueOnce(new Response(payload, {headers: {'content-type': contentType, 'x-hhc-request-id': 'safe-request-1'}}));
+      const client = createAccountSessionClient({fetcher});
+      const pending = endpoint === 'session' ? client.getSession() : endpoint === 'refresh' ? client.refreshAccessToken() : client.issueAccessToken();
+      const error = await pending.catch(error => error);
+      expect(error).toMatchObject({status: 200, endpoint, method: endpoint === 'session' || endpoint === 'csrf' ? 'GET' : 'POST', decodeStage: stage, requestId: 'safe-request-1'});
+      expect(JSON.stringify(error)).not.toContain('secret');
+    }
+  });
+
+  it('drops malformed request correlation IDs', async () => {
+    const client = createAccountSessionClient({fetcher: vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({}, 200, {'x-request-id': 'token=secret@example.test'}))});
+    const error = await client.getSession().catch(error => error);
+    expect(error.requestId).toBeUndefined();
+  });
+});
