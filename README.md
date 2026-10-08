@@ -18,7 +18,7 @@ The bulletin worker uses the same compiled renderer, CSS, fixed assets and legal
 fonts as the UI. Build a new, checksum-verified bundle after `pnpm build`:
 
 ```sh
-node scripts/verify-bulletin-renderer-v4.mjs
+node scripts/verify-bulletin-renderer-v5.mjs
 node scripts/package-bulletin-renderer.mjs artifacts/bulletin-renderer /path/to/verified/assets
 docker build -f tools/bulletin-renderer/Dockerfile -t hhc-bulletin-renderer:verify artifacts/bulletin-renderer
 ```
@@ -79,6 +79,12 @@ multiple family/small-group/fellowship affiliations, scoped responsibilities,
 and direct bulletin entitlements. Qualification and validity-window fields are
 not part of the contract.
 # Bulletin ebook presentation
+
+Renderer V5 keeps V1–V4 immutable and uses a 24pt cover bottom margin so complete
+weekly verses fit without truncation, smaller type, or an extra cover page.
+Install 1.0.43 in both readers before enabling the V5 extractor producer.
+Verify with `node scripts/verify-bulletin-renderer-v5.mjs`; the native regression
+suite uses `HHC_TEST_RENDERER_V5=1`.
 
 `BulletinEbook` renders a single semantic chapter (`cover`, `body`, `worship`,
 `back`) from the same canonical document as the paper reader. Import
