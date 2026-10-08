@@ -1,5 +1,6 @@
 export * from './controls.js';
 export * from './data.js';
+export * from './load-more.js';
 export * from './forms.js';
 export * from './layout.js';
 export * from './overlays.js';
