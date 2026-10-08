@@ -1360,6 +1360,55 @@ paths:
         '404': { $ref: '#/components/responses/ProtectedBulletinNotFound' }
         '416': { description: Requested range is not satisfiable }
         '503': { $ref: '#/components/responses/Error' }
+  /me/statements/{statementId}/dismissal:
+    parameters:
+      - name: statementId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      operationId: getStatementDismissal
+      summary: Read the signed-in account's dismissal of a published statement version
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+        - name: publishedVersion
+          in: query
+          required: true
+          schema: { type: integer, format: int64, minimum: 1, maximum: 9007199254740991 }
+      responses:
+        '200': { $ref: '#/components/responses/StatementDismissal' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+    put:
+      operationId: dismissStatement
+      summary: Idempotently stop automatic prompts for the exact published version
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [publishedVersion]
+              properties:
+                publishedVersion: { type: integer, format: int64, minimum: 1, maximum: 9007199254740991 }
+      responses:
+        '200': { $ref: '#/components/responses/StatementDismissal' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
   /statements/active:
     get:
       operationId: getActiveStatement
@@ -4917,6 +4966,11 @@ components:
         application/json:
           schema: { $ref: '#/components/schemas/TranslationPreviewInput' }
   responses:
+    StatementDismissal:
+      description: Owner-scoped statement preference; Cache-Control private, no-store
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/StatementDismissalEnvelope' }
     ReaderUnavailable:
       description: Generic not_found for denied, missing or unpublished edition. Only this owner marker together with typed not_found is terminal; an unrelated router or gateway 404 must not purge offline data.
       headers:
@@ -5139,6 +5193,21 @@ components:
       description: Public revalidation policy for Site Layout projections.
       schema: { type: string, const: 'public, max-age=30, must-revalidate' }
   schemas:
+    StatementDismissal:
+      type: object
+      additionalProperties: false
+      required: [statementId, publishedVersion, dismissed]
+      properties:
+        statementId: { type: string, format: uuid }
+        publishedVersion: { type: integer, format: int64, minimum: 1, maximum: 9007199254740991 }
+        dismissed: { type: boolean }
+    StatementDismissalEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/StatementDismissal' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: ['null'] }
     RecordingCaptureOperationInput:
       type: object
       additionalProperties: false
@@ -10024,7 +10093,12 @@ components:
         nextChangeAt: { type: [string, 'null'], format: date-time }
         statement:
           anyOf:
-            - $ref: '#/components/schemas/PublicContentItem'
+            - allOf:
+                - $ref: '#/components/schemas/PublicContentItem'
+                - type: object
+                  required: [publishedVersion]
+                  properties:
+                    publishedVersion: { type: integer, format: int64, minimum: 1, maximum: 9007199254740991 }
             - type: 'null'
     StatementNotificationRequest:
       type: object

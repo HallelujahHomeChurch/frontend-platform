@@ -136,3 +136,13 @@ Storage invalidation fences late writes across same-origin tabs. Cross-origin
 account changes still require background verification; the shared SSO hint is
 not identity proof. `runtime.signOut()` pauses auth work while global logout is
 pending and invalidates stale session and callback completions.
+
+## Church statement dismissal
+
+Release v1.0.47 adds Website client `getStatementDismissal`/`dismissStatement`
+and optional async token refresh for these idempotent requests. The preferences
+package exports `statementRefKey`, `readAnonymousStatementDismissal` and
+`writeAnonymousStatementDismissal`. Anonymous storage matches statement ID and
+published version; the shared cookie only bridges WWW/Account in one browser.
+No day or expiration timestamp participates in the display decision. Publish the
+reviewed version before updating consumer registry lockfiles.

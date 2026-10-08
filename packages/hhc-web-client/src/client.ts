@@ -8,6 +8,8 @@ export type LegalManifest = components['schemas']['LegalManifest']
 export type LegalDraft = components['schemas']['LegalDraft']
 export type LegalDocuments = components['schemas']['LegalDocuments']
 export type ActiveStatement = components['schemas']['ActiveStatement']
+export type StatementDismissal = components['schemas']['StatementDismissal']
+export type StatementRef = Pick<StatementDismissal, 'statementId' | 'publishedVersion'>
 export type StatementNotificationRequest = components['schemas']['StatementNotificationRequest']
 export type ContentLocale = components['schemas']['ContentLocale']
 export type BulletinSeries = components['schemas']['BulletinSeries']
@@ -158,7 +160,8 @@ export class HhcWebApiError extends Error {
 
 export function createHhcWebClient(options: {
   baseUrl: string
-  getAccessToken: () => string | null
+  getAccessToken: () => string | null | Promise<string | null>
+  refreshAfterUnauthorized?: (rejectedToken: string) => Promise<string | null>
   fetcher?: typeof fetch
 }) {
   const client = createClient<paths>({
@@ -167,8 +170,8 @@ export function createHhcWebClient(options: {
   })
 
   client.use({
-    onRequest({ request }) {
-      const token = options.getAccessToken()
+    async onRequest({ request }) {
+      const token = await options.getAccessToken()
       if (token) request.headers.set('Authorization', `Bearer ${token}`)
       if (!request.headers.has('Accept')) request.headers.set('Accept', 'application/json')
       return request
@@ -180,6 +183,15 @@ export function createHhcWebClient(options: {
     if (result.error !== undefined || !result.response.ok) throw apiError(result.response, result.error)
     if (result.data === undefined) throw new HhcWebApiError(result.response.status, 'invalid_response', 'The API response did not include data.')
     return result.data
+  }
+
+  async function statementRequest<T>(request: () => Promise<T>): Promise<T> {
+    const token = await options.getAccessToken()
+    try {return await request()} catch (error) {
+      if (!(error instanceof HhcWebApiError) || error.status !== 401 || !token || !options.refreshAfterUnauthorized) throw error
+      if (!await options.refreshAfterUnauthorized(token)) throw error
+      return request()
+    }
   }
 
   async function listPublicContentPage(
@@ -628,6 +640,12 @@ export function createHhcWebClient(options: {
         signal,
       })
       if (!response.ok) throw new HhcWebApiError(response.status, 'upload_failed', 'The file could not be uploaded.')
+    },
+    async getStatementDismissal(ref: StatementRef, signal?: AbortSignal): Promise<StatementDismissal> {
+      return statementRequest(async () => (await unwrap(client.GET('/me/statements/{statementId}/dismissal', {params: {path: {statementId: ref.statementId}, query: {publishedVersion: ref.publishedVersion}}, cache: 'no-store', signal}))).data)
+    },
+    async dismissStatement(ref: StatementRef, signal?: AbortSignal): Promise<StatementDismissal> {
+      return statementRequest(async () => (await unwrap(client.PUT('/me/statements/{statementId}/dismissal', {params: {path: {statementId: ref.statementId}}, body: {publishedVersion: ref.publishedVersion}, cache: 'no-store', signal}))).data)
     },
     async getActiveStatement(locale: ContentLocale, signal?: AbortSignal) {
       return (await unwrap(client.GET('/statements/active', { params: { query: { locale } }, cache: 'no-store', signal }))).data

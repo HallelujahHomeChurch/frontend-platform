@@ -835,6 +835,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/statements/{statementId}/dismissal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                statementId: string;
+            };
+            cookie?: never;
+        };
+        /** Read the signed-in account's dismissal of a published statement version */
+        get: operations["getStatementDismissal"];
+        /** Idempotently stop automatic prompts for the exact published version */
+        put: operations["dismissStatement"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/statements/active": {
         parameters: {
             query?: never;
@@ -2570,6 +2590,20 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        StatementDismissal: {
+            /** Format: uuid */
+            statementId: string;
+            /** Format: int64 */
+            publishedVersion: number;
+            dismissed: boolean;
+        };
+        StatementDismissalEnvelope: {
+            data: components["schemas"]["StatementDismissal"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
+        };
         RecordingCaptureOperationInput: {
             operationKey: string;
         };
@@ -6061,7 +6095,10 @@ export interface components {
             serverNow: string;
             /** Format: date-time */
             nextChangeAt: string | null;
-            statement: components["schemas"]["PublicContentItem"] | null;
+            statement: (components["schemas"]["PublicContentItem"] & {
+                /** Format: int64 */
+                publishedVersion: number;
+            }) | null;
         };
         StatementNotificationRequest: {
             /** Format: uuid */
@@ -6079,6 +6116,15 @@ export interface components {
         };
     };
     responses: {
+        /** @description Owner-scoped statement preference; Cache-Control private, no-store */
+        StatementDismissal: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["StatementDismissalEnvelope"];
+            };
+        };
         /** @description Generic not_found for denied, missing or unpublished edition. Only this owner marker together with typed not_found is terminal; an unrelated router or gateway 404 must not purge offline data. */
         ReaderUnavailable: {
             headers: {
@@ -8028,6 +8074,53 @@ export interface operations {
                 content?: never;
             };
             503: components["responses"]["Error"];
+        };
+    };
+    getStatementDismissal: {
+        parameters: {
+            query: {
+                publishedVersion: number;
+            };
+            header?: never;
+            path: {
+                statementId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["StatementDismissal"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    dismissStatement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                statementId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: int64 */
+                    publishedVersion: number;
+                };
+            };
+        };
+        responses: {
+            200: components["responses"]["StatementDismissal"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
         };
     };
     getActiveStatement: {
