@@ -13,6 +13,635 @@ servers:
   - url: /
     description: Direct service probe base.
 paths:
+  /api/operations/me/service/teams/{id}/publications:
+    post:
+      operationId: publishServiceAssignments
+      summary: Atomically apply the reviewed service publications batch
+      tags: [Service duties]
+      security: [{ gatewayPrincipal: [] }]
+      x-hhc-authorization: Current responsibility for this fellowship, rechecked on idempotent replay.
+      parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 1, maxLength: 200 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ServicePublication' }
+      responses:
+        '200':
+          description: Entire batch applied or replayed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ServiceBatchResult' }
+        '400': { description: Invalid or oversized batch }
+        '401': { description: Unauthenticated }
+        '404': { description: Outside management scope }
+        '409': { description: Closed assignment or idempotency conflict }
+        '412': { description: Changed assignment or occurrence; nothing published }
+        '503': { description: Dependency unavailable }
+  /api/operations/me/service/teams/{id}/drafts:
+    post:
+      operationId: createServiceDraftBatch
+      summary: Atomically apply the reviewed service drafts batch
+      tags: [Service duties]
+      security: [{ gatewayPrincipal: [] }]
+      x-hhc-authorization: Current responsibility for this fellowship, rechecked on idempotent replay.
+      parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 1, maxLength: 200 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ServiceDraftBatch' }
+      responses:
+        '200':
+          description: Entire batch applied or replayed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ServiceBatchResult' }
+        '400': { description: Invalid or oversized batch }
+        '401': { description: Unauthenticated }
+        '404': { description: Outside management scope }
+        '409': { description: Closed assignment or idempotency conflict }
+        '412': { description: Changed assignment or occurrence; nothing published }
+        '503': { description: Dependency unavailable }
+  /api/operations/me/service/push-config:
+    get:
+      operationId: getServicePushConfig
+      summary: Get browser push availability and public application server key
+      tags: [Service duties]
+      security: [{ gatewayPrincipal: [] }]
+      x-hhc-authorization: Current authenticated Account eligibility; no private subscription data is returned.
+      responses:
+        '200':
+          description: Browser push configuration; private no-store response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServicePushConfig'
+        '401': { description: Unauthenticated }
+        '404': { description: Resource unavailable or outside scope }
+        '503': { description: Dependency unavailable }
+  /api/operations/me/service/installation:
+    post:
+      operationId: registerServiceInstallation
+      summary: Register or revoke this device using its installation secret
+      tags:
+      - Service duties
+      security:
+      - gatewayPrincipal: []
+      x-hhc-authorization: Effective fellowship membership; mutations additionally enforce
+        current assignee or fellowship responsibility in the transaction.
+      parameters: []
+      responses:
+        '200':
+          description: Device registration updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceAcknowledgement'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthenticated
+        '404':
+          description: Resource unavailable or outside scope
+        '409':
+          description: Closed request or idempotency conflict
+        '412':
+          description: Stale assignment or preference version
+        '503':
+          description: Dependency unavailable
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceInstallation'
+  /priv/service-push/eligibility:
+    post:
+      operationId: servicePushEligibility
+      summary: Private native push eligibility
+      tags:
+      - Service duties
+      security:
+      - daprCallerAppID: []
+      x-hhc-authorization: Exact Dapr notification-worker caller; unavailable unless Service
+        push is enabled.
+      parameters: []
+      responses:
+        '200':
+          description: Device registration updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServicePushEligibility'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthenticated
+        '404':
+          description: Resource unavailable or outside scope
+        '409':
+          description: Closed request or idempotency conflict
+        '412':
+          description: Stale assignment or preference version
+        '503':
+          description: Dependency unavailable
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServicePushEligibilityInput'
+  /priv/service-push/result:
+    post:
+      operationId: servicePushResult
+      summary: Private native push result
+      tags:
+      - Service duties
+      security:
+      - daprCallerAppID: []
+      x-hhc-authorization: Exact Dapr notification-worker caller; unavailable unless Service
+        push is enabled.
+      parameters: []
+      responses:
+        '200':
+          description: Device registration updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceAcknowledgement'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthenticated
+        '404':
+          description: Resource unavailable or outside scope
+        '409':
+          description: Closed request or idempotency conflict
+        '412':
+          description: Stale assignment or preference version
+        '503':
+          description: Dependency unavailable
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServicePushResultInput'
+  /api/operations/me/service/teams/{id}/occurrences:
+    get:
+      operationId: listServiceOccurrences
+      summary: List church occurrences available to fellowship scheduling managers
+      tags:
+      - Service duties
+      security:
+      - gatewayPrincipal: []
+      x-hhc-authorization: Effective fellowship membership; mutations additionally enforce
+        current assignee or fellowship responsibility in the transaction.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: from
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+      responses:
+        '200':
+          description: Upcoming church occurrences
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Occurrence'
+        '400':
+          description: Invalid date range
+        '404':
+          description: Not responsible for fellowship
+        '503':
+          description: Unavailable
+  /api/operations/me/service/teams:
+    get:
+      operationId: listServiceTeams
+      summary: listServiceTeams
+      tags:
+      - Service duties
+      security:
+      - gatewayPrincipal: []
+      x-hhc-authorization: Effective fellowship membership; mutations additionally enforce
+        current assignee or fellowship responsibility in the transaction.
+      parameters: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceTeam'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthenticated
+        '404':
+          description: Resource unavailable or outside scope
+        '409':
+          description: Closed request or idempotency conflict
+        '412':
+          description: Stale assignment or preference version
+        '503':
+          description: Dependency unavailable
+  /api/operations/me/service/teams/{id}/candidates:
+    get:
+      operationId: listServiceCandidates
+      summary: listServiceCandidates
+      tags:
+      - Service duties
+      security:
+      - gatewayPrincipal: []
+      x-hhc-authorization: Effective fellowship membership; mutations additionally enforce
+        current assignee or fellowship responsibility in the transaction.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+        description: Last returned id from a full 100-item page. Omit on the first page.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceCandidate'
+                maxItems: 100
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthenticated
+        '404':
+          description: Resource unavailable or outside scope
+        '409':
+          description: Closed request or idempotency conflict
+        '412':
+          description: Stale assignment or preference version
+        '503':
+          description: Dependency unavailable
+  /api/operations/me/service/assignments:
+    get:
+      operationId: listServiceAssignments
+      summary: listServiceAssignments
+      tags:
+      - Service duties
+      security:
+      - gatewayPrincipal: []
+      x-hhc-authorization: Effective fellowship membership; mutations additionally enforce
+        current assignee or fellowship responsibility in the transaction.
+      parameters:
+      - name: includeDrafts
+        in: query
+        description: Requires current fellowship responsibility; defaults to published only.
+        schema: { type: boolean, default: false }
+      - name: teamId
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: from
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: to
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceAssignmentPage'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthenticated
+        '404':
+          description: Resource unavailable or outside scope
+        '409':
+          description: Closed request or idempotency conflict
+        '412':
+          description: Stale assignment or preference version
+        '503':
+          description: Dependency unavailable
+    post:
+      operationId: createServiceAssignment
+      summary: createServiceAssignment
+      tags:
+      - Service duties
+      security:
+      - gatewayPrincipal: []
+      x-hhc-authorization: Effective fellowship membership; mutations additionally enforce
+        current assignee or fellowship responsibility in the transaction.
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 200
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceAssignment'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthenticated
+        '404':
+          description: Resource unavailable or outside scope
+        '409':
+          description: Closed request or idempotency conflict
+        '412':
+          description: Stale assignment or preference version
+        '503':
+          description: Dependency unavailable
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceCreateInput'
+  /api/operations/me/service/assignments/{id}:
+    get:
+      operationId: getServiceAssignment
+      summary: getServiceAssignment
+      tags:
+      - Service duties
+      security:
+      - gatewayPrincipal: []
+      x-hhc-authorization: Effective fellowship membership; mutations additionally enforce
+        current assignee or fellowship responsibility in the transaction.
+      parameters:
+      - name: includeDrafts
+        in: query
+        description: Requires current fellowship responsibility; defaults to published only.
+        schema: { type: boolean, default: false }
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceAssignment'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthenticated
+        '404':
+          description: Resource unavailable or outside scope
+        '409':
+          description: Closed request or idempotency conflict
+        '412':
+          description: Stale assignment or preference version
+        '503':
+          description: Dependency unavailable
+  /api/operations/me/service/assignments/{id}/commands:
+    post:
+      operationId: commandServiceAssignment
+      summary: commandServiceAssignment
+      tags:
+      - Service duties
+      security:
+      - gatewayPrincipal: []
+      x-hhc-authorization: Effective fellowship membership; mutations additionally enforce
+        current assignee or fellowship responsibility in the transaction.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 200
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceAssignment'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthenticated
+        '404':
+          description: Resource unavailable or outside scope
+        '409':
+          description: Closed request or idempotency conflict
+        '412':
+          description: Stale assignment or preference version
+        '503':
+          description: Dependency unavailable
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceCommand'
+  /api/operations/me/service/preference:
+    get:
+      operationId: getServicePreference
+      summary: getServicePreference
+      tags:
+      - Service duties
+      security:
+      - gatewayPrincipal: []
+      x-hhc-authorization: Effective fellowship membership; mutations additionally enforce
+        current assignee or fellowship responsibility in the transaction.
+      parameters: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServicePreference'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthenticated
+        '404':
+          description: Resource unavailable or outside scope
+        '409':
+          description: Closed request or idempotency conflict
+        '412':
+          description: Stale assignment or preference version
+        '503':
+          description: Dependency unavailable
+    post:
+      operationId: updateServicePreference
+      summary: updateServicePreference
+      tags:
+      - Service duties
+      security:
+      - gatewayPrincipal: []
+      x-hhc-authorization: Effective fellowship membership; mutations additionally enforce
+        current assignee or fellowship responsibility in the transaction.
+      parameters: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServicePreference'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthenticated
+        '404':
+          description: Resource unavailable or outside scope
+        '409':
+          description: Closed request or idempotency conflict
+        '412':
+          description: Stale assignment or preference version
+        '503':
+          description: Dependency unavailable
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServicePreference'
+  /api/operations/me/service/notifications:
+    get:
+      operationId: listServiceNotifications
+      summary: listServiceNotifications
+      tags:
+      - Service duties
+      security:
+      - gatewayPrincipal: []
+      x-hhc-authorization: Effective fellowship membership; mutations additionally enforce
+        current assignee or fellowship responsibility in the transaction.
+      parameters:
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+        description: Last returned id from a full 100-item page. Omit on the first page.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceNotice'
+                maxItems: 100
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthenticated
+        '404':
+          description: Resource unavailable or outside scope
+        '409':
+          description: Closed request or idempotency conflict
+        '412':
+          description: Stale assignment or preference version
+        '503':
+          description: Dependency unavailable
+  /api/operations/me/service/notifications/{id}/read:
+    post:
+      operationId: readServiceNotification
+      summary: readServiceNotification
+      tags:
+      - Service duties
+      security:
+      - gatewayPrincipal: []
+      x-hhc-authorization: Effective fellowship membership; mutations additionally enforce
+        current assignee or fellowship responsibility in the transaction.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceNotice'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthenticated
+        '404':
+          description: Resource unavailable or outside scope
+        '409':
+          description: Closed request or idempotency conflict
+        '412':
+          description: Stale assignment or preference version
+        '503':
+          description: Dependency unavailable
   /priv/operations/member-qualifications:
     post:
       tags: [Operations]
@@ -1585,6 +2214,404 @@ components:
     IdempotencyKey: { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 1, maxLength: 200 } }
     IfMatch: { name: If-Match, in: header, required: true, schema: { type: string, pattern: '^"[1-9][0-9]*"$' } }
   schemas:
+    ServicePushConfig:
+      type: object
+      additionalProperties: false
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
+        publicKey:
+          type: string
+          description: Base64url P-256 VAPID public key, present only when enabled.
+          minLength: 87
+          maxLength: 87
+    ServiceWebSubscription:
+      type: object
+      additionalProperties: false
+      required: [endpoint, keys]
+      properties:
+        endpoint:
+          type: string
+          format: uri
+          maxLength: 2048
+          description: HTTPS endpoint on the supported FCM, Apple, Mozilla or WNS push hosts; custom ports and userinfo are rejected.
+        keys:
+          type: object
+          additionalProperties: false
+          required: [p256dh, auth]
+          properties:
+            p256dh: { type: string, minLength: 87, maxLength: 87, pattern: '^[A-Za-z0-9_-]+$' }
+            auth: { type: string, minLength: 22, maxLength: 22, pattern: '^[A-Za-z0-9_-]+$' }
+    ServiceInstallation:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - secret
+      oneOf:
+      - required: [revoke]
+        properties:
+          revoke: { const: true }
+      - required: [platform, token]
+        properties:
+          platform: { enum: [ios, android] }
+          revoke: { const: false }
+        not: { required: [subscription] }
+      - required: [platform, subscription]
+        properties:
+          platform: { const: web }
+          revoke: { const: false }
+        not: { required: [token] }
+      properties:
+        id: &id002
+          type: string
+          format: uuid
+        secret:
+          type: string
+          minLength: 32
+          maxLength: 128
+          writeOnly: true
+        token:
+          type: string
+          writeOnly: true
+          pattern: ^(ExpoPushToken|ExponentPushToken)\[[A-Za-z0-9_-]{10,200}\]$
+        platform:
+          type: string
+          enum:
+          - ios
+          - android
+          - web
+        subscription:
+          $ref: '#/components/schemas/ServiceWebSubscription'
+        revoke: &id001
+          type: boolean
+    ServiceAcknowledgement:
+      type: object
+      additionalProperties: false
+      required:
+      - ok
+      properties:
+        ok: *id001
+    ServicePushEligibilityInput:
+      type: object
+      additionalProperties: false
+      required:
+      - deliveryId
+      - tokenHash
+      properties:
+        deliveryId: *id002
+        tokenHash:
+          type: string
+          pattern: ^[a-f0-9]{64}$
+    ServicePushResultInput:
+      type: object
+      additionalProperties: false
+      required:
+      - deliveryId
+      - result
+      properties:
+        deliveryId: *id002
+        result:
+          type: string
+          enum:
+          - provider_received
+          - invalid_endpoint
+          - provider_failed
+          - receipt_unknown
+    ServicePushEligibility:
+      type: object
+      additionalProperties: false
+      required:
+      - allow
+      - ttl
+      properties:
+        allow: *id001
+        ttl:
+          type: integer
+        assignmentId: *id002
+    ServiceTeam:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - name
+      - memberId
+      - canManage
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        memberId:
+          type: string
+        canManage:
+          type: boolean
+    ServiceCandidate:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - name
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    ServiceReplacement:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - requesterMemberId
+      - mode
+      - status
+      - createdAt
+      properties:
+        id:
+          type: string
+        requesterMemberId:
+          type: string
+        mode:
+          type: string
+          enum:
+          - open
+          - nominated
+        targetMemberId:
+          type: string
+        status:
+          type: string
+          enum:
+          - active
+          - accepted
+          - declined
+          - withdrawn
+          - invalidated
+          - expired
+        createdAt:
+          type: string
+          format: date-time
+        closedAt:
+          type: string
+          format: date-time
+        acceptedByMemberId:
+          type: string
+    ServiceVersionRef:
+      type: object
+      additionalProperties: false
+      required: [id, expectedVersion]
+      properties:
+        id: { type: string, format: uuid }
+        expectedVersion: { type: integer, minimum: 1 }
+    ServicePublication:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items: { $ref: '#/components/schemas/ServiceVersionRef' }
+    ServiceDraftBatch:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          maxItems: 100
+          description: Every item must target this team and explicitly set draft to true.
+          items: { $ref: '#/components/schemas/ServiceCreateInput' }
+    ServiceBatchResult:
+      type: object
+      additionalProperties: false
+      required: [assignmentIds]
+      properties:
+        assignmentIds:
+          type: array
+          items: { type: string, format: uuid }
+    ServiceAssignment:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - teamId
+      - teamName
+      - meetingId
+      - meetingName
+      - occurrenceDate
+      - occurrenceId
+      - label
+      - timeZone
+      - startsAt
+      - endsAt
+      - version
+      - meetingVersion
+      - cancelled
+      - helpOpen
+      - needsAttention
+      properties:
+        draft: { type: boolean, description: Unpublished and visible only to authorized managers. }
+        publishedAt: { type: string, format: date-time }
+        reminderAt:
+          type: string
+          format: date-time
+        reminderReason:
+          type: string
+          enum: [disabled, unavailable, at_or_after_start, past, scheduled]
+        id:
+          type: string
+        teamId:
+          type: string
+        teamName:
+          type: string
+        meetingId:
+          type: string
+        meetingName:
+          type: string
+        occurrenceDate:
+          type: string
+        occurrenceId:
+          type: string
+        label:
+          type: string
+        assigneeMemberId:
+          type: string
+        assigneeName:
+          type: string
+        timeZone:
+          type: string
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+        meetingVersion:
+          type: integer
+        cancelled:
+          type: boolean
+        helpRecipients:
+          type: integer
+          minimum: 0
+        helpOpen:
+          type: boolean
+        needsAttention:
+          type: boolean
+        request:
+          $ref: '#/components/schemas/ServiceReplacement'
+    ServiceAssignmentPage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceAssignment'
+        nextCursor:
+          type: string
+    ServiceCreateInput:
+      type: object
+      additionalProperties: false
+      required:
+      - teamId
+      - meetingId
+      - occurrenceDate
+      - label
+      properties:
+        draft: { type: boolean, default: false, description: Admin editors send true; omitted preserves legacy immediate publication. }
+        teamId:
+          type: string
+        meetingId:
+          type: string
+        occurrenceDate:
+          type: string
+        label:
+          type: string
+        assigneeMemberId:
+          type: string
+    ServiceCommand:
+      type: object
+      additionalProperties: false
+      required:
+      - action
+      - expectedVersion
+      properties:
+        action:
+          type: string
+          enum:
+          - update
+          - assign
+          - edit
+          - cancel
+          - resolve-help
+          - request
+          - switch
+          - accept
+          - decline
+          - withdraw
+          - help
+        expectedVersion:
+          type: integer
+        requestId:
+          type: string
+        mode:
+          type: string
+        targetMemberId:
+          type: string
+        assigneeMemberId:
+          type: string
+        label:
+          type: string
+    ServicePreference:
+      type: object
+      additionalProperties: false
+      required:
+      - enabled
+      - leadDays
+      - localTime
+      - timeZone
+      - version
+      properties:
+        enabled:
+          type: boolean
+        leadDays:
+          type: integer
+          minimum: 0
+          maximum: 7
+        localTime:
+          type: string
+          pattern: ^([01][0-9]|2[0-3]):[0-5][0-9]$
+        timeZone:
+          type: string
+        version:
+          type: integer
+    ServiceNotice:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - assignmentId
+      - kind
+      - createdAt
+      properties:
+        id:
+          type: string
+        assignmentId:
+          type: string
+        kind:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        readAt:
+          type: string
+          format: date-time
     ManagedEntitlementCode:
       type: string
       enum: [bulletin.general.zh-Hant.access, bulletin.general.zh-Hans.access, bulletin.general.en.access, video.meeting-recordings.access]
@@ -2493,7 +3520,7 @@ components:
       additionalProperties: false
       required: [recordType, recordKey, data]
       properties:
-        recordType: { type: string, enum: [member, church_membership, org_membership, org_role_assignment, unit_responsibility, membership_transfer, entitlement_assignment, resource_reservation] }
+        recordType: { type: string, enum: [member, church_membership, org_membership, org_role_assignment, unit_responsibility, membership_transfer, entitlement_assignment, resource_reservation, service_assignment, service_preference, service_notification, service_installation, service_push_delivery] }
         recordKey: { type: string, format: uuid }
         data: { type: object, additionalProperties: true }
     DSRExportPage:
