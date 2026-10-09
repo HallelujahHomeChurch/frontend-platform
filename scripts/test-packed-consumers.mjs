@@ -114,7 +114,7 @@ void createHhcWebClient;
 void contentStatus;
 void groupManifest;
 void getInitialTheme;
-createRoot(document.getElementById('root')!).render(<><BulletinDocumentRenderer document={bulletin} mode="mobile" /><BulletinDocumentRenderer document={bulletinV6} mode="paper" activePage={bulletinV6.pages[0].id} /><Button>Smoke</Button><ExpandableSearchField label="Search" submitLabel="Submit" clearLabel="Clear" closeLabel="Close" onExpandedChange={() => {}} /><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /><AccountMenu user={{name: accountUser.display_name, email: accountUser.email}} links={[{id: 'destination', label: 'Destination', href: 'https://example.com/destination'}]} labels={{menu: 'Account', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => {}} /></>);
+createRoot(document.getElementById('root')!).render(<><BulletinDocumentRenderer document={bulletin} mode="mobile" /><BulletinDocumentRenderer document={bulletinV6} mode="paper" activePage={bulletinV6.pages[0].id} /><Button>Smoke</Button><ExpandableSearchField label="Search" submitLabel="Submit" clearLabel="Clear" closeLabel="Close" allowEmptySubmit onExpandedChange={() => {}} /><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /><AccountMenu user={{name: accountUser.display_name, email: accountUser.email}} links={[{id: 'destination', label: 'Destination', href: 'https://example.com/destination'}]} labels={{menu: 'Account', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => {}} /></>);
 `);
   run(vite, 'install', '--ignore-workspace');
   run(vite, 'exec', 'node', '--input-type=module', '--eval', `
@@ -195,7 +195,7 @@ void createHhcWebClient;
 void contentStatus;
 void groupManifest;
 void getInitialTheme;
-export default function Page() { return <><BulletinDocumentRenderer document={bulletin} mode="paper" activePage={bulletin.pages[0].id} /><BulletinDocumentRenderer document={bulletinV6} mode="paper" activePage={bulletinV6.pages[0].id} /><Button>Smoke</Button><ExpandableSearchField label="Search" submitLabel="Submit" clearLabel="Clear" closeLabel="Close" onExpandedChange={() => {}} /><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /><AccountMenu user={{name: accountUser.display_name, email: accountUser.email}} links={[{id: 'destination', label: 'Destination', href: 'https://example.com/destination'}]} labels={{menu: 'Account', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => {}} /></>; }
+export default function Page() { return <><BulletinDocumentRenderer document={bulletin} mode="paper" activePage={bulletin.pages[0].id} /><BulletinDocumentRenderer document={bulletinV6} mode="paper" activePage={bulletinV6.pages[0].id} /><Button>Smoke</Button><ExpandableSearchField label="Search" submitLabel="Submit" clearLabel="Clear" closeLabel="Close" allowEmptySubmit onExpandedChange={() => {}} /><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /><AccountMenu user={{name: accountUser.display_name, email: accountUser.email}} links={[{id: 'destination', label: 'Destination', href: 'https://example.com/destination'}]} labels={{menu: 'Account', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => {}} /></>; }
 `);
   run(next, 'install', '--ignore-workspace');
   run(next, 'build');
