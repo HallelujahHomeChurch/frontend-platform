@@ -1290,6 +1290,40 @@ describe('HHC UI primitives', () => {
     expect(screen.getByRole('searchbox', {name: 'Search'})).toHaveValue('weekly');
   });
 
+  it('keeps IME confirmation from submitting or collapsing the field', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+    render(<ExpandableSearchField label="Search" submitLabel="Submit" clearLabel="Clear" onSubmit={onSubmit} />);
+    await user.click(screen.getByRole('button', {name: 'Search'}));
+    const input = screen.getByRole('searchbox', {name: 'Search'});
+    fireEvent.change(input, {target: {value: '主日'}});
+    fireEvent.keyDown(input, {key: 'Enter', code: 'Enter', isComposing: true});
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(input.closest('.hhc-expandable-search')).toHaveAttribute('data-expanded', 'true');
+  });
+
+  it('reports expansion and closes without clearing the draft or submitting', async () => {
+    const user = userEvent.setup();
+    const onExpandedChange = vi.fn();
+    const onSubmit = vi.fn();
+    render(<ExpandableSearchField label="Search" submitLabel="Submit" clearLabel="Clear" closeLabel="Close search" onExpandedChange={onExpandedChange} onSubmit={onSubmit} />);
+    const trigger = screen.getByRole('button', {name: 'Search'});
+    await user.click(trigger);
+    expect(onExpandedChange).toHaveBeenLastCalledWith(true);
+    const input = screen.getByRole('searchbox', {name: 'Search'});
+    await user.type(input, 'worship');
+    await user.click(screen.getByRole('button', {name: 'Close search'}));
+    expect(onExpandedChange).toHaveBeenLastCalledWith(false);
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(trigger).toHaveFocus();
+    await user.click(trigger);
+    expect(input).toHaveValue('worship');
+    await user.clear(input);
+    await user.click(screen.getByRole('button', {name: 'Submit'}));
+    expect(onExpandedChange).toHaveBeenLastCalledWith(false);
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
   it('submits a trimmed query from the expanded search trigger', async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();
