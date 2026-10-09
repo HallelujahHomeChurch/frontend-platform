@@ -70,6 +70,7 @@ function menuSelection(items: MenuItem[]) {
 export function Menu({label, items, onAction, trigger, header, focusTriggerRef}: MenuProps) {
   const popoverRef = useRef<HTMLElement>(null);
   const pointerStartedOutsideRef = useRef(false);
+  const triggerContainerRef = useRef<HTMLSpanElement>(null);
   const shouldRestoreFocusRef = useRef(true);
   const [isOpen, setOpen] = useState(false);
   const {isSelectable, selectionProps} = menuSelection(items);
@@ -83,7 +84,7 @@ export function Menu({label, items, onAction, trigger, header, focusTriggerRef}:
     if (!isOpen || !popover) return;
     const ownerDocument = popover.ownerDocument;
     const onPointerDown = (event: PointerEvent) => {
-      pointerStartedOutsideRef.current = event.button === 0 && !event.composedPath().includes(popover);
+      pointerStartedOutsideRef.current = event.button === 0 && !event.composedPath().includes(popover) && !(triggerContainerRef.current && event.composedPath().includes(triggerContainerRef.current));
       if (pointerStartedOutsideRef.current) shouldRestoreFocusRef.current = !isMeaningfullyFocusable(event.target);
     };
     const onClick = (event: MouseEvent) => {
@@ -100,6 +101,7 @@ export function Menu({label, items, onAction, trigger, header, focusTriggerRef}:
     };
   }, [focusTriggerRef, isOpen]);
   return (
+    <span ref={triggerContainerRef} style={{display: 'contents'}}>
     <MenuTrigger isOpen={isOpen} onOpenChange={handleOpenChange}>
       {trigger ?? <AriaButton className="hhc-menu__trigger">{label}</AriaButton>}
       <Popover
@@ -114,6 +116,7 @@ export function Menu({label, items, onAction, trigger, header, focusTriggerRef}:
         </AriaMenu>
       </Popover>
     </MenuTrigger>
+    </span>
   );
 }
 
