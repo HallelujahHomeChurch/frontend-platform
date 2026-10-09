@@ -80,6 +80,13 @@ and direct bulletin entitlements. Qualification and validity-window fields are
 not part of the contract.
 # Bulletin ebook presentation
 
+`bulletinPaperPresentation(document)` applies back-panel spacing and centers the
+retained content on every paper page, without a binding margin. It translates
+text, headings and frames together; widths, vertical coordinates, fragments,
+source pages, page numbers and background art remain unchanged. Website paper,
+thumbnails and Admin desktop/iPad previews use this same presentation. Original
+PDF comparison and mobile reflow retain their existing behavior.
+
 `bulletinBackPanelPresentation(document)` returns paper-only frame geometry for
 Website and Admin previews. It spaces announcement/prayer panels after either a
 framed or unframed summary without changing text widths, anchors, or source pages.
