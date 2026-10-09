@@ -302,10 +302,14 @@ export function ExpandableSearchField({label, submitLabel, clearLabel, closeLabe
       data-expanded={isExpanded}
       data-closeable={Boolean(closeLabel)}
       onKeyDownCapture={(event) => {
-        // Intercept IME confirmation before SearchField handles Enter.
+        // Keep SearchField from submitting IME confirmation or clearing on dismissal.
         if (event.key === 'Enter' && event.nativeEvent.isComposing) {
           event.preventDefault();
           event.stopPropagation();
+        } else if (event.key === 'Escape' && isExpanded) {
+          event.preventDefault();
+          event.stopPropagation();
+          collapse({restoreFocus: true});
         }
       }}
       onBlur={(event) => {
@@ -322,12 +326,6 @@ export function ExpandableSearchField({label, submitLabel, clearLabel, closeLabe
           onChange?.(nextValue);
         }}
         onSubmit={submit}
-        onKeyDown={(event) => {
-          if (event.key === 'Escape') {
-            event.preventDefault();
-            collapse({restoreFocus: true});
-          }
-        }}
       >
         <Input ref={inputRef} placeholder={placeholder} />
         {query ? (

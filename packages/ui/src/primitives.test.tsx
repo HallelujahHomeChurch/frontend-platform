@@ -1269,12 +1269,13 @@ describe('HHC UI primitives', () => {
     await waitFor(() => expect(screen.getByRole('searchbox', {name: 'Search'})).toHaveFocus());
     expect(focus).toHaveBeenCalledWith({preventScroll: true});
 
+    await user.type(screen.getByRole('searchbox', {name: 'Search'}), 'weekly');
     await user.keyboard('{Escape}');
+    expect(screen.getByRole('searchbox', {name: 'Search'})).toHaveValue('weekly');
     expect(shell).toHaveAttribute('data-expanded', 'false');
     expect(trigger).toHaveFocus();
 
     await user.click(trigger);
-    await user.type(screen.getByRole('searchbox', {name: 'Search'}), 'weekly');
     await user.click(screen.getByRole('button', {name: 'Outside'}));
     expect(shell).toHaveAttribute('data-expanded', 'false');
     expect(onChange).not.toHaveBeenCalledWith('');
