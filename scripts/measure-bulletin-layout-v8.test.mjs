@@ -42,7 +42,8 @@ async function compose(source) {
   const saved = JSON.parse(result.submissionJSON);
   assert.deepEqual(saved.canonicalMetadata, source.canonicalMetadata);
   assert.deepEqual(saved.document.pages, source.document.pages);
-  assert.deepEqual(saved.document.layoutManifest.pages.map(p => p.slots.map(s => s.fragments)), source.document.layoutManifest.pages.map(p => p.slots.map(s => s.fragments)));
+  const anchors = document => document.layoutManifest.pages.map(p => Object.fromEntries(p.slots.map(s => [s.id, s.fragments])));
+  assert.deepEqual(anchors(saved.document), anchors(source.document));
   return {...result, saved};
 }
 test('canonical body title fits at normal tracking rather than overlapping adjacent glyphs', async () => {
@@ -69,6 +70,27 @@ test('cover issue number follows measured date with one compact space', async ()
   const end = Math.max(...date.fragments.flatMap(f => f.lines.map(l => l.x + l.width)));
   assert.ok(issue.box.x - end >= 2 && issue.box.x - end <= 6, `date gap ${issue.box.x - end}`);
 });
+test('neighboring column headings keep their own separator on the speaker row', async () => {
+  const source = fixture();
+  const page = source.document.layoutManifest.pages[1];
+  const first = source.document.components[1];
+  first.bodySection.title.sentences[0].spans[0].text = '左欄主題';
+  page.slots = [slot(first.bodySection.title, .1, .25, .13), slot(first.bodySection.contributors[0].name, .27, .25, .07), slot(first.bodySection.blocks[0], .1, .29, .35)];
+  page.fixedSlots.find(s => s.id === 'separator').box.x = .24;
+  const title = block('right-heading', '右欄主題');
+  const speaker = block('right-speaker', '講員');
+  const body = block('right-body', '另一欄的正文內容。');
+  source.document.components.push({id: 'right-article', type: 'bodySection', bodySection: {kind: 'sermon', title, contributors: [{role: 'speaker', name: speaker}], blocks: [body]}});
+  page.slots.push(...[slot(title, .55, .25, .13), slot(speaker, .72, .25, .07), slot(body, .55, .29, .35)].map(s => ({...s, componentId: 'right-article'})));
+  page.fixedSlots.push({id: 'right-separator', element: 'speakerSeparator', box: {x: .69, y: .25, width: .0215, height: .025}, style: {...style}});
+  const {measurement} = await compose(source);
+  const measured = new Map(measurement.pages[1].slots.map(s => [s.slotId, s]));
+  for (const [heading, separator, name] of [['heading-slot', 'separator', 'speaker-slot'], ['right-heading-slot', 'right-separator', 'right-speaker-slot']]) {
+    assert.ok(Math.abs(measured.get(heading).box.y - measured.get(separator).box.y) < 1, 'separator shares its heading row');
+    assert.ok(measured.get(separator).box.x > measured.get(heading).box.x + measured.get(heading).box.width);
+    assert.ok(measured.get(separator).box.x + measured.get(separator).box.width < measured.get(name).box.x);
+  }
+});
 test('unfit title remains a located layout failure instead of shrinking below the reading floor', async () => {
   const source = fixture();
   source.canonicalMetadata.title = '需要人工調整的過長標題'.repeat(12);
@@ -81,6 +103,19 @@ test('unfit title remains a located layout failure instead of shrinking below th
     return true;
   });
   assert.deepEqual(source, original);
+});
+test('hard breaks in a section heading require a located edit instead of silently fitting two lines', async () => {
+  const source = fixture();
+  const title = source.document.components[1].bodySection.title;
+  title.sentences[0].spans[0].text = '第一行\n第二行';
+  source.document.layoutManifest.pages[1].slots[0].fragments[0].end = 7;
+  const submissionJSON = JSON.stringify(source);
+  await assert.rejects(composeBulletinLayout({submissionJSON, expectedContentHash: hash(submissionJSON), assetsDirectory, timeoutMs: 15000}), error => {
+    assert.equal(error.message, 'page_requires_edit');
+    assert.equal(error.cause?.pageId, 'body-page');
+    assert.equal(error.cause?.slotId, 'heading-slot');
+    return true;
+  });
 });
 test('V8 measurement binds the original identity and rejects stale or forged versions', async () => {
   const source = fixture();

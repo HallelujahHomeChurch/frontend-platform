@@ -43,14 +43,17 @@ async function compose(input, runner) {
       const title = titles[0];
       const speakerIDs = new Set((component.bodySection.contributors ?? []).filter(c => c.role === 'speaker').map(c => c.name.id));
       const names = layout.slots.filter(s => speakerIDs.has(s.blockId) && Math.abs(s.box.y - title.box.y) * page.height < blocks.get(title.blockId).style.lineHeight);
-      const separators = (layout.fixedSlots ?? []).filter(s => s.element === 'speakerSeparator' && Math.abs(s.box.y - title.box.y) * page.height < blocks.get(title.blockId).style.lineHeight && s.box.x >= title.box.x);
+      const separators = (layout.fixedSlots ?? []).filter(s => s.element === 'speakerSeparator' && Math.abs(s.box.y - title.box.y) * page.height < blocks.get(title.blockId).style.lineHeight && s.box.x >= title.box.x && names.length === 1 && s.box.x < names[0].box.x);
       const slots = [title, ...(names.length === 1 && separators.length === 1 ? [separators[0]] : []), ...names];
       const right = Math.min(1 - 24 / page.width, Math.max(...layout.slots.filter(s => s.componentId === component.id).map(s => s.box.x + s.box.width)));
       groups.push({page, slots, x: title.box.x, y: title.box.y, width: right - title.box.x, art: false});
     }
   }
   for (const group of groups) for (const slot of group.slots) {
-    const style = slot.element ? slot.style : blocks.get(slot.blockId).style;
+    const block = blocks.get(slot.blockId);
+    const text = slot.element ? submission.canonicalMetadata[slot.element] : block.sentences.flatMap(s => s.spans.map(span => span.text)).join('');
+    if (/[\r\n]/.test(text ?? '')) throw new Error('page_requires_edit', {cause: {pageId: group.page.id, slotId: slot.id}});
+    const style = slot.element ? slot.style : block.style;
     for (const key of ['letterSpacing', 'indent', 'firstLineIndent', 'spaceBefore', 'spaceAfter']) if (style[key]) style[key] = 0;
     if (style.align && style.align !== 'left') style.align = 'left';
     slot.box.width = 10000 / group.page.width;
