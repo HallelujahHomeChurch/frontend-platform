@@ -36,12 +36,12 @@ it('renders only the requested chapter, hides cover details and uses colon-free 
   expect(container.querySelector('[data-sentence-id="s-body"]')).toBeNull();
 });
 
-it.each(['zh-Hant', 'zh-Hans'] as const)('reflows V6 historical %s rows without restoring hidden details or changing anchors', contentLocale => {
+it.each([['v6', 'zh-Hant'], ['v6', 'zh-Hans'], ['v7', 'zh-Hant'], ['v7', 'zh-Hans']] as const)('reflows %s historical %s rows without restoring hidden details or changing anchors', (rendererVersion, contentLocale) => {
   const document = fixture();
   document.contentLocale = contentLocale;
   document.templateVersion = contentLocale === 'zh-Hans' ? 'v2' : 'v1';
-  const exports = UI as typeof UI & {BULLETIN_RENDERER_V6_DIGEST: string};
-  Object.assign(document.layoutManifest, {templateVersion: document.templateVersion, rendererVersion: 'v6', rendererArtifactSha256: exports.BULLETIN_RENDERER_V6_DIGEST});
+  const exports = UI as typeof UI & {BULLETIN_RENDERER_V6_DIGEST: string; BULLETIN_RENDERER_V7_DIGEST: string};
+  Object.assign(document.layoutManifest, {templateVersion: document.templateVersion, rendererVersion, rendererArtifactSha256: rendererVersion === 'v7' ? exports.BULLETIN_RENDERER_V7_DIGEST : exports.BULLETIN_RENDERER_V6_DIGEST});
   const elements = ['historicalVision', 'historicalGospelGoals', 'historicalActions', 'historicalCommitment'];
   document.layoutManifest.pages[0].fixedSlots!.push(...elements.map(element => ({id: element, element: element as 'visionMission', style, box: {x: .4, y: .14, width: .5, height: .02}})));
   const original = structuredClone(document);
@@ -66,6 +66,23 @@ it('preserves article speaker next to boxed title and reveals production details
   rerender(<UI.BulletinEbook document={document} chapter="body" showDetails/>);
   expect(container.querySelector('[data-sentence-id="s-editor"]')).toHaveTextContent('editor');
   expect(JSON.stringify(document)).toBe(original);
+});
+
+it('uses V7 pinned serif fallbacks in Simplified ebook spans without replacing rare characters', () => {
+  const document = fixture();
+  document.contentLocale = 'zh-Hans';
+  document.templateVersion = 'v2';
+  Object.assign(document.layoutManifest, {templateVersion: 'v2', rendererVersion: 'v7', rendererArtifactSha256: UI.BULLETIN_RENDERER_V7_DIGEST});
+  const cover = document.components.find(component => component.type === 'cover');
+  if (cover?.type !== 'cover') throw new Error('cover fixture missing');
+  cover.cover.welcome[0].sentences[0].spans = [{text: '在𥚃面。', fontRole: 'body'}, {text: '保留重點', fontRole: 'emphasis'}];
+  const original = structuredClone(document);
+  const {container} = render(<UI.BulletinEbook document={document} chapter="cover" canonicalMetadata={{title: '信息', subtitle: '', date: '2026-01-01', issueNumber: 1700}}/>);
+  const welcome = container.querySelector(`[data-block-id="${cover.cover.welcome[0].id}"]`)!;
+  expect(welcome).toHaveTextContent('在𥚃面。保留重點');
+  expect(welcome.querySelector('[data-font-role="body"]')).toHaveStyle({fontFamily: "'HHC Weekly Serif SC', 'HHC Weekly Serif'"});
+  expect(welcome.querySelector('[data-font-role="emphasis"]')).toHaveStyle({fontFamily: "'HHC Weekly Serif SC', 'HHC Weekly Serif'"});
+  expect(document).toEqual(original);
 });
 
 it('separates songs while retaining Unicode offsets and scripture font roles for annotations', () => {

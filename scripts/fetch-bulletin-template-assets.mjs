@@ -7,6 +7,7 @@ const source = 'https://raw.githubusercontent.com/HallelujahHomeChurch/hhc-web/e
 const assets = [
   ...JSON.parse(await readFile(new URL('../packages/ui/src/bulletin-reader/template-assets.json', import.meta.url), 'utf8')),
   ...JSON.parse(await readFile(new URL('../packages/ui/src/bulletin-reader/v2/template-assets.json', import.meta.url), 'utf8')),
+  ...JSON.parse(await readFile(new URL('../packages/ui/src/bulletin-reader/v7/template-assets.json', import.meta.url), 'utf8')),
 ];
 for (const url of new Set(assets.map(asset => asset.licenseUrl).filter(Boolean))) {
   const match = url.match(/-([0-9a-f]{64})\.txt$/);

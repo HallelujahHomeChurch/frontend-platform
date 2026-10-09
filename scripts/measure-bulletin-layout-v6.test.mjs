@@ -2,8 +2,10 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {test} from 'node:test';
-import {composeBulletinLayout, measureBulletinLayout} from './measure-bulletin-layout-v6.mjs';
-import {BULLETIN_RENDERER_V6_DIGEST as digest} from '../packages/ui/dist/bulletin-reader/v6/artifact.js';
+const version = process.env.HHC_TEST_RENDERER_V7 === '1' ? 'v7' : 'v6';
+const {composeBulletinLayout, measureBulletinLayout} = await import(`./measure-bulletin-layout-${version}.mjs`);
+const artifact = await import(`../packages/ui/dist/bulletin-reader/${version}/artifact.js`);
+const digest = artifact[`BULLETIN_RENDERER_${version.toUpperCase()}_DIGEST`];
 
 const assetsDirectory = process.env.HHC_BULLETIN_TEMPLATE_DIR;
 assert.ok(assetsDirectory, 'native V6 acceptance requires real immutable fonts');
@@ -11,7 +13,11 @@ const hash = value => createHash('sha256').update(value).digest('hex');
 const labels = ['historicalVision', 'historicalGoals', 'historicalActions', 'historicalCommitment'];
 const style = {fontSize: 12, lineHeight: 15, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0};
 async function fixture(width, height, locale = 'zh-Hant') {
-  const assets = JSON.parse(await readFile(new URL(`../packages/ui/src/bulletin-reader/${locale === 'zh-Hans' ? 'v2/' : ''}template-assets.json`, import.meta.url)));
+  const assets = JSON.parse(await readFile(new URL(`../packages/ui/src/bulletin-reader/${locale === 'zh-Hans' ? 'v2/' : version === 'v7' ? 'v7/' : ''}template-assets.json`, import.meta.url)));
+  if (locale === 'zh-Hans' && version === 'v7') {
+    const traditional = JSON.parse(await readFile(new URL('../packages/ui/src/bulletin-reader/v7/template-assets.json', import.meta.url)));
+    assets.push(...traditional.filter(asset => asset.kind === 'font' && asset.roles.some(role => role === 'body' || role === 'emphasis')));
+  }
   const slots = [];
   const block = (id, text, fontRole = 'body') => {
     slots.push({id: `slot-${id}`, componentId: 'cover', blockId: id, box: {x: .1, y: .3, width: .8, height: .03}, fragments: [{sentenceId: `s-${id}`, start: 0, end: Array.from(text).length}]});
@@ -19,7 +25,7 @@ async function fixture(width, height, locale = 'zh-Hant') {
   };
   const cover = {welcome: [block('welcome', '歡迎一同敬拜。')], worship: [1, 2, 3].map(n => ({id: `song-${n}`, blocks: [block(`song-${n}`, `${n}.共同敬拜`)]})), work: [1, 2, 3].map(n => ({id: `work-${n}`, blocks: [block(`work-${n}`, `${n}.共同生活、愛與成全。`)]})), wordQuestions: [1, 2, 3, 4, 5, 6].map(n => ({id: `question-${n}`, blocks: [block(`question-${n}`, `${n}.分享神的愛。`)]})), weeklyVerses: [block('verse', '耶和華是我的牧者，我必不致缺乏。', 'scripture')]};
   const fixed = (element, x, y, fontSize = 12, width = .5) => ({id: `fixed-${element}`, element, style: {...style, fontSize, lineHeight: fontSize * 1.25}, box: {x, y, width, height: fontSize * 1.25 / height}});
-  const document = {issueId: '00000000-0000-4000-8000-000000000001', series: 'general', contentLocale: locale, schemaVersion: '1', templateVersion: locale === 'zh-Hans' ? 'v2' : 'v1', sourceAssetChecksum: 'a'.repeat(64), sourcePageCount: 4, components: [{id: 'cover', type: 'cover', cover}], pages: [{id: 'cover-page', width, height}], layoutManifest: {templateVersion: locale === 'zh-Hans' ? 'v2' : 'v1', rendererVersion: 'v6', rendererArtifactSha256: digest, assets: assets.filter(a => a.kind === 'font').map(a => ({url: a.url, sha256: a.sha256, kind: 'font', fontRole: a.roles[0]})), pages: [{pageId: 'cover-page', slots, fixedSlots: [fixed('masthead', .35, .06, 20, .59), fixed('date', .096, .17), fixed('issueNumber', .23, .17), fixed('pastor', .096, .208, 10, .28), fixed('titleLabel', .077, .245, 12, .15), fixed('title', .23, .245, 14, .45), fixed('subtitle', .67, .245, 12, .25), ...labels.map((element, i) => fixed(element, .422 + i * .0336, .1465 + i * .019, 9.6, .92 - (.422 + i * .0336))), ...['welcomeLabel', 'worshipLabel', 'workLabel', 'wordLabel', 'verseLabel'].map(element => fixed(element, .07, .28))]}]}};
+  const document = {issueId: '00000000-0000-4000-8000-000000000001', series: 'general', contentLocale: locale, schemaVersion: '1', templateVersion: locale === 'zh-Hans' ? 'v2' : 'v1', sourceAssetChecksum: 'a'.repeat(64), sourcePageCount: 4, components: [{id: 'cover', type: 'cover', cover}], pages: [{id: 'cover-page', width, height}], layoutManifest: {templateVersion: locale === 'zh-Hans' ? 'v2' : 'v1', rendererVersion: version, rendererArtifactSha256: digest, assets: assets.filter(a => a.kind === 'font').map(a => ({url: a.url, sha256: a.sha256, kind: 'font', fontRole: a.roles[0]})), pages: [{pageId: 'cover-page', slots, fixedSlots: [fixed('masthead', .35, .06, 20, .59), fixed('date', .096, .17), fixed('issueNumber', .23, .17), fixed('pastor', .096, .208, 10, .28), fixed('titleLabel', .077, .245, 12, .15), fixed('title', .23, .245, 14, .45), fixed('subtitle', .67, .245, 12, .25), ...labels.map((element, i) => fixed(element, .422 + i * .0336, .1465 + i * .019, 9.6, .92 - (.422 + i * .0336))), ...['welcomeLabel', 'worshipLabel', 'workLabel', 'wordLabel', 'verseLabel'].map(element => fixed(element, .07, .28))]}]}};
   return {document, canonicalMetadata: {title: '永恆的呼召', subtitle: '～一起建造', issueNumber: 1732, date: '2026-07-26'}};
 }
 const input = submission => {
@@ -81,6 +87,8 @@ test('native V1 and V2 still compose their unchanged non-historical covers', asy
     const legacy = await import(`./measure-bulletin-layout${version === 'v2' ? '-v2' : ''}.mjs`);
     const artifact = await import(`../packages/ui/dist/bulletin-reader/${version === 'v2' ? 'v2/' : ''}artifact.js`);
     source.document.layoutManifest.rendererVersion = version;
+    const legacyAssets = JSON.parse(await readFile(new URL(`../packages/ui/src/bulletin-reader/${version === 'v2' ? 'v2/' : ''}template-assets.json`, import.meta.url)));
+    source.document.layoutManifest.assets = legacyAssets.filter(a => a.kind === 'font').map(a => ({url: a.url, sha256: a.sha256, kind: 'font', fontRole: a.roles[0]}));
     source.document.layoutManifest.rendererArtifactSha256 = artifact[`BULLETIN_RENDERER_${version.toUpperCase()}_DIGEST`];
     source.document.layoutManifest.pages[0].fixedSlots = source.document.layoutManifest.pages[0].fixedSlots.filter(s => !labels.includes(s.element));
     const result = await legacy.composeBulletinLayout(input(source));

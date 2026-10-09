@@ -6812,7 +6812,7 @@ components:
       required: [templateVersion, rendererVersion, rendererArtifactSha256, assets, pages]
       properties:
         templateVersion: { type: string, enum: [v1, v2] }
-        rendererVersion: { type: string, enum: [v1, v2, v3, v4, v5, v6], description: Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. V6 adds historical four-row cover profiles. Existing published renderer versions remain immutable. }
+        rendererVersion: { type: string, enum: [v1, v2, v3, v4, v5, v6, v7], description: Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. V6 adds historical four-row cover profiles; V7 preserves proportional inline font sizes during cover composition. Existing published renderer versions remain immutable. }
         rendererArtifactSha256: { $ref: '#/components/schemas/OnlineBulletinHash' }
         contentHash: { $ref: '#/components/schemas/OnlineBulletinHash' }
         layoutValidationHash: { $ref: '#/components/schemas/OnlineBulletinHash' }
@@ -6875,7 +6875,7 @@ components:
         element:
           type: string
           enum: [title, subtitle, date, issueNumber, pageNumber, masthead, vision, visionMission, visionFellowship, visionCommitment, historicalVision, historicalGoals, historicalGospelGoals, historicalActions, historicalCommitment, pastor, contact, scanHint, websiteQRLabel, youtubeQRLabel, streamQRLabel, welcomeLabel, worshipLabel, workLabel, wordLabel, verseLabel, hymnLabel, summaryLabel, summarySidebarTitle, summarySidebarTagline, announcementsLabel, prayersLabel, titleLabel, speakerLabel, speakerSeparator, lectureDateMarker, bodyIssueSummary, bodySpeakerLabel, transcriberLabel, editorLabel, authorLabel, logo, backgroundLogo, websiteQR, youtubeQR, streamQR, topRule, footerRule, summaryFrame, announcementsFrame, prayersFrame]
-          description: Historical elements require rendererVersion v6; historicalGospelGoals preserves the reviewed native gospel-wording variant instead of substituting historicalGoals.
+          description: Historical elements require rendererVersion v6 or v7; historicalGospelGoals preserves the reviewed native gospel-wording variant instead of substituting historicalGoals.
         box: { $ref: '#/components/schemas/OnlineBulletinBox' }
         style: { $ref: '#/components/schemas/OnlineBulletinParagraphStyle' }
     OnlineBulletinCanonicalMetadata:

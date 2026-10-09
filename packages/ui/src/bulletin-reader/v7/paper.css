@@ -1,0 +1,13 @@
+/* V7 uses the same pinned true-bold body face already used by the reader. */
+@font-face {
+  font-family: 'HHC Weekly Serif';
+  src: url('/assets/weekly/v2/body-bold-49bf74f95fef7d74142848883abe13de0aa8f19e32431abe9fe4cc9d3592448f.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: block;
+  ascent-override: 88%;
+  descent-override: 12%;
+  line-gap-override: 0%;
+}
+.hhc-bulletin-v1[data-bulletin-renderer='v7'] h2[data-fixed-element] {font-family: 'HHC Weekly Serif', serif;}
+.hhc-bulletin-v2[data-bulletin-renderer='v7'] h2[data-fixed-element] {font-family: 'HHC Weekly Serif SC', 'HHC Weekly Serif', serif;}
