@@ -5,17 +5,18 @@ import {execFileSync, spawnSync} from 'node:child_process';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {test} from 'node:test';
-const v7=process.env.HHC_TEST_RENDERER_V7==='1';
+const v8=process.env.HHC_TEST_RENDERER_V8==='1';
+const v7=v8||process.env.HHC_TEST_RENDERER_V7==='1';
 const v6=v7||process.env.HHC_TEST_RENDERER_V6==='1';
 const v5=v6||process.env.HHC_TEST_RENDERER_V5==='1';
 const v4=v5||process.env.HHC_TEST_RENDERER_V4==='1';
 const v3=v4||process.env.HHC_TEST_RENDERER_V3==='1';
-const script=v7?'scripts/measure-bulletin-layout-v7.mjs':v6?'scripts/measure-bulletin-layout-v6.mjs':v5?'scripts/measure-bulletin-layout-v5.mjs':v4?'scripts/measure-bulletin-layout-v4.mjs':v3?'scripts/measure-bulletin-layout-v3.mjs':'scripts/measure-bulletin-layout.mjs';
+const script=v8?'scripts/measure-bulletin-layout-v8.mjs':v7?'scripts/measure-bulletin-layout-v7.mjs':v6?'scripts/measure-bulletin-layout-v6.mjs':v5?'scripts/measure-bulletin-layout-v5.mjs':v4?'scripts/measure-bulletin-layout-v4.mjs':v3?'scripts/measure-bulletin-layout-v3.mjs':'scripts/measure-bulletin-layout.mjs';
 const layoutRunner=await import(`../${script}`);
 const {measureBulletinLayout}=layoutRunner;
 const {BULLETIN_RENDERER_V1_DIGEST:legacyDigest}=await import('../packages/ui/dist/bulletin-reader/artifact.js');
 const {BULLETIN_RENDERER_V3_DIGEST:thirdDigest}=await import('../packages/ui/dist/bulletin-reader/v3/artifact.js');
-const newDigest=v7?(await import('../packages/ui/dist/bulletin-reader/v7/artifact.js')).BULLETIN_RENDERER_V7_DIGEST:v6?(await import('../packages/ui/dist/bulletin-reader/v6/artifact.js')).BULLETIN_RENDERER_V6_DIGEST:v5?(await import('../packages/ui/dist/bulletin-reader/v5/artifact.js')).BULLETIN_RENDERER_V5_DIGEST:v4?(await import('../packages/ui/dist/bulletin-reader/v4/artifact.js')).BULLETIN_RENDERER_V4_DIGEST:thirdDigest;
+const newDigest=v8?(await import('../packages/ui/dist/bulletin-reader/v8/artifact.js')).BULLETIN_RENDERER_V8_DIGEST:v7?(await import('../packages/ui/dist/bulletin-reader/v7/artifact.js')).BULLETIN_RENDERER_V7_DIGEST:v6?(await import('../packages/ui/dist/bulletin-reader/v6/artifact.js')).BULLETIN_RENDERER_V6_DIGEST:v5?(await import('../packages/ui/dist/bulletin-reader/v5/artifact.js')).BULLETIN_RENDERER_V5_DIGEST:v4?(await import('../packages/ui/dist/bulletin-reader/v4/artifact.js')).BULLETIN_RENDERER_V4_DIGEST:thirdDigest;
 const BULLETIN_RENDERER_V1_DIGEST=v3?newDigest:legacyDigest;
 
 const assetsDirectory = process.env.HHC_BULLETIN_TEMPLATE_DIR;
@@ -26,7 +27,7 @@ async function fixture(text = '這是一句測試。') {
     issueId: '00000000-0000-4000-8000-000000000001', series: 'general', contentLocale: 'zh-Hant', schemaVersion: '1', templateVersion: 'v1', sourceAssetChecksum: 'a'.repeat(64), sourcePageCount: 4,
     pages: [{id: 'p', width: 595.32, height: 841.92}],
     components: [{id: 'c', type: 'backSummary', items: [{id: 'i', blocks: [{id: 'b', style: {fontSize: 16, lineHeight: 24, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0}, sentences: [{id: 's', spans: [{text, fontRole: 'body'}]}]}]}]}],
-    layoutManifest: {templateVersion: 'v1', rendererVersion: v7?'v7':v6?'v6':v5?'v5':v4?'v4':v3?'v3':'v1', rendererArtifactSha256: BULLETIN_RENDERER_V1_DIGEST, assets: assets.filter(asset => asset.kind === 'font').map(asset => ({url: asset.url, sha256: asset.sha256, kind: 'font', fontRole: asset.roles[0]})), pages: [{pageId: 'p', slots: [{id: 'slot', componentId: 'c', blockId: 'b', box: {x: .1, y: .1, width: .8, height: .1}, fragments: [{sentenceId: 's', start: 0, end: Array.from(text).length}]}]}]},
+    layoutManifest: {templateVersion: 'v1', rendererVersion: v8?'v8':v7?'v7':v6?'v6':v5?'v5':v4?'v4':v3?'v3':'v1', rendererArtifactSha256: BULLETIN_RENDERER_V1_DIGEST, assets: assets.filter(asset => asset.kind === 'font').map(asset => ({url: asset.url, sha256: asset.sha256, kind: 'font', fontRole: asset.roles[0]})), pages: [{pageId: 'p', slots: [{id: 'slot', componentId: 'c', blockId: 'b', box: {x: .1, y: .1, width: .8, height: .1}, fragments: [{sentenceId: 's', start: 0, end: Array.from(text).length}]}]}]},
   };
   const submissionJSON = JSON.stringify({document, canonicalMetadata: {title: '原始主題', subtitle: '', issueNumber: 1739, date: '2026-09-20'}});
   return {submissionJSON, expectedContentHash: hash(submissionJSON), assetsDirectory};
@@ -289,7 +290,7 @@ test('controlled full-page diagnostics preserve geometry and surface every unres
   for (const [issue, pageCount, blockCount] of [[1739, 12, 495], [1740, 16, 679]]) {
     const submission = JSON.parse(await readFile(new URL(`./testdata/bulletin/${issue}-typography.json`, import.meta.url), 'utf8'));
     submission.document.layoutManifest.rendererArtifactSha256 = BULLETIN_RENDERER_V1_DIGEST;
-    submission.document.layoutManifest.rendererVersion = v7?'v7':v6?'v6':v5?'v5':v4?'v4':v3?'v3':'v1';
+    submission.document.layoutManifest.rendererVersion = v8?'v8':v7?'v7':v6?'v6':v5?'v5':v4?'v4':v3?'v3':'v1';
     submission.document.layoutManifest.assets = JSON.parse((await fixture()).submissionJSON).document.layoutManifest.assets;
     const slots = submission.document.layoutManifest.pages.flatMap(page => page.slots);
     assert.equal(slots.length, blockCount);
@@ -572,12 +573,18 @@ test('body captions move with expanded preceding rows', {skip: !assetsDirectory}
   const submission = JSON.parse(input.submissionJSON);
   const component = submission.document.components[0];
   component.type = 'bodySection';
-  component.bodySection = {kind:'sermon',title:component.items[0].blocks[0],blocks:[]};
+  const body = component.items[0].blocks[0];
+  const title = {...body, id: 'caption-heading', sentences: [{id: 'caption-heading-sentence', spans: [{text: '信息', fontRole: 'body'}]}]};
+  component.bodySection = {kind:'sermon',title,blocks:[body]};
   delete component.items;
   const page = submission.document.layoutManifest.pages[0];
   page.slots[0].box.height = .02;
+  page.slots.push({id:'heading-slot', componentId:component.id, blockId:title.id, box:{x:.1,y:.06,width:.8,height:.03}, fragments:[{sentenceId:'caption-heading-sentence',start:0,end:2}]});
   page.fixedSlots = [{id:'caption',element:'editorLabel',box:{x:.1,y:.14,width:.2,height:.04},style:{...component.bodySection.title.style}}];
   const submissionJSON = JSON.stringify(submission);
   const result = await layoutRunner.composeBulletinBodyLayout({...input,submissionJSON,expectedContentHash:hash(submissionJSON)});
   assert.deepEqual(result.measurement.overflow,[]);
+  const measured = result.measurement.pages[0].slots;
+  const preceding = measured.find(slot => slot.slotId === 'slot');
+  assert.ok(measured.find(slot => slot.slotId === 'caption').box.y >= preceding.box.y + preceding.box.height);
 });

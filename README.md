@@ -80,6 +80,13 @@ and direct bulletin entitlements. Qualification and validity-window fields are
 not part of the contract.
 # Bulletin ebook presentation
 
+V8 reuses the immutable V7 fonts and renderer with measured normal-tracking
+canonical titles, single-line boxed headings/speakers and adjacent cover
+date/issue fields. It never substitutes source text or adds source pages to fit.
+Use the V7 assets and CSS with the V8 digest; deploy V8-capable consumers before
+enabling the producer. Verify with `node scripts/verify-bulletin-renderer-v8.mjs`;
+native acceptance uses `HHC_TEST_RENDERER_V8=1`. V1–V7 remain immutable.
+
 Renderer V5 keeps V1–V4 immutable and uses a 24pt cover bottom margin so complete
 weekly verses fit without truncation, smaller type, or an extra cover page.
 Install 1.0.43 in both readers before enabling the V5 extractor producer.
