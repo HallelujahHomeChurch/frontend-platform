@@ -164,4 +164,12 @@ clearing the draft and returns focus to the search trigger. `onExpandedChange`
 reports open/close transitions so a consumer can reserve navigation space or
 pause scroll-driven header hiding. Header height, opaque background, breakpoints,
 and search routing belong to the consuming application. IME confirmation does
-not submit a query. No query provider or results UI is included.
+not submit a query. `allowEmptySubmit` optionally forwards an empty submission so
+a consumer can clear an active URL query; its default preserves existing consumers.
+No query provider or results UI is included.
+
+The Website client accepts optional `q` in `listMemberRecordingsPage` and
+`listMemberLivestreams({q, signal})`. The existing live-list AbortSignal call remains
+compatible. Only the two member search GET paths are synchronized with the canonical
+CMS search contract; unrelated domains retain their existing package contract.
+Release CMS and Gateway producers before enabling consumer search.

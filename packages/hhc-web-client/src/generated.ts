@@ -1958,8 +1958,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List recent published recordings after membership and video entitlement checks
-         * @description Without limit, retains the legacy array response. With limit, returns uploadedAt DESC and id DESC keyset batches and meta.nextCursor (null at exhaustion). Empty batches may still carry a cursor when media is no longer available; continue until nextCursor is null. Every batch rechecks current visibility and ready media.
+         * List or search published recordings after membership and video entitlement checks
+         * @description Without limit, retains the legacy array response. With limit, returns uploadedAt DESC and id DESC keyset batches and meta.nextCursor (null at exhaustion). Empty batches may still carry a cursor when media is no longer available; continue until nextCursor is null. Every batch rechecks current visibility and ready media. q normalizes Unicode whitespace and case, splits into words, and requires every word to occur literally in the title or description. Nonempty q requires limit. Search is applied before the batch limit. Cursor binds the normalized query digest and sort version; legacy cursors are accepted only without a query. Duplicate q values and malformed queries are rejected.
          */
         get: operations["listMemberRecordings"];
         put?: never;
@@ -2555,7 +2555,7 @@ export interface paths {
         };
         /**
          * listMemberLiveRecordings
-         * @description Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture bound; no service-principal upload identity in the initial OBS release.
+         * @description List currently available live events after membership, entitlement and legal checks. Optional q uses the same normalized literal all-word title/description matching as recordings. Ended/ending events are excluded; existing playback scopes remain independent. Duplicate q, more than 100 normalized Unicode code points, malformed queries and all other query parameters are rejected.
          */
         get: operations["listMemberLiveRecordings"];
         put?: never;
@@ -10040,8 +10040,10 @@ export interface operations {
             query?: {
                 /** @description Enable batched reads; required when cursor is supplied. */
                 limit?: number;
-                /** @description Opaque nextCursor from the previous batch; requires limit. */
+                /** @description Opaque nextCursor from the previous batch for the same normalized q; requires limit. */
                 cursor?: string;
+                /** @description Optional literal title/description search; maximum 100 normalized Unicode code points. Empty query retains ordinary listing. */
+                q?: string;
             };
             header?: never;
             path?: never;
@@ -11764,7 +11766,10 @@ export interface operations {
     };
     listMemberLiveRecordings: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Optional literal title/description search; maximum 100 normalized Unicode code points. */
+                q?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;

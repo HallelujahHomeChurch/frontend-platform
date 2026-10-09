@@ -251,11 +251,12 @@ export interface ExpandableSearchFieldProps {
   onSubmit?: (value: string) => void;
   onClear?: () => void;
   onExpandedChange?: (expanded: boolean) => void;
+  allowEmptySubmit?: boolean;
   isDisabled?: boolean;
   mobileBehavior?: 'inline' | 'header-overlay';
 }
 
-export function ExpandableSearchField({label, submitLabel, clearLabel, closeLabel, placeholder, value, defaultValue = '', onChange, onSubmit, onClear, onExpandedChange, isDisabled, mobileBehavior = 'inline'}: ExpandableSearchFieldProps) {
+export function ExpandableSearchField({label, submitLabel, clearLabel, closeLabel, placeholder, value, defaultValue = '', onChange, onSubmit, onClear, onExpandedChange, allowEmptySubmit = false, isDisabled, mobileBehavior = 'inline'}: ExpandableSearchFieldProps) {
   const [isExpanded, setExpanded] = useState(false);
   const [query, setQuery] = useState(value ?? defaultValue);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -278,7 +279,7 @@ export function ExpandableSearchField({label, submitLabel, clearLabel, closeLabe
 
   function submit() {
     const trimmed = query.trim();
-    if (!trimmed) {
+    if (!trimmed && !allowEmptySubmit) {
       collapse({restoreFocus: true});
       return;
     }

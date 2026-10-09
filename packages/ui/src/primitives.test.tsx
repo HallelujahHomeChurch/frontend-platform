@@ -1503,3 +1503,13 @@ describe('HHC UI primitives', () => {
     expect(screen.queryByRole('grid')).not.toBeInTheDocument();
   });
 });
+
+it('allows explicit empty submission to return from filtered search without changing legacy defaults',async()=>{
+ const user=userEvent.setup();const onSubmit=vi.fn();
+ render(<ExpandableSearchField label="Video search" submitLabel="Search videos" clearLabel="Clear query" defaultValue="faith" allowEmptySubmit onSubmit={onSubmit}/>);
+ await user.click(screen.getByRole('button',{name:'Video search'}));
+ await user.click(screen.getByRole('button',{name:'Clear query'}));
+ await user.keyboard('{Enter}');
+ expect(onSubmit).toHaveBeenCalledWith('');
+ expect(screen.getByRole('button',{name:'Video search'})).toHaveFocus();
+});
