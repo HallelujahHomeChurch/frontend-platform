@@ -303,6 +303,14 @@ export async function composeBulletinBodyLayout(input, attempt = 0) {
     layouts.push(layout);
     // Cover has its own semantic grid; the remaining regions retain source columns.
     if (!layout.slots.length || layout.slots.some(slot => !bodyIDs.has(slot.componentId))) continue;
+    const bounds = new Map(measured.pages.find(value => value.pageId === page.id).slots.map(slot => [slot.slotId, slot]));
+    // Transformed title ink can extend beyond its line box; allocate the measured ink.
+    for (const slot of layout.fixedSlots ?? []) {
+      if (page.id === document.pages[0]?.id || !['title', 'subtitle'].includes(slot.element)) continue;
+      const ink = bounds.get(slot.id);
+      slot.box.height = Math.max(slot.box.height * page.height, ink.box.height,
+        ...ink.fragments.flatMap(fragment => fragment.lines.map(line => line.y + line.height - slot.box.y * page.height))) / page.height;
+    }
     const isBack = layout.slots.every(slot => Object.values(panelTypes).includes(componentTypes.get(slot.componentId)));
     const firstRow = Math.min(...layout.slots.map(slot => slot.box.y)) - 1/page.height;
     const headers = (layout.fixedSlots ?? []).filter(slot => isBack
@@ -319,7 +327,6 @@ export async function composeBulletinBodyLayout(input, attempt = 0) {
       const dates = new Set(document.components.flatMap(component => component.bodySection?.header ? [component.bodySection.header.lectureDate.id] : []));
       for (const slot of layout.slots) if (dates.has(slot.blockId)) slot.box.x = Math.max(slot.box.x, marker.box.x + marker.box.width + 2/page.width);
     }
-    const bounds = new Map(measured.pages.find(value => value.pageId === page.id).slots.map(slot => [slot.slotId, slot]));
     const rows = [];
     for (const slot of [...layout.slots,...headers].sort((a, b) => a.box.y - b.box.y || a.box.x - b.box.x)) {
       const top = slot.box.y * page.height;

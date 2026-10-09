@@ -2,12 +2,36 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {test} from 'node:test';
-import {composeBulletinLayout, measureBulletinLayout} from './measure-bulletin-layout-v7.mjs';
+import {composeBulletinLayout, composeBulletinBodyLayout, measureBulletinLayout} from './measure-bulletin-layout-v7.mjs';
 import {BULLETIN_RENDERER_V7_DIGEST as digest} from '../packages/ui/dist/bulletin-reader/v7/artifact.js';
 
 const assetsDirectory = process.env.HHC_BULLETIN_TEMPLATE_DIR;
 assert.ok(assetsDirectory, 'native acceptance requires real immutable fonts');
 const hash = text => createHash('sha256').update(text).digest('hex');
+
+test('outlined body title allocation includes transformed font ink without changing its text or page', async () => {
+  const assets = JSON.parse(await readFile(new URL('../packages/ui/src/bulletin-reader/v7/template-assets.json', import.meta.url)));
+  const style = {fontSize: 13, lineHeight: 17};
+  const block = {id: 'body', style, sentences: [{id: 'body-sentence', spans: [{text: '正文內容。', fontRole: 'body'}]}]};
+  const art = {id: 'fixed-body-title', element: 'title', box: {x: .16978823483660133, y: .0449697005050505, width: .6707999792156862, height: .10036363434343434}, style: {fontSize: 39.7439992, lineHeight: 79.4879984, letterSpacing: -.31305422114306675}};
+  const document = {
+    issueId: '00000000-0000-4000-8000-000000000001', series: 'general', contentLocale: 'zh-Hant', schemaVersion: '1', templateVersion: 'v1', sourceAssetChecksum: 'a'.repeat(64), sourcePageCount: 4,
+    components: [{id: 'cover', type: 'cover', cover: {welcome: [], worship: [], work: [], wordQuestions: [], weeklyVerses: []}}, {id: 'article', type: 'bodySection', bodySection: {kind: 'sermon', title: block, blocks: []}}],
+    pages: [{id: 'cover-page', width: 612, height: 792}, {id: 'body-page', width: 612, height: 792}],
+    layoutManifest: {templateVersion: 'v1', rendererVersion: 'v7', rendererArtifactSha256: digest, assets: assets.filter(asset => asset.kind === 'font').map(asset => ({url: asset.url, sha256: asset.sha256, kind: 'font', fontRole: asset.roles[0]})), pages: [{pageId: 'cover-page', slots: [], fixedSlots: []}, {pageId: 'body-page', fixedSlots: [art], slots: [{id: 'body-slot', componentId: 'article', blockId: 'body', box: {x: .1, y: .35, width: .8, height: .05}, fragments: [{sentenceId: 'body-sentence', start: 0, end: 5}]}]}]},
+  };
+  const canonicalMetadata = {title: '第一個主題名稱、第二個主題名', issueNumber: 1700, date: '2026-01-01'};
+  const submissionJSON = JSON.stringify({document, canonicalMetadata});
+  const result = await composeBulletinBodyLayout({submissionJSON, expectedContentHash: hash(submissionJSON), assetsDirectory, timeoutMs: 15000});
+  assert.deepEqual(result.measurement.overflow, []);
+  const saved = JSON.parse(result.submissionJSON);
+  assert.deepEqual(saved.canonicalMetadata, canonicalMetadata);
+  assert.deepEqual(saved.document.pages, document.pages);
+  const title = saved.document.layoutManifest.pages[1].fixedSlots[0];
+  assert.deepEqual(title.style, art.style);
+  assert.ok(title.box.height > art.box.height);
+  assert.ok(title.box.y + title.box.height < .35);
+});
 
 test('Word composition scales explicit inline sizes with the block without changing text or anchors', async () => {
   const assets = JSON.parse(await readFile(new URL('../packages/ui/src/bulletin-reader/v7/template-assets.json', import.meta.url)));
