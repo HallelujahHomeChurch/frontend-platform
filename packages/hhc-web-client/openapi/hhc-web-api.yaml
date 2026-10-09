@@ -1711,7 +1711,7 @@ paths:
     post:
       operationId: startOnlineBulletinExtraction
       summary: Queue current source extraction or explicitly retry a failed job
-      description: Source asset and checksum are verified server-side. Initial If-Match is the quoted Online version zero; later calls use the current Online ETag. canonicalVersion independently fences PDF or metadata replacement. Identical source/template/extractor identities reuse the existing job without another audit mutation. retry=true resets only a failed job without an immutable snapshot. Re-upload never overwrites Base, Local, Incoming, or publication. A superseded completed snapshot cannot be rerun; edit or restore the existing revision instead.
+      description: Source asset and checksum are verified server-side. Initial If-Match is the quoted Online version zero; later calls use the current Online ETag. canonicalVersion independently fences PDF or metadata replacement. Identical source/template/extractor identities reuse the existing job without another audit mutation. retry=true resets only a failed job without an immutable snapshot. After a parser upgrade, retrying a non-superseded failed same-source job without a snapshot creates a new current-parser job under the same version fences. Re-upload never overwrites Base, Local, Incoming, or publication. A superseded completed snapshot cannot be rerun; edit or restore the existing revision instead.
       tags: [Admin]
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
@@ -6811,7 +6811,7 @@ components:
       required: [templateVersion, rendererVersion, rendererArtifactSha256, assets, pages]
       properties:
         templateVersion: { type: string, enum: [v1, v2] }
-        rendererVersion: { type: string, enum: [v1, v2, v3, v4, v5], description: Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. Existing published renderer versions remain immutable. }
+        rendererVersion: { type: string, enum: [v1, v2, v3, v4, v5, v6], description: Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. V6 adds historical four-row cover profiles. Existing published renderer versions remain immutable. }
         rendererArtifactSha256: { $ref: '#/components/schemas/OnlineBulletinHash' }
         contentHash: { $ref: '#/components/schemas/OnlineBulletinHash' }
         layoutValidationHash: { $ref: '#/components/schemas/OnlineBulletinHash' }
@@ -6873,7 +6873,8 @@ components:
         id: { $ref: '#/components/schemas/OnlineBulletinID' }
         element:
           type: string
-          enum: [title, subtitle, date, issueNumber, pageNumber, masthead, vision, visionMission, visionFellowship, visionCommitment, pastor, contact, scanHint, websiteQRLabel, youtubeQRLabel, streamQRLabel, welcomeLabel, worshipLabel, workLabel, wordLabel, verseLabel, hymnLabel, summaryLabel, summarySidebarTitle, summarySidebarTagline, announcementsLabel, prayersLabel, titleLabel, speakerLabel, speakerSeparator, lectureDateMarker, bodyIssueSummary, bodySpeakerLabel, transcriberLabel, editorLabel, authorLabel, logo, backgroundLogo, websiteQR, youtubeQR, streamQR, topRule, footerRule, summaryFrame, announcementsFrame, prayersFrame]
+          enum: [title, subtitle, date, issueNumber, pageNumber, masthead, vision, visionMission, visionFellowship, visionCommitment, historicalVision, historicalGoals, historicalGospelGoals, historicalActions, historicalCommitment, pastor, contact, scanHint, websiteQRLabel, youtubeQRLabel, streamQRLabel, welcomeLabel, worshipLabel, workLabel, wordLabel, verseLabel, hymnLabel, summaryLabel, summarySidebarTitle, summarySidebarTagline, announcementsLabel, prayersLabel, titleLabel, speakerLabel, speakerSeparator, lectureDateMarker, bodyIssueSummary, bodySpeakerLabel, transcriberLabel, editorLabel, authorLabel, logo, backgroundLogo, websiteQR, youtubeQR, streamQR, topRule, footerRule, summaryFrame, announcementsFrame, prayersFrame]
+          description: Historical elements require rendererVersion v6; historicalGospelGoals preserves the reviewed native gospel-wording variant instead of substituting historicalGoals.
         box: { $ref: '#/components/schemas/OnlineBulletinBox' }
         style: { $ref: '#/components/schemas/OnlineBulletinParagraphStyle' }
     OnlineBulletinCanonicalMetadata:

@@ -36,6 +36,26 @@ it('renders only the requested chapter, hides cover details and uses colon-free 
   expect(container.querySelector('[data-sentence-id="s-body"]')).toBeNull();
 });
 
+it.each(['zh-Hant', 'zh-Hans'] as const)('reflows V6 historical %s rows without restoring hidden details or changing anchors', contentLocale => {
+  const document = fixture();
+  document.contentLocale = contentLocale;
+  document.templateVersion = contentLocale === 'zh-Hans' ? 'v2' : 'v1';
+  const exports = UI as typeof UI & {BULLETIN_RENDERER_V6_DIGEST: string};
+  Object.assign(document.layoutManifest, {templateVersion: document.templateVersion, rendererVersion: 'v6', rendererArtifactSha256: exports.BULLETIN_RENDERER_V6_DIGEST});
+  const elements = ['historicalVision', 'historicalGospelGoals', 'historicalActions', 'historicalCommitment'];
+  document.layoutManifest.pages[0].fixedSlots!.push(...elements.map(element => ({id: element, element: element as 'visionMission', style, box: {x: .4, y: .14, width: .5, height: .02}})));
+  const original = structuredClone(document);
+  const {container, rerender} = render(<UI.BulletinEbook document={document} chapter="cover" canonicalMetadata={{title: '主題', subtitle: '', date: '2026-09-27', issueNumber: 1740}}/>);
+  expect(container.querySelector('[data-fixed-element="historicalGospelGoals"]')).toHaveTextContent(contentLocale === 'zh-Hans' ? '两个目标：福音为华人、华人为福音' : '兩個目標：福音為華人、華人為福音');
+  elements.forEach(element => expect(container.querySelector(`[data-fixed-element="${element}"]`)).toBeTruthy());
+  expect(container.querySelector('[data-fixed-element="pastor"]')).toBeNull();
+  expect(container.querySelector('[data-fixed-element="masthead"]')).toBeNull();
+  for (const [element, title] of [['welcomeLabel', '一、Welcome'], ['worshipLabel', '二、Worship'], ['workLabel', '三、Work'], ['wordLabel', '四、Word']]) expect(container.querySelector(`[data-fixed-element="${element}"]`)).toHaveTextContent(title);
+  rerender(<UI.BulletinEbook document={document} chapter="worship"/>);
+  expect(container.querySelector('[data-sentence-id="s-lyric-a"]')).toHaveAttribute('data-fragment-end', '3');
+  expect(document).toEqual(original);
+});
+
 it('preserves article speaker next to boxed title and reveals production details on demand', () => {
   const document = fixture(); const original = JSON.stringify(document);
   const {container, rerender} = render(<UI.BulletinEbook document={document} chapter="body"/>);

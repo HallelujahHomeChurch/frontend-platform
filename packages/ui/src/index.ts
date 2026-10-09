@@ -5,7 +5,7 @@ export * from './forms.js';
 export * from './layout.js';
 export * from './overlays.js';
 export * from './bulletin-reader/BulletinDocumentRenderer.js';
-export {BulletinDocumentRenderer, requireBulletinRenderer, BULLETIN_RENDERER_V2_DIGEST, BULLETIN_RENDERER_V3_DIGEST, BULLETIN_RENDERER_V4_DIGEST, BULLETIN_RENDERER_V5_DIGEST} from './bulletin-reader/versions.js';
+export {BulletinDocumentRenderer, requireBulletinRenderer, BULLETIN_RENDERER_V2_DIGEST, BULLETIN_RENDERER_V3_DIGEST, BULLETIN_RENDERER_V4_DIGEST, BULLETIN_RENDERER_V5_DIGEST, BULLETIN_RENDERER_V6_DIGEST} from './bulletin-reader/versions.js';
 export {default as BULLETIN_RENDERER_V2_ASSETS} from './bulletin-reader/v2/template-assets.json' with {type: 'json'};
 export * from './bulletin-reader/BulletinEbook.js';
 export {bulletinFixedText} from './bulletin-reader/fixed.js';

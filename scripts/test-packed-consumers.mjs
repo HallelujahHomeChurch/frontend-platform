@@ -8,9 +8,12 @@ const artifacts = resolve(root, 'artifacts');
 const temp = mkdtempSync(resolve(tmpdir(), 'hhc-package-smoke-'));
 const {version} = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
 const bulletinFixture = JSON.parse(readFileSync(resolve(root, 'scripts/testdata/bulletin/1739-typography.json'), 'utf8'));
-const bulletinModule = `import {BULLETIN_RENDERER_V1_DIGEST, type BulletinDocument} from '@hallelujahhomechurch/ui';
+const bulletinModule = `import {BULLETIN_RENDERER_V1_DIGEST, BULLETIN_RENDERER_V6_DIGEST, type BulletinDocument} from '@hallelujahhomechurch/ui';
 export const bulletin = ${JSON.stringify(bulletinFixture.document)} as BulletinDocument;
 bulletin.layoutManifest.rendererArtifactSha256 = BULLETIN_RENDERER_V1_DIGEST;
+export const bulletinV6 = structuredClone(bulletin);
+bulletinV6.layoutManifest.rendererVersion = 'v6';
+bulletinV6.layoutManifest.rendererArtifactSha256 = BULLETIN_RENDERER_V6_DIGEST;
 `;
 const tarballs = Object.fromEntries(
   readdirSync(artifacts)
@@ -80,7 +83,7 @@ import {createSandboxDonationClient} from '@hallelujahhomechurch/donation-client
 import {DonationForm} from '@hallelujahhomechurch/donation-ui';
 import '@hallelujahhomechurch/ui/styles.css';
 import '@hallelujahhomechurch/ui/bulletin-paper.css';
-import {bulletin} from './bulletin';
+import {bulletin, bulletinV6} from './bulletin';
 
 const accountUser: AccountSessionUser = {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null};
 const accountSessionClient = createAccountSessionClient();
@@ -111,7 +114,7 @@ void createHhcWebClient;
 void contentStatus;
 void groupManifest;
 void getInitialTheme;
-createRoot(document.getElementById('root')!).render(<><BulletinDocumentRenderer document={bulletin} mode="mobile" /><Button>Smoke</Button><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /><AccountMenu user={{name: accountUser.display_name, email: accountUser.email}} links={[{id: 'destination', label: 'Destination', href: 'https://example.com/destination'}]} labels={{menu: 'Account', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => {}} /></>);
+createRoot(document.getElementById('root')!).render(<><BulletinDocumentRenderer document={bulletin} mode="mobile" /><BulletinDocumentRenderer document={bulletinV6} mode="paper" activePage={bulletinV6.pages[0].id} /><Button>Smoke</Button><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /><AccountMenu user={{name: accountUser.display_name, email: accountUser.email}} links={[{id: 'destination', label: 'Destination', href: 'https://example.com/destination'}]} labels={{menu: 'Account', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => {}} /></>);
 `);
   run(vite, 'install', '--ignore-workspace');
   run(vite, 'exec', 'node', '--input-type=module', '--eval', `
@@ -120,7 +123,9 @@ createRoot(document.getElementById('root')!).render(<><BulletinDocumentRenderer 
     await import('@hallelujahhomechurch/preferences');
     await import('@hallelujahhomechurch/donation-client');
     await import('@hallelujahhomechurch/donation-ui');
-    await import('@hallelujahhomechurch/ui');
+    const ui = await import('@hallelujahhomechurch/ui');
+    if (!/^[0-9a-f]{64}$/.test(ui.BULLETIN_RENDERER_V6_DIGEST)) throw new Error('missing V6 renderer');
+    ui.requireBulletinRenderer({templateVersion: 'v1', rendererVersion: 'v6', rendererArtifactSha256: ui.BULLETIN_RENDERER_V6_DIGEST});
   `);
   run(vite, 'build');
 
@@ -157,7 +162,7 @@ import {createHhcWebClient, type ContentStatus, type PageGroupManifest} from '@h
 import {createOperationsClient, type ManagedMemberView, type ManagedUnitFolder} from '@hallelujahhomechurch/operations-client';
 import {getInitialTheme, readAnonymousStatementDismissal, writeAnonymousStatementDismissal, statementRefKey} from '@hallelujahhomechurch/preferences';
 import {AccountMenu, Button, ContextMenu, BulletinDocumentRenderer} from '@hallelujahhomechurch/ui';
-import {bulletin} from './bulletin';
+import {bulletin, bulletinV6} from './bulletin';
 import {createSandboxDonationClient} from '@hallelujahhomechurch/donation-client';
 import {DonationForm} from '@hallelujahhomechurch/donation-ui';
 
@@ -190,7 +195,7 @@ void createHhcWebClient;
 void contentStatus;
 void groupManifest;
 void getInitialTheme;
-export default function Page() { return <><BulletinDocumentRenderer document={bulletin} mode="paper" activePage={bulletin.pages[0].id} /><Button>Smoke</Button><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /><AccountMenu user={{name: accountUser.display_name, email: accountUser.email}} links={[{id: 'destination', label: 'Destination', href: 'https://example.com/destination'}]} labels={{menu: 'Account', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => {}} /></>; }
+export default function Page() { return <><BulletinDocumentRenderer document={bulletin} mode="paper" activePage={bulletin.pages[0].id} /><BulletinDocumentRenderer document={bulletinV6} mode="paper" activePage={bulletinV6.pages[0].id} /><Button>Smoke</Button><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /><AccountMenu user={{name: accountUser.display_name, email: accountUser.email}} links={[{id: 'destination', label: 'Destination', href: 'https://example.com/destination'}]} labels={{menu: 'Account', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => {}} /></>; }
 `);
   run(next, 'install', '--ignore-workspace');
   run(next, 'build');

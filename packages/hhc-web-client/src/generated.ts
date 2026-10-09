@@ -1148,7 +1148,7 @@ export interface paths {
         put?: never;
         /**
          * Queue current source extraction or explicitly retry a failed job
-         * @description Source asset and checksum are verified server-side. Initial If-Match is the quoted Online version zero; later calls use the current Online ETag. canonicalVersion independently fences PDF or metadata replacement. Identical source/template/extractor identities reuse the existing job without another audit mutation. retry=true resets only a failed job without an immutable snapshot. Re-upload never overwrites Base, Local, Incoming, or publication. A superseded completed snapshot cannot be rerun; edit or restore the existing revision instead.
+         * @description Source asset and checksum are verified server-side. Initial If-Match is the quoted Online version zero; later calls use the current Online ETag. canonicalVersion independently fences PDF or metadata replacement. Identical source/template/extractor identities reuse the existing job without another audit mutation. retry=true resets only a failed job without an immutable snapshot. After a parser upgrade, retrying a non-superseded failed same-source job without a snapshot creates a new current-parser job under the same version fences. Re-upload never overwrites Base, Local, Incoming, or publication. A superseded completed snapshot cannot be rerun; edit or restore the existing revision instead.
          */
         post: operations["startOnlineBulletinExtraction"];
         delete?: never;
@@ -3583,10 +3583,10 @@ export interface components {
             /** @enum {string} */
             templateVersion: "v1" | "v2";
             /**
-             * @description Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. Existing published renderer versions remain immutable.
+             * @description Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. V6 adds historical four-row cover profiles. Existing published renderer versions remain immutable.
              * @enum {string}
              */
-            rendererVersion: "v1" | "v2" | "v3" | "v4" | "v5";
+            rendererVersion: "v1" | "v2" | "v3" | "v4" | "v5" | "v6";
             rendererArtifactSha256: components["schemas"]["OnlineBulletinHash"];
             contentHash?: components["schemas"]["OnlineBulletinHash"];
             layoutValidationHash?: components["schemas"]["OnlineBulletinHash"];
@@ -3617,8 +3617,11 @@ export interface components {
         /** @description Template-owned geometry for a fixed label or canonical metadata reference. It contains no editable text or executable URL. */
         OnlineBulletinFixedSlot: {
             id: components["schemas"]["OnlineBulletinID"];
-            /** @enum {string} */
-            element: "title" | "subtitle" | "date" | "issueNumber" | "pageNumber" | "masthead" | "vision" | "visionMission" | "visionFellowship" | "visionCommitment" | "pastor" | "contact" | "scanHint" | "websiteQRLabel" | "youtubeQRLabel" | "streamQRLabel" | "welcomeLabel" | "worshipLabel" | "workLabel" | "wordLabel" | "verseLabel" | "hymnLabel" | "summaryLabel" | "summarySidebarTitle" | "summarySidebarTagline" | "announcementsLabel" | "prayersLabel" | "titleLabel" | "speakerLabel" | "speakerSeparator" | "lectureDateMarker" | "bodyIssueSummary" | "bodySpeakerLabel" | "transcriberLabel" | "editorLabel" | "authorLabel" | "logo" | "backgroundLogo" | "websiteQR" | "youtubeQR" | "streamQR" | "topRule" | "footerRule" | "summaryFrame" | "announcementsFrame" | "prayersFrame";
+            /**
+             * @description Historical elements require rendererVersion v6; historicalGospelGoals preserves the reviewed native gospel-wording variant instead of substituting historicalGoals.
+             * @enum {string}
+             */
+            element: "title" | "subtitle" | "date" | "issueNumber" | "pageNumber" | "masthead" | "vision" | "visionMission" | "visionFellowship" | "visionCommitment" | "historicalVision" | "historicalGoals" | "historicalGospelGoals" | "historicalActions" | "historicalCommitment" | "pastor" | "contact" | "scanHint" | "websiteQRLabel" | "youtubeQRLabel" | "streamQRLabel" | "welcomeLabel" | "worshipLabel" | "workLabel" | "wordLabel" | "verseLabel" | "hymnLabel" | "summaryLabel" | "summarySidebarTitle" | "summarySidebarTagline" | "announcementsLabel" | "prayersLabel" | "titleLabel" | "speakerLabel" | "speakerSeparator" | "lectureDateMarker" | "bodyIssueSummary" | "bodySpeakerLabel" | "transcriberLabel" | "editorLabel" | "authorLabel" | "logo" | "backgroundLogo" | "websiteQR" | "youtubeQR" | "streamQR" | "topRule" | "footerRule" | "summaryFrame" | "announcementsFrame" | "prayersFrame";
             box: components["schemas"]["OnlineBulletinBox"];
             style: components["schemas"]["OnlineBulletinParagraphStyle"];
         };
