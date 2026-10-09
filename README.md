@@ -18,7 +18,7 @@ The bulletin worker uses the same compiled renderer, CSS, fixed assets and legal
 fonts as the UI. Build a new, checksum-verified bundle after `pnpm build`:
 
 ```sh
-node scripts/verify-bulletin-renderer-v6.mjs
+node scripts/verify-bulletin-renderer-v7.mjs
 node scripts/package-bulletin-renderer.mjs artifacts/bulletin-renderer /path/to/verified/assets
 docker build -f tools/bulletin-renderer/Dockerfile -t hhc-bulletin-renderer:verify artifacts/bulletin-renderer
 ```
@@ -94,6 +94,13 @@ remain immutable. Deploy the coordinated 1.0.48 Admin and Website packages
 before enabling the V6 producer. Verify with
 `node scripts/verify-bulletin-renderer-v6.mjs --base-ref origin/main`; native
 acceptance uses real verified assets and `HHC_TEST_RENDERER_V6=1`.
+
+V7 preserves explicit inline-size proportions when composing Word questions.
+Simplified body text may use the existing pinned Traditional serif faces for
+rare glyphs absent from the Simplified faces, without substituting characters.
+Paper and ebook use the same fallback; unknown glyphs still block conversion.
+V1–V6 remain immutable. Deploy V7-capable consumers, including their exact
+asset allowlists, before enabling the V7 producer.
 
 `BulletinEbook` renders a single semantic chapter (`cover`, `body`, `worship`,
 `back`) from the same canonical document as the paper reader. Import

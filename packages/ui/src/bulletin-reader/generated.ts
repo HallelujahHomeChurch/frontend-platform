@@ -277,10 +277,10 @@ export interface components {
             /** @enum {string} */
             templateVersion: "v1" | "v2";
             /**
-             * @description Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. V6 adds historical four-row cover profiles. Existing published renderer versions remain immutable.
+             * @description Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. V6 adds historical four-row cover profiles; V7 preserves proportional inline font sizes during cover composition. Existing published renderer versions remain immutable.
              * @enum {string}
              */
-            rendererVersion: "v1" | "v2" | "v3" | "v4" | "v5" | "v6";
+            rendererVersion: "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7";
             rendererArtifactSha256: components["schemas"]["OnlineBulletinHash"];
             contentHash?: components["schemas"]["OnlineBulletinHash"];
             layoutValidationHash?: components["schemas"]["OnlineBulletinHash"];
@@ -312,7 +312,7 @@ export interface components {
         OnlineBulletinFixedSlot: {
             id: components["schemas"]["OnlineBulletinID"];
             /**
-             * @description Historical elements require rendererVersion v6; historicalGospelGoals preserves the reviewed native gospel-wording variant instead of substituting historicalGoals.
+             * @description Historical elements require rendererVersion v6 or v7; historicalGospelGoals preserves the reviewed native gospel-wording variant instead of substituting historicalGoals.
              * @enum {string}
              */
             element: "title" | "subtitle" | "date" | "issueNumber" | "pageNumber" | "masthead" | "vision" | "visionMission" | "visionFellowship" | "visionCommitment" | "historicalVision" | "historicalGoals" | "historicalGospelGoals" | "historicalActions" | "historicalCommitment" | "pastor" | "contact" | "scanHint" | "websiteQRLabel" | "youtubeQRLabel" | "streamQRLabel" | "welcomeLabel" | "worshipLabel" | "workLabel" | "wordLabel" | "verseLabel" | "hymnLabel" | "summaryLabel" | "summarySidebarTitle" | "summarySidebarTagline" | "announcementsLabel" | "prayersLabel" | "titleLabel" | "speakerLabel" | "speakerSeparator" | "lectureDateMarker" | "bodyIssueSummary" | "bodySpeakerLabel" | "transcriberLabel" | "editorLabel" | "authorLabel" | "logo" | "backgroundLogo" | "websiteQR" | "youtubeQR" | "streamQR" | "topRule" | "footerRule" | "summaryFrame" | "announcementsFrame" | "prayersFrame";

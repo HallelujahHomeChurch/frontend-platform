@@ -6,6 +6,7 @@ import {requireBulletinRenderer} from './versions.js';
 import {bulletinFixedText as traditionalFixedText, type BulletinCanonicalMetadata} from './fixed.js';
 import {bulletinFixedText as simplifiedFixedText} from './v2/fixed.js';
 import {bulletinFixedText as historicalFixedText} from './v6/fixed.js';
+import {bulletinV7FontFamily} from './v7/fonts.js';
 
 type Component = BulletinRenderableDocument['components'][number];
 export type BulletinChapterId = 'cover' | 'body' | 'worship' | 'back';
@@ -43,13 +44,17 @@ export function BulletinEbook({document, chapter, canonicalMetadata, showDetails
   sentenceState?: Readonly<Record<string, BulletinSentenceState>>;
 }) {
   requireBulletinRenderer(document.layoutManifest);
-  const bulletinFixedText = document.layoutManifest.rendererVersion === 'v6'
+  const bulletinFixedText = ['v6', 'v7'].includes(document.layoutManifest.rendererVersion)
     ? (element: Parameters<typeof historicalFixedText>[0], metadata: BulletinCanonicalMetadata | undefined, pageNumber: number, sourcePageCount = document.sourcePageCount) => historicalFixedText(element, metadata, pageNumber, sourcePageCount, document.contentLocale === 'zh-Hans' ? 'zh-Hans' : 'zh-Hant')
     : document.contentLocale === 'zh-Hans' ? simplifiedFixedText : traditionalFixedText;
   if (document.schemaVersion !== '1' || document.templateVersion !== document.layoutManifest.templateVersion) throw new Error('update_required');
   const details = bulletinMobileDetails(document);
+  const fontStyle = (role: string) => document.layoutManifest.rendererVersion === 'v7' ? {fontFamily: bulletinV7FontFamily(role, document.contentLocale)} : {};
   const sentence = (value: BulletinSentence, fontSize: number, presentation?: 'verse' | 'plain') => <span key={value.id} data-sentence-id={value.id} data-fragment-start={0} data-fragment-end={value.spans.reduce((sum, span) => sum + Array.from(span.text).length, 0)} data-selected={sentenceState?.[value.id]?.selected || undefined} data-highlight={sentenceState?.[value.id]?.highlight}>
-    {value.spans.map((span, index) => <span key={index} data-font-role={presentation === 'plain' && span.fontRole !== 'symbol' ? 'body' : presentation === 'verse' && ['body', 'reference'].includes(span.fontRole) ? 'scripture' : span.fontRole} style={span.fontSize == null ? undefined : {fontSize: `${span.fontSize / fontSize}em`}}>{span.text}</span>)}
+    {value.spans.map((span, index) => {
+      const role = presentation === 'plain' && span.fontRole !== 'symbol' ? 'body' : presentation === 'verse' && ['body', 'reference'].includes(span.fontRole) ? 'scripture' : span.fontRole;
+      return <span key={index} data-font-role={role} style={{...fontStyle(role), ...(span.fontSize == null ? {} : {fontSize: `${span.fontSize / fontSize}em`})}}>{span.text}</span>;
+    })}
   </span>;
   const block = (value: BulletinBlock, componentId: string, Tag: 'p' | 'h2' | 'h3' | 'span' = 'p', prefix?: ReactNode, presentation?: 'verse' | 'plain') => <Tag key={value.id} data-component-id={componentId} data-block-id={value.id} style={Tag === 'p' ? {textAlign: value.style.align, paddingInlineStart: `${Math.min(2, value.style.indent)}em`, textIndent: `${Math.min(2, value.style.firstLineIndent)}em`, marginBlockStart: `${Math.min(2, value.style.spaceBefore)}em`, marginBlockEnd: `${Math.min(2, Math.max(.6, value.style.spaceAfter))}em`} : undefined}>
     {prefix}{value.sentences.map(entry => sentence(entry, value.style.fontSize, presentation))}
@@ -62,7 +67,7 @@ export function BulletinEbook({document, chapter, canonicalMetadata, showDetails
   return <div className={`hhc-bulletin-v1 hhc-bulletin-ebook${document.templateVersion === 'v2' ? ' hhc-bulletin-v2' : ''}`} data-bulletin-mode="mobile" data-chapter={chapter} lang={document.contentLocale}>
     {chapter === bulletinChapters(document)[0]?.id && header.length > 0 ? <header className="hhc-bulletin-mobile-header">{header.map(slot => {
       const value = bulletinFixedText(slot.element, canonicalMetadata, 0, document.sourcePageCount);
-      return <p key={slot.id} data-fixed-element={slot.element}>{value.annotatable ? sentence({id: `canonical-${slot.element}`, spans: [{text: value.text, fontRole: value.fontRole}]}, slot.style.fontSize) : <span data-font-role={value.fontRole}>{value.text}</span>}</p>;
+      return <p key={slot.id} data-fixed-element={slot.element}>{value.annotatable ? sentence({id: `canonical-${slot.element}`, spans: [{text: value.text, fontRole: value.fontRole}]}, slot.style.fontSize) : <span data-font-role={value.fontRole} style={fontStyle(value.fontRole)}>{value.text}</span>}</p>;
     })}</header> : null}
     {document.components.filter(component => chapterForType[component.type] === chapter).map(component => {
       const id = component.id;

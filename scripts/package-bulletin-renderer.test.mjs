@@ -18,6 +18,9 @@ test('isolated renderer bundle preserves exact bytes and refuses existing output
       assert.deepEqual(await readFile(join(target, file)), await readFile(file));
     }
     const manifest = JSON.parse(await readFile(join(target,'package.json'),'utf8'));
+    for (const file of ['packages/ui/dist/bulletin-reader/v7/artifact.js', 'packages/ui/dist/bulletin-reader/v7/fonts.js', 'scripts/measure-bulletin-layout-v7.mjs', 'scripts/verify-bulletin-renderer-v7.mjs']) {
+      assert.deepEqual(await readFile(join(target, file)), await readFile(file));
+    }
     assert.equal(manifest.dependencies.react,'19.2.7');
     assert.equal(manifest.devDependencies.playwright,'1.63.0');
     const assets=JSON.parse(await readFile('packages/ui/src/bulletin-reader/template-assets.json','utf8'));

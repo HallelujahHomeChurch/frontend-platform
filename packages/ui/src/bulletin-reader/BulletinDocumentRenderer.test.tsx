@@ -20,13 +20,13 @@ function fixture(): Document {
 }
 
 describe('immutable shared bulletin renderer', () => {
-  it.each(['zh-Hant', 'zh-Hans'] as const)('renders V6 historical rows with %s wording and preserves paper anchors', contentLocale => {
+  it.each([['v6', 'zh-Hant'], ['v6', 'zh-Hans'], ['v7', 'zh-Hant'], ['v7', 'zh-Hans']] as const)('renders %s historical rows with %s wording and preserves paper anchors', (rendererVersion, contentLocale) => {
     const document = fixture();
     const templateVersion = contentLocale === 'zh-Hans' ? 'v2' : 'v1';
     document.templateVersion = templateVersion;
     document.contentLocale = contentLocale;
-    const exports = UI as typeof UI & {BULLETIN_RENDERER_V6_DIGEST: string};
-    Object.assign(document.layoutManifest, {templateVersion, rendererVersion: 'v6', rendererArtifactSha256: exports.BULLETIN_RENDERER_V6_DIGEST});
+    const exports = UI as typeof UI & {BULLETIN_RENDERER_V6_DIGEST: string; BULLETIN_RENDERER_V7_DIGEST: string};
+    Object.assign(document.layoutManifest, {templateVersion, rendererVersion, rendererArtifactSha256: rendererVersion === 'v7' ? exports.BULLETIN_RENDERER_V7_DIGEST : exports.BULLETIN_RENDERER_V6_DIGEST});
     const elements = ['historicalVision', 'historicalGoals', 'historicalActions', 'historicalCommitment'];
     const texts = contentLocale === 'zh-Hans'
       ? ['一个异象：合一与宣教', '两个目标：宣教为中国、中国为宣教', '三个行动：共同生活、爱与成全、恩膏传承', '四个坚持：宣教主导、灵恩神学、团队事奉、门徒训练']
@@ -69,11 +69,12 @@ describe('immutable shared bulletin renderer', () => {
     expect(container.querySelector('[data-sentence-id="s"]')).toHaveTextContent('𠮷你');
     expect(frame.querySelector('image,use,foreignObject,script')).toBeNull();
   });
-  it('repeats canonical body art as selectable native text without transforming the cover', () => {
+  it.each(['v1', 'v7'] as const)('repeats %s canonical body art without requiring excluded production metadata', rendererVersion => {
     const document = fixture();
+    if (rendererVersion === 'v7') Object.assign(document.layoutManifest, {rendererVersion, rendererArtifactSha256: UI.BULLETIN_RENDERER_V7_DIGEST});
     const style = {fontSize: 42, lineHeight: 84, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0};
     for (const page of document.layoutManifest.pages) page.fixedSlots = [{id: `${page.pageId}-title`, element: 'title', box: {x: .12, y: .04, width: .6, height: .1}, style}];
-    document.layoutManifest.pages[1].fixedSlots!.push({id: 'body-issue', element: 'bodyIssueSummary', box: {x: .3, y: .3, width: .2, height: .02}, style: {...style, fontSize: 11, lineHeight: 14}});
+    if (rendererVersion === 'v1') document.layoutManifest.pages[1].fixedSlots!.push({id: 'body-issue', element: 'bodyIssueSummary', box: {x: .3, y: .3, width: .2, height: .02}, style: {...style, fontSize: 11, lineHeight: 14}});
     // The cover may gain a continuation; body identity is not physical page 2.
     document.pages.splice(1,0,{id: 'cover-continuation',width:595.32,height:841.92});
     document.layoutManifest.pages.splice(1,0,{pageId:'cover-continuation',slots:[]});
