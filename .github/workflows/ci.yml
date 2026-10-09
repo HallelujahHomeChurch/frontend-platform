@@ -48,7 +48,7 @@ jobs:
           corepack pnpm exec playwright install --with-deps chromium
           node scripts/fetch-bulletin-template-assets.mjs "$HHC_BULLETIN_TEMPLATE_DIR"
           node --test scripts/measure-bulletin-layout.test.mjs
-          HHC_TEST_RENDERER_V6=1 node --test scripts/measure-bulletin-layout.test.mjs scripts/measure-bulletin-layout-v6.test.mjs
+          HHC_TEST_RENDERER_V6=1 node --test --test-concurrency=1 scripts/measure-bulletin-layout.test.mjs scripts/measure-bulletin-layout-v6.test.mjs
           node --test scripts/package-bulletin-renderer.test.mjs
           node scripts/package-bulletin-renderer.mjs artifacts/bulletin-renderer "$HHC_BULLETIN_TEMPLATE_DIR"
           docker build -f tools/bulletin-renderer/Dockerfile -t hhc-bulletin-renderer:verify artifacts/bulletin-renderer
@@ -86,7 +86,7 @@ jobs:
             --mount "type=bind,src=$PWD/scripts/measure-bulletin-layout.test.mjs,dst=/opt/bulletin-renderer/scripts/measure-bulletin-layout.test.mjs,readonly" \
             --mount "type=bind,src=$PWD/scripts/measure-bulletin-layout-v6.test.mjs,dst=/opt/bulletin-renderer/scripts/measure-bulletin-layout-v6.test.mjs,readonly" \
             --mount "type=bind,src=$PWD/scripts/testdata,dst=/opt/bulletin-renderer/scripts/testdata,readonly" \
-            --entrypoint node hhc-bulletin-renderer:verify --test /opt/bulletin-renderer/scripts/measure-bulletin-layout.test.mjs /opt/bulletin-renderer/scripts/measure-bulletin-layout-v6.test.mjs
+            --entrypoint node hhc-bulletin-renderer:verify --test --test-concurrency=1 /opt/bulletin-renderer/scripts/measure-bulletin-layout.test.mjs /opt/bulletin-renderer/scripts/measure-bulletin-layout-v6.test.mjs
       - run: corepack pnpm test
       - run: corepack pnpm lint
       - run: corepack pnpm --filter @hallelujahhomechurch/hhc-web-client check:generated
