@@ -10,6 +10,7 @@ export {default as BULLETIN_RENDERER_V2_ASSETS} from './bulletin-reader/v2/templ
 export {default as BULLETIN_RENDERER_V7_ASSETS} from './bulletin-reader/v7/template-assets.json' with {type: 'json'};
 export * from './bulletin-reader/BulletinEbook.js';
 export * from './bulletin-reader/backPanelPresentation.js';
+export * from './bulletin-reader/paperPresentation.js';
 export {bulletinFixedText} from './bulletin-reader/fixed.js';
 export * from './bulletin-reader/ReaderWatermark.js';
 export {REGEXP_ONLY_DIGITS} from 'input-otp';
