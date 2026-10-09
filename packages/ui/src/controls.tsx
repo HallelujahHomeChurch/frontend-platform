@@ -1,7 +1,7 @@
 import {useEffect, useRef, useState, type ReactNode} from 'react';
 import {parseDate} from '@internationalized/date';
 import {OTPInput, type OTPInputProps} from 'input-otp';
-import {ChevronDown, Search} from 'lucide-react';
+import {ArrowLeft, ChevronDown, Search} from 'lucide-react';
 import {
   Button as AriaButton,
   type ButtonProps as AriaButtonProps,
@@ -243,17 +243,20 @@ export interface ExpandableSearchFieldProps {
   label: string;
   submitLabel: string;
   clearLabel: string;
+  closeLabel?: string;
   placeholder?: string;
   value?: string;
   defaultValue?: string;
   onChange?: (value: string) => void;
   onSubmit?: (value: string) => void;
   onClear?: () => void;
+  onExpandedChange?: (expanded: boolean) => void;
+  allowEmptySubmit?: boolean;
   isDisabled?: boolean;
   mobileBehavior?: 'inline' | 'header-overlay';
 }
 
-export function ExpandableSearchField({label, submitLabel, clearLabel, placeholder, value, defaultValue = '', onChange, onSubmit, onClear, isDisabled, mobileBehavior = 'inline'}: ExpandableSearchFieldProps) {
+export function ExpandableSearchField({label, submitLabel, clearLabel, closeLabel, placeholder, value, defaultValue = '', onChange, onSubmit, onClear, onExpandedChange, allowEmptySubmit = false, isDisabled, mobileBehavior = 'inline'}: ExpandableSearchFieldProps) {
   const [isExpanded, setExpanded] = useState(false);
   const [query, setQuery] = useState(value ?? defaultValue);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -270,17 +273,18 @@ export function ExpandableSearchField({label, submitLabel, clearLabel, placehold
 
   function collapse({restoreFocus = false} = {}) {
     setExpanded(false);
+    onExpandedChange?.(false);
     if (restoreFocus) triggerRef.current?.focus({preventScroll: true});
   }
 
   function submit() {
     const trimmed = query.trim();
-    if (!trimmed) {
-      collapse();
+    if (!trimmed && !allowEmptySubmit) {
+      collapse({restoreFocus: true});
       return;
     }
     onSubmit?.(trimmed);
-    setExpanded(false);
+    collapse({restoreFocus: true});
   }
 
   useEffect(() => {
@@ -297,10 +301,23 @@ export function ExpandableSearchField({label, submitLabel, clearLabel, placehold
       ref={rootRef}
       className={`hhc-expandable-search${mobileBehavior === 'header-overlay' ? ' hhc-expandable-search--header-overlay' : ''}`}
       data-expanded={isExpanded}
+      data-closeable={Boolean(closeLabel)}
+      onKeyDownCapture={(event) => {
+        // Keep SearchField from submitting IME confirmation or clearing on dismissal.
+        if (event.key === 'Enter' && event.nativeEvent.isComposing) {
+          event.preventDefault();
+          event.stopPropagation();
+        } else if (event.key === 'Escape' && isExpanded) {
+          event.preventDefault();
+          event.stopPropagation();
+          collapse({restoreFocus: true});
+        }
+      }}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) collapse();
       }}
     >
+      {closeLabel && isExpanded ? <AriaButton className="hhc-expandable-search__close" aria-label={closeLabel} onPress={() => collapse({restoreFocus: true})}><ArrowLeft aria-hidden="true" /></AriaButton> : null}
       <SearchField
         aria-label={label}
         className="hhc-expandable-search__field"
@@ -310,12 +327,6 @@ export function ExpandableSearchField({label, submitLabel, clearLabel, placehold
           onChange?.(nextValue);
         }}
         onSubmit={submit}
-        onKeyDown={(event) => {
-          if (event.key === 'Escape') {
-            event.preventDefault();
-            collapse({restoreFocus: true});
-          }
-        }}
       >
         <Input ref={inputRef} placeholder={placeholder} />
         {query ? (
@@ -338,7 +349,7 @@ export function ExpandableSearchField({label, submitLabel, clearLabel, placehold
         isDisabled={isDisabled}
         onPress={() => {
           if (isExpanded) submit();
-          else setExpanded(true);
+          else {setExpanded(true); onExpandedChange?.(true);}
         }}
       >
         <Search aria-hidden="true" className="hhc-expandable-search__icon" />

@@ -334,8 +334,9 @@ export function createHhcWebClient(options: {
       if (!Number.isSafeInteger(version) || version < 1) throw new Error('Invalid legal publication version')
       return (await unwrap(client.POST('/admin/legal/{scope}/publish', {params: {path: {scope}, header: {'If-Match': `"${version}"`}}, cache: 'no-store'}))).data
     },
-    async listMemberLivestreams(signal?: AbortSignal) {
-      return (await unwrap(client.GET('/member/recordings/live', {signal, cache: 'no-store'}))).data
+    async listMemberLivestreams(input: AbortSignal | {q?: string; signal?: AbortSignal} = {}) {
+      const options = 'aborted' in input ? {signal: input} : input
+      return (await unwrap(client.GET('/member/recordings/live', {params: {query: {q: options.q}}, signal: options.signal, cache: 'no-store'}))).data
     },
     async issueLiveRecordingPlayback(id: string, captureId: string, playbackScopeId: string, signal?: AbortSignal) {
       return (await unwrap(client.POST('/member/recordings/{id}/live/playback', {
@@ -357,9 +358,9 @@ export function createHhcWebClient(options: {
         params: {path: {id, captureId}}, body: {operationKey}, signal, cache: 'no-store',
       }))).data
     },
-    async listMemberRecordingsPage(options: {limit?: number; cursor?: string; signal?: AbortSignal} = {}) {
+    async listMemberRecordingsPage(options: {limit?: number; cursor?: string; q?: string; signal?: AbortSignal} = {}) {
       const result = await unwrap(client.GET('/member/recordings', {
-        params: {query: {limit: options.limit ?? 12, cursor: options.cursor}}, signal: options.signal, cache: 'no-store',
+        params: {query: {limit: options.limit ?? 12, cursor: options.cursor, q: options.q}}, signal: options.signal, cache: 'no-store',
       }))
       const cursor = result.meta.nextCursor
       if (cursor !== null && typeof cursor !== 'string') throw new HhcWebApiError(502, 'invalid_response', 'Recording pagination is unavailable.')

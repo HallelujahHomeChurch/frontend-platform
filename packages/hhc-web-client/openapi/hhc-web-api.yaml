@@ -3111,16 +3111,17 @@ paths:
   /member/recordings:
     get:
       operationId: listMemberRecordings
-      summary: List recent published recordings after membership and video entitlement checks
+      summary: List or search published recordings after membership and video entitlement checks
       tags: [Authenticated]
       x-hhc-visibility: authenticated
       x-hhc-callers: [api-gateway]
       x-hhc-cache: 'private, no-store'
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
-      description: Without limit, retains the legacy array response. With limit, returns uploadedAt DESC and id DESC keyset batches and meta.nextCursor (null at exhaustion). Empty batches may still carry a cursor when media is no longer available; continue until nextCursor is null. Every batch rechecks current visibility and ready media.
+      description: Without limit, retains the legacy array response. With limit, returns uploadedAt DESC and id DESC keyset batches and meta.nextCursor (null at exhaustion). Empty batches may still carry a cursor when media is no longer available; continue until nextCursor is null. Every batch rechecks current visibility and ready media. q normalizes Unicode whitespace and case, splits into words, and requires every word to occur literally in the title or description. Nonempty q requires limit. Search is applied before the batch limit. Cursor binds the normalized query digest and sort version; legacy cursors are accepted only without a query. Duplicate q values and malformed queries are rejected.
       parameters:
         - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 }, description: Enable batched reads; required when cursor is supplied. }
-        - { name: cursor, in: query, schema: { type: string, maxLength: 256 }, description: Opaque nextCursor from the previous batch; requires limit. }
+        - { name: cursor, in: query, schema: { type: string, maxLength: 256 }, description: Opaque nextCursor from the previous batch for the same normalized q; requires limit. }
+        - { name: q, in: query, schema: { type: string, maxLength: 100 }, description: Optional literal title/description search; maximum 100 normalized Unicode code points. Empty query retains ordinary listing. }
       responses:
         '200': { description: Authorized recent recordings, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingListEnvelope' } } } }
         '400': { $ref: '#/components/responses/Error' }
@@ -4696,14 +4697,14 @@ paths:
     get:
       operationId: listMemberLiveRecordings
       summary: listMemberLiveRecordings
-      description: Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture
-        bound; no service-principal upload identity in the initial OBS release.
+      description: List currently available live events after membership, entitlement and legal checks. Optional q uses the same normalized literal all-word title/description matching as recordings. Ended/ending events are excluded; existing playback scopes remain independent. Duplicate q, more than 100 normalized Unicode code points, malformed queries and all other query parameters are rejected.
       tags: [Authenticated]
       x-hhc-visibility: authenticated
       x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
-      parameters: []
+      parameters:
+        - { name: q, in: query, schema: { type: string, maxLength: 100 }, description: Optional literal title/description search; maximum 100 normalized Unicode code points. }
       responses:
         '200':
           description: Accepted operation result; acceptance is not verified media readiness.
