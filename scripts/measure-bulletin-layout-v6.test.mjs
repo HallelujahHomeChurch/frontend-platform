@@ -13,9 +13,9 @@ const hash = value => createHash('sha256').update(value).digest('hex');
 const labels = ['historicalVision', 'historicalGoals', 'historicalActions', 'historicalCommitment'];
 const style = {fontSize: 12, lineHeight: 15, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0};
 async function fixture(width, height, locale = 'zh-Hant') {
-  const assets = JSON.parse(await readFile(new URL(`../packages/ui/src/bulletin-reader/${locale === 'zh-Hans' ? 'v2/' : ''}template-assets.json`, import.meta.url)));
+  const assets = JSON.parse(await readFile(new URL(`../packages/ui/src/bulletin-reader/${locale === 'zh-Hans' ? 'v2/' : version === 'v7' ? 'v7/' : ''}template-assets.json`, import.meta.url)));
   if (locale === 'zh-Hans' && version === 'v7') {
-    const traditional = JSON.parse(await readFile(new URL('../packages/ui/src/bulletin-reader/template-assets.json', import.meta.url)));
+    const traditional = JSON.parse(await readFile(new URL('../packages/ui/src/bulletin-reader/v7/template-assets.json', import.meta.url)));
     assets.push(...traditional.filter(asset => asset.kind === 'font' && asset.roles.some(role => role === 'body' || role === 'emphasis')));
   }
   const slots = [];

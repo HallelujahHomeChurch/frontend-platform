@@ -81,7 +81,7 @@ it('uses V7 pinned serif fallbacks in Simplified ebook spans without replacing r
   const welcome = container.querySelector(`[data-block-id="${cover.cover.welcome[0].id}"]`)!;
   expect(welcome).toHaveTextContent('在𥚃面。保留重點');
   expect(welcome.querySelector('[data-font-role="body"]')).toHaveStyle({fontFamily: "'HHC Weekly Serif SC', 'HHC Weekly Serif'"});
-  expect(welcome.querySelector('[data-font-role="emphasis"]')).toHaveStyle({fontFamily: "'HHC Weekly Serif SC', 'HHC Weekly Kai'"});
+  expect(welcome.querySelector('[data-font-role="emphasis"]')).toHaveStyle({fontFamily: "'HHC Weekly Serif SC', 'HHC Weekly Serif'"});
   expect(document).toEqual(original);
 });
 

@@ -22,7 +22,7 @@ const workspace=JSON.parse(await readFile(resolve(root,'package.json'),'utf8'));
 assert.equal(manifest.dependencies.react,require('react').version);
 assert.equal(manifest.dependencies['react-dom'],require('react-dom').version);
 assert.equal(manifest.devDependencies.playwright,workspace.devDependencies.playwright);
-const allAssets = (await Promise.all(['', 'v2/'].map(async version => JSON.parse(await readFile(resolve(root,`packages/ui/src/bulletin-reader/${version}template-assets.json`),'utf8'))))).flat();
+const allAssets = (await Promise.all(['', 'v2/', 'v7/'].map(async version => JSON.parse(await readFile(resolve(root,`packages/ui/src/bulletin-reader/${version}template-assets.json`),'utf8'))))).flat();
 const assets=[...new Map(allAssets.map(asset=>[asset.url,asset])).values()];
 for (const url of new Set(assets.map(asset=>asset.licenseUrl).filter(Boolean))) {
   const match=url.match(/-([0-9a-f]{64})\.txt$/);

@@ -1,0 +1,95 @@
+[
+  {
+    "url": "/assets/weekly/v1/body-ba497525931c22348ff17863ecd1b49a0d54010145cd2f2adce115505dbde7b0.woff2",
+    "sha256": "ba497525931c22348ff17863ecd1b49a0d54010145cd2f2adce115505dbde7b0",
+    "mime": "font/woff2",
+    "sizeBytes": 3998724,
+    "kind": "font",
+    "family": "HHC Weekly Serif",
+    "weight": 400,
+    "roles": [
+      "body",
+      "reference",
+      "foreignText"
+    ],
+    "licenseUrl": "/assets/weekly/v1/noto-license-5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6.txt",
+    "sourceUrl": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/notoseriftc/NotoSerifTC%5Bwght%5D.ttf",
+    "sourceSha256": "0077e18f57c6908f4a000969880940bdb0dad057c0e8d98b49dc364c3d1b09c6"
+  },
+  {
+    "url": "/assets/weekly/v1/scripture-b330d18e5aee29a4035c7ea34581f4268b9913ce9051cd978218caf51c16ca2d.woff2",
+    "sha256": "b330d18e5aee29a4035c7ea34581f4268b9913ce9051cd978218caf51c16ca2d",
+    "mime": "font/woff2",
+    "sizeBytes": 14982568,
+    "kind": "font",
+    "family": "HHC Weekly Scripture",
+    "weight": 400,
+    "roles": [
+      "scripture"
+    ],
+    "licenseUrl": "/assets/weekly/v1/kai-license-3891666f7f37bac38e8736f7be6bb0c848ae0114dbd667880e77e9fb767420c4.txt",
+    "sourceUrl": "https://www.cns11643.gov.tw/opendata/Fonts_Kai.zip",
+    "sourceSha256": "d5e8d7d8743c5cf816bdeb393a443f65105a8130266a04c19560e1d3401b28f0"
+  },
+  {
+    "url": "/assets/weekly/v2/body-bold-49bf74f95fef7d74142848883abe13de0aa8f19e32431abe9fe4cc9d3592448f.woff2",
+    "sha256": "49bf74f95fef7d74142848883abe13de0aa8f19e32431abe9fe4cc9d3592448f",
+    "mime": "font/woff2",
+    "sizeBytes": 4140364,
+    "kind": "font",
+    "family": "HHC Weekly Serif",
+    "weight": 700,
+    "roles": [
+      "emphasis"
+    ],
+    "licenseUrl": "/assets/weekly/v1/noto-license-5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6.txt",
+    "sourceUrl": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/notoseriftc/NotoSerifTC%5Bwght%5D.ttf",
+    "sourceSha256": "0077e18f57c6908f4a000969880940bdb0dad057c0e8d98b49dc364c3d1b09c6"
+  },
+  {
+    "url": "/assets/weekly/v1/logo-5dabd62c4acc8761d650410cb9f2ecf53de967fe8609544d7146b86a592584f5.png",
+    "sha256": "5dabd62c4acc8761d650410cb9f2ecf53de967fe8609544d7146b86a592584f5",
+    "mime": "image/png",
+    "sizeBytes": 96960,
+    "kind": "decoration"
+  },
+  {
+    "url": "/assets/weekly/v1/qr-website-fd963a95c1d3e19834aaf4a814795dddd0fc855d312932626c5c5d0f89f9ea9a.svg",
+    "sha256": "fd963a95c1d3e19834aaf4a814795dddd0fc855d312932626c5c5d0f89f9ea9a",
+    "mime": "image/svg+xml",
+    "sizeBytes": 4061,
+    "kind": "decoration",
+    "sourceUrl": "https://www.alive.org.tw/"
+  },
+  {
+    "url": "/assets/weekly/v1/qr-youtube-9a08ce99ca7d33e0a6a21dea961c0e3626ddabfaa7af5f73ecbc3f807673cef3.svg",
+    "sha256": "9a08ce99ca7d33e0a6a21dea961c0e3626ddabfaa7af5f73ecbc3f807673cef3",
+    "mime": "image/svg+xml",
+    "sizeBytes": 10003,
+    "kind": "decoration",
+    "sourceUrl": "https://www.youtube.com/c/%E5%93%88%E5%88%A9%E8%B7%AF%E4%BA%9E%E5%AE%B6%E6%95%99%E6%9C%83"
+  },
+  {
+    "url": "/assets/weekly/v1/qr-stream-709ad7995ea45f27898bfbddb62d0bff38f526922e9c3825d561a8195c0974cb.svg",
+    "sha256": "709ad7995ea45f27898bfbddb62d0bff38f526922e9c3825d561a8195c0974cb",
+    "mime": "image/svg+xml",
+    "sizeBytes": 4914,
+    "kind": "decoration",
+    "sourceUrl": "https://www.youtube.com/@GKPMusic777"
+  },
+  {
+    "url": "/assets/weekly/v1/symbol-89ed6ff28006ceddbfb893fc2812b5868c5b691341c48959a092b25f33ec5bdd.woff2",
+    "sha256": "89ed6ff28006ceddbfb893fc2812b5868c5b691341c48959a092b25f33ec5bdd",
+    "mime": "font/woff2",
+    "sizeBytes": 396064,
+    "kind": "font",
+    "family": "HHC Weekly Symbols",
+    "weight": 400,
+    "roles": [
+      "symbol"
+    ],
+    "licenseUrl": "/assets/weekly/v1/symbol-license-e87c2ed7ff174c637d55fa381939ebb96f43f0415ad94605a37589228f4cbf4f.txt",
+    "sourceUrl": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/notosanssymbols2/NotoSansSymbols2-Regular.ttf",
+    "sourceSha256": "7d5fb73b7ca67a6798101741f5d280a3d016a56a197afcd4199dbb57b4b82a21"
+  }
+]

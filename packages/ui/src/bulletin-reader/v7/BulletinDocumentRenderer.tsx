@@ -99,7 +99,7 @@ export function BulletinDocumentRenderer({document, manifest = document.layoutMa
     const label = {hymnLyrics: 'hymnLabel', backSummary: 'summaryLabel', announcements: 'announcementsLabel', victoriesAndPrayers: 'prayersLabel'}[component.type as 'hymnLyrics' | 'backSummary' | 'announcements' | 'victoriesAndPrayers'];
     return [{componentId: component.id, label: label as components['schemas']['OnlineBulletinFixedSlot']['element'] | undefined, blocks: entries.map(entry => entry.block)}];
   });
-  return <div className={locale === 'zh-Hans' ? 'hhc-bulletin-v1 hhc-bulletin-v2' : 'hhc-bulletin-v1'} data-bulletin-mode={mode} lang={document.contentLocale}
+  return <div className={locale === 'zh-Hans' ? 'hhc-bulletin-v1 hhc-bulletin-v2' : 'hhc-bulletin-v1'} data-bulletin-renderer="v7" data-bulletin-mode={mode} lang={document.contentLocale}
     onPointerDown={event => {
       activePointers.current.add(event.pointerId);
       if (activePointers.current.size > 1 && pointer.current) pointer.current.moved = true;

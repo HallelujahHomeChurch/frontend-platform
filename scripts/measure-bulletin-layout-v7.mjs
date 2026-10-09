@@ -12,10 +12,11 @@ const require = createRequire(new URL('../packages/ui/package.json', import.meta
 const {createElement} = require('react');
 const {renderToStaticMarkup} = require('react-dom/server');
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
-const profiles = await Promise.all(['','v2/'].map(async path=>{
+const profiles = await Promise.all(['v7/','v2/'].map(async path=>{
   const assets=JSON.parse(await readFile(new URL(`../packages/ui/src/bulletin-reader/${path}template-assets.json`,import.meta.url),'utf8'));
   const coverage=JSON.parse(await readFile(new URL(`../packages/ui/src/bulletin-reader/${path}font-coverage.json`,import.meta.url),'utf8'));
-  return {assets,css:await readFile(new URL(`../packages/ui/dist/bulletin-reader/${path}paper.css`,import.meta.url),'utf8'),fontPoints:new Map(assets.filter(asset=>asset.kind==='font').map(asset=>[asset.sha256,new Set(coverage[asset.sha256].flatMap(([start,end])=>Array.from({length:end-start+1},(_,index)=>start+index)))]))};
+  const css = await readFile(new URL(`../packages/ui/dist/bulletin-reader/${path}paper.css`,import.meta.url),'utf8');
+  return {assets,css:path==='v7/' ? await readFile(new URL('../packages/ui/dist/bulletin-reader/paper.css',import.meta.url),'utf8') + css : css,fontPoints:new Map(assets.filter(asset=>asset.kind==='font').map(asset=>[asset.sha256,new Set(coverage[asset.sha256].flatMap(([start,end])=>Array.from({length:end-start+1},(_,index)=>start+index)))]))};
 }));
 
 /** Exact bytes are the worker submission identity; user-supplied URLs never execute. */

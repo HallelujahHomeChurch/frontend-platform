@@ -10,7 +10,7 @@ assert.ok(assetsDirectory, 'native acceptance requires real immutable fonts');
 const hash = text => createHash('sha256').update(text).digest('hex');
 
 test('Word composition scales explicit inline sizes with the block without changing text or anchors', async () => {
-  const assets = JSON.parse(await readFile(new URL('../packages/ui/src/bulletin-reader/template-assets.json', import.meta.url)));
+  const assets = JSON.parse(await readFile(new URL('../packages/ui/src/bulletin-reader/v7/template-assets.json', import.meta.url)));
   const style = {fontSize: 13, lineHeight: 16.25, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0};
   const question = {id: 'question', style, sentences: [
     {id: 'question-1', spans: [{text: '分享神的愛。', fontRole: 'body'}]},
@@ -44,7 +44,7 @@ test('Word composition scales explicit inline sizes with the block without chang
 
 test('Simplified rare glyph uses pinned Traditional serif fallback without changing its Unicode identity', async () => {
   const assets = JSON.parse(await readFile(new URL('../packages/ui/src/bulletin-reader/v2/template-assets.json', import.meta.url)));
-  const traditional = JSON.parse(await readFile(new URL('../packages/ui/src/bulletin-reader/template-assets.json', import.meta.url)));
+  const traditional = JSON.parse(await readFile(new URL('../packages/ui/src/bulletin-reader/v7/template-assets.json', import.meta.url)));
   assets.push(...traditional.filter(asset => asset.kind === 'font' && asset.roles.some(role => role === 'body' || role === 'emphasis')));
   const style = {fontSize: 13, lineHeight: 18, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0};
   const block = {id: 'body', style, sentences: [{id: 'body-sentence', spans: [{text: '在𥚃面。', fontRole: 'body'}]}]};
@@ -60,6 +60,12 @@ test('Simplified rare glyph uses pinned Traditional serif fallback without chang
   };
   const result = await measureBulletinLayout(input());
   assert.deepEqual(result.overflow, []);
+  assert.equal(block.sentences[0].spans[0].text, '在𥚃面。');
+  block.sentences[0].spans[0].fontRole = 'emphasis';
+  const emphasized = await measureBulletinLayout(input());
+  assert.deepEqual(emphasized.overflow, []);
+  assert.ok(emphasized.fontHashes.includes('49bf74f95fef7d74142848883abe13de0aa8f19e32431abe9fe4cc9d3592448f'));
+  assert.ok(!emphasized.fontHashes.includes('9c02738cbfdf263d60baceaf5e97dd1dd39230daf64e98bf91be07a8609fb962'));
   assert.equal(block.sentences[0].spans[0].text, '在𥚃面。');
   block.sentences[0].spans[0].text = '在🫠面。';
   await assert.rejects(measureBulletinLayout(input()), /missing_glyph/);

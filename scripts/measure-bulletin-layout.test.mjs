@@ -21,7 +21,7 @@ const BULLETIN_RENDERER_V1_DIGEST=v3?newDigest:legacyDigest;
 const assetsDirectory = process.env.HHC_BULLETIN_TEMPLATE_DIR;
 const hash = value => createHash('sha256').update(value).digest('hex');
 async function fixture(text = '這是一句測試。') {
-  const assets = JSON.parse(await readFile(new URL('../packages/ui/src/bulletin-reader/template-assets.json', import.meta.url), 'utf8'));
+  const assets = JSON.parse(await readFile(new URL(`../packages/ui/src/bulletin-reader/${v7 ? 'v7/' : ''}template-assets.json`, import.meta.url), 'utf8'));
   const document = {
     issueId: '00000000-0000-4000-8000-000000000001', series: 'general', contentLocale: 'zh-Hant', schemaVersion: '1', templateVersion: 'v1', sourceAssetChecksum: 'a'.repeat(64), sourcePageCount: 4,
     pages: [{id: 'p', width: 595.32, height: 841.92}],
@@ -249,7 +249,7 @@ test('fixed graphics must be declared trusted assets and loaded before measureme
   submission.document.layoutManifest.pages[0].fixedSlots = [{id: 'fixed-qr', element: 'websiteQR', box: {x: .1, y: .3, width: .1, height: .07}, style: {fontSize: 16, lineHeight: 24, indent: 0, firstLineIndent: 0, spaceBefore: 0, spaceAfter: 0}}];
   let submissionJSON = JSON.stringify(submission);
   await assert.rejects(measureBulletinLayout({...input, submissionJSON, expectedContentHash: hash(submissionJSON)}), /missing_decoration/);
-  const assets = JSON.parse(await readFile(new URL('../packages/ui/src/bulletin-reader/template-assets.json', import.meta.url), 'utf8'));
+  const assets = JSON.parse(await readFile(new URL(`../packages/ui/src/bulletin-reader/${v7 ? 'v7/' : ''}template-assets.json`, import.meta.url), 'utf8'));
   const asset = assets.find(asset => asset.url.includes('/qr-website-'));
   submission.document.layoutManifest.assets.push({url: asset.url, sha256: asset.sha256, kind: 'decoration'});
   submissionJSON = JSON.stringify(submission);

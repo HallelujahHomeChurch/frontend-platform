@@ -99,6 +99,9 @@ V7 preserves explicit inline-size proportions when composing Word questions.
 Simplified body text may use the existing pinned Traditional serif faces for
 rare glyphs absent from the Simplified faces, without substituting characters.
 Paper and ebook use the same fallback; unknown glyphs still block conversion.
+The V7 Traditional emphasis face is the reader's already-published true-bold
+Noto Serif TC, not the legacy WenKai face. Import `bulletin-paper-v7.css` after
+the existing paper styles and use `BULLETIN_RENDERER_V7_ASSETS` for this profile.
 V1–V6 remain immutable. Deploy V7-capable consumers, including their exact
 asset allowlists, before enabling the V7 producer.
 

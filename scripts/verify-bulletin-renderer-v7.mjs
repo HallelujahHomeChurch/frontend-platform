@@ -11,9 +11,9 @@ const baseArgs=baseIndex===-1?[]:['--base-ref',process.argv[baseIndex+1]];
 for(const script of ['scripts/verify-bulletin-renderer-v3.mjs','scripts/verify-bulletin-renderer-v4.mjs','scripts/verify-bulletin-renderer-v5.mjs','scripts/verify-bulletin-renderer-v6.mjs'])execFileSync(process.execPath,[script,...baseArgs],{cwd:root,stdio:'pipe'});
 for(const args of [[],['--v2']])execFileSync(process.execPath,['scripts/verify-bulletin-renderer.mjs',...args,...baseArgs],{cwd:root,stdio:'pipe'});
 const artifact='packages/ui/src/bulletin-reader/v7/artifact.ts';
-const source=['packages/ui/src/bulletin-reader/v7/BulletinDocumentRenderer.tsx','packages/ui/src/bulletin-reader/v7/fonts.ts','scripts/measure-bulletin-layout-v7.mjs'];
+const source=['packages/ui/src/bulletin-reader/v7/BulletinDocumentRenderer.tsx','packages/ui/src/bulletin-reader/v7/fonts.ts','packages/ui/src/bulletin-reader/v7/paper.css','packages/ui/src/bulletin-reader/v7/template-assets.json','packages/ui/src/bulletin-reader/v7/font-coverage.json','scripts/measure-bulletin-layout-v7.mjs'];
 const files=[...['','v2/'].flatMap(version=>['BulletinDocumentRenderer.js','fixed.js','paper.css'].map(file=>`packages/ui/dist/bulletin-reader/${version}${file}`).concat(['template-assets.json','font-coverage.json','artifact.ts'].map(file=>`packages/ui/src/bulletin-reader/${version}${file}`))),
-  'packages/ui/dist/bulletin-reader/v7/BulletinDocumentRenderer.js','packages/ui/dist/bulletin-reader/v7/fonts.js','packages/ui/dist/bulletin-reader/v6/fixed.js','packages/ui/dist/bulletin-reader/v3/measure.js','scripts/measure-bulletin-layout-v7.mjs'];
+  'packages/ui/dist/bulletin-reader/v7/BulletinDocumentRenderer.js','packages/ui/dist/bulletin-reader/v7/fonts.js','packages/ui/dist/bulletin-reader/v7/paper.css','packages/ui/src/bulletin-reader/v7/template-assets.json','packages/ui/src/bulletin-reader/v7/font-coverage.json','packages/ui/dist/bulletin-reader/v6/fixed.js','packages/ui/dist/bulletin-reader/v3/measure.js','scripts/measure-bulletin-layout-v7.mjs'];
 const digest=createHash('sha256');
 for(const file of files)digest.update(file).update('\0').update(await readFile(resolve(root,file))).update('\0');
 const workspace=JSON.parse(await readFile(resolve(root,'package.json'),'utf8'));
