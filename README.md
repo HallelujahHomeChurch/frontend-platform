@@ -80,6 +80,13 @@ and direct bulletin entitlements. Qualification and validity-window fields are
 not part of the contract.
 # Bulletin ebook presentation
 
+`bulletinBackPanelPresentation(document)` returns paper-only frame geometry for
+Website and Admin previews. It spaces announcement/prayer panels after either a
+framed or unframed summary without changing text widths, anchors, or source pages.
+When vertical spacing cannot fit, it retains original vertical geometry while
+still aligning horizontal frame padding. Stored manifests and frozen V1–V8
+renderers remain unchanged; mobile reflow does not use this helper.
+
 V8 reuses the immutable V7 fonts and renderer with measured normal-tracking
 canonical titles, single-line boxed headings/speakers and adjacent cover
 date/issue fields. It never substitutes source text or adds source pages to fit.
