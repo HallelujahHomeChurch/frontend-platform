@@ -870,6 +870,18 @@
           },
           "componentId": {
             "$ref": "#/components/schemas/OnlineBulletinID"
+          },
+          "blockId": {
+            "$ref": "#/components/schemas/OnlineBulletinID"
+          },
+          "sentenceId": {
+            "$ref": "#/components/schemas/OnlineBulletinID"
+          },
+          "sourcePage": {
+            "description": "One-based original PDF page, never the composed online page index. Omitted when no exact source page is available.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 40
           }
         }
       },
@@ -1093,9 +1105,10 @@
               "v2",
               "v3",
               "v4",
-              "v5"
+              "v5",
+              "v6"
             ],
-            "description": "Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. Existing published renderer versions remain immutable."
+            "description": "Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. V6 adds historical four-row cover profiles. Existing published renderer versions remain immutable."
           },
           "rendererArtifactSha256": {
             "$ref": "#/components/schemas/OnlineBulletinHash"
@@ -1243,6 +1256,11 @@
               "visionMission",
               "visionFellowship",
               "visionCommitment",
+              "historicalVision",
+              "historicalGoals",
+              "historicalGospelGoals",
+              "historicalActions",
+              "historicalCommitment",
               "pastor",
               "contact",
               "scanHint",
@@ -1279,7 +1297,8 @@
               "summaryFrame",
               "announcementsFrame",
               "prayersFrame"
-            ]
+            ],
+            "description": "Historical elements require rendererVersion v6; historicalGospelGoals preserves the reviewed native gospel-wording variant instead of substituting historicalGoals."
           },
           "box": {
             "$ref": "#/components/schemas/OnlineBulletinBox"

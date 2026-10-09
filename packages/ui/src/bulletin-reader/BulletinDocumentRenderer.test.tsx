@@ -20,6 +20,31 @@ function fixture(): Document {
 }
 
 describe('immutable shared bulletin renderer', () => {
+  it.each(['zh-Hant', 'zh-Hans'] as const)('renders V6 historical rows with %s wording and preserves paper anchors', contentLocale => {
+    const document = fixture();
+    const templateVersion = contentLocale === 'zh-Hans' ? 'v2' : 'v1';
+    document.templateVersion = templateVersion;
+    document.contentLocale = contentLocale;
+    const exports = UI as typeof UI & {BULLETIN_RENDERER_V6_DIGEST: string};
+    Object.assign(document.layoutManifest, {templateVersion, rendererVersion: 'v6', rendererArtifactSha256: exports.BULLETIN_RENDERER_V6_DIGEST});
+    const elements = ['historicalVision', 'historicalGoals', 'historicalActions', 'historicalCommitment'];
+    const texts = contentLocale === 'zh-Hans'
+      ? ['一个异象：合一与宣教', '两个目标：宣教为中国、中国为宣教', '三个行动：共同生活、爱与成全、恩膏传承', '四个坚持：宣教主导、灵恩神学、团队事奉、门徒训练']
+      : ['一個異象：合一與宣教', '兩個目標：宣教為中國、中國為宣教', '三個行動：共同生活、愛與成全、恩膏傳承', '四個堅持：宣教主導、靈恩神學、團隊事奉、門徒訓練'];
+    document.layoutManifest.pages[0].fixedSlots = elements.map((element, index) => ({id: element, element: element as 'visionMission', style: {fontSize: 10, lineHeight: 12}, box: {x: .42 + index * .034, y: .146 + index * .019, width: .4, height: .015}}));
+    const original = structuredClone(document);
+    const {container, rerender} = render(<UI.BulletinDocumentRenderer document={document} mode="paper"/>);
+    elements.forEach((element, index) => expect(container.querySelector(`[data-fixed-element="${element}"]`)).toHaveTextContent(texts[index]));
+    expect(container.querySelector('[data-fixed-element="visionMission"]')).toBeNull();
+    expect(container.querySelector('[data-sentence-id="s"]')).toHaveTextContent('𠮷你');
+    expect(container.querySelector('[data-sentence-id="s"]')).toHaveAttribute('data-fragment-end', '2');
+    expect(document).toEqual(original);
+    document.layoutManifest.pages[0].fixedSlots![1].element = 'historicalGospelGoals' as 'visionMission';
+    rerender(<UI.BulletinDocumentRenderer document={document} mode="paper"/>);
+    expect(container.querySelector('[data-fixed-element="historicalGospelGoals"]')).toHaveTextContent(contentLocale === 'zh-Hans' ? '两个目标：福音为华人、华人为福音' : '兩個目標：福音為華人、華人為福音');
+    document.layoutManifest.rendererArtifactSha256 = '0'.repeat(64);
+    expect(() => UI.requireBulletinRenderer(document.layoutManifest)).toThrow('update_required');
+  });
   it.each(['v1','v2'] as const)('renders V3/V4/V5 with the frozen %s template without rewriting stored identities', templateVersion => {
     for (const rendererVersion of ['v3', 'v4', 'v5'] as const) {
     const document=fixture();

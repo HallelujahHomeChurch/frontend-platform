@@ -5,6 +5,7 @@ import {bulletinBlocks, type BulletinBlock, type BulletinRenderableDocument, typ
 import {requireBulletinRenderer} from './versions.js';
 import {bulletinFixedText as traditionalFixedText, type BulletinCanonicalMetadata} from './fixed.js';
 import {bulletinFixedText as simplifiedFixedText} from './v2/fixed.js';
+import {bulletinFixedText as historicalFixedText} from './v6/fixed.js';
 
 type Component = BulletinRenderableDocument['components'][number];
 export type BulletinChapterId = 'cover' | 'body' | 'worship' | 'back';
@@ -42,7 +43,9 @@ export function BulletinEbook({document, chapter, canonicalMetadata, showDetails
   sentenceState?: Readonly<Record<string, BulletinSentenceState>>;
 }) {
   requireBulletinRenderer(document.layoutManifest);
-  const bulletinFixedText = document.contentLocale === 'zh-Hans' ? simplifiedFixedText : traditionalFixedText;
+  const bulletinFixedText = document.layoutManifest.rendererVersion === 'v6'
+    ? (element: Parameters<typeof historicalFixedText>[0], metadata: BulletinCanonicalMetadata | undefined, pageNumber: number, sourcePageCount = document.sourcePageCount) => historicalFixedText(element, metadata, pageNumber, sourcePageCount, document.contentLocale === 'zh-Hans' ? 'zh-Hans' : 'zh-Hant')
+    : document.contentLocale === 'zh-Hans' ? simplifiedFixedText : traditionalFixedText;
   if (document.schemaVersion !== '1' || document.templateVersion !== document.layoutManifest.templateVersion) throw new Error('update_required');
   const details = bulletinMobileDetails(document);
   const sentence = (value: BulletinSentence, fontSize: number, presentation?: 'verse' | 'plain') => <span key={value.id} data-sentence-id={value.id} data-fragment-start={0} data-fragment-end={value.spans.reduce((sum, span) => sum + Array.from(span.text).length, 0)} data-selected={sentenceState?.[value.id]?.selected || undefined} data-highlight={sentenceState?.[value.id]?.highlight}>
@@ -54,7 +57,7 @@ export function BulletinEbook({document, chapter, canonicalMetadata, showDetails
   type Fixed = Parameters<typeof bulletinFixedText>[0];
   const label = (element: Fixed) => bulletinFixedText(element, canonicalMetadata, 0).text;
   const items = (list: Extract<Component, {type: 'backSummary' | 'announcements' | 'victoriesAndPrayers'}>['items'], id: string, plain = false) => list.flatMap(item => [...(item.title ? [block(item.title, id, plain ? 'p' : 'h3', undefined, plain ? 'plain' : undefined)] : []), ...item.blocks.map(value => block(value, id, 'p', undefined, plain ? 'plain' : undefined))]);
-  const headerElements = ['title', 'subtitle', 'date', 'issueNumber', 'vision', 'visionMission', 'visionFellowship', 'visionCommitment', 'pastor', 'masthead'];
+  const headerElements = ['title', 'subtitle', 'date', 'issueNumber', 'vision', 'visionMission', 'visionFellowship', 'visionCommitment', 'historicalVision', 'historicalGoals', 'historicalGospelGoals', 'historicalActions', 'historicalCommitment', 'pastor', 'masthead'];
   const header = (document.layoutManifest.pages[0]?.fixedSlots ?? []).filter(slot => headerElements.includes(slot.element) && (showDetails || !details.fixedElements.has(slot.element)));
   return <div className={`hhc-bulletin-v1 hhc-bulletin-ebook${document.templateVersion === 'v2' ? ' hhc-bulletin-v2' : ''}`} data-bulletin-mode="mobile" data-chapter={chapter} lang={document.contentLocale}>
     {chapter === bulletinChapters(document)[0]?.id && header.length > 0 ? <header className="hhc-bulletin-mobile-header">{header.map(slot => {
