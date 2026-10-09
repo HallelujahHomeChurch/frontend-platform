@@ -1513,3 +1513,13 @@ it('allows explicit empty submission to return from filtered search without chan
  expect(onSubmit).toHaveBeenCalledWith('');
  expect(screen.getByRole('button',{name:'Video search'})).toHaveFocus();
 });
+
+it('lets the trigger close AccountMenu on a second touch', async () => {
+ const user=userEvent.setup();
+ render(<AccountMenu user={{name:'Ada',email:'ada@example.test'}} labels={{menu:'Account menu',greeting:'Hi',signOut:'Sign out'}} onSignOut={()=>undefined}/>);
+ const trigger=screen.getByRole('button',{name:'Account menu'});
+ await user.pointer([{keys:'[TouchA>]',target:trigger},{keys:'[/TouchA]'}]);
+ expect(trigger).toHaveAttribute('aria-expanded','true');
+ await user.pointer([{keys:'[TouchA>]',target:trigger},{keys:'[/TouchA]'}]);
+ expect(trigger).toHaveAttribute('aria-expanded','false');
+});
