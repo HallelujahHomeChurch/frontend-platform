@@ -58,6 +58,9 @@ export type RecordingCoverList = components['schemas']['RecordingCoverList']
 export type RecordingCoverSelection = components['schemas']['RecordingCoverSelection']
 export type RecordingCoverSelectionResult = components['schemas']['RecordingCoverSelectionResult']
 export type RecordingCoverUpload = components['schemas']['RecordingCoverUpload']
+export type LiveCoverSelection = components['schemas']['LiveCoverSelection']
+export type LiveCoverSettings = components['schemas']['LiveCoverSettings']
+export type LiveCoverScope = 'defaults' | {recordingId: string; captureId: string}
 export type MemberRecordingPlayback = components['schemas']['MemberRecordingPlayback']
 export type MemberLivePlayback = components['schemas']['MemberLivePlayback']
 export type MemberLiveRecording = components['schemas']['MemberLiveRecording']
@@ -371,6 +374,38 @@ export function createHhcWebClient(options: {
     },
     async listRecordingCovers(id:string,signal?:AbortSignal) {
       return (await unwrap(client.GET('/admin/recordings/{id}/covers',{params:{path:{id}},signal,cache:'no-store'}))).data
+    },
+    async getLiveCoverSettings(scope:LiveCoverScope,signal?:AbortSignal) {
+      if(scope==='defaults')return (await unwrap(client.GET('/admin/recordings/live-cover-settings',{signal,cache:'no-store'}))).data
+      return (await unwrap(client.GET('/admin/recordings/{id}/captures/{captureId}/cover-settings',{params:{path:{id:scope.recordingId,captureId:scope.captureId}},signal,cache:'no-store'}))).data
+    },
+    async setLiveCoverSettings(scope:LiveCoverScope,revision:number,selection:LiveCoverSelection,key:string,signal?:AbortSignal) {
+      const header={'If-Match':`"${revision}"`,'Idempotency-Key':key}
+      if(scope==='defaults')return (await unwrap(client.PUT('/admin/recordings/live-cover-settings',{params:{header},body:selection,signal,cache:'no-store'}))).data
+      return (await unwrap(client.PUT('/admin/recordings/{id}/captures/{captureId}/cover-settings',{params:{path:{id:scope.recordingId,captureId:scope.captureId},header},body:selection,signal,cache:'no-store'}))).data
+    },
+    async uploadLiveCover(scope:LiveCoverScope,blob:Blob,key:string,signal?:AbortSignal) {
+      if(!['image/jpeg','image/png'].includes(blob.type)||blob.size<1||blob.size>5*1024*1024)throw new HhcWebApiError(422,'invalid_cover','Choose JPEG or PNG up to 5 MiB.')
+      const options={headers:{'Content-Type':blob.type},body:'',bodySerializer:()=>blob,signal,cache:'no-store' as const,redirect:'error' as const}
+      if(scope==='defaults')return (await unwrap(client.POST('/admin/recordings/live-cover-settings/uploads',{...options,params:{header:{'Idempotency-Key':key}}}))).data
+      return (await unwrap(client.POST('/admin/recordings/{id}/captures/{captureId}/cover-settings/uploads',{...options,params:{path:{id:scope.recordingId,captureId:scope.captureId},header:{'Idempotency-Key':key}}}))).data
+    },
+    async getLiveCoverUpload(scope:LiveCoverScope,uploadId:string,signal?:AbortSignal) {
+      if(scope==='defaults')return (await unwrap(client.GET('/admin/recordings/live-cover-settings/uploads/{uploadId}',{params:{path:{uploadId}},signal,cache:'no-store'}))).data
+      return (await unwrap(client.GET('/admin/recordings/{id}/captures/{captureId}/cover-settings/uploads/{uploadId}',{params:{path:{id:scope.recordingId,captureId:scope.captureId,uploadId}},signal,cache:'no-store'}))).data
+    },
+    async getLiveCoverContent(scope:LiveCoverScope,uploadId?:string,signal?:AbortSignal) {
+      const options={signal,cache:'no-store' as const,redirect:'error' as const,parseAs:'blob' as const,headers:{Accept:'image/jpeg'}}
+      if(scope==='defaults') {
+        if(!uploadId)throw new HhcWebApiError(400,'invalid_request','A default upload ID is required.')
+        return unwrap(client.GET('/admin/recordings/live-cover-settings/uploads/{uploadId}/content',{...options,params:{path:{uploadId}}}))
+      }
+      const path={id:scope.recordingId,captureId:scope.captureId}
+      if(uploadId)return unwrap(client.GET('/admin/recordings/{id}/captures/{captureId}/cover-settings/uploads/{uploadId}/content',{...options,params:{path:{...path,uploadId}}}))
+      return unwrap(client.GET('/admin/recordings/{id}/captures/{captureId}/cover-settings/content',{...options,params:{path}}))
+    },
+    async getMemberLiveCover(id:string,captureId:string,signal?:AbortSignal) {
+      return unwrap(client.GET('/member/recordings/{id}/live/{captureId}/cover',{params:{path:{id,captureId}},signal,cache:'no-store',redirect:'error',parseAs:'blob',headers:{Accept:'image/jpeg'}}))
     },
     async uploadRecordingCover(id:string,blob:Blob,key:string,signal?:AbortSignal) {
       if(!['image/jpeg','image/png'].includes(blob.type)||blob.size<1||blob.size>5*1024*1024) throw new HhcWebApiError(422,'invalid_cover','Choose JPEG or PNG up to 5 MiB.')

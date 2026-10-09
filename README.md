@@ -197,3 +197,18 @@ The Website client accepts optional `q` in `listMemberRecordingsPage` and
 compatible. Only the two member search GET paths are synchronized with the canonical
 CMS search contract; unrelated domains retain their existing package contract.
 Release CMS and Gateway producers before enabling consumer search.
+
+## Live thumbnail client
+
+`LiveCoverScope` separates persistent defaults from a `{recordingId, captureId}`
+event. Use `get/setLiveCoverSettings` for revision-fenced explicit saves;
+`uploadLiveCover` and `getLiveCoverUpload` prepare a fixed image before selecting
+it. `getLiveCoverContent` and `getMemberLiveCover` return authenticated private
+Blobs with cancellation and no redirects. Consumers must validate image type/size,
+revoke object URLs and discard them on account/scope/authorization changes.
+No private image URL belongs in persistent storage or an image optimizer.
+
+Publish the reviewed shared client through the existing version/tag workflow
+before pinning Admin and Website registry lockfiles. Local packed builds do not
+prove a package release or production acceptance. C1 and OBS wire contracts remain
+unchanged.
