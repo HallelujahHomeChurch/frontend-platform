@@ -4870,6 +4870,329 @@ paths:
             schema:
               $ref: '#/components/schemas/RecordingLivePlaybackInput'
 
+  /admin/recordings/live-cover-settings:
+    get:
+      operationId: getDefaultLiveCoverSettings
+      summary: getDefaultLiveCoverSettings
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:read]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      responses:
+        '200': { description: Private thumbnail result, content: { application/json: { schema: { $ref: '#/components/schemas/LiveCoverSettingsEnvelope' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+    put:
+      operationId: setDefaultLiveCoverSettings
+      summary: Save immutable thumbnail selection with revision and idempotency checks
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:write, cms:recordings:publish]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+        - { name: Idempotency-Key, in: header, required: true, schema: { type: string, pattern: '^[a-zA-Z0-9._:-]{1,128}$' } }
+        - { name: If-Match, in: header, required: true, schema: { type: string, pattern: '^"[1-9][0-9]*"$' } }
+      requestBody:
+        required: true
+        description: Human administrators only. Maximum 2 KiB. A custom upload must already be ready.
+        content: { application/json: { schema: { $ref: '#/components/schemas/LiveCoverSelection' } } }
+      responses:
+        '200': { description: Private thumbnail result, content: { application/json: { schema: { $ref: '#/components/schemas/LiveCoverSettingsEnvelope' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/recordings/live-cover-settings/uploads:
+    post:
+      operationId: uploadDefaultLiveCover
+      summary: uploadDefaultLiveCover
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:write, cms:recordings:publish]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+        - { name: Idempotency-Key, in: header, required: true, schema: { type: string, pattern: '^[a-zA-Z0-9._:-]{1,128}$' } }
+      requestBody:
+        required: true
+        description: Human administrators only. JPEG or PNG up to 5 MiB, cropped to 16:9 and normalized by Asset. Uploading does not change the active thumbnail.
+        content:
+          image/jpeg: { schema: { type: string, format: binary } }
+          image/png: { schema: { type: string, format: binary } }
+      responses:
+        '202': { description: Private thumbnail result, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingCoverUploadEnvelope' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/recordings/live-cover-settings/uploads/{uploadId}:
+    get:
+      operationId: getDefaultLiveCoverUpload
+      summary: getDefaultLiveCoverUpload
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:read]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+        - { name: uploadId, in: path, required: true, schema: { type: string, pattern: '^[A-Za-z0-9-]{1,128}$' } }
+      responses:
+        '200': { description: Private thumbnail result, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingCoverUploadEnvelope' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/recordings/live-cover-settings/uploads/{uploadId}/content:
+    get:
+      operationId: getDefaultLiveCoverUploadContent
+      summary: getDefaultLiveCoverUploadContent
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:read]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+        - { name: uploadId, in: path, required: true, schema: { type: string, pattern: '^[A-Za-z0-9-]{1,128}$' } }
+      responses:
+        '200': { description: Private thumbnail result, content: { image/jpeg: { schema: { type: string, format: binary } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/recordings/{id}/captures/{captureId}/cover-settings:
+    get:
+      operationId: getCaptureLiveCoverSettings
+      summary: getCaptureLiveCoverSettings
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:read]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: captureId, in: path, required: true, schema: { type: string, pattern: '^[a-f0-9]{32}$' } }
+      responses:
+        '200': { description: Private thumbnail result, content: { application/json: { schema: { $ref: '#/components/schemas/LiveCoverSettingsEnvelope' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+    put:
+      operationId: setCaptureLiveCoverSettings
+      summary: Save immutable thumbnail selection with revision and idempotency checks
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:write, cms:recordings:publish]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: captureId, in: path, required: true, schema: { type: string, pattern: '^[a-f0-9]{32}$' } }
+        - { name: Idempotency-Key, in: header, required: true, schema: { type: string, pattern: '^[a-zA-Z0-9._:-]{1,128}$' } }
+        - { name: If-Match, in: header, required: true, schema: { type: string, pattern: '^"[1-9][0-9]*"$' } }
+      requestBody:
+        required: true
+        description: Human administrators only. Maximum 2 KiB. A custom upload must already be ready.
+        content: { application/json: { schema: { $ref: '#/components/schemas/LiveCoverSelection' } } }
+      responses:
+        '200': { description: Private thumbnail result, content: { application/json: { schema: { $ref: '#/components/schemas/LiveCoverSettingsEnvelope' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/recordings/{id}/captures/{captureId}/cover-settings/uploads:
+    post:
+      operationId: uploadCaptureLiveCover
+      summary: uploadCaptureLiveCover
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:write, cms:recordings:publish]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: captureId, in: path, required: true, schema: { type: string, pattern: '^[a-f0-9]{32}$' } }
+        - { name: Idempotency-Key, in: header, required: true, schema: { type: string, pattern: '^[a-zA-Z0-9._:-]{1,128}$' } }
+      requestBody:
+        required: true
+        description: Human administrators only. JPEG or PNG up to 5 MiB, cropped to 16:9 and normalized by Asset. Uploading does not change the active thumbnail.
+        content:
+          image/jpeg: { schema: { type: string, format: binary } }
+          image/png: { schema: { type: string, format: binary } }
+      responses:
+        '202': { description: Private thumbnail result, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingCoverUploadEnvelope' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/recordings/{id}/captures/{captureId}/cover-settings/uploads/{uploadId}:
+    get:
+      operationId: getCaptureLiveCoverUpload
+      summary: getCaptureLiveCoverUpload
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:read]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: captureId, in: path, required: true, schema: { type: string, pattern: '^[a-f0-9]{32}$' } }
+        - { name: uploadId, in: path, required: true, schema: { type: string, pattern: '^[A-Za-z0-9-]{1,128}$' } }
+      responses:
+        '200': { description: Private thumbnail result, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingCoverUploadEnvelope' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/recordings/{id}/captures/{captureId}/cover-settings/uploads/{uploadId}/content:
+    get:
+      operationId: getCaptureLiveCoverUploadContent
+      summary: getCaptureLiveCoverUploadContent
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:read]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: captureId, in: path, required: true, schema: { type: string, pattern: '^[a-f0-9]{32}$' } }
+        - { name: uploadId, in: path, required: true, schema: { type: string, pattern: '^[A-Za-z0-9-]{1,128}$' } }
+      responses:
+        '200': { description: Private thumbnail result, content: { image/jpeg: { schema: { type: string, format: binary } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/recordings/{id}/captures/{captureId}/cover-settings/content:
+    get:
+      operationId: getCaptureLiveCoverContent
+      summary: getCaptureLiveCoverContent
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:read]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: captureId, in: path, required: true, schema: { type: string, pattern: '^[a-f0-9]{32}$' } }
+      responses:
+        '200': { description: Private thumbnail result, content: { image/jpeg: { schema: { type: string, format: binary } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /member/recordings/{id}/live/{captureId}/cover:
+    get:
+      operationId: getMemberLiveCover
+      summary: Read the current visible live thumbnail without creating a playback grant
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: captureId, in: path, required: true, schema: { type: string, pattern: '^[a-f0-9]{32}$' } }
+      responses:
+        '200': { description: Bounded private JPEG with nosniff; membership and current legal entitlement required, content: { image/jpeg: { schema: { type: string, format: binary } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
 components:
   securitySchemes:
     daprApiToken:
@@ -5194,6 +5517,35 @@ components:
       description: Public revalidation policy for Site Layout projections.
       schema: { type: string, const: 'public, max-age=30, must-revalidate' }
   schemas:
+    LiveCoverSelection:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [mode]
+          properties:
+            mode: {type: string, enum: [auto]}
+        - type: object
+          additionalProperties: false
+          required: [mode, uploadId]
+          properties:
+            mode: {type: string, enum: [custom]}
+            uploadId: {type: string, pattern: '^[A-Za-z0-9-]{1,128}$'}
+    LiveCoverSettings:
+      type: object
+      additionalProperties: false
+      required: [revision, selection, coverState]
+      properties:
+        revision: {type: integer, minimum: 1, format: int64}
+        selection: {$ref: '#/components/schemas/LiveCoverSelection'}
+        coverState: {type: string, enum: [none, waiting, pending, ready, failed]}
+        coverId: {type: string, maxLength: 128}
+        contentPath: {type: string, pattern: '^/api/admin/recordings/'}
+        inheritedRevision: {type: integer, minimum: 1, format: int64}
+    LiveCoverSettingsEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: {$ref: '#/components/schemas/LiveCoverSettings'}
     StatementDismissal:
       type: object
       additionalProperties: false
@@ -5697,6 +6049,7 @@ components:
       - stopAcceptedAt
       - progress
       properties:
+        coverRevision: { type: string, maxLength: 128, description: Immutable active image identity; changes only after a ready image becomes effective. }
         id:
           type: string
           format: uuid
@@ -6751,6 +7104,7 @@ components:
         attempts: { type: integer, minimum: 0 }
         errorCode: { type: string, pattern: '^[a-z0-9_]{0,64}$' }
         reviewIssues:
+          description: Extraction, current saved-draft layout, or Simplified conversion diagnostics. Layout findings are non-waivable and reference original PDF pages and content IDs when available. Conversion locations refer to the immutable Traditional source revision recorded by the derivation.
           type: array
           maxItems: 4096
           items: { $ref: '#/components/schemas/OnlineBulletinReviewIssue' }
