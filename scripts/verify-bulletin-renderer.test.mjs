@@ -41,7 +41,7 @@ test('unrelated package releases retain V1 while mutation and removal fail close
   } finally { await rm(fixture, {recursive: true, force: true}); }
 });
 
-test('V6 hashes its fixed-label dependency and preserves every frozen version', async () => {
+for (const version of ['v6', 'v8']) test(`${version} hashes its dependencies and preserves every frozen version`, async () => {
   const root = resolve(import.meta.dirname, '..');
   const fixture = await mkdtemp(join(tmpdir(), 'hhc-renderer-v6-immutability-'));
   try {
@@ -54,7 +54,7 @@ test('V6 hashes its fixed-label dependency and preserves every frozen version', 
     git('init', '-q');
     git('add', 'package.json', 'scripts', 'packages/ui/package.json', 'packages/ui/src', 'packages/ui/dist');
     git('-c', 'user.name=Renderer fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'Immutable V6 fixture');
-    const verify = () => execFileSync(process.execPath, ['scripts/verify-bulletin-renderer-v6.mjs', '--base-ref', 'HEAD'], {cwd: fixture, stdio: 'pipe'});
+    const verify = () => execFileSync(process.execPath, [`scripts/verify-bulletin-renderer-${version}.mjs`, '--base-ref', 'HEAD'], {cwd: fixture, stdio: 'pipe'});
     const original = verify();
     for (const file of ['package.json', 'packages/ui/package.json']) {
       const path = join(fixture, file);
@@ -63,7 +63,7 @@ test('V6 hashes its fixed-label dependency and preserves every frozen version', 
       await writeFile(path, JSON.stringify(metadata));
     }
     assert.deepEqual(verify(), original);
-    for (const file of ['packages/ui/dist/bulletin-reader/v6/fixed.js', 'packages/ui/src/bulletin-reader/v6/fixed.ts', 'packages/ui/src/bulletin-reader/v3/measure.ts']) {
+    for (const file of ['packages/ui/dist/bulletin-reader/v6/fixed.js', 'packages/ui/src/bulletin-reader/v6/fixed.ts', 'packages/ui/src/bulletin-reader/v3/measure.ts', ...(version === 'v8' ? ['scripts/measure-bulletin-layout-v8.mjs', 'packages/ui/dist/bulletin-reader/v8/BulletinDocumentRenderer.js', 'packages/ui/src/bulletin-reader/v8/BulletinDocumentRenderer.tsx', 'packages/ui/src/bulletin-reader/v7/fonts.ts'] : [])]) {
       const path = join(fixture, file);
       const bytes = await readFile(path);
       await writeFile(path, Buffer.concat([bytes, Buffer.from('\n/* changed */\n')]));

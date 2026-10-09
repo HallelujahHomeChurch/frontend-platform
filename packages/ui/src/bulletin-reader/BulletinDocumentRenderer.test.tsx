@@ -3,6 +3,7 @@ import {describe, expect, it, vi} from 'vitest';
 import * as UI from '../index.js';
 import type {components} from './generated.js';
 import {bulletinFixedText} from './fixed.js';
+import {BULLETIN_RENDERER_V8_DIGEST} from './v8/artifact.js';
 
 type Document = components['schemas']['OnlineBulletinDocument'];
 function fixture(): Document {
@@ -20,13 +21,13 @@ function fixture(): Document {
 }
 
 describe('immutable shared bulletin renderer', () => {
-  it.each([['v6', 'zh-Hant'], ['v6', 'zh-Hans'], ['v7', 'zh-Hant'], ['v7', 'zh-Hans']] as const)('renders %s historical rows with %s wording and preserves paper anchors', (rendererVersion, contentLocale) => {
+  it.each([['v6', 'zh-Hant'], ['v6', 'zh-Hans'], ['v7', 'zh-Hant'], ['v7', 'zh-Hans'], ['v8', 'zh-Hant'], ['v8', 'zh-Hans']] as const)('renders %s historical rows with %s wording and preserves paper anchors', (rendererVersion, contentLocale) => {
     const document = fixture();
     const templateVersion = contentLocale === 'zh-Hans' ? 'v2' : 'v1';
     document.templateVersion = templateVersion;
     document.contentLocale = contentLocale;
     const exports = UI as typeof UI & {BULLETIN_RENDERER_V6_DIGEST: string; BULLETIN_RENDERER_V7_DIGEST: string};
-    Object.assign(document.layoutManifest, {templateVersion, rendererVersion, rendererArtifactSha256: rendererVersion === 'v7' ? exports.BULLETIN_RENDERER_V7_DIGEST : exports.BULLETIN_RENDERER_V6_DIGEST});
+    Object.assign(document.layoutManifest, {templateVersion, rendererVersion, rendererArtifactSha256: rendererVersion === 'v8' ? BULLETIN_RENDERER_V8_DIGEST : rendererVersion === 'v7' ? exports.BULLETIN_RENDERER_V7_DIGEST : exports.BULLETIN_RENDERER_V6_DIGEST});
     const elements = ['historicalVision', 'historicalGoals', 'historicalActions', 'historicalCommitment'];
     const texts = contentLocale === 'zh-Hans'
       ? ['一个异象：合一与宣教', '两个目标：宣教为中国、中国为宣教', '三个行动：共同生活、爱与成全、恩膏传承', '四个坚持：宣教主导、灵恩神学、团队事奉、门徒训练']

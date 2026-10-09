@@ -36,12 +36,12 @@ it('renders only the requested chapter, hides cover details and uses colon-free 
   expect(container.querySelector('[data-sentence-id="s-body"]')).toBeNull();
 });
 
-it.each([['v6', 'zh-Hant'], ['v6', 'zh-Hans'], ['v7', 'zh-Hant'], ['v7', 'zh-Hans']] as const)('reflows %s historical %s rows without restoring hidden details or changing anchors', (rendererVersion, contentLocale) => {
+it.each([['v6', 'zh-Hant'], ['v6', 'zh-Hans'], ['v7', 'zh-Hant'], ['v7', 'zh-Hans'], ['v8', 'zh-Hant'], ['v8', 'zh-Hans']] as const)('reflows %s historical %s rows without restoring hidden details or changing anchors', (rendererVersion, contentLocale) => {
   const document = fixture();
   document.contentLocale = contentLocale;
   document.templateVersion = contentLocale === 'zh-Hans' ? 'v2' : 'v1';
-  const exports = UI as typeof UI & {BULLETIN_RENDERER_V6_DIGEST: string; BULLETIN_RENDERER_V7_DIGEST: string};
-  Object.assign(document.layoutManifest, {templateVersion: document.templateVersion, rendererVersion, rendererArtifactSha256: rendererVersion === 'v7' ? exports.BULLETIN_RENDERER_V7_DIGEST : exports.BULLETIN_RENDERER_V6_DIGEST});
+  const exports = UI as typeof UI & {BULLETIN_RENDERER_V6_DIGEST: string; BULLETIN_RENDERER_V7_DIGEST: string; BULLETIN_RENDERER_V8_DIGEST: string};
+  Object.assign(document.layoutManifest, {templateVersion: document.templateVersion, rendererVersion, rendererArtifactSha256: rendererVersion === 'v8' ? exports.BULLETIN_RENDERER_V8_DIGEST : rendererVersion === 'v7' ? exports.BULLETIN_RENDERER_V7_DIGEST : exports.BULLETIN_RENDERER_V6_DIGEST});
   const elements = ['historicalVision', 'historicalGospelGoals', 'historicalActions', 'historicalCommitment'];
   document.layoutManifest.pages[0].fixedSlots!.push(...elements.map(element => ({id: element, element: element as 'visionMission', style, box: {x: .4, y: .14, width: .5, height: .02}})));
   const original = structuredClone(document);
