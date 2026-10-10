@@ -104,6 +104,9 @@ export type OnlineBulletinDocument = components['schemas']['OnlineBulletinDocume
 export type BulletinTemplateText = components['schemas']['BulletinTemplateText']
 export type BulletinTemplateSettings = components['schemas']['BulletinTemplateSettings']
 export type BulletinTemplateSettingsRevision = components['schemas']['BulletinTemplateSettingsRevision']
+export type BulletinLearningRule = components['schemas']['OnlineBulletinLearningRule']
+export type BulletinLearningRulePage = components['schemas']['OnlineBulletinLearningRulePage']
+export type BulletinLearningRuleDetail = components['schemas']['OnlineBulletinLearningRuleDetail']
 export type PageMeta = components['schemas']['PageMeta']
 export type UploadTarget = components['schemas']['UploadTarget']
 export type CreatedBulletinUpload = components['schemas']['CreatedUpload']
@@ -894,6 +897,18 @@ export function createHhcWebClient(options: {
     },
     async getBulletinTemplateSettings(signal?: AbortSignal): Promise<BulletinTemplateSettings> {
       return (await unwrap(client.GET('/admin/bulletins/template-settings', {signal, cache:'no-store'}))).data
+    },
+    async listBulletinLearningRules(cursor?: string, signal?: AbortSignal): Promise<BulletinLearningRulePage> {
+      if (cursor !== undefined && !/^[a-f0-9]{64}$/.test(cursor)) throw new Error('Invalid bulletin learning cursor')
+      return (await unwrap(client.GET('/admin/bulletin-learning-rules', {params: {query: {cursor}}, signal, cache: 'no-store'}))).data
+    },
+    async getBulletinLearningRule(signature: string, signal?: AbortSignal): Promise<BulletinLearningRuleDetail> {
+      if (!/^[a-f0-9]{64}$/.test(signature)) throw new Error('Invalid bulletin learning signature')
+      return (await unwrap(client.GET('/admin/bulletin-learning-rules/{signature}', {params: {path: {signature}}, signal, cache: 'no-store'}))).data
+    },
+    async setBulletinLearningRuleEnabled(signature: string, version: number, enabled: boolean, signal?: AbortSignal): Promise<BulletinLearningRule> {
+      if (!/^[a-f0-9]{64}$/.test(signature) || !Number.isSafeInteger(version) || version < 1) throw new Error('Invalid bulletin learning signature or version')
+      return (await unwrap(client.PUT('/admin/bulletin-learning-rules/{signature}', {params: {path: {signature}, header: {'If-Match': `"${version}"`}}, body: {enabled}, signal, cache: 'no-store'}))).data
     },
     async saveBulletinTemplateSettings(version: number, input: BulletinTemplateText, signal?: AbortSignal): Promise<BulletinTemplateSettings> {
       if (!Number.isSafeInteger(version) || version < 1) throw new Error('Invalid bulletin template settings version')
