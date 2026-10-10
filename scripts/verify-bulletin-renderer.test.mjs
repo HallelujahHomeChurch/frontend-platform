@@ -41,7 +41,7 @@ test('unrelated package releases retain V1 while mutation and removal fail close
   } finally { await rm(fixture, {recursive: true, force: true}); }
 });
 
-for (const version of ['v6', 'v8']) test(`${version} hashes its dependencies and preserves every frozen version`, async () => {
+for (const version of ['v6', 'v8', 'v9']) test(`${version} hashes its dependencies and preserves every frozen version`, async () => {
   const root = resolve(import.meta.dirname, '..');
   const fixture = await mkdtemp(join(tmpdir(), 'hhc-renderer-v6-immutability-'));
   try {
@@ -63,7 +63,7 @@ for (const version of ['v6', 'v8']) test(`${version} hashes its dependencies and
       await writeFile(path, JSON.stringify(metadata));
     }
     assert.deepEqual(verify(), original);
-    for (const file of ['packages/ui/dist/bulletin-reader/v6/fixed.js', 'packages/ui/src/bulletin-reader/v6/fixed.ts', 'packages/ui/src/bulletin-reader/v3/measure.ts', ...(version === 'v8' ? ['scripts/measure-bulletin-layout-v8.mjs', 'packages/ui/dist/bulletin-reader/v8/BulletinDocumentRenderer.js', 'packages/ui/src/bulletin-reader/v8/BulletinDocumentRenderer.tsx', 'packages/ui/src/bulletin-reader/v7/fonts.ts'] : [])]) {
+    for (const file of ['packages/ui/dist/bulletin-reader/v6/fixed.js', 'packages/ui/src/bulletin-reader/v6/fixed.ts', 'packages/ui/src/bulletin-reader/v3/measure.ts', ...(['v8', 'v9'].includes(version) ? ['scripts/measure-bulletin-layout-v8.mjs', 'packages/ui/dist/bulletin-reader/v8/BulletinDocumentRenderer.js', 'packages/ui/src/bulletin-reader/v8/BulletinDocumentRenderer.tsx', 'packages/ui/src/bulletin-reader/v7/fonts.ts'] : []), ...(version === 'v9' ? ['scripts/measure-bulletin-layout-v9-base.mjs', 'scripts/measure-bulletin-layout-v9.mjs', 'packages/ui/dist/bulletin-reader/v9/BulletinDocumentRenderer.js', 'packages/ui/dist/bulletin-reader/v9/fixed.js', 'packages/ui/src/bulletin-reader/v9/fixed.ts'] : [])]) {
       const path = join(fixture, file);
       const bytes = await readFile(path);
       await writeFile(path, Buffer.concat([bytes, Buffer.from('\n/* changed */\n')]));

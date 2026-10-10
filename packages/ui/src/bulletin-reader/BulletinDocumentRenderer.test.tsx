@@ -21,6 +21,26 @@ function fixture(): Document {
 }
 
 describe('immutable shared bulletin renderer', () => {
+  it.each(['zh-Hant', 'zh-Hans'] as const)('renders saved V9 church values in paper and ebook for %s without mutable configuration', contentLocale => {
+    const document = fixture();
+    document.contentLocale = contentLocale;
+    document.templateVersion = contentLocale === 'zh-Hans' ? 'v2' : 'v1';
+    document.templateSnapshot = {version: 8, visionMission: contentLocale === 'zh-Hans' ? '保存的异象' : '保存的異象', visionFellowship: contentLocale === 'zh-Hans' ? '保存的团契' : '保存的團契', visionCommitment: contentLocale === 'zh-Hans' ? '保存的坚持' : '保存的堅持'};
+    const digest = (UI as typeof UI & {BULLETIN_RENDERER_V9_DIGEST: string}).BULLETIN_RENDERER_V9_DIGEST;
+    Object.assign(document.layoutManifest, {templateVersion: document.templateVersion, rendererVersion: 'v9', rendererArtifactSha256: digest});
+    document.layoutManifest.pages[0].fixedSlots = (['visionMission', 'visionFellowship', 'visionCommitment'] as const).map((element, i) => ({id: element, element, style: {fontSize: 10, lineHeight: 14}, box: {x: .4, y: .1 + i * .03, width: .5, height: .03}}));
+    const original = structuredClone(document);
+    const {container, rerender} = render(<UI.BulletinDocumentRenderer document={document} mode="paper"/>);
+    expect(container.querySelector('[data-fixed-element="visionMission"]')).toHaveTextContent(contentLocale === 'zh-Hans' ? '异象使命：保存的异象' : '異象使命：保存的異象');
+    expect(container.querySelector('[data-fixed-element="visionFellowship"]')).toHaveTextContent(document.templateSnapshot.visionFellowship);
+    expect(container.querySelector('[data-sentence-id="s"]')).toHaveAttribute('data-fragment-end', '2');
+    rerender(<UI.BulletinEbook document={document} chapter="back"/>);
+    expect(container.querySelector('[data-fixed-element="visionCommitment"]')).toHaveTextContent(document.templateSnapshot.visionCommitment);
+    expect(document).toEqual(original);
+    document.templateSnapshot = undefined;
+    expect(() => render(<UI.BulletinDocumentRenderer document={document} mode="paper"/>)).toThrow('invalid_template_snapshot');
+    expect(() => render(<UI.BulletinEbook document={document} chapter="back"/>)).toThrow('invalid_template_snapshot');
+  });
   it.each([['v6', 'zh-Hant'], ['v6', 'zh-Hans'], ['v7', 'zh-Hant'], ['v7', 'zh-Hans'], ['v8', 'zh-Hant'], ['v8', 'zh-Hans']] as const)('renders %s historical rows with %s wording and preserves paper anchors', (rendererVersion, contentLocale) => {
     const document = fixture();
     const templateVersion = contentLocale === 'zh-Hans' ? 'v2' : 'v1';

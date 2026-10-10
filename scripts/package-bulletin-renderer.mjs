@@ -17,6 +17,7 @@ execFileSync(process.execPath,['scripts/verify-bulletin-renderer-v5.mjs'],{cwd:r
 execFileSync(process.execPath,['scripts/verify-bulletin-renderer-v6.mjs'],{cwd:root,stdio:'pipe'});
 execFileSync(process.execPath,['scripts/verify-bulletin-renderer-v7.mjs'],{cwd:root,stdio:'pipe'});
 execFileSync(process.execPath,['scripts/verify-bulletin-renderer-v8.mjs'],{cwd:root,stdio:'pipe'});
+execFileSync(process.execPath,['scripts/verify-bulletin-renderer-v9.mjs'],{cwd:root,stdio:'pipe'});
 const require=createRequire(resolve(root,'packages/ui/package.json'));
 const manifest=JSON.parse(await readFile(resolve(root,'tools/bulletin-renderer/package.json'),'utf8'));
 const workspace=JSON.parse(await readFile(resolve(root,'package.json'),'utf8'));
@@ -60,6 +61,9 @@ const files=[
   ['scripts/verify-bulletin-renderer-v7.mjs','scripts/verify-bulletin-renderer-v7.mjs'],
   ['scripts/measure-bulletin-layout-v8.mjs','scripts/measure-bulletin-layout-v8.mjs'],
   ['scripts/verify-bulletin-renderer-v8.mjs','scripts/verify-bulletin-renderer-v8.mjs'],
+  ['scripts/measure-bulletin-layout-v9-base.mjs','scripts/measure-bulletin-layout-v9-base.mjs'],
+  ['scripts/measure-bulletin-layout-v9.mjs','scripts/measure-bulletin-layout-v9.mjs'],
+  ['scripts/verify-bulletin-renderer-v9.mjs','scripts/verify-bulletin-renderer-v9.mjs'],
   ['scripts/verify-bulletin-renderer.mjs','scripts/verify-bulletin-renderer.mjs'],
 ];
 for (const [source,path] of files) {

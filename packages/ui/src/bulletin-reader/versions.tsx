@@ -9,17 +9,20 @@ import {BulletinDocumentRenderer as V5, requireBulletinRenderer as requireV5} fr
 import {BulletinDocumentRenderer as V6, requireBulletinRenderer as requireV6} from './v6/BulletinDocumentRenderer.js';
 import {BulletinDocumentRenderer as V7, requireBulletinRenderer as requireV7} from './v7/BulletinDocumentRenderer.js';
 import {BulletinDocumentRenderer as V8, requireBulletinRenderer as requireV8} from './v8/BulletinDocumentRenderer.js';
+import {BulletinDocumentRenderer as V9, requireBulletinRenderer as requireV9} from './v9/BulletinDocumentRenderer.js';
 
 export {BULLETIN_RENDERER_V5_DIGEST} from './v5/artifact.js';
 export {BULLETIN_RENDERER_V6_DIGEST} from './v6/artifact.js';
 export {BULLETIN_RENDERER_V7_DIGEST} from './v7/artifact.js';
 export {BULLETIN_RENDERER_V8_DIGEST} from './v8/artifact.js';
+export {BULLETIN_RENDERER_V9_DIGEST} from './v9/artifact.js';
 export {BULLETIN_RENDERER_V2_DIGEST} from './v2/artifact.js';
 export {BULLETIN_RENDERER_V3_DIGEST} from './v3/artifact.js';
 export {BULLETIN_RENDERER_V4_DIGEST} from './v4/artifact.js';
 
 export function requireBulletinRenderer(manifest: BulletinLayoutManifest) {
-  if (manifest.rendererVersion === 'v8') requireV8(manifest);
+  if (manifest.rendererVersion === 'v9') requireV9(manifest);
+  else if (manifest.rendererVersion === 'v8') requireV8(manifest);
   else if (manifest.rendererVersion === 'v7') requireV7(manifest);
   else if (manifest.rendererVersion === 'v6') requireV6(manifest);
   else if (manifest.rendererVersion === 'v5') requireV5(manifest);
@@ -31,6 +34,6 @@ export function requireBulletinRenderer(manifest: BulletinLayoutManifest) {
 
 export function BulletinDocumentRenderer(props: BulletinDocumentRendererProps) {
   const version=(props.manifest ?? props.document.layoutManifest).rendererVersion;
-  const Renderer = version==='v8'?V8:version==='v7'?V7:version==='v6'?V6:version==='v5'?V5:version==='v4'?V4:version==='v3'?V3:version==='v2'?V2:V1;
+  const Renderer = version==='v9'?V9:version==='v8'?V8:version==='v7'?V7:version==='v6'?V6:version==='v5'?V5:version==='v4'?V4:version==='v3'?V3:version==='v2'?V2:V1;
   return <Renderer {...props} />;
 }

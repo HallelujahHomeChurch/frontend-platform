@@ -7,6 +7,38 @@
   "paths": {},
   "components": {
     "schemas": {
+      "BulletinTemplateSettings": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version",
+          "visionMission",
+          "visionFellowship",
+          "visionCommitment"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "visionMission": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "visionFellowship": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "visionCommitment": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        }
+      },
       "OnlineBulletinComparisonValue": {
         "oneOf": [
           {
@@ -920,6 +952,7 @@
             "pattern": "^[a-z0-9_]{0,64}$"
           },
           "reviewIssues": {
+            "description": "Extraction, current saved-draft layout, or Simplified conversion diagnostics. Layout findings are non-waivable and reference original PDF pages and content IDs when available. Conversion locations refer to the immutable Traditional source revision recorded by the derivation.",
             "type": "array",
             "maxItems": 4096,
             "items": {
@@ -963,6 +996,33 @@
           "layoutManifest",
           "components"
         ],
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "layoutManifest": {
+                  "properties": {
+                    "rendererVersion": {
+                      "const": "v9"
+                    }
+                  }
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "templateSnapshot"
+              ]
+            },
+            "else": {
+              "not": {
+                "required": [
+                  "templateSnapshot"
+                ]
+              }
+            }
+          }
+        ],
         "properties": {
           "issueId": {
             "type": "string",
@@ -989,6 +1049,21 @@
               "v1",
               "v2"
             ]
+          },
+          "templateSnapshot": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BulletinTemplateSettings"
+              },
+              {
+                "properties": {
+                  "version": {
+                    "maximum": 9007199254740991
+                  }
+                }
+              }
+            ],
+            "description": "Immutable issue-owned settings captured when queued. Required by V9; earlier renderers do not carry a snapshot. Simplified values are server-derived by OpenCC, with the same settings version. Never editable through draft components."
           },
           "sourceAssetChecksum": {
             "$ref": "#/components/schemas/OnlineBulletinHash"
@@ -1108,9 +1183,10 @@
               "v5",
               "v6",
               "v7",
-              "v8"
+              "v8",
+              "v9"
             ],
-            "description": "Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. V6 adds historical four-row cover profiles; V7 preserves proportional inline font sizes during cover composition. V8 fits titles at normal tracking and keeps heading-speaker rows and cover date-issue rows together. Existing published renderer versions remain immutable."
+            "description": "Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. V6 adds historical four-row cover profiles; V7 preserves proportional inline font sizes during cover composition. V8 fits titles at normal tracking and keeps heading-speaker rows and cover date-issue rows together. V9 consumes an immutable issue-owned template snapshot. Existing published renderer versions remain immutable."
           },
           "rendererArtifactSha256": {
             "$ref": "#/components/schemas/OnlineBulletinHash"

@@ -8,7 +8,7 @@ const output = new URL('../../ui/src/bulletin-reader/generated.ts', import.meta.
 const sourceIndex = process.argv.indexOf('--source');
 if (sourceIndex !== -1) {
   const api = parse(await readFile(process.argv[sourceIndex + 1], 'utf8'));
-  const schemas = Object.fromEntries(Object.entries(api.components.schemas).filter(([name]) => name.startsWith('OnlineBulletin')));
+  const schemas = Object.fromEntries(Object.entries(api.components.schemas).filter(([name]) => name.startsWith('OnlineBulletin') || name === 'BulletinTemplateSettings'));
   // Include referenced shared enums/models so the standalone domain is valid.
   const pending = Object.keys(schemas);
   for (const name of pending) {
