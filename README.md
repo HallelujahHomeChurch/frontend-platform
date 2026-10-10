@@ -90,6 +90,8 @@ PDF comparison and mobile reflow retain their existing behavior.
 `bulletinBackPanelPresentation(document)` returns paper-only frame geometry for
 Website and Admin previews. It spaces announcement/prayer panels after either a
 framed or unframed summary without changing text widths, anchors, or source pages.
+An unframed summary receives its own solid border around that page's text and
+label, excluding the vertical sidebar tagline. Repeated presentation is stable.
 When vertical spacing cannot fit, it retains original vertical geometry while
 still aligning horizontal frame padding. Stored manifests and frozen V1–V8
 renderers remain unchanged; mobile reflow does not use this helper.
