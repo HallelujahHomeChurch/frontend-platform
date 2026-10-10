@@ -7,6 +7,7 @@ import {bulletinFixedText as traditionalFixedText, type BulletinCanonicalMetadat
 import {bulletinFixedText as simplifiedFixedText} from './v2/fixed.js';
 import {bulletinFixedText as historicalFixedText} from './v6/fixed.js';
 import {bulletinV7FontFamily} from './v7/fonts.js';
+import {bulletinFixedText as snapshotText, readBulletinTemplateSnapshot} from './v9/fixed.js';
 
 type Component = BulletinRenderableDocument['components'][number];
 export type BulletinChapterId = 'cover' | 'body' | 'worship' | 'back';
@@ -44,12 +45,15 @@ export function BulletinEbook({document, chapter, canonicalMetadata, showDetails
   sentenceState?: Readonly<Record<string, BulletinSentenceState>>;
 }) {
   requireBulletinRenderer(document.layoutManifest);
-  const bulletinFixedText = ['v6', 'v7', 'v8'].includes(document.layoutManifest.rendererVersion)
+  const snapshot = document.layoutManifest.rendererVersion === 'v9' ? readBulletinTemplateSnapshot(document.templateSnapshot) : undefined;
+  const bulletinFixedText = snapshot
+    ? (element: Parameters<typeof historicalFixedText>[0], metadata: BulletinCanonicalMetadata | undefined, pageNumber: number, sourcePageCount = document.sourcePageCount) => snapshotText(element, metadata, pageNumber, snapshot, sourcePageCount, document.contentLocale === 'zh-Hans' ? 'zh-Hans' : 'zh-Hant')
+    : ['v6', 'v7', 'v8'].includes(document.layoutManifest.rendererVersion)
     ? (element: Parameters<typeof historicalFixedText>[0], metadata: BulletinCanonicalMetadata | undefined, pageNumber: number, sourcePageCount = document.sourcePageCount) => historicalFixedText(element, metadata, pageNumber, sourcePageCount, document.contentLocale === 'zh-Hans' ? 'zh-Hans' : 'zh-Hant')
     : document.contentLocale === 'zh-Hans' ? simplifiedFixedText : traditionalFixedText;
   if (document.schemaVersion !== '1' || document.templateVersion !== document.layoutManifest.templateVersion) throw new Error('update_required');
   const details = bulletinMobileDetails(document);
-  const fontStyle = (role: string) => ['v7', 'v8'].includes(document.layoutManifest.rendererVersion) ? {fontFamily: bulletinV7FontFamily(role, document.contentLocale)} : {};
+  const fontStyle = (role: string) => ['v7', 'v8', 'v9'].includes(document.layoutManifest.rendererVersion) ? {fontFamily: bulletinV7FontFamily(role, document.contentLocale)} : {};
   const sentence = (value: BulletinSentence, fontSize: number, presentation?: 'verse' | 'plain') => <span key={value.id} data-sentence-id={value.id} data-fragment-start={0} data-fragment-end={value.spans.reduce((sum, span) => sum + Array.from(span.text).length, 0)} data-selected={sentenceState?.[value.id]?.selected || undefined} data-highlight={sentenceState?.[value.id]?.highlight}>
     {value.spans.map((span, index) => {
       const role = presentation === 'plain' && span.fontRole !== 'symbol' ? 'body' : presentation === 'verse' && ['body', 'reference'].includes(span.fontRole) ? 'scripture' : span.fontRole;

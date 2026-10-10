@@ -41,6 +41,7 @@ jobs:
           node scripts/verify-bulletin-renderer-v6.mjs --base-ref origin/main
           node scripts/verify-bulletin-renderer-v7.mjs --base-ref origin/main
           node scripts/verify-bulletin-renderer-v8.mjs --base-ref origin/main
+          node scripts/verify-bulletin-renderer-v9.mjs --base-ref origin/main
           node --test scripts/verify-bulletin-renderer.test.mjs
           python3 -m unittest discover -s scripts -p test_bulletin_corpus.py
       - name: Measure with pinned Chromium and verified producer fonts
@@ -53,6 +54,7 @@ jobs:
           HHC_TEST_RENDERER_V6=1 node --test --test-concurrency=1 scripts/measure-bulletin-layout.test.mjs scripts/measure-bulletin-layout-v6.test.mjs
           HHC_TEST_RENDERER_V7=1 node --test --test-concurrency=1 scripts/measure-bulletin-layout.test.mjs scripts/measure-bulletin-layout-v6.test.mjs scripts/measure-bulletin-layout-v7.test.mjs
           HHC_TEST_RENDERER_V8=1 node --test --test-concurrency=1 scripts/measure-bulletin-layout.test.mjs scripts/measure-bulletin-layout-v8.test.mjs
+          HHC_TEST_RENDERER_V9=1 node --test --test-concurrency=1 scripts/measure-bulletin-layout.test.mjs scripts/measure-bulletin-layout-v9.test.mjs
           node --test scripts/package-bulletin-renderer.test.mjs
           node scripts/package-bulletin-renderer.mjs artifacts/bulletin-renderer "$HHC_BULLETIN_TEMPLATE_DIR"
           docker build -f tools/bulletin-renderer/Dockerfile -t hhc-bulletin-renderer:verify artifacts/bulletin-renderer
@@ -108,6 +110,14 @@ jobs:
             --mount "type=bind,src=$PWD/scripts/measure-bulletin-layout-v8.test.mjs,dst=/opt/bulletin-renderer/scripts/measure-bulletin-layout-v8.test.mjs,readonly" \
             --mount "type=bind,src=$PWD/scripts/testdata,dst=/opt/bulletin-renderer/scripts/testdata,readonly" \
             --entrypoint node hhc-bulletin-renderer:verify --test --test-concurrency=1 /opt/bulletin-renderer/scripts/measure-bulletin-layout.test.mjs /opt/bulletin-renderer/scripts/measure-bulletin-layout-v8.test.mjs
+          docker run --rm --network none --read-only --memory 2g --cpus 1 \
+            --tmpfs /tmp:rw,noexec,nosuid,size=128m \
+            -e HHC_TEST_RENDERER_V9=1 \
+            -e HHC_BULLETIN_TEMPLATE_DIR=/opt/bulletin-renderer/assets \
+            --mount "type=bind,src=$PWD/scripts/measure-bulletin-layout.test.mjs,dst=/opt/bulletin-renderer/scripts/measure-bulletin-layout.test.mjs,readonly" \
+            --mount "type=bind,src=$PWD/scripts/measure-bulletin-layout-v9.test.mjs,dst=/opt/bulletin-renderer/scripts/measure-bulletin-layout-v9.test.mjs,readonly" \
+            --mount "type=bind,src=$PWD/scripts/testdata,dst=/opt/bulletin-renderer/scripts/testdata,readonly" \
+            --entrypoint node hhc-bulletin-renderer:verify --test --test-concurrency=1 /opt/bulletin-renderer/scripts/measure-bulletin-layout.test.mjs /opt/bulletin-renderer/scripts/measure-bulletin-layout-v9.test.mjs
       - run: corepack pnpm test
       - run: corepack pnpm lint
       - run: corepack pnpm --filter @hallelujahhomechurch/hhc-web-client check:generated

@@ -3,6 +3,13 @@ export type paths = Record<string, never>;
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        BulletinTemplateSettings: {
+            /** Format: int64 */
+            version: number;
+            visionMission: string;
+            visionFellowship: string;
+            visionCommitment: string;
+        };
         OnlineBulletinComparisonValue: components["schemas"]["OnlineBulletinBlock"] | components["schemas"]["OnlineBulletinComponent"] | components["schemas"]["OnlineBulletinID"][] | null;
         OnlineBulletinComparison: {
             /** Format: uuid */
@@ -233,6 +240,7 @@ export interface components {
             status: "queued" | "parsing" | "converting" | "review_ready" | "validating" | "ready" | "failed";
             attempts: number;
             errorCode: string;
+            /** @description Extraction, current saved-draft layout, or Simplified conversion diagnostics. Layout findings are non-waivable and reference original PDF pages and content IDs when available. Conversion locations refer to the immutable Traditional source revision recorded by the derivation. */
             reviewIssues?: components["schemas"]["OnlineBulletinReviewIssue"][];
         };
         OnlineBulletinID: string;
@@ -251,13 +259,17 @@ export interface components {
             schemaVersion: "1";
             /** @enum {string} */
             templateVersion: "v1" | "v2";
+            /** @description Immutable issue-owned settings captured when queued. Required by V9; earlier renderers do not carry a snapshot. Simplified values are server-derived by OpenCC, with the same settings version. Never editable through draft components. */
+            templateSnapshot?: components["schemas"]["BulletinTemplateSettings"] & {
+                version?: unknown;
+            };
             sourceAssetChecksum: components["schemas"]["OnlineBulletinHash"];
             /** @description Must equal the saved page count. Composition preserves original page identity and fragment membership; overflow blocks publication instead of adding pages. */
             sourcePageCount: number;
             pages: components["schemas"]["OnlineBulletinPage"][];
             layoutManifest: components["schemas"]["OnlineBulletinLayoutManifest"];
             components: components["schemas"]["OnlineBulletinComponent"][];
-        };
+        } & unknown;
         OnlineBulletinPage: {
             id: components["schemas"]["OnlineBulletinID"];
             /** @description PDF points. */
@@ -277,10 +289,10 @@ export interface components {
             /** @enum {string} */
             templateVersion: "v1" | "v2";
             /**
-             * @description Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. V6 adds historical four-row cover profiles; V7 preserves proportional inline font sizes during cover composition. V8 fits titles at normal tracking and keeps heading-speaker rows and cover date-issue rows together. Existing published renderer versions remain immutable.
+             * @description Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. V6 adds historical four-row cover profiles; V7 preserves proportional inline font sizes during cover composition. V8 fits titles at normal tracking and keeps heading-speaker rows and cover date-issue rows together. V9 consumes an immutable issue-owned template snapshot. Existing published renderer versions remain immutable.
              * @enum {string}
              */
-            rendererVersion: "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | "v8";
+            rendererVersion: "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | "v8" | "v9";
             rendererArtifactSha256: components["schemas"]["OnlineBulletinHash"];
             contentHash?: components["schemas"]["OnlineBulletinHash"];
             layoutValidationHash?: components["schemas"]["OnlineBulletinHash"];
