@@ -1757,6 +1757,123 @@ paths:
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
         '403': { $ref: '#/components/responses/AdminForbidden' }
         '503': { $ref: '#/components/responses/Error' }
+  /admin/bulletin-learning-rules:
+    get:
+      operationId: listOnlineBulletinLearningRules
+      summary: Read private confirmed conversion rules
+      description: Human-only, source-backed rules for general Traditional issues from 1739. Fifty rules per page, ordered by signature; nextCursor continues after the last returned signature. Unknown patterns still require review. No raw extraction evidence or public/member projection.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes: [cms:bulletins:read]
+      parameters:
+        - name: cursor
+          in: query
+          schema: { type: string, pattern: '^[0-9a-f]{64}$' }
+      responses:
+        '200':
+          description: Bounded rule page
+          headers:
+            Cache-Control: { schema: { type: string, const: 'private, no-store' } }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta, error]
+                properties:
+                  data: { $ref: '#/components/schemas/OnlineBulletinLearningRulePage' }
+                  meta: { type: object, additionalProperties: true }
+                  error: { type: 'null' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/bulletin-learning-rules/{signature}:
+    parameters:
+      - name: signature
+        in: path
+        required: true
+        schema: { type: string, pattern: '^[0-9a-f]{64}$' }
+    get:
+      operationId: getOnlineBulletinLearningRule
+      summary: Inspect a rule and its confirmed source context
+      description: One consistent private snapshot containing the current rule, latest fifty immutable rule revisions and latest fifty located confirmed examples. Audit is mandatory; evidence is never returned to a service principal or without durable read audit.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes: [cms:bulletins:read]
+      responses:
+        '200':
+          description: Located rule and immutable history
+          headers:
+            Cache-Control: { schema: { type: string, const: 'private, no-store' } }
+            ETag: { description: Quoted current rule version, schema: { type: string } }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta, error]
+                properties:
+                  data: { $ref: '#/components/schemas/OnlineBulletinLearningRuleDetail' }
+                  meta: { type: object, additionalProperties: true }
+                  error: { type: 'null' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+    put:
+      operationId: setOnlineBulletinLearningRuleEnabled
+      summary: Disable or restore verified use of a conversion rule
+      description: Human-only CAS update with atomic immutable history and church-settings audit. Requires current If-Match and exactly one enabled boolean within 1024 bytes. Restoring is allowed only with consistent confirmed examples from at least two distinct issues; conflicting or insufficient evidence cannot be activated. Creates a new version, never rewrites history, Local, Incoming or published content. Queued jobs retain their original frozen input.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes: [cms:bulletins:write]
+      parameters:
+        - { $ref: '#/components/parameters/IfMatch' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [enabled]
+              properties:
+                enabled: { type: boolean }
+      responses:
+        '200':
+          description: New rule version
+          headers:
+            Cache-Control: { schema: { type: string, const: 'private, no-store' } }
+            ETag: { description: Quoted new rule version, schema: { type: string } }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta, error]
+                properties:
+                  data: { $ref: '#/components/schemas/OnlineBulletinLearningRule' }
+                  meta: { type: object, additionalProperties: true }
+                  error: { type: 'null' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
   /admin/bulletins/{issueId}/online/{series}/{contentLocale}:
     get:
       operationId: getOnlineBulletinState
@@ -7393,6 +7510,58 @@ components:
         data: { $ref: '#/components/schemas/BulletinTemplateSettings' }
         meta: { type: object, additionalProperties: true }
         error: { type: 'null' }
+    OnlineBulletinLearningRule:
+      type: object
+      additionalProperties: false
+      required: [signature, version, status, kind, title, speaker, confirmedIssues, conflicted]
+      properties:
+        signature: { type: string, pattern: '^[0-9a-f]{64}$' }
+        version: { type: integer, format: int64, minimum: 1 }
+        status: { type: string, enum: [pending, active, conflicted, disabled] }
+        kind: { type: string, enum: [sermon, testimony, teaching, reflection] }
+        title: { type: string, minLength: 1, maxLength: 512 }
+        speaker: { type: string, minLength: 1, maxLength: 256 }
+        confirmedIssues: { type: integer, minimum: 0 }
+        conflicted: { type: boolean }
+    OnlineBulletinLearningRulePage:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items: { type: array, maxItems: 50, items: { $ref: '#/components/schemas/OnlineBulletinLearningRule' } }
+        nextCursor: { type: string, pattern: '^[0-9a-f]{64}$' }
+    OnlineBulletinLearningRuleRevision:
+      type: object
+      additionalProperties: false
+      required: [version, status, kind, createdBy, createdAt]
+      properties:
+        version: { type: integer, format: int64, minimum: 1 }
+        status: { type: string, enum: [pending, active, conflicted, disabled] }
+        kind: { type: string, enum: [sermon, testimony, teaching, reflection] }
+        createdBy: { type: string, minLength: 1 }
+        createdAt: { type: string, format: date-time }
+    OnlineBulletinLearningExample:
+      type: object
+      additionalProperties: false
+      required: [issueId, issueNumber, documentId, revision, componentId, sourcePage, kind, createdBy, createdAt]
+      properties:
+        issueId: { type: string, format: uuid }
+        issueNumber: { type: integer, minimum: 1739 }
+        documentId: { type: string, format: uuid }
+        revision: { type: integer, format: int64, minimum: 1 }
+        componentId: { $ref: '#/components/schemas/OnlineBulletinID' }
+        sourcePage: { type: integer, minimum: 2, maximum: 39 }
+        kind: { type: string, enum: [sermon, testimony, teaching, reflection] }
+        createdBy: { type: string, minLength: 1 }
+        createdAt: { type: string, format: date-time }
+    OnlineBulletinLearningRuleDetail:
+      type: object
+      additionalProperties: false
+      required: [rule, revisions, examples]
+      properties:
+        rule: { $ref: '#/components/schemas/OnlineBulletinLearningRule' }
+        revisions: { type: array, maxItems: 50, items: { $ref: '#/components/schemas/OnlineBulletinLearningRuleRevision' } }
+        examples: { type: array, maxItems: 50, items: { $ref: '#/components/schemas/OnlineBulletinLearningExample' } }
     LiveCoverSettingsEnvelope:
       type: object
       required: [data]

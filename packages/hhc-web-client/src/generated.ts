@@ -1161,6 +1161,52 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/bulletin-learning-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read private confirmed conversion rules
+         * @description Human-only, source-backed rules for general Traditional issues from 1739. Fifty rules per page, ordered by signature; nextCursor continues after the last returned signature. Unknown patterns still require review. No raw extraction evidence or public/member projection.
+         */
+        get: operations["listOnlineBulletinLearningRules"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletin-learning-rules/{signature}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                signature: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * Inspect a rule and its confirmed source context
+         * @description One consistent private snapshot containing the current rule, latest fifty immutable rule revisions and latest fifty located confirmed examples. Audit is mandatory; evidence is never returned to a service principal or without durable read audit.
+         */
+        get: operations["getOnlineBulletinLearningRule"];
+        /**
+         * Disable or restore verified use of a conversion rule
+         * @description Human-only CAS update with atomic immutable history and church-settings audit. Requires current If-Match and exactly one enabled boolean within 1024 bytes. Restoring is allowed only with consistent confirmed examples from at least two distinct issues; conflicting or insufficient evidence cannot be activated. Creates a new version, never rewrites history, Local, Incoming or published content. Queued jobs retain their original frozen input.
+         */
+        put: operations["setOnlineBulletinLearningRuleEnabled"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/bulletins/{issueId}/online/{series}/{contentLocale}": {
         parameters: {
             query?: never;
@@ -3501,6 +3547,55 @@ export interface components {
                 [key: string]: unknown;
             };
             error: null;
+        };
+        OnlineBulletinLearningRule: {
+            signature: string;
+            /** Format: int64 */
+            version: number;
+            /** @enum {string} */
+            status: "pending" | "active" | "conflicted" | "disabled";
+            /** @enum {string} */
+            kind: "sermon" | "testimony" | "teaching" | "reflection";
+            title: string;
+            speaker: string;
+            confirmedIssues: number;
+            conflicted: boolean;
+        };
+        OnlineBulletinLearningRulePage: {
+            items: components["schemas"]["OnlineBulletinLearningRule"][];
+            nextCursor?: string;
+        };
+        OnlineBulletinLearningRuleRevision: {
+            /** Format: int64 */
+            version: number;
+            /** @enum {string} */
+            status: "pending" | "active" | "conflicted" | "disabled";
+            /** @enum {string} */
+            kind: "sermon" | "testimony" | "teaching" | "reflection";
+            createdBy: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        OnlineBulletinLearningExample: {
+            /** Format: uuid */
+            issueId: string;
+            issueNumber: number;
+            /** Format: uuid */
+            documentId: string;
+            /** Format: int64 */
+            revision: number;
+            componentId: components["schemas"]["OnlineBulletinID"];
+            sourcePage: number;
+            /** @enum {string} */
+            kind: "sermon" | "testimony" | "teaching" | "reflection";
+            createdBy: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        OnlineBulletinLearningRuleDetail: {
+            rule: components["schemas"]["OnlineBulletinLearningRule"];
+            revisions: components["schemas"]["OnlineBulletinLearningRuleRevision"][];
+            examples: components["schemas"]["OnlineBulletinLearningExample"][];
         };
         LiveCoverSettingsEnvelope: {
             data: components["schemas"]["LiveCoverSettings"];
@@ -9465,6 +9560,122 @@ export interface operations {
             };
             401: components["responses"]["AdminUnauthorized"];
             403: components["responses"]["AdminForbidden"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listOnlineBulletinLearningRules: {
+        parameters: {
+            query?: {
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bounded rule page */
+            200: {
+                headers: {
+                    "Cache-Control"?: "private, no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OnlineBulletinLearningRulePage"];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getOnlineBulletinLearningRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                signature: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Located rule and immutable history */
+            200: {
+                headers: {
+                    "Cache-Control"?: "private, no-store";
+                    /** @description Quoted current rule version */
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OnlineBulletinLearningRuleDetail"];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    setOnlineBulletinLearningRuleEnabled: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                signature: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    enabled: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description New rule version */
+            200: {
+                headers: {
+                    "Cache-Control"?: "private, no-store";
+                    /** @description Quoted new rule version */
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OnlineBulletinLearningRule"];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            428: components["responses"]["Error"];
             503: components["responses"]["Error"];
         };
     };
