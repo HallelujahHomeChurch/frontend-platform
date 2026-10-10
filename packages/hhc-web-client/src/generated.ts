@@ -1506,7 +1506,7 @@ export interface paths {
         put?: never;
         /**
          * Complete bulletin upload
-         * @description Replacing PDF bytes does not overwrite Online Local or publication. Changed canonical title or subtitle forks only the affected Online Local for fresh layout validation; re-extraction is a separate action producing Incoming.
+         * @description When BULLETIN_AUTO_EXTRACTION_ENABLED is enabled, from issue 1739, general zh-Hant first and replacement uploads durably request online extraction after ownership, PDF MIME, checksum and clean scan verification. Closing the browser does not cancel conversion. Extraction does not publish or overwrite authored Local; an existing document receives Incoming for comparison. Other editions and earlier PDFs retain their existing upload flow. Changed canonical title or subtitle forks only the affected Online Local for fresh layout validation.
          */
         post: operations["completeBulletinUpload"];
         delete?: never;
@@ -2758,10 +2758,658 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/broadcast-capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * getBroadcastCapabilities
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+         */
+        get: operations["getBroadcastCapabilities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcasts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * listBroadcasts
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+         */
+        get: operations["listBroadcasts"];
+        put?: never;
+        /**
+         * createBroadcast
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+         */
+        post: operations["createBroadcast"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcasts/{recordingId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * getBroadcast
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+         */
+        get: operations["getBroadcast"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * updateBroadcast
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+         */
+        patch: operations["updateBroadcast"];
+        trace?: never;
+    };
+    "/admin/broadcasts/{recordingId}/announce": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * announceBroadcast
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+         */
+        post: operations["announceBroadcast"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcasts/{recordingId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * cancelBroadcast
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+         */
+        post: operations["cancelBroadcast"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcasts/{recordingId}/bindings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * bindBroadcast
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+         */
+        post: operations["bindBroadcast"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcasts/{recordingId}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * startBroadcast
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+         */
+        post: operations["startBroadcast"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcasts/{recordingId}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * endBroadcast
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+         */
+        post: operations["endBroadcast"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcasts/{recordingId}/commands/{commandId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * cancelBroadcastCommand
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+         */
+        post: operations["cancelBroadcastCommand"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcasts/{recordingId}/control": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * getBroadcastControl
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+         */
+        get: operations["getBroadcastControl"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcasts/{recordingId}/commands/{commandId}/ack": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * acknowledgeBroadcastCommand
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+         */
+        post: operations["acknowledgeBroadcastCommand"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcasts/{recordingId}/emergency-close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * emergencyCloseBroadcast
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+         */
+        post: operations["emergencyCloseBroadcast"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/recordings/{recordingId}/watch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * getBroadcastWatch
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+         */
+        get: operations["getBroadcastWatch"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcasts/{recordingId}/preview-access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * createBroadcastPreviewAccess
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+         */
+        post: operations["createBroadcastPreviewAccess"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/broadcasts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List announced upcoming broadcasts
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+         */
+        get: operations["listUpcomingBroadcasts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcasts/{recordingId}/cover-uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * uploadBroadcastCover
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+         */
+        post: operations["uploadBroadcastCover"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcasts/{recordingId}/cover-uploads/{uploadId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * getBroadcastCoverUpload
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+         */
+        get: operations["getBroadcastCoverUpload"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcasts/{recordingId}/cover-uploads/{uploadId}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * getBroadcastCoverContent
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+         */
+        get: operations["getBroadcastCoverContent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcasts/{recordingId}/cover/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * getSelectedBroadcastCoverContent
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+         */
+        get: operations["getSelectedBroadcastCoverContent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/recordings/{recordingId}/broadcast-cover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the selected announced broadcast cover
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+         */
+        get: operations["getMemberBroadcastCover"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        BroadcastPolicy: {
+            autoStart: boolean;
+            autoEnd: boolean;
+            autoPublish: boolean;
+        };
+        BroadcastBinding: {
+            captureId: string;
+            epoch: number;
+            /** Format: uuid */
+            actorId: string;
+        };
+        BroadcastBoundaries: {
+            startSequence: number | null;
+            endSequenceExclusive: number | null;
+            revision: number;
+        };
+        BroadcastCommand: {
+            /** Format: uuid */
+            commandId: string;
+            /** @enum {string} */
+            kind: "start" | "end";
+            captureId: string;
+            epoch: number;
+            /** Format: date-time */
+            requestedAt: string;
+            /** @enum {string} */
+            status: "pending" | "acknowledged" | "cancelled" | "rejected";
+            boundarySequence: number | null;
+        };
+        BroadcastHealth: {
+            /** @enum {string} */
+            state: "waiting" | "healthy" | "interrupted" | "recovering";
+            lastConfirmedAt: string | null;
+            lastPublishedAt: string | null;
+            verifiedEndSeconds: number | null;
+            queuedObjects: number | null;
+            reason: string | null;
+        };
+        BroadcastArchive: {
+            /** @enum {string} */
+            state: "none" | "processing" | "ready" | "published" | "failed";
+            reason: string | null;
+        };
+        BroadcastView: {
+            /** Format: uuid */
+            recordingId: string;
+            revision: number;
+            /** @enum {string} */
+            phase: "draft" | "scheduled" | "preview" | "start_pending" | "live" | "end_pending" | "processing" | "archived" | "cancelled" | "failed";
+            announced: boolean;
+            scheduledAt: string | null;
+            title: string;
+            description: components["schemas"]["RecordingDescription"];
+            policy: components["schemas"]["BroadcastPolicy"];
+            cover: components["schemas"]["LiveCoverSettings"];
+            binding: components["schemas"]["BroadcastBinding"] | null;
+            boundaries: components["schemas"]["BroadcastBoundaries"];
+            health: components["schemas"]["BroadcastHealth"];
+            pendingCommand: components["schemas"]["BroadcastCommand"] | null;
+            archive: components["schemas"]["BroadcastArchive"];
+        };
+        BroadcastMutationInput: {
+            operationKey: string;
+            expectedRevision: number;
+        };
+        BroadcastCreateInput: {
+            operationKey: string;
+            title: string;
+            description: components["schemas"]["RecordingDescription"];
+            scheduledAt: string | null;
+            policy: components["schemas"]["BroadcastPolicy"];
+            cover?: components["schemas"]["LiveCoverSelection"];
+        };
+        BroadcastUpdateInput: {
+            operationKey: string;
+            expectedRevision: number;
+            title?: string;
+            description?: components["schemas"]["RecordingDescription"];
+            scheduledAt?: string | null;
+            policy?: components["schemas"]["BroadcastPolicy"];
+            cover?: components["schemas"]["LiveCoverSelection"];
+        };
+        BroadcastBindInput: {
+            operationKey: string;
+            expectedRevision: number;
+            protocolVersion: string;
+        };
+        BroadcastMarkerAckInput: {
+            operationKey: string;
+            captureId: string;
+            epoch: number;
+            boundarySequence: number;
+        };
+        BroadcastEmergencyCloseInput: {
+            operationKey: string;
+            expectedRevision: number;
+            reason: string;
+        };
+        BroadcastPreviewInput: {
+            captureId: string;
+            epoch: number;
+        };
+        BroadcastReceipt: {
+            operationKey: string;
+            /** @enum {string} */
+            operation: "create" | "update" | "announce" | "cancel" | "bind" | "start" | "end" | "cancel-command" | "ack" | "emergency-close";
+            /** @enum {string} */
+            state: "accepted" | "completed" | "rejected";
+            /** Format: uuid */
+            commandId?: string;
+        };
+        BroadcastMutationResult: {
+            broadcast: components["schemas"]["BroadcastView"];
+            receipt: components["schemas"]["BroadcastReceipt"];
+        };
+        BroadcastList: {
+            items: components["schemas"]["BroadcastView"][];
+            nextCursor: string | null;
+        };
+        BroadcastControl: {
+            revision: number;
+            /** @enum {string} */
+            phase: "draft" | "scheduled" | "preview" | "start_pending" | "live" | "end_pending" | "processing" | "archived" | "cancelled" | "failed";
+            pendingCommand: components["schemas"]["BroadcastCommand"] | null;
+        };
+        BroadcastCapabilities: {
+            versions: "b1-2026-10-10.rc1"[];
+            /** @enum {integer} */
+            maxActiveCaptures: 1;
+            /** @enum {string} */
+            markerMode: "next-common-segment";
+        };
+        BroadcastWatch: {
+            /** Format: uuid */
+            recordingId: string;
+            title: string;
+            description: components["schemas"]["RecordingDescription"];
+            /** @enum {string} */
+            view: "waiting" | "live" | "processing" | "vod" | "cancelled" | "expired" | "unavailable";
+            scheduledAt: string | null;
+            /** Format: date-time */
+            serverNow: string;
+            cover: {
+                revision: string;
+                contentPath: string;
+            } | null;
+            stateRevision: number;
+            recording?: components["schemas"]["MemberRecording"] | null;
+            live?: components["schemas"]["MemberLiveRecording"] | null;
+            mediaStartSeconds?: number | null;
+            durationSeconds?: number | null;
+        };
+        BroadcastPreviewAccess: {
+            /** Format: uuid */
+            recordingId: string;
+            captureId: string;
+            epoch: number;
+            /** @enum {string} */
+            purpose: "staff-preview";
+            /** Format: uuid */
+            playbackScopeId: string;
+            /** Format: uri */
+            mediaUrl: string;
+            exchangeCredential: string;
+            /** Format: date-time */
+            issuedAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        BroadcastErrorEnvelope: {
+            data: null;
+            meta: {
+                [key: string]: unknown;
+            };
+            error: {
+                /** @enum {string} */
+                code: "broadcast_invalid" | "broadcast_not_found" | "broadcast_state_conflict" | "broadcast_already_bound" | "broadcast_active_limit" | "broadcast_epoch_mismatch" | "broadcast_boundary_conflict" | "broadcast_operation_conflict" | "broadcast_revision_conflict" | "broadcast_protocol_unsupported" | "unauthorized" | "forbidden" | "rate_limited" | "unavailable";
+                message: string;
+            };
+        };
+        BroadcastViewEnvelope: {
+            data: components["schemas"]["BroadcastView"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        BroadcastMutationResultEnvelope: {
+            data: components["schemas"]["BroadcastMutationResult"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        BroadcastListEnvelope: {
+            data: components["schemas"]["BroadcastList"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        BroadcastControlEnvelope: {
+            data: components["schemas"]["BroadcastControl"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        BroadcastCapabilitiesEnvelope: {
+            data: components["schemas"]["BroadcastCapabilities"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        BroadcastWatchEnvelope: {
+            data: components["schemas"]["BroadcastWatch"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        BroadcastPreviewAccessEnvelope: {
+            data: components["schemas"]["BroadcastPreviewAccess"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        BroadcastWatchList: {
+            items: components["schemas"]["BroadcastWatch"][];
+            nextCursor: string | null;
+        };
+        BroadcastWatchListEnvelope: {
+            data: components["schemas"]["BroadcastWatchList"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
         LiveCoverSelection: {
             /** @enum {string} */
             mode: "auto";
@@ -6316,6 +6964,17 @@ export interface components {
         };
     };
     responses: {
+        /** @description B1 operation rejected or dependency unavailable; failed responses never prove a state transition. */
+        BroadcastFailure: {
+            headers: {
+                /** @description Retry delay for unavailable dependencies. */
+                "Retry-After"?: number;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["BroadcastErrorEnvelope"];
+            };
+        };
         /** @description Owner-scoped statement preference; Cache-Control private, no-store */
         StatementDismissal: {
             headers: {
@@ -12579,6 +13238,745 @@ export interface operations {
             404: components["responses"]["Error"];
             428: components["responses"]["Error"];
             503: components["responses"]["Error"];
+        };
+    };
+    getBroadcastCapabilities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description BroadcastCapabilities */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastCapabilitiesEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
+        };
+    };
+    listBroadcasts: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+                filter?: "selectable" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description BroadcastList */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastListEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
+        };
+    };
+    createBroadcast: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastCreateInput"];
+            };
+        };
+        responses: {
+            /** @description BroadcastMutationResult */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastMutationResultEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
+        };
+    };
+    getBroadcast: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description BroadcastView */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastViewEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
+        };
+    };
+    updateBroadcast: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastUpdateInput"];
+            };
+        };
+        responses: {
+            /** @description BroadcastMutationResult */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastMutationResultEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
+        };
+    };
+    announceBroadcast: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastMutationInput"];
+            };
+        };
+        responses: {
+            /** @description BroadcastMutationResult */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastMutationResultEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
+        };
+    };
+    cancelBroadcast: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastMutationInput"];
+            };
+        };
+        responses: {
+            /** @description BroadcastMutationResult */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastMutationResultEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
+        };
+    };
+    bindBroadcast: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastBindInput"];
+            };
+        };
+        responses: {
+            /** @description BroadcastMutationResult */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastMutationResultEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
+        };
+    };
+    startBroadcast: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastMutationInput"];
+            };
+        };
+        responses: {
+            /** @description BroadcastMutationResult */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastMutationResultEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
+        };
+    };
+    endBroadcast: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastMutationInput"];
+            };
+        };
+        responses: {
+            /** @description BroadcastMutationResult */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastMutationResultEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
+        };
+    };
+    cancelBroadcastCommand: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordingId: string;
+                commandId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastMutationInput"];
+            };
+        };
+        responses: {
+            /** @description BroadcastMutationResult */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastMutationResultEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
+        };
+    };
+    getBroadcastControl: {
+        parameters: {
+            query: {
+                captureId: string;
+                epoch: number;
+            };
+            header?: never;
+            path: {
+                recordingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description BroadcastControl */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastControlEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
+        };
+    };
+    acknowledgeBroadcastCommand: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordingId: string;
+                commandId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastMarkerAckInput"];
+            };
+        };
+        responses: {
+            /** @description BroadcastMutationResult */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastMutationResultEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
+        };
+    };
+    emergencyCloseBroadcast: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastEmergencyCloseInput"];
+            };
+        };
+        responses: {
+            /** @description BroadcastMutationResult */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastMutationResultEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
+        };
+    };
+    getBroadcastWatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description BroadcastWatch */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastWatchEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
+        };
+    };
+    createBroadcastPreviewAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastPreviewInput"];
+            };
+        };
+        responses: {
+            /** @description BroadcastPreviewAccess */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastPreviewAccessEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
+        };
+    };
+    listUpcomingBroadcasts: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description BroadcastWatch */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastWatchListEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
+        };
+    };
+    uploadBroadcastCover: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                recordingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "image/jpeg": string;
+                "image/png": string;
+            };
+        };
+        responses: {
+            /** @description BroadcastView */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCoverUploadEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
+        };
+    };
+    getBroadcastCoverUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordingId: string;
+                uploadId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description BroadcastView */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCoverUploadEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
+        };
+    };
+    getBroadcastCoverContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordingId: string;
+                uploadId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description BroadcastView */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                };
+            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
+        };
+    };
+    getSelectedBroadcastCoverContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description BroadcastView */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                };
+            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
+        };
+    };
+    getMemberBroadcastCover: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description BroadcastWatch */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                };
+            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
         };
     };
 }

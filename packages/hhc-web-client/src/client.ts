@@ -60,6 +60,20 @@ export type RecordingCoverSelectionResult = components['schemas']['RecordingCove
 export type RecordingCoverUpload = components['schemas']['RecordingCoverUpload']
 export type LiveCoverSelection = components['schemas']['LiveCoverSelection']
 export type LiveCoverSettings = components['schemas']['LiveCoverSettings']
+export type BroadcastBinding = components['schemas']['BroadcastBinding']
+export type BroadcastView = components['schemas']['BroadcastView']
+export type BroadcastPolicy = components['schemas']['BroadcastPolicy']
+export type BroadcastCreateInput = components['schemas']['BroadcastCreateInput']
+export type BroadcastUpdateInput = components['schemas']['BroadcastUpdateInput']
+export type BroadcastMutationInput = components['schemas']['BroadcastMutationInput']
+export type BroadcastMutationResult = components['schemas']['BroadcastMutationResult']
+export type BroadcastBindInput = components['schemas']['BroadcastBindInput']
+export type BroadcastEmergencyCloseInput = components['schemas']['BroadcastEmergencyCloseInput']
+export type BroadcastPreviewInput = components['schemas']['BroadcastPreviewInput']
+export type BroadcastPreviewAccess = components['schemas']['BroadcastPreviewAccess']
+export type BroadcastCapabilities = components['schemas']['BroadcastCapabilities']
+export type BroadcastWatch = components['schemas']['BroadcastWatch']
+export type RecordingWatchView = BroadcastWatch
 export type LiveCoverScope = 'defaults' | {recordingId: string; captureId: string}
 export type MemberRecordingPlayback = components['schemas']['MemberRecordingPlayback']
 export type MemberLivePlayback = components['schemas']['MemberLivePlayback']
@@ -227,6 +241,66 @@ export function createHhcWebClient(options: {
   }
 
   return {
+    async getBroadcastCapabilities(signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/broadcast-capabilities', {signal, cache:'no-store'}))).data
+    },
+    async listBroadcasts(options: {cursor?:string;limit?:number;filter?:'all'|'selectable';signal?:AbortSignal} = {}) {
+      return (await unwrap(client.GET('/admin/broadcasts', {params:{query:{cursor:options.cursor,limit:options.limit,filter:options.filter}},signal:options.signal,cache:'no-store'}))).data
+    },
+    async getBroadcast(recordingId:string,signal?:AbortSignal) {
+      return (await unwrap(client.GET('/admin/broadcasts/{recordingId}', {params:{path:{recordingId}},signal,cache:'no-store'}))).data
+    },
+    async createBroadcast(body:BroadcastCreateInput,signal?:AbortSignal) {
+      return (await unwrap(client.POST('/admin/broadcasts', {body,signal,cache:'no-store'}))).data
+    },
+    async updateBroadcast(recordingId:string,body:BroadcastUpdateInput,signal?:AbortSignal) {
+      return (await unwrap(client.PATCH('/admin/broadcasts/{recordingId}', {params:{path:{recordingId}},body,signal,cache:'no-store'}))).data
+    },
+    async announceBroadcast(recordingId:string,body:BroadcastMutationInput,signal?:AbortSignal) {
+      return (await unwrap(client.POST('/admin/broadcasts/{recordingId}/announce', {params:{path:{recordingId}},body,signal,cache:'no-store'}))).data
+    },
+    async cancelBroadcast(recordingId:string,body:BroadcastMutationInput,signal?:AbortSignal) {
+      return (await unwrap(client.POST('/admin/broadcasts/{recordingId}/cancel', {params:{path:{recordingId}},body,signal,cache:'no-store'}))).data
+    },
+    async bindBroadcast(recordingId:string,body:BroadcastBindInput,signal?:AbortSignal) {
+      return (await unwrap(client.POST('/admin/broadcasts/{recordingId}/bindings', {params:{path:{recordingId}},body,signal,cache:'no-store'}))).data
+    },
+    async startBroadcast(recordingId:string,body:BroadcastMutationInput,signal?:AbortSignal) {
+      return (await unwrap(client.POST('/admin/broadcasts/{recordingId}/start', {params:{path:{recordingId}},body,signal,cache:'no-store'}))).data
+    },
+    async endBroadcast(recordingId:string,body:BroadcastMutationInput,signal?:AbortSignal) {
+      return (await unwrap(client.POST('/admin/broadcasts/{recordingId}/end', {params:{path:{recordingId}},body,signal,cache:'no-store'}))).data
+    },
+    async emergencyCloseBroadcast(recordingId:string,body:BroadcastEmergencyCloseInput,signal?:AbortSignal) {
+      return (await unwrap(client.POST('/admin/broadcasts/{recordingId}/emergency-close', {params:{path:{recordingId}},body,signal,cache:'no-store'}))).data
+    },
+    async getBroadcastPreviewAccess(recordingId:string,body:BroadcastPreviewInput,signal?:AbortSignal) {
+      return (await unwrap(client.POST('/admin/broadcasts/{recordingId}/preview-access', {params:{path:{recordingId}},body,signal,cache:'no-store'}))).data
+    },
+    async cancelBroadcastCommand(recordingId:string,commandId:string,body:BroadcastMutationInput,signal?:AbortSignal) {
+      return (await unwrap(client.POST('/admin/broadcasts/{recordingId}/commands/{commandId}/cancel', {params:{path:{recordingId,commandId}},body,signal,cache:'no-store'}))).data
+    },
+    async listMemberBroadcasts(options:{limit?:number;cursor?:string;signal?:AbortSignal}={}) {
+      return (await unwrap(client.GET('/member/broadcasts',{params:{query:{limit:options.limit,cursor:options.cursor}},signal:options.signal,cache:'no-store'}))).data
+    },
+    async getMemberBroadcastCover(recordingId:string,signal?:AbortSignal) {
+      return unwrap(client.GET('/member/recordings/{recordingId}/broadcast-cover',{params:{path:{recordingId}},signal,cache:'no-store',redirect:'error',parseAs:'blob',headers:{Accept:'image/jpeg'}}))
+    },
+    async uploadBroadcastCover(recordingId:string,blob:Blob,key:string,signal?:AbortSignal) {
+      if(!['image/jpeg','image/png'].includes(blob.type)||blob.size<1||blob.size>5*1024*1024)throw new HhcWebApiError(422,'invalid_cover','Choose JPEG or PNG up to 5 MiB.')
+      return (await unwrap(client.POST('/admin/broadcasts/{recordingId}/cover-uploads',{params:{path:{recordingId},header:{'Idempotency-Key':key}},headers:{'Content-Type':blob.type},body:'',bodySerializer:()=>blob,signal,cache:'no-store',redirect:'error'}))).data
+    },
+    async getBroadcastCoverUpload(recordingId:string,uploadId:string,signal?:AbortSignal) {
+      return (await unwrap(client.GET('/admin/broadcasts/{recordingId}/cover-uploads/{uploadId}',{params:{path:{recordingId,uploadId}},signal,cache:'no-store'}))).data
+    },
+    async getBroadcastCoverContent(recordingId:string,uploadId?:string,signal?:AbortSignal) {
+      const options={signal,cache:'no-store' as const,redirect:'error' as const,parseAs:'blob' as const,headers:{Accept:'image/jpeg'}}
+      if(uploadId)return unwrap(client.GET('/admin/broadcasts/{recordingId}/cover-uploads/{uploadId}/content',{...options,params:{path:{recordingId,uploadId}}}))
+      return unwrap(client.GET('/admin/broadcasts/{recordingId}/cover/content',{...options,params:{path:{recordingId}}}))
+    },
+    async resolveRecordingWatch(recordingId:string,signal?:AbortSignal) {
+      return (await unwrap(client.GET('/member/recordings/{recordingId}/watch', {params:{path:{recordingId}},signal,cache:'no-store'}))).data
+    },
     async getReaderState({issueId, series, locale, fromRevision, signal}: {issueId: string; series: BulletinSeries; locale: BulletinLocale; fromRevision?: number; signal?: AbortSignal}): Promise<BulletinReaderStateResponse> {
       return (await unwrap(client.GET('/member/bulletins/{issueID}/versions/{locale}/online/reader/state', {params: {path: {issueID: issueId, locale}, query: {series, fromRevision}}, cache: 'no-store', signal}))).data
     },
