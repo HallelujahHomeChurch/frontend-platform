@@ -101,6 +101,9 @@ export type OnlineBulletinPublishInput = components['schemas']['OnlineBulletinPu
 export type OnlineBulletinReviewIssue = components['schemas']['OnlineBulletinReviewIssue']
 export type OnlineBulletinComponent = components['schemas']['OnlineBulletinComponent']
 export type OnlineBulletinDocument = components['schemas']['OnlineBulletinDocument']
+export type BulletinTemplateText = components['schemas']['BulletinTemplateText']
+export type BulletinTemplateSettings = components['schemas']['BulletinTemplateSettings']
+export type BulletinTemplateSettingsRevision = components['schemas']['BulletinTemplateSettingsRevision']
 export type PageMeta = components['schemas']['PageMeta']
 export type UploadTarget = components['schemas']['UploadTarget']
 export type CreatedBulletinUpload = components['schemas']['CreatedUpload']
@@ -888,6 +891,18 @@ export function createHhcWebClient(options: {
     /** @deprecated Home v2 includes site layout links in getPublicPage('home', locale). */
     async getSiteLayout(locale: ContentLocale, signal?: AbortSignal) {
       return (await unwrap(client.GET('/site-layout', { params: { query: { locale } }, signal }))).data
+    },
+    async getBulletinTemplateSettings(signal?: AbortSignal): Promise<BulletinTemplateSettings> {
+      return (await unwrap(client.GET('/admin/bulletins/template-settings', {signal, cache:'no-store'}))).data
+    },
+    async saveBulletinTemplateSettings(version: number, input: BulletinTemplateText, signal?: AbortSignal): Promise<BulletinTemplateSettings> {
+      if (!Number.isSafeInteger(version) || version < 1) throw new Error('Invalid bulletin template settings version')
+      return (await unwrap(client.PUT('/admin/bulletins/template-settings', {
+        params:{header:{'If-Match':`"${version}"`}}, body:input, signal, cache:'no-store',
+      }))).data
+    },
+    async listBulletinTemplateSettingsRevisions(signal?: AbortSignal): Promise<BulletinTemplateSettingsRevision[]> {
+      return (await unwrap(client.GET('/admin/bulletins/template-settings/revisions', {signal, cache:'no-store'}))).data
     },
     async getSiteSettings(signal?: AbortSignal) {
       return (await unwrap(client.GET('/admin/site-settings', { signal }))).data

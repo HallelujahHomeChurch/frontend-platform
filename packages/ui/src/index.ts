@@ -12,5 +12,6 @@ export * from './bulletin-reader/BulletinEbook.js';
 export * from './bulletin-reader/backPanelPresentation.js';
 export * from './bulletin-reader/paperPresentation.js';
 export {bulletinFixedText} from './bulletin-reader/fixed.js';
+export {readBulletinTemplateSnapshot} from './bulletin-reader/v9/fixed.js';
 export * from './bulletin-reader/ReaderWatermark.js';
 export {REGEXP_ONLY_DIGITS} from 'input-otp';
