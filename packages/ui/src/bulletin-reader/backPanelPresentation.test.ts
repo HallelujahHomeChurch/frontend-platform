@@ -13,15 +13,39 @@ function fixture(): UI.BulletinRenderableDocument {
 }
 const present = UI.bulletinBackPanelPresentation;
 
+it('creates a solid-summary decoration around this page text, excluding the sidebar', () => {
+  const document = fixture();
+  document.layoutManifest.pages[0].fixedSlots!.push({id: 'tagline', element: 'summarySidebarTagline', style, box: {x: .01, y: .1, width: .04, height: .2}});
+  const page = present(document).pages[0];
+  const frame = page.fixedSlots!.find(slot => slot.element === 'summaryFrame');
+  expect(frame).toBeDefined();
+  expect(frame!.box.x).toBeCloseTo(.09);
+  expect(frame!.box.y).toBeCloseTo(.0925);
+  expect(frame!.box.width).toBeCloseTo(.82);
+  expect(frame!.box.height).toBeCloseTo(.215);
+  expect(frame!.style.spaceBefore).toBe(0);
+  expect(frame!.style.indent).toBe(0);
+  expect(page.fixedSlots!.find(slot => slot.id === 'tagline')).toEqual(document.layoutManifest.pages[0].fixedSlots![2]);
+});
+
+it('frames summary-only pages without requiring announcements or prayers', () => {
+  const document = fixture();
+  document.layoutManifest.pages[0].slots = document.layoutManifest.pages[0].slots.slice(0, 1);
+  document.layoutManifest.pages[0].fixedSlots = [];
+  expect(present(document).pages[0].fixedSlots).toHaveLength(1);
+  const layout = present(document);
+  expect(present({...document, layoutManifest: layout})).toEqual(layout);
+});
+
 it('separates unframed summary from aligned panels without mutating content or source geometry', () => {
   const document = fixture(); const original = structuredClone(document);
   const layout = present(document);
   const page = layout.pages[0];
   expect(page.fixedSlots![0].box.x).toBeCloseTo(.09);
   expect(page.fixedSlots![0].box.width).toBeCloseTo(.82);
-  expect(page.fixedSlots![0].box.y).toBeCloseTo(.315);
-  expect(page.fixedSlots![1].box.y).toBeCloseTo(.545);
-  expect(page.slots[1].box.y).toBeCloseTo(.3225);
+  expect(page.fixedSlots![0].box.y).toBeCloseTo(.3225);
+  expect(page.fixedSlots![1].box.y).toBeCloseTo(.5525);
+  expect(page.slots[1].box.y).toBeCloseTo(.33);
   expect(page.slots[1].box.width).toBe(.8);
   expect(document).toEqual(original);
   expect(present({...document, layoutManifest: layout})).toEqual(layout);
@@ -34,6 +58,16 @@ it('keeps horizontal frame clearance when a dense page cannot accept vertical sp
   expect(page.slots).toEqual(document.layoutManifest.pages[0].slots);
   expect(page.fixedSlots![1].box.x).toBeCloseTo(.09);
   expect(page.fixedSlots![1].box.width).toBeCloseTo(.82);
+  const summary = page.fixedSlots!.find(slot => slot.element === 'summaryFrame')!;
+  expect(summary.box.y + summary.box.height).toBeLessThanOrEqual(page.slots[1].box.y);
+});
+
+it('keeps a near-threshold dense fallback stable when presented repeatedly', () => {
+  const document = fixture();
+  document.layoutManifest.pages[0].slots[2].box.height = .432;
+  const layout = present(document);
+  expect(layout.pages[0].slots).toEqual(document.layoutManifest.pages[0].slots);
+  expect(present({...document, layoutManifest: layout})).toEqual(layout);
 });
 
 it('uses a summary frame when present and never takes summary bounds from another page', () => {
