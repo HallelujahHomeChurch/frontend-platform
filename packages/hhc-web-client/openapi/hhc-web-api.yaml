@@ -2446,7 +2446,7 @@ paths:
     post:
       operationId: completeBulletinUpload
       summary: Complete bulletin upload
-      description: Replacing PDF bytes does not overwrite Online Local or publication. Changed canonical title or subtitle forks only the affected Online Local for fresh layout validation; re-extraction is a separate action producing Incoming.
+      description: When BULLETIN_AUTO_EXTRACTION_ENABLED is enabled, from issue 1739, general zh-Hant first and replacement uploads durably request online extraction after ownership, PDF MIME, checksum and clean scan verification. Closing the browser does not cancel conversion. Extraction does not publish or overwrite authored Local; an existing document receives Incoming for comparison. Other editions and earlier PDFs retain their existing upload flow. Changed canonical title or subtitle forks only the affected Online Local for fresh layout validation.
       tags: [Admin]
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
@@ -5197,25 +5197,16 @@ paths:
     get:
       operationId: getBroadcastCapabilities
       summary: getBroadcastCapabilities
-      description: Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure
-        requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED;
-        readers and emergency close remain available when disabled.
-      tags:
-      - Admin
+      description: Durable B1 control with immutable operation receipts and verified media boundaries. Creation and
+        binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+      tags: [Admin]
       x-hhc-visibility: admin
-      x-hhc-callers:
-      - api-gateway
+      x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
       x-required-scopes:
       - cms:recordings:read
-      security:
-      - daprApiToken: []
-        daprCallerAppId: []
-        trustedUserId: []
-        trustedAuthProvider: []
-        trustedScopes: []
-      servers:
-      - url: https://admin.alive.org.tw/api
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
         '200':
           description: BroadcastCapabilities
@@ -5223,95 +5214,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BroadcastCapabilitiesEnvelope'
-        '400':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '401':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '403':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '404':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '409':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '412':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '422':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '429':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
-        '503':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
+        '400': { $ref: '#/components/responses/BroadcastFailure' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/BroadcastFailure' }
+        '409': { $ref: '#/components/responses/BroadcastFailure' }
+        '412': { $ref: '#/components/responses/BroadcastFailure' }
+        '422': { $ref: '#/components/responses/BroadcastFailure' }
+        '429': { $ref: '#/components/responses/BroadcastFailure' }
+        '503': { $ref: '#/components/responses/BroadcastFailure' }
   /admin/broadcasts:
     post:
       operationId: createBroadcast
       summary: createBroadcast
-      description: Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure
-        requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED;
-        readers and emergency close remain available when disabled.
-      tags:
-      - Admin
+      description: Durable B1 control with immutable operation receipts and verified media boundaries. Creation and
+        binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+      tags: [Admin]
       x-hhc-visibility: admin
-      x-hhc-callers:
-      - api-gateway
+      x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
       x-required-scopes:
       - cms:recordings:write
-      security:
-      - daprApiToken: []
-        daprCallerAppId: []
-        trustedUserId: []
-        trustedAuthProvider: []
-        trustedScopes: []
-      servers:
-      - url: https://admin.alive.org.tw/api
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
         '201':
           description: BroadcastMutationResult
@@ -5319,72 +5244,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BroadcastMutationResultEnvelope'
-        '400':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '401':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '403':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '404':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '409':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '412':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '422':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '429':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
-        '503':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
+        '400': { $ref: '#/components/responses/BroadcastFailure' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/BroadcastFailure' }
+        '409': { $ref: '#/components/responses/BroadcastFailure' }
+        '412': { $ref: '#/components/responses/BroadcastFailure' }
+        '422': { $ref: '#/components/responses/BroadcastFailure' }
+        '429': { $ref: '#/components/responses/BroadcastFailure' }
+        '503': { $ref: '#/components/responses/BroadcastFailure' }
       requestBody:
         required: true
         content:
@@ -5394,25 +5262,16 @@ paths:
     get:
       operationId: listBroadcasts
       summary: listBroadcasts
-      description: Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure
-        requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED;
-        readers and emergency close remain available when disabled.
-      tags:
-      - Admin
+      description: Durable B1 control with immutable operation receipts and verified media boundaries. Creation and
+        binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+      tags: [Admin]
       x-hhc-visibility: admin
-      x-hhc-callers:
-      - api-gateway
+      x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
       x-required-scopes:
       - cms:recordings:read
-      security:
-      - daprApiToken: []
-        daprCallerAppId: []
-        trustedUserId: []
-        trustedAuthProvider: []
-        trustedScopes: []
-      servers:
-      - url: https://admin.alive.org.tw/api
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
         '200':
           description: BroadcastList
@@ -5420,72 +5279,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BroadcastListEnvelope'
-        '400':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '401':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '403':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '404':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '409':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '412':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '422':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '429':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
-        '503':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
+        '400': { $ref: '#/components/responses/BroadcastFailure' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/BroadcastFailure' }
+        '409': { $ref: '#/components/responses/BroadcastFailure' }
+        '412': { $ref: '#/components/responses/BroadcastFailure' }
+        '422': { $ref: '#/components/responses/BroadcastFailure' }
+        '429': { $ref: '#/components/responses/BroadcastFailure' }
+        '503': { $ref: '#/components/responses/BroadcastFailure' }
       parameters:
       - name: cursor
         in: query
@@ -5510,25 +5312,16 @@ paths:
     get:
       operationId: getBroadcast
       summary: getBroadcast
-      description: Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure
-        requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED;
-        readers and emergency close remain available when disabled.
-      tags:
-      - Admin
+      description: Durable B1 control with immutable operation receipts and verified media boundaries. Creation and
+        binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+      tags: [Admin]
       x-hhc-visibility: admin
-      x-hhc-callers:
-      - api-gateway
+      x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
       x-required-scopes:
       - cms:recordings:read
-      security:
-      - daprApiToken: []
-        daprCallerAppId: []
-        trustedUserId: []
-        trustedAuthProvider: []
-        trustedScopes: []
-      servers:
-      - url: https://admin.alive.org.tw/api
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
         '200':
           description: BroadcastView
@@ -5536,72 +5329,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BroadcastViewEnvelope'
-        '400':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '401':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '403':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '404':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '409':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '412':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '422':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '429':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
-        '503':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
+        '400': { $ref: '#/components/responses/BroadcastFailure' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/BroadcastFailure' }
+        '409': { $ref: '#/components/responses/BroadcastFailure' }
+        '412': { $ref: '#/components/responses/BroadcastFailure' }
+        '422': { $ref: '#/components/responses/BroadcastFailure' }
+        '429': { $ref: '#/components/responses/BroadcastFailure' }
+        '503': { $ref: '#/components/responses/BroadcastFailure' }
       parameters:
       - name: recordingId
         in: path
@@ -5612,25 +5348,16 @@ paths:
     patch:
       operationId: updateBroadcast
       summary: updateBroadcast
-      description: Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure
-        requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED;
-        readers and emergency close remain available when disabled.
-      tags:
-      - Admin
+      description: Durable B1 control with immutable operation receipts and verified media boundaries. Creation and
+        binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+      tags: [Admin]
       x-hhc-visibility: admin
-      x-hhc-callers:
-      - api-gateway
+      x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
       x-required-scopes:
       - cms:recordings:write
-      security:
-      - daprApiToken: []
-        daprCallerAppId: []
-        trustedUserId: []
-        trustedAuthProvider: []
-        trustedScopes: []
-      servers:
-      - url: https://admin.alive.org.tw/api
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
         '200':
           description: BroadcastMutationResult
@@ -5638,72 +5365,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BroadcastMutationResultEnvelope'
-        '400':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '401':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '403':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '404':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '409':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '412':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '422':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '429':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
-        '503':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
+        '400': { $ref: '#/components/responses/BroadcastFailure' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/BroadcastFailure' }
+        '409': { $ref: '#/components/responses/BroadcastFailure' }
+        '412': { $ref: '#/components/responses/BroadcastFailure' }
+        '422': { $ref: '#/components/responses/BroadcastFailure' }
+        '429': { $ref: '#/components/responses/BroadcastFailure' }
+        '503': { $ref: '#/components/responses/BroadcastFailure' }
       parameters:
       - name: recordingId
         in: path
@@ -5721,26 +5391,17 @@ paths:
     post:
       operationId: announceBroadcast
       summary: announceBroadcast
-      description: Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure
-        requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED;
-        readers and emergency close remain available when disabled.
-      tags:
-      - Admin
+      description: Durable B1 control with immutable operation receipts and verified media boundaries. Creation and
+        binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+      tags: [Admin]
       x-hhc-visibility: admin
-      x-hhc-callers:
-      - api-gateway
+      x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
       x-required-scopes:
       - cms:recordings:write
       - cms:recordings:publish
-      security:
-      - daprApiToken: []
-        daprCallerAppId: []
-        trustedUserId: []
-        trustedAuthProvider: []
-        trustedScopes: []
-      servers:
-      - url: https://admin.alive.org.tw/api
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
         '200':
           description: BroadcastMutationResult
@@ -5748,72 +5409,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BroadcastMutationResultEnvelope'
-        '400':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '401':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '403':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '404':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '409':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '412':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '422':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '429':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
-        '503':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
+        '400': { $ref: '#/components/responses/BroadcastFailure' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/BroadcastFailure' }
+        '409': { $ref: '#/components/responses/BroadcastFailure' }
+        '412': { $ref: '#/components/responses/BroadcastFailure' }
+        '422': { $ref: '#/components/responses/BroadcastFailure' }
+        '429': { $ref: '#/components/responses/BroadcastFailure' }
+        '503': { $ref: '#/components/responses/BroadcastFailure' }
       parameters:
       - name: recordingId
         in: path
@@ -5831,26 +5435,17 @@ paths:
     post:
       operationId: cancelBroadcast
       summary: cancelBroadcast
-      description: Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure
-        requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED;
-        readers and emergency close remain available when disabled.
-      tags:
-      - Admin
+      description: Durable B1 control with immutable operation receipts and verified media boundaries. Creation and
+        binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+      tags: [Admin]
       x-hhc-visibility: admin
-      x-hhc-callers:
-      - api-gateway
+      x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
       x-required-scopes:
       - cms:recordings:write
       - cms:recordings:publish
-      security:
-      - daprApiToken: []
-        daprCallerAppId: []
-        trustedUserId: []
-        trustedAuthProvider: []
-        trustedScopes: []
-      servers:
-      - url: https://admin.alive.org.tw/api
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
         '200':
           description: BroadcastMutationResult
@@ -5858,72 +5453,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BroadcastMutationResultEnvelope'
-        '400':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '401':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '403':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '404':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '409':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '412':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '422':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '429':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
-        '503':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
+        '400': { $ref: '#/components/responses/BroadcastFailure' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/BroadcastFailure' }
+        '409': { $ref: '#/components/responses/BroadcastFailure' }
+        '412': { $ref: '#/components/responses/BroadcastFailure' }
+        '422': { $ref: '#/components/responses/BroadcastFailure' }
+        '429': { $ref: '#/components/responses/BroadcastFailure' }
+        '503': { $ref: '#/components/responses/BroadcastFailure' }
       parameters:
       - name: recordingId
         in: path
@@ -5941,25 +5479,16 @@ paths:
     post:
       operationId: bindBroadcast
       summary: bindBroadcast
-      description: Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure
-        requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED;
-        readers and emergency close remain available when disabled.
-      tags:
-      - Admin
+      description: Durable B1 control with immutable operation receipts and verified media boundaries. Creation and
+        binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+      tags: [Admin]
       x-hhc-visibility: admin
-      x-hhc-callers:
-      - api-gateway
+      x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
       x-required-scopes:
       - cms:recordings:write
-      security:
-      - daprApiToken: []
-        daprCallerAppId: []
-        trustedUserId: []
-        trustedAuthProvider: []
-        trustedScopes: []
-      servers:
-      - url: https://admin.alive.org.tw/api
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
         '202':
           description: BroadcastMutationResult
@@ -5967,72 +5496,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BroadcastMutationResultEnvelope'
-        '400':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '401':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '403':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '404':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '409':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '412':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '422':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '429':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
-        '503':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
+        '400': { $ref: '#/components/responses/BroadcastFailure' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/BroadcastFailure' }
+        '409': { $ref: '#/components/responses/BroadcastFailure' }
+        '412': { $ref: '#/components/responses/BroadcastFailure' }
+        '422': { $ref: '#/components/responses/BroadcastFailure' }
+        '429': { $ref: '#/components/responses/BroadcastFailure' }
+        '503': { $ref: '#/components/responses/BroadcastFailure' }
       parameters:
       - name: recordingId
         in: path
@@ -6050,26 +5522,17 @@ paths:
     post:
       operationId: startBroadcast
       summary: startBroadcast
-      description: Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure
-        requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED;
-        readers and emergency close remain available when disabled.
-      tags:
-      - Admin
+      description: Durable B1 control with immutable operation receipts and verified media boundaries. Creation and
+        binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+      tags: [Admin]
       x-hhc-visibility: admin
-      x-hhc-callers:
-      - api-gateway
+      x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
       x-required-scopes:
       - cms:recordings:write
       - cms:recordings:publish
-      security:
-      - daprApiToken: []
-        daprCallerAppId: []
-        trustedUserId: []
-        trustedAuthProvider: []
-        trustedScopes: []
-      servers:
-      - url: https://admin.alive.org.tw/api
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
         '202':
           description: BroadcastMutationResult
@@ -6077,72 +5540,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BroadcastMutationResultEnvelope'
-        '400':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '401':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '403':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '404':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '409':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '412':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '422':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '429':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
-        '503':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
+        '400': { $ref: '#/components/responses/BroadcastFailure' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/BroadcastFailure' }
+        '409': { $ref: '#/components/responses/BroadcastFailure' }
+        '412': { $ref: '#/components/responses/BroadcastFailure' }
+        '422': { $ref: '#/components/responses/BroadcastFailure' }
+        '429': { $ref: '#/components/responses/BroadcastFailure' }
+        '503': { $ref: '#/components/responses/BroadcastFailure' }
       parameters:
       - name: recordingId
         in: path
@@ -6160,26 +5566,17 @@ paths:
     post:
       operationId: endBroadcast
       summary: endBroadcast
-      description: Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure
-        requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED;
-        readers and emergency close remain available when disabled.
-      tags:
-      - Admin
+      description: Durable B1 control with immutable operation receipts and verified media boundaries. Creation and
+        binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+      tags: [Admin]
       x-hhc-visibility: admin
-      x-hhc-callers:
-      - api-gateway
+      x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
       x-required-scopes:
       - cms:recordings:write
       - cms:recordings:publish
-      security:
-      - daprApiToken: []
-        daprCallerAppId: []
-        trustedUserId: []
-        trustedAuthProvider: []
-        trustedScopes: []
-      servers:
-      - url: https://admin.alive.org.tw/api
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
         '202':
           description: BroadcastMutationResult
@@ -6187,72 +5584,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BroadcastMutationResultEnvelope'
-        '400':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '401':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '403':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '404':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '409':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '412':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '422':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '429':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
-        '503':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
+        '400': { $ref: '#/components/responses/BroadcastFailure' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/BroadcastFailure' }
+        '409': { $ref: '#/components/responses/BroadcastFailure' }
+        '412': { $ref: '#/components/responses/BroadcastFailure' }
+        '422': { $ref: '#/components/responses/BroadcastFailure' }
+        '429': { $ref: '#/components/responses/BroadcastFailure' }
+        '503': { $ref: '#/components/responses/BroadcastFailure' }
       parameters:
       - name: recordingId
         in: path
@@ -6270,26 +5610,17 @@ paths:
     post:
       operationId: cancelBroadcastCommand
       summary: cancelBroadcastCommand
-      description: Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure
-        requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED;
-        readers and emergency close remain available when disabled.
-      tags:
-      - Admin
+      description: Durable B1 control with immutable operation receipts and verified media boundaries. Creation and
+        binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+      tags: [Admin]
       x-hhc-visibility: admin
-      x-hhc-callers:
-      - api-gateway
+      x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
       x-required-scopes:
       - cms:recordings:write
       - cms:recordings:publish
-      security:
-      - daprApiToken: []
-        daprCallerAppId: []
-        trustedUserId: []
-        trustedAuthProvider: []
-        trustedScopes: []
-      servers:
-      - url: https://admin.alive.org.tw/api
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
         '200':
           description: BroadcastMutationResult
@@ -6297,72 +5628,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BroadcastMutationResultEnvelope'
-        '400':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '401':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '403':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '404':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '409':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '412':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '422':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '429':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
-        '503':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
+        '400': { $ref: '#/components/responses/BroadcastFailure' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/BroadcastFailure' }
+        '409': { $ref: '#/components/responses/BroadcastFailure' }
+        '412': { $ref: '#/components/responses/BroadcastFailure' }
+        '422': { $ref: '#/components/responses/BroadcastFailure' }
+        '429': { $ref: '#/components/responses/BroadcastFailure' }
+        '503': { $ref: '#/components/responses/BroadcastFailure' }
       parameters:
       - name: recordingId
         in: path
@@ -6386,25 +5660,16 @@ paths:
     get:
       operationId: getBroadcastControl
       summary: getBroadcastControl
-      description: Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure
-        requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED;
-        readers and emergency close remain available when disabled.
-      tags:
-      - Admin
+      description: Durable B1 control with immutable operation receipts and verified media boundaries. Creation and
+        binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+      tags: [Admin]
       x-hhc-visibility: admin
-      x-hhc-callers:
-      - api-gateway
+      x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
       x-required-scopes:
       - cms:recordings:write
-      security:
-      - daprApiToken: []
-        daprCallerAppId: []
-        trustedUserId: []
-        trustedAuthProvider: []
-        trustedScopes: []
-      servers:
-      - url: https://admin.alive.org.tw/api
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
         '200':
           description: BroadcastControl
@@ -6412,72 +5677,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BroadcastControlEnvelope'
-        '400':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '401':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '403':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '404':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '409':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '412':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '422':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '429':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
-        '503':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
+        '400': { $ref: '#/components/responses/BroadcastFailure' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/BroadcastFailure' }
+        '409': { $ref: '#/components/responses/BroadcastFailure' }
+        '412': { $ref: '#/components/responses/BroadcastFailure' }
+        '422': { $ref: '#/components/responses/BroadcastFailure' }
+        '429': { $ref: '#/components/responses/BroadcastFailure' }
+        '503': { $ref: '#/components/responses/BroadcastFailure' }
       parameters:
       - name: recordingId
         in: path
@@ -6502,25 +5710,16 @@ paths:
     post:
       operationId: acknowledgeBroadcastCommand
       summary: acknowledgeBroadcastCommand
-      description: Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure
-        requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED;
-        readers and emergency close remain available when disabled.
-      tags:
-      - Admin
+      description: Durable B1 control with immutable operation receipts and verified media boundaries. Creation and
+        binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+      tags: [Admin]
       x-hhc-visibility: admin
-      x-hhc-callers:
-      - api-gateway
+      x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
       x-required-scopes:
       - cms:recordings:write
-      security:
-      - daprApiToken: []
-        daprCallerAppId: []
-        trustedUserId: []
-        trustedAuthProvider: []
-        trustedScopes: []
-      servers:
-      - url: https://admin.alive.org.tw/api
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
         '202':
           description: BroadcastMutationResult
@@ -6528,72 +5727,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BroadcastMutationResultEnvelope'
-        '400':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '401':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '403':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '404':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '409':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '412':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '422':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '429':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
-        '503':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
+        '400': { $ref: '#/components/responses/BroadcastFailure' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/BroadcastFailure' }
+        '409': { $ref: '#/components/responses/BroadcastFailure' }
+        '412': { $ref: '#/components/responses/BroadcastFailure' }
+        '422': { $ref: '#/components/responses/BroadcastFailure' }
+        '429': { $ref: '#/components/responses/BroadcastFailure' }
+        '503': { $ref: '#/components/responses/BroadcastFailure' }
       parameters:
       - name: recordingId
         in: path
@@ -6617,26 +5759,17 @@ paths:
     post:
       operationId: emergencyCloseBroadcast
       summary: emergencyCloseBroadcast
-      description: Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure
-        requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED;
-        readers and emergency close remain available when disabled.
-      tags:
-      - Admin
+      description: Durable B1 control with immutable operation receipts and verified media boundaries. Creation and
+        binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+      tags: [Admin]
       x-hhc-visibility: admin
-      x-hhc-callers:
-      - api-gateway
+      x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
       x-required-scopes:
       - cms:recordings:write
       - cms:recordings:publish
-      security:
-      - daprApiToken: []
-        daprCallerAppId: []
-        trustedUserId: []
-        trustedAuthProvider: []
-        trustedScopes: []
-      servers:
-      - url: https://admin.alive.org.tw/api
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
         '202':
           description: BroadcastMutationResult
@@ -6644,72 +5777,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BroadcastMutationResultEnvelope'
-        '400':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '401':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '403':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '404':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '409':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '412':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '422':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '429':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
-        '503':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
+        '400': { $ref: '#/components/responses/BroadcastFailure' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/BroadcastFailure' }
+        '409': { $ref: '#/components/responses/BroadcastFailure' }
+        '412': { $ref: '#/components/responses/BroadcastFailure' }
+        '422': { $ref: '#/components/responses/BroadcastFailure' }
+        '429': { $ref: '#/components/responses/BroadcastFailure' }
+        '503': { $ref: '#/components/responses/BroadcastFailure' }
       parameters:
       - name: recordingId
         in: path
@@ -6727,23 +5803,13 @@ paths:
     get:
       operationId: getBroadcastWatch
       summary: getBroadcastWatch
-      description: Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure
-        requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED;
-        readers and emergency close remain available when disabled.
-      tags:
-      - Authenticated
+      description: Durable B1 control with immutable operation receipts and verified media boundaries. Creation and
+        binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+      tags: [Authenticated]
       x-hhc-visibility: authenticated
-      x-hhc-callers:
-      - api-gateway
+      x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
-      security:
-      - daprApiToken: []
-        daprCallerAppId: []
-        trustedUserId: []
-        trustedAuthProvider: []
-        trustedScopes: []
-      servers:
-      - url: https://www.alive.org.tw/api
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       responses:
         '200':
           description: BroadcastWatch
@@ -6751,72 +5817,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BroadcastWatchEnvelope'
-        '400':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '401':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '403':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '404':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '409':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '412':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '422':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '429':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
-        '503':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
+        '400': { $ref: '#/components/responses/BroadcastFailure' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/BroadcastFailure' }
+        '409': { $ref: '#/components/responses/BroadcastFailure' }
+        '412': { $ref: '#/components/responses/BroadcastFailure' }
+        '422': { $ref: '#/components/responses/BroadcastFailure' }
+        '429': { $ref: '#/components/responses/BroadcastFailure' }
+        '503': { $ref: '#/components/responses/BroadcastFailure' }
       parameters:
       - name: recordingId
         in: path
@@ -6828,25 +5837,16 @@ paths:
     post:
       operationId: createBroadcastPreviewAccess
       summary: createBroadcastPreviewAccess
-      description: Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure
-        requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED;
-        readers and emergency close remain available when disabled.
-      tags:
-      - Admin
+      description: Durable B1 control with immutable operation receipts and verified media boundaries. Creation and
+        binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+      tags: [Admin]
       x-hhc-visibility: admin
-      x-hhc-callers:
-      - api-gateway
+      x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
       x-required-scopes:
       - cms:recordings:read
-      security:
-      - daprApiToken: []
-        daprCallerAppId: []
-        trustedUserId: []
-        trustedAuthProvider: []
-        trustedScopes: []
-      servers:
-      - url: https://admin.alive.org.tw/api
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
         '200':
           description: BroadcastPreviewAccess
@@ -6854,72 +5854,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BroadcastPreviewAccessEnvelope'
-        '400':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '401':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '403':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '404':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '409':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '412':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '422':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '429':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
-        '503':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
+        '400': { $ref: '#/components/responses/BroadcastFailure' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/BroadcastFailure' }
+        '409': { $ref: '#/components/responses/BroadcastFailure' }
+        '412': { $ref: '#/components/responses/BroadcastFailure' }
+        '422': { $ref: '#/components/responses/BroadcastFailure' }
+        '429': { $ref: '#/components/responses/BroadcastFailure' }
+        '503': { $ref: '#/components/responses/BroadcastFailure' }
       parameters:
       - name: recordingId
         in: path
@@ -6937,23 +5880,13 @@ paths:
     get:
       operationId: listUpcomingBroadcasts
       summary: List announced upcoming broadcasts
-      description: Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure
-        requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED;
-        readers and emergency close remain available when disabled.
-      tags:
-      - Authenticated
+      description: Durable B1 control with immutable operation receipts and verified media boundaries. Creation and
+        binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+      tags: [Authenticated]
       x-hhc-visibility: authenticated
-      x-hhc-callers:
-      - api-gateway
+      x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
-      security:
-      - daprApiToken: []
-        daprCallerAppId: []
-        trustedUserId: []
-        trustedAuthProvider: []
-        trustedScopes: []
-      servers:
-      - url: https://www.alive.org.tw/api
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       responses:
         '200':
           description: BroadcastWatch
@@ -6961,72 +5894,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BroadcastWatchListEnvelope'
-        '400':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '401':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '403':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '404':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '409':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '412':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '422':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '429':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
-        '503':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
+        '400': { $ref: '#/components/responses/BroadcastFailure' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/BroadcastFailure' }
+        '409': { $ref: '#/components/responses/BroadcastFailure' }
+        '412': { $ref: '#/components/responses/BroadcastFailure' }
+        '422': { $ref: '#/components/responses/BroadcastFailure' }
+        '429': { $ref: '#/components/responses/BroadcastFailure' }
+        '503': { $ref: '#/components/responses/BroadcastFailure' }
       parameters:
       - name: limit
         in: query
@@ -7044,93 +5920,27 @@ paths:
     post:
       operationId: uploadBroadcastCover
       summary: uploadBroadcastCover
-      description: Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure
-        requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED;
-        readers and emergency close remain available when disabled.
-      tags:
-      - Admin
+      description: Durable B1 control with immutable operation receipts and verified media boundaries. Creation and
+        binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+      tags: [Admin]
       x-hhc-visibility: admin
-      x-hhc-callers:
-      - api-gateway
+      x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
       x-required-scopes:
       - cms:recordings:write
       - cms:recordings:publish
-      security:
-      - daprApiToken: []
-        daprCallerAppId: []
-        trustedUserId: []
-        trustedAuthProvider: []
-        trustedScopes: []
-      servers:
-      - url: https://admin.alive.org.tw/api
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
-        '400':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '401':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '403':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '404':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '409':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '412':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '422':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '429':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
-        '503':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
+        '400': { $ref: '#/components/responses/BroadcastFailure' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/BroadcastFailure' }
+        '409': { $ref: '#/components/responses/BroadcastFailure' }
+        '412': { $ref: '#/components/responses/BroadcastFailure' }
+        '422': { $ref: '#/components/responses/BroadcastFailure' }
+        '429': { $ref: '#/components/responses/BroadcastFailure' }
+        '503': { $ref: '#/components/responses/BroadcastFailure' }
         '202':
           description: BroadcastView
           content:
@@ -7165,25 +5975,16 @@ paths:
     get:
       operationId: getBroadcastCoverUpload
       summary: getBroadcastCoverUpload
-      description: Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure
-        requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED;
-        readers and emergency close remain available when disabled.
-      tags:
-      - Admin
+      description: Durable B1 control with immutable operation receipts and verified media boundaries. Creation and
+        binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+      tags: [Admin]
       x-hhc-visibility: admin
-      x-hhc-callers:
-      - api-gateway
+      x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
       x-required-scopes:
       - cms:recordings:read
-      security:
-      - daprApiToken: []
-        daprCallerAppId: []
-        trustedUserId: []
-        trustedAuthProvider: []
-        trustedScopes: []
-      servers:
-      - url: https://admin.alive.org.tw/api
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
         '200':
           description: BroadcastView
@@ -7191,72 +5992,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RecordingCoverUploadEnvelope'
-        '400':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '401':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '403':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '404':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '409':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '412':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '422':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '429':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
-        '503':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
+        '400': { $ref: '#/components/responses/BroadcastFailure' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/BroadcastFailure' }
+        '409': { $ref: '#/components/responses/BroadcastFailure' }
+        '412': { $ref: '#/components/responses/BroadcastFailure' }
+        '422': { $ref: '#/components/responses/BroadcastFailure' }
+        '429': { $ref: '#/components/responses/BroadcastFailure' }
+        '503': { $ref: '#/components/responses/BroadcastFailure' }
       parameters:
       - name: recordingId
         in: path
@@ -7274,25 +6018,16 @@ paths:
     get:
       operationId: getBroadcastCoverContent
       summary: getBroadcastCoverContent
-      description: Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure
-        requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED;
-        readers and emergency close remain available when disabled.
-      tags:
-      - Admin
+      description: Durable B1 control with immutable operation receipts and verified media boundaries. Creation and
+        binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+      tags: [Admin]
       x-hhc-visibility: admin
-      x-hhc-callers:
-      - api-gateway
+      x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
       x-required-scopes:
       - cms:recordings:read
-      security:
-      - daprApiToken: []
-        daprCallerAppId: []
-        trustedUserId: []
-        trustedAuthProvider: []
-        trustedScopes: []
-      servers:
-      - url: https://admin.alive.org.tw/api
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
         '200':
           description: BroadcastView
@@ -7301,72 +6036,15 @@ paths:
               schema:
                 type: string
                 format: binary
-        '400':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '401':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '403':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '404':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '409':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '412':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '422':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '429':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
-        '503':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
+        '400': { $ref: '#/components/responses/BroadcastFailure' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/BroadcastFailure' }
+        '409': { $ref: '#/components/responses/BroadcastFailure' }
+        '412': { $ref: '#/components/responses/BroadcastFailure' }
+        '422': { $ref: '#/components/responses/BroadcastFailure' }
+        '429': { $ref: '#/components/responses/BroadcastFailure' }
+        '503': { $ref: '#/components/responses/BroadcastFailure' }
       parameters:
       - name: recordingId
         in: path
@@ -7384,25 +6062,16 @@ paths:
     get:
       operationId: getSelectedBroadcastCoverContent
       summary: getSelectedBroadcastCoverContent
-      description: Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure
-        requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED;
-        readers and emergency close remain available when disabled.
-      tags:
-      - Admin
+      description: Durable B1 control with immutable operation receipts and verified media boundaries. Creation and
+        binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+      tags: [Admin]
       x-hhc-visibility: admin
-      x-hhc-callers:
-      - api-gateway
+      x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
       x-required-scopes:
       - cms:recordings:read
-      security:
-      - daprApiToken: []
-        daprCallerAppId: []
-        trustedUserId: []
-        trustedAuthProvider: []
-        trustedScopes: []
-      servers:
-      - url: https://admin.alive.org.tw/api
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
       responses:
         '200':
           description: BroadcastView
@@ -7411,72 +6080,15 @@ paths:
               schema:
                 type: string
                 format: binary
-        '400':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '401':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '403':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '404':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '409':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '412':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '422':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '429':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
-        '503':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
+        '400': { $ref: '#/components/responses/BroadcastFailure' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/BroadcastFailure' }
+        '409': { $ref: '#/components/responses/BroadcastFailure' }
+        '412': { $ref: '#/components/responses/BroadcastFailure' }
+        '422': { $ref: '#/components/responses/BroadcastFailure' }
+        '429': { $ref: '#/components/responses/BroadcastFailure' }
+        '503': { $ref: '#/components/responses/BroadcastFailure' }
       parameters:
       - name: recordingId
         in: path
@@ -7488,23 +6100,13 @@ paths:
     get:
       operationId: getMemberBroadcastCover
       summary: Read the selected announced broadcast cover
-      description: Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure
-        requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED;
-        readers and emergency close remain available when disabled.
-      tags:
-      - Authenticated
+      description: Durable B1 control with immutable operation receipts and verified media boundaries. Creation and
+        binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+      tags: [Authenticated]
       x-hhc-visibility: authenticated
-      x-hhc-callers:
-      - api-gateway
+      x-hhc-callers: [api-gateway]
       x-hhc-cache: private, no-store
-      security:
-      - daprApiToken: []
-        daprCallerAppId: []
-        trustedUserId: []
-        trustedAuthProvider: []
-        trustedScopes: []
-      servers:
-      - url: https://www.alive.org.tw/api
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
       responses:
         '200':
           description: BroadcastWatch
@@ -7513,72 +6115,15 @@ paths:
               schema:
                 type: string
                 format: binary
-        '400':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '401':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '403':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '404':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '409':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '412':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '422':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-        '429':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
-        '503':
-          description: B1 error; retry 429/503 using the original operation key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BroadcastErrorEnvelope'
-          headers:
-            Retry-After:
-              description: Retry delay in seconds
-              schema:
-                type: integer
-                minimum: 1
+        '400': { $ref: '#/components/responses/BroadcastFailure' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/BroadcastFailure' }
+        '409': { $ref: '#/components/responses/BroadcastFailure' }
+        '412': { $ref: '#/components/responses/BroadcastFailure' }
+        '422': { $ref: '#/components/responses/BroadcastFailure' }
+        '429': { $ref: '#/components/responses/BroadcastFailure' }
+        '503': { $ref: '#/components/responses/BroadcastFailure' }
       parameters:
       - name: recordingId
         in: path
@@ -7683,6 +6228,15 @@ components:
         application/json:
           schema: { $ref: '#/components/schemas/TranslationPreviewInput' }
   responses:
+    BroadcastFailure:
+      description: B1 operation rejected or dependency unavailable; failed responses never prove a state transition.
+      headers:
+        Retry-After:
+          description: Retry delay for unavailable dependencies.
+          schema: { type: integer, minimum: 1 }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/BroadcastErrorEnvelope' }
     StatementDismissal:
       description: Owner-scoped statement preference; Cache-Control private, no-store
       content:
@@ -7910,6 +6464,790 @@ components:
       description: Public revalidation policy for Site Layout projections.
       schema: { type: string, const: 'public, max-age=30, must-revalidate' }
   schemas:
+    BroadcastPolicy:
+      type: object
+      additionalProperties: false
+      required:
+      - autoStart
+      - autoEnd
+      - autoPublish
+      properties:
+        autoStart:
+          type: boolean
+        autoEnd:
+          type: boolean
+        autoPublish:
+          type: boolean
+    BroadcastBinding:
+      type: object
+      additionalProperties: false
+      required:
+      - captureId
+      - epoch
+      - actorId
+      properties:
+        captureId:
+          type: string
+          pattern: ^[a-f0-9]{32}$
+        epoch:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        actorId:
+          type: string
+          format: uuid
+    BroadcastBoundaries:
+      type: object
+      additionalProperties: false
+      required:
+      - startSequence
+      - endSequenceExclusive
+      - revision
+      properties:
+        startSequence:
+          anyOf:
+          - type: integer
+            minimum: 0
+            maximum: 2147483647
+          - type: 'null'
+        endSequenceExclusive:
+          anyOf:
+          - type: integer
+            minimum: 0
+            maximum: 2147483647
+          - type: 'null'
+        revision:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+    BroadcastCommand:
+      type: object
+      additionalProperties: false
+      required:
+      - commandId
+      - kind
+      - captureId
+      - epoch
+      - requestedAt
+      - status
+      - boundarySequence
+      properties:
+        commandId:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum:
+          - start
+          - end
+        captureId:
+          type: string
+          pattern: ^[a-f0-9]{32}$
+        epoch:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        requestedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+          - pending
+          - acknowledged
+          - cancelled
+          - rejected
+        boundarySequence:
+          anyOf:
+          - type: integer
+            minimum: 0
+            maximum: 2147483647
+          - type: 'null'
+    BroadcastHealth:
+      type: object
+      additionalProperties: false
+      required:
+      - state
+      - lastConfirmedAt
+      - lastPublishedAt
+      - verifiedEndSeconds
+      - queuedObjects
+      - reason
+      properties:
+        state:
+          type: string
+          enum:
+          - waiting
+          - healthy
+          - interrupted
+          - recovering
+        lastConfirmedAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+        lastPublishedAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+        verifiedEndSeconds:
+          anyOf:
+          - type: number
+            minimum: 0
+          - type: 'null'
+        queuedObjects:
+          anyOf:
+          - type: integer
+            minimum: 0
+          - type: 'null'
+        reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+    BroadcastArchive:
+      type: object
+      additionalProperties: false
+      required:
+      - state
+      - reason
+      properties:
+        state:
+          type: string
+          enum:
+          - none
+          - processing
+          - ready
+          - published
+          - failed
+        reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+    BroadcastView:
+      type: object
+      additionalProperties: false
+      required:
+      - recordingId
+      - revision
+      - phase
+      - announced
+      - scheduledAt
+      - title
+      - description
+      - policy
+      - cover
+      - binding
+      - boundaries
+      - health
+      - pendingCommand
+      - archive
+      properties:
+        recordingId:
+          type: string
+          format: uuid
+        revision:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        phase:
+          type: string
+          enum:
+          - draft
+          - scheduled
+          - preview
+          - start_pending
+          - live
+          - end_pending
+          - processing
+          - archived
+          - cancelled
+          - failed
+        announced:
+          type: boolean
+        scheduledAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 180
+        description:
+          $ref: '#/components/schemas/RecordingDescription'
+        policy:
+          $ref: '#/components/schemas/BroadcastPolicy'
+        cover:
+          $ref: '#/components/schemas/LiveCoverSettings'
+        binding:
+          anyOf:
+          - $ref: '#/components/schemas/BroadcastBinding'
+          - type: 'null'
+        boundaries:
+          $ref: '#/components/schemas/BroadcastBoundaries'
+        health:
+          $ref: '#/components/schemas/BroadcastHealth'
+        pendingCommand:
+          anyOf:
+          - $ref: '#/components/schemas/BroadcastCommand'
+          - type: 'null'
+        archive:
+          $ref: '#/components/schemas/BroadcastArchive'
+    BroadcastMutationInput:
+      type: object
+      additionalProperties: false
+      required:
+      - operationKey
+      - expectedRevision
+      properties:
+        operationKey:
+          type: string
+          pattern: ^[a-zA-Z0-9._:-]{1,128}$
+        expectedRevision:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+    BroadcastCreateInput:
+      type: object
+      additionalProperties: false
+      required:
+      - operationKey
+      - title
+      - description
+      - scheduledAt
+      - policy
+      properties:
+        operationKey:
+          type: string
+          pattern: ^[a-zA-Z0-9._:-]{1,128}$
+        title:
+          type: string
+          minLength: 1
+          maxLength: 180
+        description:
+          $ref: '#/components/schemas/RecordingDescription'
+        scheduledAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+        policy:
+          $ref: '#/components/schemas/BroadcastPolicy'
+        cover:
+          $ref: '#/components/schemas/LiveCoverSelection'
+    BroadcastUpdateInput:
+      type: object
+      additionalProperties: false
+      required:
+      - operationKey
+      - expectedRevision
+      properties:
+        operationKey:
+          type: string
+          pattern: ^[a-zA-Z0-9._:-]{1,128}$
+        expectedRevision:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        title:
+          type: string
+          minLength: 1
+          maxLength: 180
+        description:
+          $ref: '#/components/schemas/RecordingDescription'
+        scheduledAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+        policy:
+          $ref: '#/components/schemas/BroadcastPolicy'
+        cover:
+          $ref: '#/components/schemas/LiveCoverSelection'
+      minProperties: 3
+    BroadcastBindInput:
+      type: object
+      additionalProperties: false
+      required:
+      - operationKey
+      - expectedRevision
+      - protocolVersion
+      properties:
+        operationKey:
+          type: string
+          pattern: ^[a-zA-Z0-9._:-]{1,128}$
+        expectedRevision:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        protocolVersion:
+          type: string
+          minLength: 1
+          maxLength: 64
+    BroadcastMarkerAckInput:
+      type: object
+      additionalProperties: false
+      required:
+      - operationKey
+      - captureId
+      - epoch
+      - boundarySequence
+      properties:
+        operationKey:
+          type: string
+          pattern: ^[a-zA-Z0-9._:-]{1,128}$
+        captureId:
+          type: string
+          pattern: ^[a-f0-9]{32}$
+        epoch:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        boundarySequence:
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+    BroadcastEmergencyCloseInput:
+      type: object
+      additionalProperties: false
+      required:
+      - operationKey
+      - expectedRevision
+      - reason
+      properties:
+        operationKey:
+          type: string
+          pattern: ^[a-zA-Z0-9._:-]{1,128}$
+        expectedRevision:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+    BroadcastPreviewInput:
+      type: object
+      additionalProperties: false
+      required:
+      - captureId
+      - epoch
+      properties:
+        captureId:
+          type: string
+          pattern: ^[a-f0-9]{32}$
+        epoch:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+    BroadcastReceipt:
+      type: object
+      additionalProperties: false
+      required:
+      - operationKey
+      - operation
+      - state
+      properties:
+        operationKey:
+          type: string
+          pattern: ^[a-zA-Z0-9._:-]{1,128}$
+        operation:
+          type: string
+          enum:
+          - create
+          - update
+          - announce
+          - cancel
+          - bind
+          - start
+          - end
+          - cancel-command
+          - ack
+          - emergency-close
+        state:
+          type: string
+          enum:
+          - accepted
+          - completed
+          - rejected
+        commandId:
+          type: string
+          format: uuid
+    BroadcastMutationResult:
+      type: object
+      additionalProperties: false
+      required:
+      - broadcast
+      - receipt
+      properties:
+        broadcast:
+          $ref: '#/components/schemas/BroadcastView'
+        receipt:
+          $ref: '#/components/schemas/BroadcastReceipt'
+    BroadcastList:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      - nextCursor
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BroadcastView'
+        nextCursor:
+          anyOf:
+          - type: string
+            minLength: 1
+          - type: 'null'
+    BroadcastControl:
+      type: object
+      additionalProperties: false
+      required:
+      - revision
+      - phase
+      - pendingCommand
+      properties:
+        revision:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        phase:
+          type: string
+          enum:
+          - draft
+          - scheduled
+          - preview
+          - start_pending
+          - live
+          - end_pending
+          - processing
+          - archived
+          - cancelled
+          - failed
+        pendingCommand:
+          anyOf:
+          - $ref: '#/components/schemas/BroadcastCommand'
+          - type: 'null'
+    BroadcastCapabilities:
+      type: object
+      additionalProperties: false
+      required:
+      - versions
+      - maxActiveCaptures
+      - markerMode
+      properties:
+        versions:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            type: string
+            enum:
+            - b1-2026-10-10.rc1
+        maxActiveCaptures:
+          type: integer
+          enum:
+          - 1
+        markerMode:
+          type: string
+          enum:
+          - next-common-segment
+    BroadcastWatch:
+      type: object
+      additionalProperties: false
+      required:
+      - recordingId
+      - title
+      - description
+      - view
+      - scheduledAt
+      - serverNow
+      - cover
+      - stateRevision
+      properties:
+        recordingId:
+          type: string
+          format: uuid
+        title:
+          type: string
+          minLength: 1
+          maxLength: 180
+        description:
+          $ref: '#/components/schemas/RecordingDescription'
+        view:
+          type: string
+          enum:
+          - waiting
+          - live
+          - processing
+          - vod
+          - cancelled
+          - expired
+          - unavailable
+        scheduledAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+        serverNow:
+          type: string
+          format: date-time
+        cover:
+          anyOf:
+          - type: object
+            additionalProperties: false
+            required:
+            - revision
+            - contentPath
+            properties:
+              revision:
+                type: string
+                minLength: 1
+              contentPath:
+                type: string
+                pattern: ^/api/member/
+          - type: 'null'
+        stateRevision:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        recording:
+          anyOf:
+          - $ref: '#/components/schemas/MemberRecording'
+          - type: 'null'
+        live:
+          anyOf:
+          - $ref: '#/components/schemas/MemberLiveRecording'
+          - type: 'null'
+        mediaStartSeconds:
+          anyOf:
+          - type: number
+            minimum: 0
+          - type: 'null'
+        durationSeconds:
+          anyOf:
+          - type: number
+            minimum: 0
+          - type: 'null'
+    BroadcastPreviewAccess:
+      type: object
+      additionalProperties: false
+      required:
+      - recordingId
+      - captureId
+      - epoch
+      - purpose
+      - playbackScopeId
+      - mediaUrl
+      - exchangeCredential
+      - issuedAt
+      - expiresAt
+      properties:
+        recordingId:
+          type: string
+          format: uuid
+        captureId:
+          type: string
+          pattern: ^[a-f0-9]{32}$
+        epoch:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        purpose:
+          type: string
+          enum:
+          - staff-preview
+        playbackScopeId:
+          type: string
+          format: uuid
+        mediaUrl:
+          type: string
+          format: uri
+        exchangeCredential:
+          type: string
+          minLength: 1
+        issuedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+    BroadcastErrorEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+      - data
+      - meta
+      - error
+      properties:
+        data:
+          type: 'null'
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          type: object
+          additionalProperties: false
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              enum:
+              - broadcast_invalid
+              - broadcast_not_found
+              - broadcast_state_conflict
+              - broadcast_already_bound
+              - broadcast_active_limit
+              - broadcast_epoch_mismatch
+              - broadcast_boundary_conflict
+              - broadcast_operation_conflict
+              - broadcast_revision_conflict
+              - broadcast_protocol_unsupported
+              - unauthorized
+              - forbidden
+              - rate_limited
+              - unavailable
+            message:
+              type: string
+    BroadcastViewEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+      - data
+      - meta
+      - error
+      properties:
+        data:
+          $ref: '#/components/schemas/BroadcastView'
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          type: 'null'
+    BroadcastMutationResultEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+      - data
+      - meta
+      - error
+      properties:
+        data:
+          $ref: '#/components/schemas/BroadcastMutationResult'
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          type: 'null'
+    BroadcastListEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+      - data
+      - meta
+      - error
+      properties:
+        data:
+          $ref: '#/components/schemas/BroadcastList'
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          type: 'null'
+    BroadcastControlEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+      - data
+      - meta
+      - error
+      properties:
+        data:
+          $ref: '#/components/schemas/BroadcastControl'
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          type: 'null'
+    BroadcastCapabilitiesEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+      - data
+      - meta
+      - error
+      properties:
+        data:
+          $ref: '#/components/schemas/BroadcastCapabilities'
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          type: 'null'
+    BroadcastWatchEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+      - data
+      - meta
+      - error
+      properties:
+        data:
+          $ref: '#/components/schemas/BroadcastWatch'
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          type: 'null'
+    BroadcastPreviewAccessEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+      - data
+      - meta
+      - error
+      properties:
+        data:
+          $ref: '#/components/schemas/BroadcastPreviewAccess'
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          type: 'null'
+    BroadcastWatchList:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      - nextCursor
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BroadcastWatch'
+        nextCursor:
+          anyOf:
+          - type: string
+          - type: 'null'
+    BroadcastWatchListEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+      - data
+      - meta
+      - error
+      properties:
+        data:
+          $ref: '#/components/schemas/BroadcastWatchList'
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          type: 'null'
     LiveCoverSelection:
       oneOf:
         - type: object
@@ -12864,792 +12202,3 @@ components:
         data: { $ref: '#/components/schemas/ActiveStatement' }
         meta: { type: object, additionalProperties: true }
         error: { type: ['null'] }
-
-    BroadcastPolicy:
-      type: object
-      additionalProperties: false
-      required:
-      - autoStart
-      - autoEnd
-      - autoPublish
-      properties:
-        autoStart:
-          type: boolean
-        autoEnd:
-          type: boolean
-        autoPublish:
-          type: boolean
-    BroadcastBinding:
-      type: object
-      additionalProperties: false
-      required:
-      - captureId
-      - epoch
-      - actorId
-      properties:
-        captureId:
-          type: string
-          pattern: ^[a-f0-9]{32}$
-        epoch:
-          type: integer
-          minimum: 1
-          maximum: 9007199254740991
-        actorId:
-          type: string
-          format: uuid
-    BroadcastBoundaries:
-      type: object
-      additionalProperties: false
-      required:
-      - startSequence
-      - endSequenceExclusive
-      - revision
-      properties:
-        startSequence:
-          anyOf:
-          - type: integer
-            minimum: 0
-            maximum: 2147483647
-          - type: 'null'
-        endSequenceExclusive:
-          anyOf:
-          - type: integer
-            minimum: 0
-            maximum: 2147483647
-          - type: 'null'
-        revision:
-          type: integer
-          minimum: 1
-          maximum: 9007199254740991
-    BroadcastCommand:
-      type: object
-      additionalProperties: false
-      required:
-      - commandId
-      - kind
-      - captureId
-      - epoch
-      - requestedAt
-      - status
-      - boundarySequence
-      properties:
-        commandId:
-          type: string
-          format: uuid
-        kind:
-          type: string
-          enum:
-          - start
-          - end
-        captureId:
-          type: string
-          pattern: ^[a-f0-9]{32}$
-        epoch:
-          type: integer
-          minimum: 1
-          maximum: 9007199254740991
-        requestedAt:
-          type: string
-          format: date-time
-        status:
-          type: string
-          enum:
-          - pending
-          - acknowledged
-          - cancelled
-          - rejected
-        boundarySequence:
-          anyOf:
-          - type: integer
-            minimum: 0
-            maximum: 2147483647
-          - type: 'null'
-    BroadcastHealth:
-      type: object
-      additionalProperties: false
-      required:
-      - state
-      - lastConfirmedAt
-      - lastPublishedAt
-      - verifiedEndSeconds
-      - queuedObjects
-      - reason
-      properties:
-        state:
-          type: string
-          enum:
-          - waiting
-          - healthy
-          - interrupted
-          - recovering
-        lastConfirmedAt:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-        lastPublishedAt:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-        verifiedEndSeconds:
-          anyOf:
-          - type: number
-            minimum: 0
-          - type: 'null'
-        queuedObjects:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
-        reason:
-          anyOf:
-          - type: string
-          - type: 'null'
-    BroadcastArchive:
-      type: object
-      additionalProperties: false
-      required:
-      - state
-      - reason
-      properties:
-        state:
-          type: string
-          enum:
-          - none
-          - processing
-          - ready
-          - published
-          - failed
-        reason:
-          anyOf:
-          - type: string
-          - type: 'null'
-    BroadcastView:
-      type: object
-      additionalProperties: false
-      required:
-      - recordingId
-      - revision
-      - phase
-      - announced
-      - scheduledAt
-      - title
-      - description
-      - policy
-      - cover
-      - binding
-      - boundaries
-      - health
-      - pendingCommand
-      - archive
-      properties:
-        recordingId:
-          type: string
-          format: uuid
-        revision:
-          type: integer
-          minimum: 1
-          maximum: 9007199254740991
-        phase:
-          type: string
-          enum:
-          - draft
-          - scheduled
-          - preview
-          - start_pending
-          - live
-          - end_pending
-          - processing
-          - archived
-          - cancelled
-          - failed
-        announced:
-          type: boolean
-        scheduledAt:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-        title:
-          type: string
-          minLength: 1
-          maxLength: 180
-        description:
-          $ref: '#/components/schemas/RecordingDescription'
-        policy:
-          $ref: '#/components/schemas/BroadcastPolicy'
-        cover:
-          $ref: '#/components/schemas/LiveCoverSettings'
-        binding:
-          anyOf:
-          - $ref: '#/components/schemas/BroadcastBinding'
-          - type: 'null'
-        boundaries:
-          $ref: '#/components/schemas/BroadcastBoundaries'
-        health:
-          $ref: '#/components/schemas/BroadcastHealth'
-        pendingCommand:
-          anyOf:
-          - $ref: '#/components/schemas/BroadcastCommand'
-          - type: 'null'
-        archive:
-          $ref: '#/components/schemas/BroadcastArchive'
-    BroadcastMutationInput:
-      type: object
-      additionalProperties: false
-      required:
-      - operationKey
-      - expectedRevision
-      properties:
-        operationKey:
-          type: string
-          pattern: ^[a-zA-Z0-9._:-]{1,128}$
-        expectedRevision:
-          type: integer
-          minimum: 1
-          maximum: 9007199254740991
-    BroadcastCreateInput:
-      type: object
-      additionalProperties: false
-      required:
-      - operationKey
-      - title
-      - description
-      - scheduledAt
-      - policy
-      properties:
-        operationKey:
-          type: string
-          pattern: ^[a-zA-Z0-9._:-]{1,128}$
-        title:
-          type: string
-          minLength: 1
-          maxLength: 180
-        description:
-          $ref: '#/components/schemas/RecordingDescription'
-        scheduledAt:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-        policy:
-          $ref: '#/components/schemas/BroadcastPolicy'
-        cover:
-          $ref: '#/components/schemas/LiveCoverSelection'
-    BroadcastUpdateInput:
-      type: object
-      additionalProperties: false
-      required:
-      - operationKey
-      - expectedRevision
-      properties:
-        operationKey:
-          type: string
-          pattern: ^[a-zA-Z0-9._:-]{1,128}$
-        expectedRevision:
-          type: integer
-          minimum: 1
-          maximum: 9007199254740991
-        title:
-          type: string
-          minLength: 1
-          maxLength: 180
-        description:
-          $ref: '#/components/schemas/RecordingDescription'
-        scheduledAt:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-        policy:
-          $ref: '#/components/schemas/BroadcastPolicy'
-        cover:
-          $ref: '#/components/schemas/LiveCoverSelection'
-      minProperties: 3
-    BroadcastBindInput:
-      type: object
-      additionalProperties: false
-      required:
-      - operationKey
-      - expectedRevision
-      - protocolVersion
-      properties:
-        operationKey:
-          type: string
-          pattern: ^[a-zA-Z0-9._:-]{1,128}$
-        expectedRevision:
-          type: integer
-          minimum: 1
-          maximum: 9007199254740991
-        protocolVersion:
-          type: string
-          minLength: 1
-          maxLength: 64
-    BroadcastMarkerAckInput:
-      type: object
-      additionalProperties: false
-      required:
-      - operationKey
-      - captureId
-      - epoch
-      - boundarySequence
-      properties:
-        operationKey:
-          type: string
-          pattern: ^[a-zA-Z0-9._:-]{1,128}$
-        captureId:
-          type: string
-          pattern: ^[a-f0-9]{32}$
-        epoch:
-          type: integer
-          minimum: 1
-          maximum: 9007199254740991
-        boundarySequence:
-          type: integer
-          minimum: 0
-          maximum: 2147483647
-    BroadcastEmergencyCloseInput:
-      type: object
-      additionalProperties: false
-      required:
-      - operationKey
-      - expectedRevision
-      - reason
-      properties:
-        operationKey:
-          type: string
-          pattern: ^[a-zA-Z0-9._:-]{1,128}$
-        expectedRevision:
-          type: integer
-          minimum: 1
-          maximum: 9007199254740991
-        reason:
-          type: string
-          minLength: 1
-          maxLength: 500
-    BroadcastPreviewInput:
-      type: object
-      additionalProperties: false
-      required:
-      - captureId
-      - epoch
-      properties:
-        captureId:
-          type: string
-          pattern: ^[a-f0-9]{32}$
-        epoch:
-          type: integer
-          minimum: 1
-          maximum: 9007199254740991
-    BroadcastReceipt:
-      type: object
-      additionalProperties: false
-      required:
-      - operationKey
-      - operation
-      - state
-      properties:
-        operationKey:
-          type: string
-          pattern: ^[a-zA-Z0-9._:-]{1,128}$
-        operation:
-          type: string
-          enum:
-          - create
-          - update
-          - announce
-          - cancel
-          - bind
-          - start
-          - end
-          - cancel-command
-          - ack
-          - emergency-close
-        state:
-          type: string
-          enum:
-          - accepted
-          - completed
-          - rejected
-        commandId:
-          type: string
-          format: uuid
-    BroadcastMutationResult:
-      type: object
-      additionalProperties: false
-      required:
-      - broadcast
-      - receipt
-      properties:
-        broadcast:
-          $ref: '#/components/schemas/BroadcastView'
-        receipt:
-          $ref: '#/components/schemas/BroadcastReceipt'
-    BroadcastList:
-      type: object
-      additionalProperties: false
-      required:
-      - items
-      - nextCursor
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/BroadcastView'
-        nextCursor:
-          anyOf:
-          - type: string
-            minLength: 1
-          - type: 'null'
-    BroadcastControl:
-      type: object
-      additionalProperties: false
-      required:
-      - revision
-      - phase
-      - pendingCommand
-      properties:
-        revision:
-          type: integer
-          minimum: 1
-          maximum: 9007199254740991
-        phase:
-          type: string
-          enum:
-          - draft
-          - scheduled
-          - preview
-          - start_pending
-          - live
-          - end_pending
-          - processing
-          - archived
-          - cancelled
-          - failed
-        pendingCommand:
-          anyOf:
-          - $ref: '#/components/schemas/BroadcastCommand'
-          - type: 'null'
-    BroadcastCapabilities:
-      type: object
-      additionalProperties: false
-      required:
-      - versions
-      - maxActiveCaptures
-      - markerMode
-      properties:
-        versions:
-          type: array
-          minItems: 1
-          uniqueItems: true
-          items:
-            type: string
-            enum:
-            - b1-2026-10-10.rc1
-        maxActiveCaptures:
-          type: integer
-          enum:
-          - 1
-        markerMode:
-          type: string
-          enum:
-          - next-common-segment
-    BroadcastWatch:
-      type: object
-      additionalProperties: false
-      required:
-      - recordingId
-      - title
-      - description
-      - view
-      - scheduledAt
-      - serverNow
-      - cover
-      - stateRevision
-      - recording
-      - live
-      - mediaStartSeconds
-      - durationSeconds
-      properties:
-        recordingId:
-          type: string
-          format: uuid
-        title:
-          type: string
-          minLength: 1
-          maxLength: 180
-        description:
-          $ref: '#/components/schemas/RecordingDescription'
-        view:
-          type: string
-          enum:
-          - waiting
-          - live
-          - processing
-          - vod
-          - cancelled
-          - expired
-          - unavailable
-        scheduledAt:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-        serverNow:
-          type: string
-          format: date-time
-        cover:
-          anyOf:
-          - type: object
-            additionalProperties: false
-            required:
-            - revision
-            - contentPath
-            properties:
-              revision:
-                type: string
-                minLength: 1
-              contentPath:
-                type: string
-                pattern: ^/api/member/
-          - type: 'null'
-        stateRevision:
-          type: integer
-          minimum: 1
-          maximum: 9007199254740991
-        recording:
-          anyOf:
-          - $ref: '#/components/schemas/MemberRecording'
-          - type: 'null'
-        live:
-          anyOf:
-          - $ref: '#/components/schemas/MemberLiveRecording'
-          - type: 'null'
-        mediaStartSeconds:
-          anyOf:
-          - type: number
-            minimum: 0
-          - type: 'null'
-        durationSeconds:
-          anyOf:
-          - type: number
-            minimum: 0
-          - type: 'null'
-    BroadcastPreviewAccess:
-      type: object
-      additionalProperties: false
-      required:
-      - recordingId
-      - captureId
-      - epoch
-      - purpose
-      - playbackScopeId
-      - mediaUrl
-      - exchangeCredential
-      - issuedAt
-      - expiresAt
-      properties:
-        recordingId:
-          type: string
-          format: uuid
-        captureId:
-          type: string
-          pattern: ^[a-f0-9]{32}$
-        epoch:
-          type: integer
-          minimum: 1
-          maximum: 9007199254740991
-        purpose:
-          type: string
-          enum:
-          - staff-preview
-        playbackScopeId:
-          type: string
-          format: uuid
-        mediaUrl:
-          type: string
-          format: uri
-        exchangeCredential:
-          type: string
-          minLength: 1
-        issuedAt:
-          type: string
-          format: date-time
-        expiresAt:
-          type: string
-          format: date-time
-    BroadcastErrorEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-      - data
-      - meta
-      - error
-      properties:
-        data:
-          type: 'null'
-        meta:
-          type: object
-          additionalProperties: true
-        error:
-          type: object
-          additionalProperties: false
-          required:
-          - code
-          - message
-          properties:
-            code:
-              type: string
-              enum:
-              - broadcast_invalid
-              - broadcast_not_found
-              - broadcast_state_conflict
-              - broadcast_already_bound
-              - broadcast_active_limit
-              - broadcast_epoch_mismatch
-              - broadcast_boundary_conflict
-              - broadcast_operation_conflict
-              - broadcast_revision_conflict
-              - broadcast_protocol_unsupported
-              - unauthorized
-              - forbidden
-              - rate_limited
-              - unavailable
-            message:
-              type: string
-    BroadcastViewEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-      - data
-      - meta
-      - error
-      properties:
-        data:
-          $ref: '#/components/schemas/BroadcastView'
-        meta:
-          type: object
-          additionalProperties: true
-        error:
-          type: 'null'
-    BroadcastMutationResultEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-      - data
-      - meta
-      - error
-      properties:
-        data:
-          $ref: '#/components/schemas/BroadcastMutationResult'
-        meta:
-          type: object
-          additionalProperties: true
-        error:
-          type: 'null'
-    BroadcastListEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-      - data
-      - meta
-      - error
-      properties:
-        data:
-          $ref: '#/components/schemas/BroadcastList'
-        meta:
-          type: object
-          additionalProperties: true
-        error:
-          type: 'null'
-    BroadcastControlEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-      - data
-      - meta
-      - error
-      properties:
-        data:
-          $ref: '#/components/schemas/BroadcastControl'
-        meta:
-          type: object
-          additionalProperties: true
-        error:
-          type: 'null'
-    BroadcastCapabilitiesEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-      - data
-      - meta
-      - error
-      properties:
-        data:
-          $ref: '#/components/schemas/BroadcastCapabilities'
-        meta:
-          type: object
-          additionalProperties: true
-        error:
-          type: 'null'
-    BroadcastWatchEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-      - data
-      - meta
-      - error
-      properties:
-        data:
-          $ref: '#/components/schemas/BroadcastWatch'
-        meta:
-          type: object
-          additionalProperties: true
-        error:
-          type: 'null'
-    BroadcastPreviewAccessEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-      - data
-      - meta
-      - error
-      properties:
-        data:
-          $ref: '#/components/schemas/BroadcastPreviewAccess'
-        meta:
-          type: object
-          additionalProperties: true
-        error:
-          type: 'null'
-    BroadcastWatchList:
-      type: object
-      additionalProperties: false
-      required:
-      - items
-      - nextCursor
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/BroadcastWatch'
-        nextCursor:
-          anyOf:
-          - type: string
-          - type: 'null'
-    BroadcastWatchListEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-      - data
-      - meta
-      - error
-      properties:
-        data:
-          $ref: '#/components/schemas/BroadcastWatchList'
-        meta:
-          type: object
-          additionalProperties: true
-        error:
-          type: 'null'

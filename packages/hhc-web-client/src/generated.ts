@@ -1506,7 +1506,7 @@ export interface paths {
         put?: never;
         /**
          * Complete bulletin upload
-         * @description Replacing PDF bytes does not overwrite Online Local or publication. Changed canonical title or subtitle forks only the affected Online Local for fresh layout validation; re-extraction is a separate action producing Incoming.
+         * @description When BULLETIN_AUTO_EXTRACTION_ENABLED is enabled, from issue 1739, general zh-Hant first and replacement uploads durably request online extraction after ownership, PDF MIME, checksum and clean scan verification. Closing the browser does not cancel conversion. Extraction does not publish or overwrite authored Local; an existing document receives Incoming for comparison. Other editions and earlier PDFs retain their existing upload flow. Changed canonical title or subtitle forks only the affected Online Local for fresh layout validation.
          */
         post: operations["completeBulletinUpload"];
         delete?: never;
@@ -2767,7 +2767,7 @@ export interface paths {
         };
         /**
          * getBroadcastCapabilities
-         * @description Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED; readers and emergency close remain available when disabled.
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
          */
         get: operations["getBroadcastCapabilities"];
         put?: never;
@@ -2787,13 +2787,13 @@ export interface paths {
         };
         /**
          * listBroadcasts
-         * @description Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED; readers and emergency close remain available when disabled.
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
          */
         get: operations["listBroadcasts"];
         put?: never;
         /**
          * createBroadcast
-         * @description Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED; readers and emergency close remain available when disabled.
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
          */
         post: operations["createBroadcast"];
         delete?: never;
@@ -2811,7 +2811,7 @@ export interface paths {
         };
         /**
          * getBroadcast
-         * @description Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED; readers and emergency close remain available when disabled.
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
          */
         get: operations["getBroadcast"];
         put?: never;
@@ -2821,7 +2821,7 @@ export interface paths {
         head?: never;
         /**
          * updateBroadcast
-         * @description Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED; readers and emergency close remain available when disabled.
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
          */
         patch: operations["updateBroadcast"];
         trace?: never;
@@ -2837,7 +2837,7 @@ export interface paths {
         put?: never;
         /**
          * announceBroadcast
-         * @description Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED; readers and emergency close remain available when disabled.
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
          */
         post: operations["announceBroadcast"];
         delete?: never;
@@ -2857,7 +2857,7 @@ export interface paths {
         put?: never;
         /**
          * cancelBroadcast
-         * @description Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED; readers and emergency close remain available when disabled.
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
          */
         post: operations["cancelBroadcast"];
         delete?: never;
@@ -2877,7 +2877,7 @@ export interface paths {
         put?: never;
         /**
          * bindBroadcast
-         * @description Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED; readers and emergency close remain available when disabled.
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
          */
         post: operations["bindBroadcast"];
         delete?: never;
@@ -2897,7 +2897,7 @@ export interface paths {
         put?: never;
         /**
          * startBroadcast
-         * @description Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED; readers and emergency close remain available when disabled.
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
          */
         post: operations["startBroadcast"];
         delete?: never;
@@ -2917,7 +2917,7 @@ export interface paths {
         put?: never;
         /**
          * endBroadcast
-         * @description Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED; readers and emergency close remain available when disabled.
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
          */
         post: operations["endBroadcast"];
         delete?: never;
@@ -2937,7 +2937,7 @@ export interface paths {
         put?: never;
         /**
          * cancelBroadcastCommand
-         * @description Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED; readers and emergency close remain available when disabled.
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
          */
         post: operations["cancelBroadcastCommand"];
         delete?: never;
@@ -2955,7 +2955,7 @@ export interface paths {
         };
         /**
          * getBroadcastControl
-         * @description Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED; readers and emergency close remain available when disabled.
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
          */
         get: operations["getBroadcastControl"];
         put?: never;
@@ -2977,7 +2977,7 @@ export interface paths {
         put?: never;
         /**
          * acknowledgeBroadcastCommand
-         * @description Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED; readers and emergency close remain available when disabled.
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
          */
         post: operations["acknowledgeBroadcastCommand"];
         delete?: never;
@@ -2997,7 +2997,7 @@ export interface paths {
         put?: never;
         /**
          * emergencyCloseBroadcast
-         * @description Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED; readers and emergency close remain available when disabled.
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
          */
         post: operations["emergencyCloseBroadcast"];
         delete?: never;
@@ -3015,7 +3015,7 @@ export interface paths {
         };
         /**
          * getBroadcastWatch
-         * @description Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED; readers and emergency close remain available when disabled.
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
          */
         get: operations["getBroadcastWatch"];
         put?: never;
@@ -3037,7 +3037,7 @@ export interface paths {
         put?: never;
         /**
          * createBroadcastPreviewAccess
-         * @description Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED; readers and emergency close remain available when disabled.
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
          */
         post: operations["createBroadcastPreviewAccess"];
         delete?: never;
@@ -3055,7 +3055,7 @@ export interface paths {
         };
         /**
          * List announced upcoming broadcasts
-         * @description Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED; readers and emergency close remain available when disabled.
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
          */
         get: operations["listUpcomingBroadcasts"];
         put?: never;
@@ -3077,7 +3077,7 @@ export interface paths {
         put?: never;
         /**
          * uploadBroadcastCover
-         * @description Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED; readers and emergency close remain available when disabled.
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
          */
         post: operations["uploadBroadcastCover"];
         delete?: never;
@@ -3095,7 +3095,7 @@ export interface paths {
         };
         /**
          * getBroadcastCoverUpload
-         * @description Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED; readers and emergency close remain available when disabled.
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
          */
         get: operations["getBroadcastCoverUpload"];
         put?: never;
@@ -3115,7 +3115,7 @@ export interface paths {
         };
         /**
          * getBroadcastCoverContent
-         * @description Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED; readers and emergency close remain available when disabled.
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
          */
         get: operations["getBroadcastCoverContent"];
         put?: never;
@@ -3135,7 +3135,7 @@ export interface paths {
         };
         /**
          * getSelectedBroadcastCoverContent
-         * @description Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED; readers and emergency close remain available when disabled.
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
          */
         get: operations["getSelectedBroadcastCoverContent"];
         put?: never;
@@ -3155,7 +3155,7 @@ export interface paths {
         };
         /**
          * Read the selected announced broadcast cover
-         * @description Durable B1 control. Metadata revisions do not invalidate actor-bound command markers. Media exposure requires independently verified Asset projection. New creation and binding require BROADCAST_WRITERS_ENABLED; readers and emergency close remain available when disabled.
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
          */
         get: operations["getMemberBroadcastCover"];
         put?: never;
@@ -3170,6 +3170,246 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        BroadcastPolicy: {
+            autoStart: boolean;
+            autoEnd: boolean;
+            autoPublish: boolean;
+        };
+        BroadcastBinding: {
+            captureId: string;
+            epoch: number;
+            /** Format: uuid */
+            actorId: string;
+        };
+        BroadcastBoundaries: {
+            startSequence: number | null;
+            endSequenceExclusive: number | null;
+            revision: number;
+        };
+        BroadcastCommand: {
+            /** Format: uuid */
+            commandId: string;
+            /** @enum {string} */
+            kind: "start" | "end";
+            captureId: string;
+            epoch: number;
+            /** Format: date-time */
+            requestedAt: string;
+            /** @enum {string} */
+            status: "pending" | "acknowledged" | "cancelled" | "rejected";
+            boundarySequence: number | null;
+        };
+        BroadcastHealth: {
+            /** @enum {string} */
+            state: "waiting" | "healthy" | "interrupted" | "recovering";
+            lastConfirmedAt: string | null;
+            lastPublishedAt: string | null;
+            verifiedEndSeconds: number | null;
+            queuedObjects: number | null;
+            reason: string | null;
+        };
+        BroadcastArchive: {
+            /** @enum {string} */
+            state: "none" | "processing" | "ready" | "published" | "failed";
+            reason: string | null;
+        };
+        BroadcastView: {
+            /** Format: uuid */
+            recordingId: string;
+            revision: number;
+            /** @enum {string} */
+            phase: "draft" | "scheduled" | "preview" | "start_pending" | "live" | "end_pending" | "processing" | "archived" | "cancelled" | "failed";
+            announced: boolean;
+            scheduledAt: string | null;
+            title: string;
+            description: components["schemas"]["RecordingDescription"];
+            policy: components["schemas"]["BroadcastPolicy"];
+            cover: components["schemas"]["LiveCoverSettings"];
+            binding: components["schemas"]["BroadcastBinding"] | null;
+            boundaries: components["schemas"]["BroadcastBoundaries"];
+            health: components["schemas"]["BroadcastHealth"];
+            pendingCommand: components["schemas"]["BroadcastCommand"] | null;
+            archive: components["schemas"]["BroadcastArchive"];
+        };
+        BroadcastMutationInput: {
+            operationKey: string;
+            expectedRevision: number;
+        };
+        BroadcastCreateInput: {
+            operationKey: string;
+            title: string;
+            description: components["schemas"]["RecordingDescription"];
+            scheduledAt: string | null;
+            policy: components["schemas"]["BroadcastPolicy"];
+            cover?: components["schemas"]["LiveCoverSelection"];
+        };
+        BroadcastUpdateInput: {
+            operationKey: string;
+            expectedRevision: number;
+            title?: string;
+            description?: components["schemas"]["RecordingDescription"];
+            scheduledAt?: string | null;
+            policy?: components["schemas"]["BroadcastPolicy"];
+            cover?: components["schemas"]["LiveCoverSelection"];
+        };
+        BroadcastBindInput: {
+            operationKey: string;
+            expectedRevision: number;
+            protocolVersion: string;
+        };
+        BroadcastMarkerAckInput: {
+            operationKey: string;
+            captureId: string;
+            epoch: number;
+            boundarySequence: number;
+        };
+        BroadcastEmergencyCloseInput: {
+            operationKey: string;
+            expectedRevision: number;
+            reason: string;
+        };
+        BroadcastPreviewInput: {
+            captureId: string;
+            epoch: number;
+        };
+        BroadcastReceipt: {
+            operationKey: string;
+            /** @enum {string} */
+            operation: "create" | "update" | "announce" | "cancel" | "bind" | "start" | "end" | "cancel-command" | "ack" | "emergency-close";
+            /** @enum {string} */
+            state: "accepted" | "completed" | "rejected";
+            /** Format: uuid */
+            commandId?: string;
+        };
+        BroadcastMutationResult: {
+            broadcast: components["schemas"]["BroadcastView"];
+            receipt: components["schemas"]["BroadcastReceipt"];
+        };
+        BroadcastList: {
+            items: components["schemas"]["BroadcastView"][];
+            nextCursor: string | null;
+        };
+        BroadcastControl: {
+            revision: number;
+            /** @enum {string} */
+            phase: "draft" | "scheduled" | "preview" | "start_pending" | "live" | "end_pending" | "processing" | "archived" | "cancelled" | "failed";
+            pendingCommand: components["schemas"]["BroadcastCommand"] | null;
+        };
+        BroadcastCapabilities: {
+            versions: "b1-2026-10-10.rc1"[];
+            /** @enum {integer} */
+            maxActiveCaptures: 1;
+            /** @enum {string} */
+            markerMode: "next-common-segment";
+        };
+        BroadcastWatch: {
+            /** Format: uuid */
+            recordingId: string;
+            title: string;
+            description: components["schemas"]["RecordingDescription"];
+            /** @enum {string} */
+            view: "waiting" | "live" | "processing" | "vod" | "cancelled" | "expired" | "unavailable";
+            scheduledAt: string | null;
+            /** Format: date-time */
+            serverNow: string;
+            cover: {
+                revision: string;
+                contentPath: string;
+            } | null;
+            stateRevision: number;
+            recording?: components["schemas"]["MemberRecording"] | null;
+            live?: components["schemas"]["MemberLiveRecording"] | null;
+            mediaStartSeconds?: number | null;
+            durationSeconds?: number | null;
+        };
+        BroadcastPreviewAccess: {
+            /** Format: uuid */
+            recordingId: string;
+            captureId: string;
+            epoch: number;
+            /** @enum {string} */
+            purpose: "staff-preview";
+            /** Format: uuid */
+            playbackScopeId: string;
+            /** Format: uri */
+            mediaUrl: string;
+            exchangeCredential: string;
+            /** Format: date-time */
+            issuedAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        BroadcastErrorEnvelope: {
+            data: null;
+            meta: {
+                [key: string]: unknown;
+            };
+            error: {
+                /** @enum {string} */
+                code: "broadcast_invalid" | "broadcast_not_found" | "broadcast_state_conflict" | "broadcast_already_bound" | "broadcast_active_limit" | "broadcast_epoch_mismatch" | "broadcast_boundary_conflict" | "broadcast_operation_conflict" | "broadcast_revision_conflict" | "broadcast_protocol_unsupported" | "unauthorized" | "forbidden" | "rate_limited" | "unavailable";
+                message: string;
+            };
+        };
+        BroadcastViewEnvelope: {
+            data: components["schemas"]["BroadcastView"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        BroadcastMutationResultEnvelope: {
+            data: components["schemas"]["BroadcastMutationResult"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        BroadcastListEnvelope: {
+            data: components["schemas"]["BroadcastList"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        BroadcastControlEnvelope: {
+            data: components["schemas"]["BroadcastControl"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        BroadcastCapabilitiesEnvelope: {
+            data: components["schemas"]["BroadcastCapabilities"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        BroadcastWatchEnvelope: {
+            data: components["schemas"]["BroadcastWatch"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        BroadcastPreviewAccessEnvelope: {
+            data: components["schemas"]["BroadcastPreviewAccess"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        BroadcastWatchList: {
+            items: components["schemas"]["BroadcastWatch"][];
+            nextCursor: string | null;
+        };
+        BroadcastWatchListEnvelope: {
+            data: components["schemas"]["BroadcastWatchList"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
         LiveCoverSelection: {
             /** @enum {string} */
             mode: "auto";
@@ -6722,248 +6962,19 @@ export interface components {
             };
             error?: null;
         };
-        BroadcastPolicy: {
-            autoStart: boolean;
-            autoEnd: boolean;
-            autoPublish: boolean;
-        };
-        BroadcastBinding: {
-            captureId: string;
-            epoch: number;
-            /** Format: uuid */
-            actorId: string;
-        };
-        BroadcastBoundaries: {
-            startSequence: number | null;
-            endSequenceExclusive: number | null;
-            revision: number;
-        };
-        BroadcastCommand: {
-            /** Format: uuid */
-            commandId: string;
-            /** @enum {string} */
-            kind: "start" | "end";
-            captureId: string;
-            epoch: number;
-            /** Format: date-time */
-            requestedAt: string;
-            /** @enum {string} */
-            status: "pending" | "acknowledged" | "cancelled" | "rejected";
-            boundarySequence: number | null;
-        };
-        BroadcastHealth: {
-            /** @enum {string} */
-            state: "waiting" | "healthy" | "interrupted" | "recovering";
-            lastConfirmedAt: string | null;
-            lastPublishedAt: string | null;
-            verifiedEndSeconds: number | null;
-            queuedObjects: number | null;
-            reason: string | null;
-        };
-        BroadcastArchive: {
-            /** @enum {string} */
-            state: "none" | "processing" | "ready" | "published" | "failed";
-            reason: string | null;
-        };
-        BroadcastView: {
-            /** Format: uuid */
-            recordingId: string;
-            revision: number;
-            /** @enum {string} */
-            phase: "draft" | "scheduled" | "preview" | "start_pending" | "live" | "end_pending" | "processing" | "archived" | "cancelled" | "failed";
-            announced: boolean;
-            scheduledAt: string | null;
-            title: string;
-            description: components["schemas"]["RecordingDescription"];
-            policy: components["schemas"]["BroadcastPolicy"];
-            cover: components["schemas"]["LiveCoverSettings"];
-            binding: components["schemas"]["BroadcastBinding"] | null;
-            boundaries: components["schemas"]["BroadcastBoundaries"];
-            health: components["schemas"]["BroadcastHealth"];
-            pendingCommand: components["schemas"]["BroadcastCommand"] | null;
-            archive: components["schemas"]["BroadcastArchive"];
-        };
-        BroadcastMutationInput: {
-            operationKey: string;
-            expectedRevision: number;
-        };
-        BroadcastCreateInput: {
-            operationKey: string;
-            title: string;
-            description: components["schemas"]["RecordingDescription"];
-            scheduledAt: string | null;
-            policy: components["schemas"]["BroadcastPolicy"];
-            cover?: components["schemas"]["LiveCoverSelection"];
-        };
-        BroadcastUpdateInput: {
-            operationKey: string;
-            expectedRevision: number;
-            title?: string;
-            description?: components["schemas"]["RecordingDescription"];
-            scheduledAt?: string | null;
-            policy?: components["schemas"]["BroadcastPolicy"];
-            cover?: components["schemas"]["LiveCoverSelection"];
-        };
-        BroadcastBindInput: {
-            operationKey: string;
-            expectedRevision: number;
-            protocolVersion: string;
-        };
-        BroadcastMarkerAckInput: {
-            operationKey: string;
-            captureId: string;
-            epoch: number;
-            boundarySequence: number;
-        };
-        BroadcastEmergencyCloseInput: {
-            operationKey: string;
-            expectedRevision: number;
-            reason: string;
-        };
-        BroadcastPreviewInput: {
-            captureId: string;
-            epoch: number;
-        };
-        BroadcastReceipt: {
-            operationKey: string;
-            /** @enum {string} */
-            operation: "create" | "update" | "announce" | "cancel" | "bind" | "start" | "end" | "cancel-command" | "ack" | "emergency-close";
-            /** @enum {string} */
-            state: "accepted" | "completed" | "rejected";
-            /** Format: uuid */
-            commandId?: string;
-        };
-        BroadcastMutationResult: {
-            broadcast: components["schemas"]["BroadcastView"];
-            receipt: components["schemas"]["BroadcastReceipt"];
-        };
-        BroadcastList: {
-            items: components["schemas"]["BroadcastView"][];
-            nextCursor: string | null;
-        };
-        BroadcastControl: {
-            revision: number;
-            /** @enum {string} */
-            phase: "draft" | "scheduled" | "preview" | "start_pending" | "live" | "end_pending" | "processing" | "archived" | "cancelled" | "failed";
-            pendingCommand: components["schemas"]["BroadcastCommand"] | null;
-        };
-        BroadcastCapabilities: {
-            versions: "b1-2026-10-10.rc1"[];
-            /** @enum {integer} */
-            maxActiveCaptures: 1;
-            /** @enum {string} */
-            markerMode: "next-common-segment";
-        };
-        BroadcastWatch: {
-            /** Format: uuid */
-            recordingId: string;
-            title: string;
-            description: components["schemas"]["RecordingDescription"];
-            /** @enum {string} */
-            view: "waiting" | "live" | "processing" | "vod" | "cancelled" | "expired" | "unavailable";
-            scheduledAt: string | null;
-            /** Format: date-time */
-            serverNow: string;
-            cover: {
-                revision: string;
-                contentPath: string;
-            } | null;
-            stateRevision: number;
-            recording: components["schemas"]["MemberRecording"] | null;
-            live: components["schemas"]["MemberLiveRecording"] | null;
-            mediaStartSeconds: number | null;
-            durationSeconds: number | null;
-        };
-        BroadcastPreviewAccess: {
-            /** Format: uuid */
-            recordingId: string;
-            captureId: string;
-            epoch: number;
-            /** @enum {string} */
-            purpose: "staff-preview";
-            /** Format: uuid */
-            playbackScopeId: string;
-            /** Format: uri */
-            mediaUrl: string;
-            exchangeCredential: string;
-            /** Format: date-time */
-            issuedAt: string;
-            /** Format: date-time */
-            expiresAt: string;
-        };
-        BroadcastErrorEnvelope: {
-            data: null;
-            meta: {
-                [key: string]: unknown;
-            };
-            error: {
-                /** @enum {string} */
-                code: "broadcast_invalid" | "broadcast_not_found" | "broadcast_state_conflict" | "broadcast_already_bound" | "broadcast_active_limit" | "broadcast_epoch_mismatch" | "broadcast_boundary_conflict" | "broadcast_operation_conflict" | "broadcast_revision_conflict" | "broadcast_protocol_unsupported" | "unauthorized" | "forbidden" | "rate_limited" | "unavailable";
-                message: string;
-            };
-        };
-        BroadcastViewEnvelope: {
-            data: components["schemas"]["BroadcastView"];
-            meta: {
-                [key: string]: unknown;
-            };
-            error: null;
-        };
-        BroadcastMutationResultEnvelope: {
-            data: components["schemas"]["BroadcastMutationResult"];
-            meta: {
-                [key: string]: unknown;
-            };
-            error: null;
-        };
-        BroadcastListEnvelope: {
-            data: components["schemas"]["BroadcastList"];
-            meta: {
-                [key: string]: unknown;
-            };
-            error: null;
-        };
-        BroadcastControlEnvelope: {
-            data: components["schemas"]["BroadcastControl"];
-            meta: {
-                [key: string]: unknown;
-            };
-            error: null;
-        };
-        BroadcastCapabilitiesEnvelope: {
-            data: components["schemas"]["BroadcastCapabilities"];
-            meta: {
-                [key: string]: unknown;
-            };
-            error: null;
-        };
-        BroadcastWatchEnvelope: {
-            data: components["schemas"]["BroadcastWatch"];
-            meta: {
-                [key: string]: unknown;
-            };
-            error: null;
-        };
-        BroadcastPreviewAccessEnvelope: {
-            data: components["schemas"]["BroadcastPreviewAccess"];
-            meta: {
-                [key: string]: unknown;
-            };
-            error: null;
-        };
-        BroadcastWatchList: {
-            items: components["schemas"]["BroadcastWatch"][];
-            nextCursor: string | null;
-        };
-        BroadcastWatchListEnvelope: {
-            data: components["schemas"]["BroadcastWatchList"];
-            meta: {
-                [key: string]: unknown;
-            };
-            error: null;
-        };
     };
     responses: {
+        /** @description B1 operation rejected or dependency unavailable; failed responses never prove a state transition. */
+        BroadcastFailure: {
+            headers: {
+                /** @description Retry delay for unavailable dependencies. */
+                "Retry-After"?: number;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["BroadcastErrorEnvelope"];
+            };
+        };
         /** @description Owner-scoped statement preference; Cache-Control private, no-store */
         StatementDismissal: {
             headers: {
@@ -13247,91 +13258,15 @@ export interface operations {
                     "application/json": components["schemas"]["BroadcastCapabilitiesEnvelope"];
                 };
             };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            412: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            429: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            503: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
         };
     };
     listBroadcasts: {
@@ -13356,91 +13291,15 @@ export interface operations {
                     "application/json": components["schemas"]["BroadcastListEnvelope"];
                 };
             };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            412: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            429: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            503: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
         };
     };
     createBroadcast: {
@@ -13465,91 +13324,15 @@ export interface operations {
                     "application/json": components["schemas"]["BroadcastMutationResultEnvelope"];
                 };
             };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            412: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            429: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            503: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
         };
     };
     getBroadcast: {
@@ -13572,91 +13355,15 @@ export interface operations {
                     "application/json": components["schemas"]["BroadcastViewEnvelope"];
                 };
             };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            412: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            429: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            503: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
         };
     };
     updateBroadcast: {
@@ -13683,91 +13390,15 @@ export interface operations {
                     "application/json": components["schemas"]["BroadcastMutationResultEnvelope"];
                 };
             };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            412: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            429: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            503: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
         };
     };
     announceBroadcast: {
@@ -13794,91 +13425,15 @@ export interface operations {
                     "application/json": components["schemas"]["BroadcastMutationResultEnvelope"];
                 };
             };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            412: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            429: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            503: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
         };
     };
     cancelBroadcast: {
@@ -13905,91 +13460,15 @@ export interface operations {
                     "application/json": components["schemas"]["BroadcastMutationResultEnvelope"];
                 };
             };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            412: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            429: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            503: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
         };
     };
     bindBroadcast: {
@@ -14016,91 +13495,15 @@ export interface operations {
                     "application/json": components["schemas"]["BroadcastMutationResultEnvelope"];
                 };
             };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            412: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            429: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            503: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
         };
     };
     startBroadcast: {
@@ -14127,91 +13530,15 @@ export interface operations {
                     "application/json": components["schemas"]["BroadcastMutationResultEnvelope"];
                 };
             };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            412: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            429: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            503: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
         };
     };
     endBroadcast: {
@@ -14238,91 +13565,15 @@ export interface operations {
                     "application/json": components["schemas"]["BroadcastMutationResultEnvelope"];
                 };
             };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            412: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            429: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            503: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
         };
     };
     cancelBroadcastCommand: {
@@ -14350,91 +13601,15 @@ export interface operations {
                     "application/json": components["schemas"]["BroadcastMutationResultEnvelope"];
                 };
             };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            412: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            429: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            503: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
         };
     };
     getBroadcastControl: {
@@ -14460,91 +13635,15 @@ export interface operations {
                     "application/json": components["schemas"]["BroadcastControlEnvelope"];
                 };
             };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            412: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            429: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            503: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
         };
     };
     acknowledgeBroadcastCommand: {
@@ -14572,91 +13671,15 @@ export interface operations {
                     "application/json": components["schemas"]["BroadcastMutationResultEnvelope"];
                 };
             };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            412: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            429: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            503: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
         };
     };
     emergencyCloseBroadcast: {
@@ -14683,91 +13706,15 @@ export interface operations {
                     "application/json": components["schemas"]["BroadcastMutationResultEnvelope"];
                 };
             };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            412: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            429: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            503: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
         };
     };
     getBroadcastWatch: {
@@ -14790,91 +13737,15 @@ export interface operations {
                     "application/json": components["schemas"]["BroadcastWatchEnvelope"];
                 };
             };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            412: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            429: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            503: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
         };
     };
     createBroadcastPreviewAccess: {
@@ -14901,91 +13772,15 @@ export interface operations {
                     "application/json": components["schemas"]["BroadcastPreviewAccessEnvelope"];
                 };
             };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            412: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            429: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            503: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
         };
     };
     listUpcomingBroadcasts: {
@@ -15009,91 +13804,15 @@ export interface operations {
                     "application/json": components["schemas"]["BroadcastWatchListEnvelope"];
                 };
             };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            412: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            429: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            503: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
         };
     };
     uploadBroadcastCover: {
@@ -15123,91 +13842,15 @@ export interface operations {
                     "application/json": components["schemas"]["RecordingCoverUploadEnvelope"];
                 };
             };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            412: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            429: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            503: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
         };
     };
     getBroadcastCoverUpload: {
@@ -15231,91 +13874,15 @@ export interface operations {
                     "application/json": components["schemas"]["RecordingCoverUploadEnvelope"];
                 };
             };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            412: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            429: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            503: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
         };
     };
     getBroadcastCoverContent: {
@@ -15339,91 +13906,15 @@ export interface operations {
                     "image/jpeg": string;
                 };
             };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            412: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            429: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            503: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
         };
     };
     getSelectedBroadcastCoverContent: {
@@ -15446,91 +13937,15 @@ export interface operations {
                     "image/jpeg": string;
                 };
             };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            412: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            429: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            503: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
         };
     };
     getMemberBroadcastCover: {
@@ -15553,91 +13968,15 @@ export interface operations {
                     "image/jpeg": string;
                 };
             };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            412: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            429: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
-            /** @description B1 error; retry 429/503 using the original operation key. */
-            503: {
-                headers: {
-                    /** @description Retry delay in seconds */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastErrorEnvelope"];
-                };
-            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
         };
     };
 }
