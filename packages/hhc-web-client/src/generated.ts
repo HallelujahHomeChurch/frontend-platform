@@ -1117,6 +1117,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/bulletins/template-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read saved Traditional Chinese church values for future conversions
+         * @description Human-only private settings. New extraction jobs capture this version atomically; existing jobs, drafts and published documents never follow later settings changes. Labels and other fixed template elements are not editable through this endpoint.
+         */
+        get: operations["getBulletinTemplateSettings"];
+        /**
+         * Save church values with version fencing and atomic audit
+         * @description Human-only CAS save creates immutable history, never publishes or rewrites an issue. Three required values are trimmed plain single-line text of 1–64 Unicode characters; controls, format/bidi characters and line separators are rejected. Body limit is 4096 bytes. Restore by submitting a historical value with the current ETag; old history is never modified. Simplified text is derived during conversion, not edited here.
+         */
+        put: operations["saveBulletinTemplateSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bulletins/template-settings/revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the latest 50 immutable church-values revisions
+         * @description Human-only private history in descending version order. Includes actor and UTC timestamp; never exposes extraction assets or job leases.
+         */
+        get: operations["listBulletinTemplateSettingsRevisions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/bulletins/{issueId}/online/{series}/{contentLocale}": {
         parameters: {
             query?: never;
@@ -3429,6 +3473,35 @@ export interface components {
             /** Format: int64 */
             inheritedRevision?: number;
         };
+        BulletinTemplateText: {
+            visionMission: string;
+            visionFellowship: string;
+            visionCommitment: string;
+        };
+        BulletinTemplateSettings: {
+            /** Format: int64 */
+            version: number;
+            visionMission: string;
+            visionFellowship: string;
+            visionCommitment: string;
+        };
+        BulletinTemplateSettingsRevision: {
+            /** Format: int64 */
+            version: number;
+            visionMission: string;
+            visionFellowship: string;
+            visionCommitment: string;
+            createdBy: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        BulletinTemplateSettingsEnvelope: {
+            data: components["schemas"]["BulletinTemplateSettings"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
         LiveCoverSettingsEnvelope: {
             data: components["schemas"]["LiveCoverSettings"];
         };
@@ -4149,10 +4222,14 @@ export interface components {
             schemaVersion: "1";
             /** @enum {string} */
             templateVersion: "v1" | "v2";
+            /** @description Immutable renderable values only; no settings actor or audit history is exposed. */
+            templateSnapshot?: components["schemas"]["BulletinTemplateSettings"] & {
+                version?: unknown;
+            };
             pages: components["schemas"]["OnlineBulletinPage"][];
             layoutManifest: components["schemas"]["OnlineBulletinLayoutManifest"];
             components: components["schemas"]["ReaderComponent"][];
-        };
+        } & unknown;
         OnlineBulletinComparisonValue: components["schemas"]["OnlineBulletinBlock"] | components["schemas"]["OnlineBulletinComponent"] | components["schemas"]["OnlineBulletinID"][] | null;
         OnlineBulletinComparison: {
             /** Format: uuid */
@@ -4402,13 +4479,17 @@ export interface components {
             schemaVersion: "1";
             /** @enum {string} */
             templateVersion: "v1" | "v2";
+            /** @description Immutable issue-owned settings captured when queued. Required by V9; earlier renderers do not carry a snapshot. Simplified values are server-derived by OpenCC, with the same settings version. Never editable through draft components. */
+            templateSnapshot?: components["schemas"]["BulletinTemplateSettings"] & {
+                version?: unknown;
+            };
             sourceAssetChecksum: components["schemas"]["OnlineBulletinHash"];
             /** @description Must equal the saved page count. Composition preserves original page identity and fragment membership; overflow blocks publication instead of adding pages. */
             sourcePageCount: number;
             pages: components["schemas"]["OnlineBulletinPage"][];
             layoutManifest: components["schemas"]["OnlineBulletinLayoutManifest"];
             components: components["schemas"]["OnlineBulletinComponent"][];
-        };
+        } & unknown;
         OnlineBulletinPage: {
             id: components["schemas"]["OnlineBulletinID"];
             /** @description PDF points. */
@@ -4428,10 +4509,10 @@ export interface components {
             /** @enum {string} */
             templateVersion: "v1" | "v2";
             /**
-             * @description Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. V6 adds historical four-row cover profiles; V7 preserves proportional inline font sizes during cover composition. V8 fits titles at normal tracking and keeps heading-speaker rows and cover date-issue rows together. Existing published renderer versions remain immutable.
+             * @description Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. V6 adds historical four-row cover profiles; V7 preserves proportional inline font sizes during cover composition. V8 fits titles at normal tracking and keeps heading-speaker rows and cover date-issue rows together. V9 consumes an immutable issue-owned template snapshot. Existing published renderer versions remain immutable.
              * @enum {string}
              */
-            rendererVersion: "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | "v8";
+            rendererVersion: "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | "v8" | "v9";
             rendererArtifactSha256: components["schemas"]["OnlineBulletinHash"];
             contentHash?: components["schemas"]["OnlineBulletinHash"];
             layoutValidationHash?: components["schemas"]["OnlineBulletinHash"];
@@ -9294,6 +9375,97 @@ export interface operations {
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
             428: components["responses"]["Error"];
+        };
+    };
+    getBulletinTemplateSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current settings version */
+            200: {
+                headers: {
+                    "Cache-Control"?: "private, no-store";
+                    /** @description Quoted settings version */
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulletinTemplateSettingsEnvelope"];
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            503: components["responses"]["Error"];
+        };
+    };
+    saveBulletinTemplateSettings: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulletinTemplateText"];
+            };
+        };
+        responses: {
+            /** @description Saved settings version */
+            200: {
+                headers: {
+                    "Cache-Control"?: "private, no-store";
+                    /** @description Quoted new settings version */
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulletinTemplateSettingsEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            412: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listBulletinTemplateSettingsRevisions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bounded settings history */
+            200: {
+                headers: {
+                    "Cache-Control"?: "private, no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["BulletinTemplateSettingsRevision"][];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            503: components["responses"]["Error"];
         };
     };
     getOnlineBulletinState: {

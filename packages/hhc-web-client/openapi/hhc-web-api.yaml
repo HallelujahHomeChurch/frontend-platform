@@ -1671,6 +1671,92 @@ paths:
         '409': { $ref: '#/components/responses/Error' }
         '422': { $ref: '#/components/responses/Error' }
         '428': { $ref: '#/components/responses/Error' }
+  /admin/bulletins/template-settings:
+    get:
+      operationId: getBulletinTemplateSettings
+      summary: Read saved Traditional Chinese church values for future conversions
+      description: Human-only private settings. New extraction jobs capture this version atomically; existing jobs, drafts and published documents never follow later settings changes. Labels and other fixed template elements are not editable through this endpoint.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes: [cms:bulletins:read]
+      responses:
+        '200':
+          description: Current settings version
+          headers:
+            Cache-Control: { schema: { type: string, const: 'private, no-store' } }
+            ETag: { description: Quoted settings version, schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BulletinTemplateSettingsEnvelope' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '503': { $ref: '#/components/responses/Error' }
+    put:
+      operationId: saveBulletinTemplateSettings
+      summary: Save church values with version fencing and atomic audit
+      description: Human-only CAS save creates immutable history, never publishes or rewrites an issue. Three required values are trimmed plain single-line text of 1–64 Unicode characters; controls, format/bidi characters and line separators are rejected. Body limit is 4096 bytes. Restore by submitting a historical value with the current ETag; old history is never modified. Simplified text is derived during conversion, not edited here.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes: [cms:bulletins:write]
+      parameters:
+        - { $ref: '#/components/parameters/IfMatch' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BulletinTemplateText' }
+      responses:
+        '200':
+          description: Saved settings version
+          headers:
+            Cache-Control: { schema: { type: string, const: 'private, no-store' } }
+            ETag: { description: Quoted new settings version, schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BulletinTemplateSettingsEnvelope' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '412': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/bulletins/template-settings/revisions:
+    get:
+      operationId: listBulletinTemplateSettingsRevisions
+      summary: Read the latest 50 immutable church-values revisions
+      description: Human-only private history in descending version order. Includes actor and UTC timestamp; never exposes extraction assets or job leases.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes: [cms:bulletins:read]
+      responses:
+        '200':
+          description: Bounded settings history
+          headers:
+            Cache-Control: { schema: { type: string, const: 'private, no-store' } }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta, error]
+                properties:
+                  data: { type: array, maxItems: 50, items: { $ref: '#/components/schemas/BulletinTemplateSettingsRevision' } }
+                  meta: { type: object, additionalProperties: true }
+                  error: { type: 'null' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '503': { $ref: '#/components/responses/Error' }
   /admin/bulletins/{issueId}/online/{series}/{contentLocale}:
     get:
       operationId: getOnlineBulletinState
@@ -7272,6 +7358,41 @@ components:
         coverId: {type: string, maxLength: 128}
         contentPath: {type: string, pattern: '^/api/admin/recordings/'}
         inheritedRevision: {type: integer, minimum: 1, format: int64}
+    BulletinTemplateText:
+      type: object
+      additionalProperties: false
+      required: [visionMission, visionFellowship, visionCommitment]
+      properties:
+        visionMission: { type: string, minLength: 1, maxLength: 64 }
+        visionFellowship: { type: string, minLength: 1, maxLength: 64 }
+        visionCommitment: { type: string, minLength: 1, maxLength: 64 }
+    BulletinTemplateSettings:
+      type: object
+      additionalProperties: false
+      required: [version, visionMission, visionFellowship, visionCommitment]
+      properties:
+        version: { type: integer, format: int64, minimum: 1 }
+        visionMission: { type: string, minLength: 1, maxLength: 64 }
+        visionFellowship: { type: string, minLength: 1, maxLength: 64 }
+        visionCommitment: { type: string, minLength: 1, maxLength: 64 }
+    BulletinTemplateSettingsRevision:
+      type: object
+      additionalProperties: false
+      required: [version, visionMission, visionFellowship, visionCommitment, createdBy, createdAt]
+      properties:
+        version: { type: integer, format: int64, minimum: 1 }
+        visionMission: { type: string, minLength: 1, maxLength: 64 }
+        visionFellowship: { type: string, minLength: 1, maxLength: 64 }
+        visionCommitment: { type: string, minLength: 1, maxLength: 64 }
+        createdBy: { type: string, minLength: 1 }
+        createdAt: { type: string, format: date-time }
+    BulletinTemplateSettingsEnvelope:
+      type: object
+      required: [data, meta, error]
+      properties:
+        data: { $ref: '#/components/schemas/BulletinTemplateSettings' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: 'null' }
     LiveCoverSettingsEnvelope:
       type: object
       required: [data]
@@ -8530,10 +8651,22 @@ components:
       type: object
       additionalProperties: false
       required: [schemaVersion, templateVersion, printedBodyPageCount, pages, layoutManifest, components]
+      allOf:
+        - if:
+            properties:
+              layoutManifest:
+                properties: { rendererVersion: { const: v9 } }
+          then: { required: [templateSnapshot] }
+          else: { not: { required: [templateSnapshot] } }
       properties:
         printedBodyPageCount: { type: integer, minimum: 2, maximum: 38, description: 'Visible printed body issue-summary count, independent of HTML pagination.' }
         schemaVersion: { type: string, const: '1' }
         templateVersion: { type: string, enum: [v1, v2] }
+        templateSnapshot:
+          allOf:
+            - $ref: '#/components/schemas/BulletinTemplateSettings'
+            - properties: { version: { maximum: 9007199254740991 } }
+          description: Immutable renderable values only; no settings actor or audit history is exposed.
         pages: { type: array, minItems: 4, maxItems: 40, items: { $ref: '#/components/schemas/OnlineBulletinPage' } }
         layoutManifest: { $ref: '#/components/schemas/OnlineBulletinLayoutManifest' }
         components: { type: array, minItems: 6, maxItems: 256, items: { $ref: '#/components/schemas/ReaderComponent' } }
@@ -8853,12 +8986,24 @@ components:
       type: object
       additionalProperties: false
       required: [issueId, series, contentLocale, schemaVersion, templateVersion, sourceAssetChecksum, sourcePageCount, pages, layoutManifest, components]
+      allOf:
+        - if:
+            properties:
+              layoutManifest:
+                properties: { rendererVersion: { const: v9 } }
+          then: { required: [templateSnapshot] }
+          else: { not: { required: [templateSnapshot] } }
       properties:
         issueId: { type: string, format: uuid }
         series: { type: string, const: general }
         contentLocale: { type: string, enum: [zh-Hant, zh-Hans] }
         schemaVersion: { type: string, const: '1' }
         templateVersion: { type: string, enum: [v1, v2] }
+        templateSnapshot:
+          allOf:
+            - $ref: '#/components/schemas/BulletinTemplateSettings'
+            - properties: { version: { maximum: 9007199254740991 } }
+          description: Immutable issue-owned settings captured when queued. Required by V9; earlier renderers do not carry a snapshot. Simplified values are server-derived by OpenCC, with the same settings version. Never editable through draft components.
         sourceAssetChecksum: { $ref: '#/components/schemas/OnlineBulletinHash' }
         sourcePageCount: { type: integer, minimum: 4, maximum: 40, description: Must equal the saved page count. Composition preserves original page identity and fragment membership; overflow blocks publication instead of adding pages. }
         pages:
@@ -8897,7 +9042,7 @@ components:
       required: [templateVersion, rendererVersion, rendererArtifactSha256, assets, pages]
       properties:
         templateVersion: { type: string, enum: [v1, v2] }
-        rendererVersion: { type: string, enum: [v1, v2, v3, v4, v5, v6, v7, v8], description: Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. V6 adds historical four-row cover profiles; V7 preserves proportional inline font sizes during cover composition. V8 fits titles at normal tracking and keeps heading-speaker rows and cover date-issue rows together. Existing published renderer versions remain immutable. }
+        rendererVersion: { type: string, enum: [v1, v2, v3, v4, v5, v6, v7, v8, v9], description: Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. V6 adds historical four-row cover profiles; V7 preserves proportional inline font sizes during cover composition. V8 fits titles at normal tracking and keeps heading-speaker rows and cover date-issue rows together. V9 consumes an immutable issue-owned template snapshot. Existing published renderer versions remain immutable. }
         rendererArtifactSha256: { $ref: '#/components/schemas/OnlineBulletinHash' }
         contentHash: { $ref: '#/components/schemas/OnlineBulletinHash' }
         layoutValidationHash: { $ref: '#/components/schemas/OnlineBulletinHash' }

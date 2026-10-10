@@ -469,6 +469,13 @@ export interface components {
         };
         /** @enum {string} */
         BulletinVersionStatus: "draft" | "publishing" | "published" | "unpublishing" | "unpublish_failed" | "unpublished";
+        BulletinTemplateSettings: {
+            /** Format: int64 */
+            version: number;
+            visionMission: string;
+            visionFellowship: string;
+            visionCommitment: string;
+        };
     };
     responses: never;
     parameters: never;
