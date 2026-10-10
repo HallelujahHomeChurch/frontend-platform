@@ -5,7 +5,9 @@
 **Goal:** Keep canonical V9 documents and the three private settings operations in
 the existing Website SDK so Admin does not add a separate fetch/auth convention.
 **Architecture:** Synchronize the canonical Website OpenAPI, regenerate existing
-types, add three thin no-store SDK methods and public types. Restore uses the
+types, add three thin no-store SDK methods and public types. Export the existing
+V9 snapshot validator so private/offline readers reuse it at their trust boundary.
+Restore uses the
 existing CAS save with selected historical values; no invented restore endpoint.
 **Spec:** Approved adaptive-conversion decisions; settings and snapshots produced
 by API192/194/195. Gateway160 provides the existing same-origin boundary.

@@ -1976,38 +1976,6 @@
           "unpublish_failed",
           "unpublished"
         ]
-      },
-      "BulletinTemplateSettings": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "version",
-          "visionMission",
-          "visionFellowship",
-          "visionCommitment"
-        ],
-        "properties": {
-          "version": {
-            "type": "integer",
-            "format": "int64",
-            "minimum": 1
-          },
-          "visionMission": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 64
-          },
-          "visionFellowship": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 64
-          },
-          "visionCommitment": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 64
-          }
-        }
       }
     }
   }
