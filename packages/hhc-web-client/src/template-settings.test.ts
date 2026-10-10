@@ -37,7 +37,7 @@ it('propagates a stale settings conflict without retrying or overwriting', async
 
 it.each([0,-1,1.5,Number.NaN,Number.POSITIVE_INFINITY,Number.MAX_SAFE_INTEGER+1])('rejects unsafe settings version %s before sending', async version => {
   const fetcher=vi.fn<typeof fetch>()
-  const client=createHhcWebClient({baseUrl:'/api',fetcher})
+  const client=createHhcWebClient({baseUrl:'/api',getAccessToken:()=>null,fetcher})
   await expect(client.saveBulletinTemplateSettings(version,values)).rejects.toThrow('Invalid bulletin template settings version')
   expect(fetcher).not.toHaveBeenCalled()
 })
