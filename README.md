@@ -19,6 +19,7 @@ fonts as the UI. Build a new, checksum-verified bundle after `pnpm build`:
 
 ```sh
 node scripts/verify-bulletin-renderer-v9.mjs
+node scripts/verify-bulletin-renderer-v10.mjs
 node scripts/package-bulletin-renderer.mjs artifacts/bulletin-renderer /path/to/verified/assets
 docker build -f tools/bulletin-renderer/Dockerfile -t hhc-bulletin-renderer:verify artifacts/bulletin-renderer
 ```
@@ -62,6 +63,14 @@ corepack pnpm build
 corepack pnpm pack:packages
 corepack pnpm test:consumers
 ```
+
+V10 keeps V1–V9 rendering immutable and adds a dense-cover fallback only when the
+V9 composition cannot fit. Long canonical title/subtitle use separate rows;
+Word questions and the weekly verse use measured sizing down to 9pt, while
+source text, anchors and PDF page correspondence remain intact. Missing glyphs,
+untrusted assets and content that cannot fit at that floor still fail closed.
+Deploy V10-capable web/admin consumers before enabling the producer. Native
+verification uses `HHC_TEST_RENDERER_V10=1` and the V10 measurement suite.
 
 Consumers install exact package versions from GitHub Packages. Local development
 requires a GitHub token with `read:packages`; GitHub Actions uses its repository

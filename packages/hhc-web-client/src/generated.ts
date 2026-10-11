@@ -1257,8 +1257,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Synchronize Simplified Chinese content from confirmed Traditional Chinese content
-         * @description Human administrators only. Source is always the same issue general zh-Hant confirmed Local. If-Match fences the target Online version (zero before creation); the body independently fences canonical metadata and source revision/version. Identical source/configuration requests reuse the durable job; a completed legacy Incoming result is requeued under current version fences. retry=true retries failed conversion work, or only failed layout validation when conversion is review_ready and its result is still the current saved Local. A layout-only retry preserves the revision and conversion job, returns that review_ready job with the incremented target version, and queues a new layout job visible through the state endpoint. Successful conversion replaces the Simplified Local and Base, clears Incoming, and queues layout validation. Immutable history and publication are retained. Simplified content cannot be manually edited; review and publication remain independent. No PDF asset or additional grant is created.
+         * Synchronize Simplified Chinese content from verified Traditional Chinese content
+         * @description Human administrators only. Source is always the same issue general zh-Hant Local, with current human confirmation or zero review findings and a current immutable layout proof. New uploads retain their human authorizer; layout completion or review confirmation automatically queues conversion when the current PDF matches and no Incoming comparison remains. No automatic publication occurs. If-Match fences the target Online version (zero before creation); the body independently fences canonical metadata and source revision/version. Identical source/configuration requests reuse the durable job; a completed legacy Incoming result is requeued under current version fences. retry=true retries failed conversion work, or only failed layout validation when conversion is review_ready and its result is still the current saved Local. A layout-only retry preserves the revision and conversion job, returns that review_ready job with the incremented target version, and queues a new layout job visible through the state endpoint. Successful conversion replaces the Simplified Local and Base, clears Incoming, and queues layout validation. Immutable history and publication are retained. Simplified content cannot be manually edited; review and publication remain independent. No PDF asset or additional grant is created.
          */
         post: operations["startOnlineBulletinConversion"];
         delete?: never;
@@ -4574,7 +4574,7 @@ export interface components {
             schemaVersion: "1";
             /** @enum {string} */
             templateVersion: "v1" | "v2";
-            /** @description Immutable issue-owned settings captured when queued. Required by V9; earlier renderers do not carry a snapshot. Simplified values are server-derived by OpenCC, with the same settings version. Never editable through draft components. */
+            /** @description Immutable issue-owned settings captured when queued. Required by V9 and V10; earlier renderers do not carry a snapshot. Simplified values are server-derived by OpenCC, with the same settings version. Never editable through draft components. */
             templateSnapshot?: components["schemas"]["BulletinTemplateSettings"] & {
                 version?: unknown;
             };
@@ -4604,10 +4604,10 @@ export interface components {
             /** @enum {string} */
             templateVersion: "v1" | "v2";
             /**
-             * @description Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. V6 adds historical four-row cover profiles; V7 preserves proportional inline font sizes during cover composition. V8 fits titles at normal tracking and keeps heading-speaker rows and cover date-issue rows together. V9 consumes an immutable issue-owned template snapshot. Existing published renderer versions remain immutable.
+             * @description Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. V6 adds historical four-row cover profiles; V7 preserves proportional inline font sizes during cover composition. V8 fits titles at normal tracking and keeps heading-speaker rows and cover date-issue rows together. V9 consumes an immutable issue-owned template snapshot. V10 reuses V9 paper rendering and adds bounded measured dense-cover composition with separate long title/subtitle rows and a 9-point cover text floor. Existing published renderer versions remain immutable.
              * @enum {string}
              */
-            rendererVersion: "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | "v8" | "v9";
+            rendererVersion: "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | "v8" | "v9" | "v10";
             rendererArtifactSha256: components["schemas"]["OnlineBulletinHash"];
             contentHash?: components["schemas"]["OnlineBulletinHash"];
             layoutValidationHash?: components["schemas"]["OnlineBulletinHash"];

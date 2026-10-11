@@ -10,6 +10,55 @@ export interface components {
             visionFellowship: string;
             visionCommitment: string;
         };
+        OnlineBulletinLearningRule: {
+            signature: string;
+            /** Format: int64 */
+            version: number;
+            /** @enum {string} */
+            status: "pending" | "active" | "conflicted" | "disabled";
+            /** @enum {string} */
+            kind: "sermon" | "testimony" | "teaching" | "reflection";
+            title: string;
+            speaker: string;
+            confirmedIssues: number;
+            conflicted: boolean;
+        };
+        OnlineBulletinLearningRulePage: {
+            items: components["schemas"]["OnlineBulletinLearningRule"][];
+            nextCursor?: string;
+        };
+        OnlineBulletinLearningRuleRevision: {
+            /** Format: int64 */
+            version: number;
+            /** @enum {string} */
+            status: "pending" | "active" | "conflicted" | "disabled";
+            /** @enum {string} */
+            kind: "sermon" | "testimony" | "teaching" | "reflection";
+            createdBy: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        OnlineBulletinLearningExample: {
+            /** Format: uuid */
+            issueId: string;
+            issueNumber: number;
+            /** Format: uuid */
+            documentId: string;
+            /** Format: int64 */
+            revision: number;
+            componentId: components["schemas"]["OnlineBulletinID"];
+            sourcePage: number;
+            /** @enum {string} */
+            kind: "sermon" | "testimony" | "teaching" | "reflection";
+            createdBy: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        OnlineBulletinLearningRuleDetail: {
+            rule: components["schemas"]["OnlineBulletinLearningRule"];
+            revisions: components["schemas"]["OnlineBulletinLearningRuleRevision"][];
+            examples: components["schemas"]["OnlineBulletinLearningExample"][];
+        };
         OnlineBulletinComparisonValue: components["schemas"]["OnlineBulletinBlock"] | components["schemas"]["OnlineBulletinComponent"] | components["schemas"]["OnlineBulletinID"][] | null;
         OnlineBulletinComparison: {
             /** Format: uuid */
@@ -259,7 +308,7 @@ export interface components {
             schemaVersion: "1";
             /** @enum {string} */
             templateVersion: "v1" | "v2";
-            /** @description Immutable issue-owned settings captured when queued. Required by V9; earlier renderers do not carry a snapshot. Simplified values are server-derived by OpenCC, with the same settings version. Never editable through draft components. */
+            /** @description Immutable issue-owned settings captured when queued. Required by V9 and V10; earlier renderers do not carry a snapshot. Simplified values are server-derived by OpenCC, with the same settings version. Never editable through draft components. */
             templateSnapshot?: components["schemas"]["BulletinTemplateSettings"] & {
                 version?: unknown;
             };
@@ -292,7 +341,7 @@ export interface components {
              * @description Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. V6 adds historical four-row cover profiles; V7 preserves proportional inline font sizes during cover composition. V8 fits titles at normal tracking and keeps heading-speaker rows and cover date-issue rows together. V9 consumes an immutable issue-owned template snapshot. Existing published renderer versions remain immutable.
              * @enum {string}
              */
-            rendererVersion: "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | "v8" | "v9";
+            rendererVersion: "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | "v8" | "v9" | "v10";
             rendererArtifactSha256: components["schemas"]["OnlineBulletinHash"];
             contentHash?: components["schemas"]["OnlineBulletinHash"];
             layoutValidationHash?: components["schemas"]["OnlineBulletinHash"];

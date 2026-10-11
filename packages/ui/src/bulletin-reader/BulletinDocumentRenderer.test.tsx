@@ -21,13 +21,13 @@ function fixture(): Document {
 }
 
 describe('immutable shared bulletin renderer', () => {
-  it.each(['zh-Hant', 'zh-Hans'] as const)('renders saved V9 church values in paper and ebook for %s without mutable configuration', contentLocale => {
+  it.each([['v9', 'zh-Hant'], ['v9', 'zh-Hans'], ['v10', 'zh-Hant'], ['v10', 'zh-Hans']] as const)('renders saved %s church values in paper and ebook for %s without mutable configuration', (rendererVersion, contentLocale) => {
     const document = fixture();
     document.contentLocale = contentLocale;
     document.templateVersion = contentLocale === 'zh-Hans' ? 'v2' : 'v1';
     document.templateSnapshot = {version: 8, visionMission: contentLocale === 'zh-Hans' ? '保存的异象' : '保存的異象', visionFellowship: contentLocale === 'zh-Hans' ? '保存的团契' : '保存的團契', visionCommitment: contentLocale === 'zh-Hans' ? '保存的坚持' : '保存的堅持'};
-    const digest = (UI as typeof UI & {BULLETIN_RENDERER_V9_DIGEST: string}).BULLETIN_RENDERER_V9_DIGEST;
-    Object.assign(document.layoutManifest, {templateVersion: document.templateVersion, rendererVersion: 'v9', rendererArtifactSha256: digest});
+    const digest = rendererVersion === 'v10' ? UI.BULLETIN_RENDERER_V10_DIGEST : UI.BULLETIN_RENDERER_V9_DIGEST;
+    Object.assign(document.layoutManifest, {templateVersion: document.templateVersion, rendererVersion, rendererArtifactSha256: digest});
     document.layoutManifest.pages[0].fixedSlots = (['visionMission', 'visionFellowship', 'visionCommitment'] as const).map((element, i) => ({id: element, element, style: {fontSize: 10, lineHeight: 14}, box: {x: .4, y: .1 + i * .03, width: .5, height: .03}}));
     const original = structuredClone(document);
     const {container, rerender} = render(<UI.BulletinDocumentRenderer document={document} mode="paper"/>);
@@ -37,6 +37,9 @@ describe('immutable shared bulletin renderer', () => {
     rerender(<UI.BulletinEbook document={document} chapter="back"/>);
     expect(container.querySelector('[data-fixed-element="visionCommitment"]')).toHaveTextContent(document.templateSnapshot.visionCommitment);
     expect(document).toEqual(original);
+    document.layoutManifest.rendererArtifactSha256 = '0'.repeat(64);
+    expect(() => UI.requireBulletinRenderer(document.layoutManifest)).toThrow('update_required');
+    document.layoutManifest.rendererArtifactSha256 = digest;
     document.templateSnapshot = undefined;
     expect(() => render(<UI.BulletinDocumentRenderer document={document} mode="paper"/>)).toThrow('invalid_template_snapshot');
     expect(() => render(<UI.BulletinEbook document={document} chapter="back"/>)).toThrow('invalid_template_snapshot');

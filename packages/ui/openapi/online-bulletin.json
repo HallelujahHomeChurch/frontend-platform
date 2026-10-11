@@ -39,6 +39,217 @@
           }
         }
       },
+      "OnlineBulletinLearningRule": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "signature",
+          "version",
+          "status",
+          "kind",
+          "title",
+          "speaker",
+          "confirmedIssues",
+          "conflicted"
+        ],
+        "properties": {
+          "signature": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "active",
+              "conflicted",
+              "disabled"
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "sermon",
+              "testimony",
+              "teaching",
+              "reflection"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "speaker": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "confirmedIssues": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "conflicted": {
+            "type": "boolean"
+          }
+        }
+      },
+      "OnlineBulletinLearningRulePage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinLearningRule"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      },
+      "OnlineBulletinLearningRuleRevision": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version",
+          "status",
+          "kind",
+          "createdBy",
+          "createdAt"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "active",
+              "conflicted",
+              "disabled"
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "sermon",
+              "testimony",
+              "teaching",
+              "reflection"
+            ]
+          },
+          "createdBy": {
+            "type": "string",
+            "minLength": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "OnlineBulletinLearningExample": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "issueId",
+          "issueNumber",
+          "documentId",
+          "revision",
+          "componentId",
+          "sourcePage",
+          "kind",
+          "createdBy",
+          "createdAt"
+        ],
+        "properties": {
+          "issueId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "issueNumber": {
+            "type": "integer",
+            "minimum": 1739
+          },
+          "documentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "componentId": {
+            "$ref": "#/components/schemas/OnlineBulletinID"
+          },
+          "sourcePage": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 39
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "sermon",
+              "testimony",
+              "teaching",
+              "reflection"
+            ]
+          },
+          "createdBy": {
+            "type": "string",
+            "minLength": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "OnlineBulletinLearningRuleDetail": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "rule",
+          "revisions",
+          "examples"
+        ],
+        "properties": {
+          "rule": {
+            "$ref": "#/components/schemas/OnlineBulletinLearningRule"
+          },
+          "revisions": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinLearningRuleRevision"
+            }
+          },
+          "examples": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinLearningExample"
+            }
+          }
+        }
+      },
       "OnlineBulletinComparisonValue": {
         "oneOf": [
           {
@@ -1003,7 +1214,10 @@
                 "layoutManifest": {
                   "properties": {
                     "rendererVersion": {
-                      "const": "v9"
+                      "enum": [
+                        "v9",
+                        "v10"
+                      ]
                     }
                   }
                 }
@@ -1063,7 +1277,7 @@
                 }
               }
             ],
-            "description": "Immutable issue-owned settings captured when queued. Required by V9; earlier renderers do not carry a snapshot. Simplified values are server-derived by OpenCC, with the same settings version. Never editable through draft components."
+            "description": "Immutable issue-owned settings captured when queued. Required by V9 and V10; earlier renderers do not carry a snapshot. Simplified values are server-derived by OpenCC, with the same settings version. Never editable through draft components."
           },
           "sourceAssetChecksum": {
             "$ref": "#/components/schemas/OnlineBulletinHash"
@@ -1184,7 +1398,8 @@
               "v6",
               "v7",
               "v8",
-              "v9"
+              "v9",
+              "v10"
             ],
             "description": "Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. V6 adds historical four-row cover profiles; V7 preserves proportional inline font sizes during cover composition. V8 fits titles at normal tracking and keeps heading-speaker rows and cover date-issue rows together. V9 consumes an immutable issue-owned template snapshot. Existing published renderer versions remain immutable."
           },

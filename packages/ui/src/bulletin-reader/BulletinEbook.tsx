@@ -37,15 +37,16 @@ export function bulletinMobileDetails(document: Pick<BulletinRenderableDocument,
 }
 
 /** Reflow presentation is independent of the immutable source-paper layout artifact. */
-export function BulletinEbook({document, chapter, canonicalMetadata, showDetails = false, sentenceState}: {
+export function BulletinEbook({document, chapter, canonicalMetadata, showDetails = false, sentenceState, selectable = false}: {
   document: BulletinRenderableDocument;
   chapter: BulletinChapterId;
   canonicalMetadata?: BulletinCanonicalMetadata;
   showDetails?: boolean;
   sentenceState?: Readonly<Record<string, BulletinSentenceState>>;
+  selectable?: boolean;
 }) {
   requireBulletinRenderer(document.layoutManifest);
-  const snapshot = document.layoutManifest.rendererVersion === 'v9' ? readBulletinTemplateSnapshot(document.templateSnapshot) : undefined;
+  const snapshot = ['v9','v10'].includes(document.layoutManifest.rendererVersion) ? readBulletinTemplateSnapshot(document.templateSnapshot) : undefined;
   const bulletinFixedText = snapshot
     ? (element: Parameters<typeof historicalFixedText>[0], metadata: BulletinCanonicalMetadata | undefined, pageNumber: number, sourcePageCount = document.sourcePageCount) => snapshotText(element, metadata, pageNumber, snapshot, sourcePageCount, document.contentLocale === 'zh-Hans' ? 'zh-Hans' : 'zh-Hant')
     : ['v6', 'v7', 'v8'].includes(document.layoutManifest.rendererVersion)
@@ -53,8 +54,8 @@ export function BulletinEbook({document, chapter, canonicalMetadata, showDetails
     : document.contentLocale === 'zh-Hans' ? simplifiedFixedText : traditionalFixedText;
   if (document.schemaVersion !== '1' || document.templateVersion !== document.layoutManifest.templateVersion) throw new Error('update_required');
   const details = bulletinMobileDetails(document);
-  const fontStyle = (role: string) => ['v7', 'v8', 'v9'].includes(document.layoutManifest.rendererVersion) ? {fontFamily: bulletinV7FontFamily(role, document.contentLocale)} : {};
-  const sentence = (value: BulletinSentence, fontSize: number, presentation?: 'verse' | 'plain') => <span key={value.id} data-sentence-id={value.id} data-fragment-start={0} data-fragment-end={value.spans.reduce((sum, span) => sum + Array.from(span.text).length, 0)} data-selected={sentenceState?.[value.id]?.selected || undefined} data-highlight={sentenceState?.[value.id]?.highlight}>
+  const fontStyle = (role: string) => ['v7', 'v8', 'v9', 'v10'].includes(document.layoutManifest.rendererVersion) ? {fontFamily: bulletinV7FontFamily(role, document.contentLocale)} : {};
+  const sentence = (value: BulletinSentence, fontSize: number, presentation?: 'verse' | 'plain') => <span key={value.id} role={selectable?'button':undefined} tabIndex={selectable?0:undefined} aria-pressed={selectable?!!sentenceState?.[value.id]?.selected:undefined} data-sentence-id={value.id} data-fragment-start={0} data-fragment-end={value.spans.reduce((sum, span) => sum + Array.from(span.text).length, 0)} data-selected={sentenceState?.[value.id]?.selected || undefined} data-highlight={sentenceState?.[value.id]?.highlight}>
     {value.spans.map((span, index) => {
       const role = presentation === 'plain' && span.fontRole !== 'symbol' ? 'body' : presentation === 'verse' && ['body', 'reference'].includes(span.fontRole) ? 'scripture' : span.fontRole;
       return <span key={index} data-font-role={role} style={{...fontStyle(role), ...(span.fontSize == null ? {} : {fontSize: `${span.fontSize / fontSize}em`})}}>{span.text}</span>;

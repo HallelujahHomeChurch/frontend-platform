@@ -41,7 +41,7 @@ test('unrelated package releases retain V1 while mutation and removal fail close
   } finally { await rm(fixture, {recursive: true, force: true}); }
 });
 
-for (const version of ['v6', 'v8', 'v9']) test(`${version} hashes its dependencies and preserves every frozen version`, async () => {
+for (const version of ['v6', 'v8', 'v9', 'v10']) test(`${version} hashes its dependencies and preserves every frozen version`, async () => {
   const root = resolve(import.meta.dirname, '..');
   const fixture = await mkdtemp(join(tmpdir(), 'hhc-renderer-v6-immutability-'));
   try {
@@ -66,6 +66,12 @@ for (const version of ['v6', 'v8', 'v9']) test(`${version} hashes its dependenci
     for (const file of ['packages/ui/dist/bulletin-reader/v6/fixed.js', 'packages/ui/src/bulletin-reader/v6/fixed.ts', 'packages/ui/src/bulletin-reader/v3/measure.ts', ...(['v8', 'v9'].includes(version) ? ['scripts/measure-bulletin-layout-v8.mjs', 'packages/ui/dist/bulletin-reader/v8/BulletinDocumentRenderer.js', 'packages/ui/src/bulletin-reader/v8/BulletinDocumentRenderer.tsx', 'packages/ui/src/bulletin-reader/v7/fonts.ts'] : []), ...(version === 'v9' ? ['scripts/measure-bulletin-layout-v9-base.mjs', 'scripts/measure-bulletin-layout-v9.mjs', 'packages/ui/dist/bulletin-reader/v9/BulletinDocumentRenderer.js', 'packages/ui/dist/bulletin-reader/v9/fixed.js', 'packages/ui/src/bulletin-reader/v9/fixed.ts'] : [])]) {
       const path = join(fixture, file);
       const bytes = await readFile(path);
+      await writeFile(path, Buffer.concat([bytes, Buffer.from('\n/* changed */\n')]));
+      assert.throws(verify, /immutable/);
+      await writeFile(path, bytes);
+    }
+    if (version === 'v10') for (const file of ['scripts/compose-dense-cover-v10.mjs', 'scripts/measure-bulletin-layout-v10.mjs', 'packages/ui/src/bulletin-reader/v10/BulletinDocumentRenderer.tsx', 'packages/ui/dist/bulletin-reader/v10/BulletinDocumentRenderer.js']) {
+      const path = join(fixture, file), bytes = await readFile(path);
       await writeFile(path, Buffer.concat([bytes, Buffer.from('\n/* changed */\n')]));
       assert.throws(verify, /immutable/);
       await writeFile(path, bytes);
