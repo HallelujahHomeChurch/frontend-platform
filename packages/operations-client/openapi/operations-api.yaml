@@ -834,6 +834,51 @@ paths:
         '412':
           description: Preview version mismatch
           content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+  /api/admin/operations/entitlement-batches/candidates:
+    get:
+      tags: [Operations]
+      operationId: listEntitlementBatchCandidates
+      summary: Search currently eligible members for a batch selection
+      description: Read-only current member projection, ordered by member UUID. Requires the same current global authority or selected unit entitlement policy as preview. Scoped results exclude self, processing-restricted and ineligible members; family scope includes active child groups using the selected family policy. Only available local account projections matching the search are returned. No snapshot or grant is created. Private no-store response.
+      x-hhc-visibility: admin
+      security: [{ gatewayPrincipal: [] }]
+      parameters:
+        - name: entitlementCode
+          in: query
+          required: true
+          schema: { $ref: '#/components/schemas/EntitlementCode' }
+        - name: audienceKind
+          in: query
+          required: true
+          schema: { type: string, enum: [all, church, members] }
+        - name: unitId
+          in: query
+          description: Required for church and scoped members searches; prohibited for all. Church requires an active church unit. Global members may optionally narrow to a unit.
+          schema: { type: string, format: uuid }
+        - name: q
+          in: query
+          required: true
+          description: Case-insensitive name or email substring, trimmed before validation.
+          schema: { type: string, minLength: 2, maxLength: 200 }
+        - name: cursor
+          in: query
+          schema: { type: string, format: uuid }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 50 }
+      responses:
+        '200':
+          description: Current authorized candidates; nextCursor is omitted on the last page.
+          content: { application/json: { schema: { $ref: '#/components/schemas/EntitlementBatchCandidatePage' } } }
+        '400':
+          description: Invalid selection or query
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '401':
+          description: Missing identity
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '403':
+          description: Current authority, unit policy or processing permission denied
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
   /api/admin/operations/entitlement-batches/previews:
     post:
       tags: [Operations]
@@ -1874,6 +1919,13 @@ components:
     EntitlementBatchItemStatus:
       type: string
       enum: [pending, granted, already_granted, excluded, ineligible, skipped_changed, failed]
+    EntitlementBatchCandidatePage:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items: { type: array, maxItems: 50, items: { $ref: '#/components/schemas/MemberView' } }
+        nextCursor: { type: string, format: uuid }
     EntitlementBatchItem:
       type: object
       additionalProperties: false
@@ -1883,6 +1935,7 @@ components:
         id: { type: string, format: uuid }
         memberId: { type: string, format: uuid }
         displayName: { type: string }
+        displayEmail: { type: string, description: Current available authorized account email; never stored in the batch snapshot. }
         status: { $ref: '#/components/schemas/EntitlementBatchItemStatus' }
         assignmentId: { type: string, format: uuid }
         reasonCode: { type: string, enum: [excluded, not_eligible, already_granted, membership_changed, entitlement_changed, scope_changed, policy_changed, processing_restricted, member_unavailable, failed] }

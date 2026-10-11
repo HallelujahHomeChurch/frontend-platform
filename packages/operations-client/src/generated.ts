@@ -913,6 +913,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/operations/entitlement-batches/candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search currently eligible members for a batch selection
+         * @description Read-only current member projection, ordered by member UUID. Requires the same current global authority or selected unit entitlement policy as preview. Scoped results exclude self, processing-restricted and ineligible members; family scope includes active child groups using the selected family policy. Only available local account projections matching the search are returned. No snapshot or grant is created. Private no-store response.
+         */
+        get: operations["listEntitlementBatchCandidates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/operations/entitlement-batches/previews": {
         parameters: {
             query?: never;
@@ -1908,6 +1928,11 @@ export interface components {
         };
         /** @enum {string} */
         EntitlementBatchItemStatus: "pending" | "granted" | "already_granted" | "excluded" | "ineligible" | "skipped_changed" | "failed";
+        EntitlementBatchCandidatePage: {
+            items: components["schemas"]["MemberView"][];
+            /** Format: uuid */
+            nextCursor?: string;
+        };
         /** @description Member identity and current display label are returned only while visible and legally retained. Reasons never contain arbitrary internal error text. */
         EntitlementBatchItem: {
             /** Format: uuid */
@@ -1915,6 +1940,8 @@ export interface components {
             /** Format: uuid */
             memberId?: string;
             displayName?: string;
+            /** @description Current available authorized account email; never stored in the batch snapshot. */
+            displayEmail?: string;
             status: components["schemas"]["EntitlementBatchItemStatus"];
             /** Format: uuid */
             assignmentId?: string;
@@ -5607,6 +5634,62 @@ export interface operations {
             };
             /** @description Preview version mismatch */
             412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listEntitlementBatchCandidates: {
+        parameters: {
+            query: {
+                entitlementCode: components["schemas"]["EntitlementCode"];
+                audienceKind: "all" | "church" | "members";
+                /** @description Required for church and scoped members searches; prohibited for all. Church requires an active church unit. Global members may optionally narrow to a unit. */
+                unitId?: string;
+                /** @description Case-insensitive name or email substring, trimmed before validation. */
+                q: string;
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current authorized candidates; nextCursor is omitted on the last page. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntitlementBatchCandidatePage"];
+                };
+            };
+            /** @description Invalid selection or query */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Missing identity */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Current authority, unit policy or processing permission denied */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
