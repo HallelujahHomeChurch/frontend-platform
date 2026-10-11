@@ -1916,6 +1916,16 @@ export interface components {
             excludedMemberIds: string[];
             /** @enum {string} */
             status: "preview" | "confirmed" | "completed" | "expired";
+            /**
+             * @description Durable execution state after confirmation. Stopped is terminal and cannot be resumed by confirmation or execution. Omitted for previews and completed jobs.
+             * @enum {string}
+             */
+            executionState?: "queued" | "processing" | "retrying" | "stopped";
+            /**
+             * @description Bounded reason for retrying or stopped execution; never contains internal errors.
+             * @enum {string}
+             */
+            executionReason?: "authorization_unavailable" | "execution_unavailable" | "actor_ineligible" | "authority_lost" | "deadline_expired";
             counts: components["schemas"]["EntitlementBatchCounts"];
             /** Format: date-time */
             createdAt: string;

@@ -1911,6 +1911,14 @@ components:
         audience: { $ref: '#/components/schemas/EntitlementBatchAudience' }
         excludedMemberIds: { type: array, items: { type: string, format: uuid } }
         status: { type: string, enum: [preview, confirmed, completed, expired] }
+        executionState:
+          type: string
+          enum: [queued, processing, retrying, stopped]
+          description: Durable execution state after confirmation. Stopped is terminal and cannot be resumed by confirmation or execution. Omitted for previews and completed jobs.
+        executionReason:
+          type: string
+          enum: [authorization_unavailable, execution_unavailable, actor_ineligible, authority_lost, deadline_expired]
+          description: Bounded reason for retrying or stopped execution; never contains internal errors.
         counts: { $ref: '#/components/schemas/EntitlementBatchCounts' }
         createdAt: { type: string, format: date-time }
         expiresAt: { type: string, format: date-time }

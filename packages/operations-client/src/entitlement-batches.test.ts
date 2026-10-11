@@ -1,4 +1,4 @@
-import {describe, expect, it, vi} from 'vitest';
+import {describe, expect, expectTypeOf, it, vi} from 'vitest';
 import {createOperationsClient} from './client';
 import type {components} from './generated';
 
@@ -69,6 +69,67 @@ describe('Entitlement batch contract', () => {
       expect(request.headers.has('x-hhc-scopes')).toBe(false);
       expect(await request.clone().json()).toEqual(body);
     }
+  });
+
+  it('keeps execution metadata optional and preserves the existing public status enum', () => {
+    type Batch = components['schemas']['EntitlementBatch'];
+    expectTypeOf<Batch['status']>().toEqualTypeOf<'preview' | 'confirmed' | 'completed' | 'expired'>();
+    expectTypeOf<Batch['executionState']>().toEqualTypeOf<'queued' | 'processing' | 'retrying' | 'stopped' | undefined>();
+    expectTypeOf<Batch['executionReason']>().toEqualTypeOf<'authorization_unavailable' | 'execution_unavailable' | 'actor_ineligible' | 'authority_lost' | 'deadline_expired' | undefined>();
+  });
+
+  it('retries confirmation with the same snapshot and key and recovers accepted status by GET', async () => {
+    const accepted = {id: batchId, status: 'confirmed', executionState: 'queued'};
+    const stopped = {...accepted, executionState: 'stopped', executionReason: 'authority_lost'};
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(json({}, 401))
+      .mockResolvedValueOnce(json(accepted)).mockResolvedValueOnce(json(stopped));
+    const client = createOperationsClient({baseUrl: '', getAccessToken: async () => 'old-token', refreshAfterUnauthorized: async () => 'new-token', fetcher});
+    const confirmation = await client.raw.POST('/api/admin/operations/entitlement-batches/{batchId}/confirm', {
+      params: {path: {batchId}, header: {'Idempotency-Key': 'stable-confirm-key'}}, body: {version: 7}, cache: 'no-store'
+    });
+    expect(confirmation.data).toEqual(accepted);
+    const controller = new AbortController();
+    const recovered = await client.raw.GET('/api/admin/operations/entitlement-batches/{batchId}', {
+      params: {path: {batchId}}, cache: 'no-store', signal: controller.signal
+    });
+    expect(recovered.data).toEqual(stopped);
+    for (const [input] of fetcher.mock.calls.slice(0, 2)) {
+      const request = input as Request;
+      expect(request.url).toBe(`http://localhost${prefix}/${batchId}/confirm`);
+      expect(request.method).toBe('POST');
+      expect(request.headers.get('idempotency-key')).toBe('stable-confirm-key');
+      expect(await request.clone().json()).toEqual({version: 7});
+    }
+    const recovery = fetcher.mock.calls[2]?.[0] as Request;
+    expect(recovery.url).toBe(`http://localhost${prefix}/${batchId}`);
+    expect(recovery.method).toBe('GET');
+    expect(recovery.cache).toBe('no-store');
+    expect(recovery.headers.get('authorization')).toBe('Bearer old-token');
+    expect(await recovery.clone().text()).toBe('');
+    controller.abort();
+    expect(recovery.signal.aborted).toBe(true);
+    expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+
+  it('leaves an ambiguous confirmation to recovery using the original key and version', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockRejectedValueOnce(new TypeError('connection lost'))
+      .mockResolvedValueOnce(json({id: batchId, status: 'confirmed', executionState: 'processing'}));
+    const refresh = vi.fn(async () => 'new-token');
+    const client = createOperationsClient({baseUrl: '', getAccessToken: async () => 'token', refreshAfterUnauthorized: refresh, fetcher});
+    const confirm = () => client.raw.POST('/api/admin/operations/entitlement-batches/{batchId}/confirm', {
+      params: {path: {batchId}, header: {'Idempotency-Key': 'original-key'}}, body: {version: 7}
+    });
+    await expect(confirm()).rejects.toThrow('connection lost');
+    expect(fetcher).toHaveBeenCalledOnce();
+    const recovered = await confirm();
+    expect(recovered.data?.executionState).toBe('processing');
+    for (const [input] of fetcher.mock.calls) {
+      const request = input as Request;
+      expect(request.url).toBe(`http://localhost${prefix}/${batchId}/confirm`);
+      expect(request.headers.get('idempotency-key')).toBe('original-key');
+      expect(await request.clone().json()).toEqual({version: 7});
+    }
+    expect(refresh).not.toHaveBeenCalled();
   });
 
   it('confirms a reviewed version then executes only the fixed batch ID', async () => {
