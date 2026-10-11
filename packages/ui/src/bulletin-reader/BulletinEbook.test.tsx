@@ -3,6 +3,16 @@ import {afterEach, expect, it} from 'vitest';
 import * as UI from '../index.js';
 
 afterEach(cleanup);
+it('exposes sentence tap targets without mutating stored anchors or partial highlights', () => {
+  const document=fixture(),original=structuredClone(document);
+  const metadata={title:'主題',subtitle:'',date:'2026-09-27',issueNumber:1740};
+  const {container,rerender}=render(<UI.BulletinEbook document={document} chapter="cover" canonicalMetadata={metadata} selectable sentenceState={{'s-welcome':{selected:true}}}/>);
+  const sentence=container.querySelector('[data-sentence-id="s-welcome"]')!;
+  expect(sentence).toHaveAttribute('role','button');expect(sentence).toHaveAttribute('tabindex','0');expect(sentence).toHaveAttribute('aria-pressed','true');
+  expect(sentence).toHaveAttribute('data-fragment-end','7');expect(document).toEqual(original);
+  rerender(<UI.BulletinEbook document={document} chapter="cover" canonicalMetadata={metadata}/>);
+  expect(sentence).not.toHaveAttribute('role');expect(sentence).not.toHaveAttribute('tabindex');
+});
 const style = {fontSize: 16, lineHeight: 24, indent: 0, firstLineIndent: 2, spaceBefore: 0, spaceAfter: 0};
 const block = (id: string, text = id): UI.BulletinBlock => ({id, style, sentences: [{id: `s-${id}`, spans: [{text, fontRole: 'scripture'}]}]});
 function fixture(): UI.BulletinRenderableDocument {
