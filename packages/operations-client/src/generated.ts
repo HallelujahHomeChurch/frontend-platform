@@ -2465,6 +2465,12 @@ export interface components {
             memberId: string;
             /** Format: uuid */
             orgUnitId: string;
+            /** @description Exact active descendant bindings shown in the upward-move confirmation. Missing, changed, or extra bindings reject the entire move; church membership and other branches are preserved. */
+            replaceAffiliations?: {
+                /** Format: uuid */
+                id: string;
+                version: number;
+            }[];
         };
         OrgMembership: {
             /** Format: uuid */
@@ -5408,8 +5414,15 @@ export interface operations {
                     "application/json": components["schemas"]["OrgMembership"];
                 };
             };
-            /** @description Conflict */
+            /** @description Unconfirmed upward move, responsibility eligibility conflict, or idempotency conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Confirmed source affiliations changed; reload before confirming again */
+            412: {
                 headers: {
                     [name: string]: unknown;
                 };
