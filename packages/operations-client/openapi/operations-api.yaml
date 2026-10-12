@@ -743,7 +743,8 @@ paths:
         '200':
           description: Organization affiliation
           content: { application/json: { schema: { $ref: '#/components/schemas/OrgMembership' } } }
-        '409': { description: Conflict }
+        '409': { description: 'Unconfirmed upward move, responsibility eligibility conflict, or idempotency conflict' }
+        '412': { description: Confirmed source affiliations changed; reload before confirming again }
   /api/admin/operations/org-memberships/{id}:
     delete:
       tags: [Operations]
@@ -804,6 +805,251 @@ paths:
       security: [{ gatewayPrincipal: [] }]
       parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/IfMatch' }]
       responses: { '200': { description: Revoked unit responsibility, content: { application/json: { schema: { $ref: '#/components/schemas/UnitResponsibility' } } } }, '403': { description: Scope denied }, '412': { description: Version mismatch } }
+  /api/admin/operations/entitlement-batches/options:
+    get:
+      tags: [Operations]
+      operationId: getEntitlementBatchOptions
+      summary: Get currently permitted batch features and audiences
+      description: Requires current global memberships manage authority or applicable entitlement management responsibility. Roster permission alone is insufficient. Every lookup rechecks owner and current authority; old scopes and batch IDs confer no access.
+      x-hhc-visibility: admin
+      security: [{ gatewayPrincipal: [] }]
+      responses:
+        '200':
+          description: Historical batch result; grants may subsequently have been revoked. Private no-store response.
+          content: { application/json: { schema: { $ref: '#/components/schemas/EntitlementBatchOptions' } } }
+        '400':
+          description: Invalid request
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '401':
+          description: Missing identity
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '403':
+          description: Current authority or processing permission denied
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '404':
+          description: Batch or visible member unavailable
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '409':
+          description: Idempotency payload conflict or batch state conflict
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '412':
+          description: Preview version mismatch
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+  /api/admin/operations/entitlement-batches/candidates:
+    get:
+      tags: [Operations]
+      operationId: listEntitlementBatchCandidates
+      summary: Search currently eligible members for a batch selection
+      description: Read-only current member projection, ordered by member UUID. Requires the same current global authority or selected unit entitlement policy as preview. Scoped results exclude self, processing-restricted and ineligible members; family scope includes active child groups using the selected family policy. Only available local account projections matching the search are returned. No snapshot or grant is created. Private no-store response.
+      x-hhc-visibility: admin
+      security: [{ gatewayPrincipal: [] }]
+      parameters:
+        - name: entitlementCode
+          in: query
+          required: true
+          schema: { $ref: '#/components/schemas/EntitlementCode' }
+        - name: audienceKind
+          in: query
+          required: true
+          schema: { type: string, enum: [all, church, members] }
+        - name: unitId
+          in: query
+          description: Required for church and scoped members searches; prohibited for all. Church requires an active church unit. Global members may optionally narrow to a unit.
+          schema: { type: string, format: uuid }
+        - name: q
+          in: query
+          required: true
+          description: Case-insensitive name or email substring, trimmed before validation.
+          schema: { type: string, minLength: 2, maxLength: 200 }
+        - name: cursor
+          in: query
+          schema: { type: string, format: uuid }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 50 }
+      responses:
+        '200':
+          description: Current authorized candidates; nextCursor is omitted on the last page.
+          content: { application/json: { schema: { $ref: '#/components/schemas/EntitlementBatchCandidatePage' } } }
+        '400':
+          description: Invalid selection or query
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '401':
+          description: Missing identity
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '403':
+          description: Current authority, unit policy or processing permission denied
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+  /api/admin/operations/entitlement-batches/previews:
+    post:
+      tags: [Operations]
+      operationId: previewEntitlementBatch
+      summary: Create an immutable member snapshot without granting access
+      description: Requires current global memberships manage authority or applicable entitlement management responsibility. Roster permission alone is insufficient. Every lookup rechecks owner and current authority; old scopes and batch IDs confer no access.
+      x-hhc-visibility: admin
+      security: [{ gatewayPrincipal: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/EntitlementBatchPreviewInput' } } }
+      responses:
+        '200':
+          description: Historical batch result; grants may subsequently have been revoked. Private no-store response.
+          content: { application/json: { schema: { $ref: '#/components/schemas/EntitlementBatch' } } }
+        '400':
+          description: Invalid request
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '401':
+          description: Missing identity
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '403':
+          description: Current authority or processing permission denied
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '404':
+          description: Batch or visible member unavailable
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '409':
+          description: Idempotency payload conflict or batch state conflict
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '412':
+          description: Preview version mismatch
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '413': { description: Request or snapshot capacity exceeded }
+  /api/admin/operations/entitlement-batches/{batchId}:
+    get:
+      tags: [Operations]
+      operationId: getEntitlementBatch
+      summary: Read historical batch progress owned by the current actor
+      description: Requires current global memberships manage authority or applicable entitlement management responsibility. Roster permission alone is insufficient. Every lookup rechecks owner and current authority; old scopes and batch IDs confer no access.
+      x-hhc-visibility: admin
+      security: [{ gatewayPrincipal: [] }]
+      parameters:
+        - { name: batchId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Historical batch result; grants may subsequently have been revoked. Private no-store response.
+          content: { application/json: { schema: { $ref: '#/components/schemas/EntitlementBatch' } } }
+        '400':
+          description: Invalid request
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '401':
+          description: Missing identity
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '403':
+          description: Current authority or processing permission denied
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '404':
+          description: Batch or visible member unavailable
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '409':
+          description: Idempotency payload conflict or batch state conflict
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '412':
+          description: Preview version mismatch
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+  /api/admin/operations/entitlement-batches/{batchId}/items:
+    get:
+      tags: [Operations]
+      operationId: listEntitlementBatchItems
+      summary: Read visible historical batch item outcomes
+      description: Requires current global memberships manage authority or applicable entitlement management responsibility. Roster permission alone is insufficient. Every lookup rechecks owner and current authority; old scopes and batch IDs confer no access.
+      x-hhc-visibility: admin
+      security: [{ gatewayPrincipal: [] }]
+      parameters:
+        - { name: batchId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: cursor, in: query, schema: { type: string, maxLength: 200 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 50 } }
+      responses:
+        '200':
+          description: Historical batch result; grants may subsequently have been revoked. Private no-store response.
+          content: { application/json: { schema: { $ref: '#/components/schemas/EntitlementBatchItemPage' } } }
+        '400':
+          description: Invalid request
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '401':
+          description: Missing identity
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '403':
+          description: Current authority or processing permission denied
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '404':
+          description: Batch or visible member unavailable
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '409':
+          description: Idempotency payload conflict or batch state conflict
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '412':
+          description: Preview version mismatch
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+  /api/admin/operations/entitlement-batches/{batchId}/confirm:
+    post:
+      tags: [Operations]
+      operationId: confirmEntitlementBatch
+      summary: Confirm the exact preview version within thirty minutes
+      description: Requires current global memberships manage authority or applicable entitlement management responsibility. Roster permission alone is insufficient. Every lookup rechecks owner and current authority; old scopes and batch IDs confer no access.
+      x-hhc-visibility: admin
+      security: [{ gatewayPrincipal: [] }]
+      parameters:
+        - { name: batchId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/EntitlementBatchConfirmInput' } } }
+      responses:
+        '200':
+          description: Historical batch result; grants may subsequently have been revoked. Private no-store response.
+          content: { application/json: { schema: { $ref: '#/components/schemas/EntitlementBatch' } } }
+        '400':
+          description: Invalid request
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '401':
+          description: Missing identity
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '403':
+          description: Current authority or processing permission denied
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '404':
+          description: Batch or visible member unavailable
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '409':
+          description: Idempotency payload conflict or batch state conflict
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '412':
+          description: Preview version mismatch
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+  /api/admin/operations/entitlement-batches/{batchId}/execute:
+    post:
+      tags: [Operations]
+      operationId: executeEntitlementBatch
+      summary: Process at most fifty pending snapshot items atomically
+      description: Requires current global memberships manage authority or applicable entitlement management responsibility. Roster permission alone is insufficient. Every lookup rechecks owner and current authority; old scopes and batch IDs confer no access.
+      x-hhc-visibility: admin
+      security: [{ gatewayPrincipal: [] }]
+      parameters:
+        - { name: batchId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Historical batch result; grants may subsequently have been revoked. Private no-store response.
+          content: { application/json: { schema: { $ref: '#/components/schemas/EntitlementBatch' } } }
+        '400':
+          description: Invalid request
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '401':
+          description: Missing identity
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '403':
+          description: Current authority or processing permission denied
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '404':
+          description: Batch or visible member unavailable
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '409':
+          description: Idempotency payload conflict or batch state conflict
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '412':
+          description: Preview version mismatch
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
   /api/admin/operations/entitlement-assignments:
     get:
       tags: [Operations]
@@ -1585,6 +1831,130 @@ components:
     IdempotencyKey: { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 1, maxLength: 200 } }
     IfMatch: { name: If-Match, in: header, required: true, schema: { type: string, pattern: '^"[1-9][0-9]*"$' } }
   schemas:
+    EntitlementBatchCode:
+      type: string
+      enum: [bulletin.general.zh-Hant.access, bulletin.general.zh-Hans.access, bulletin.general.en.access, bulletin.children.zh-Hant.access, bulletin.children.en.access, video.meeting-recordings.access]
+    EntitlementBatchAudience:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [kind]
+          properties:
+            kind: { type: string, const: all }
+        - type: object
+          additionalProperties: false
+          required: [kind, churchOrgUnitId]
+          properties:
+            kind: { type: string, const: church }
+            churchOrgUnitId: { type: string, format: uuid }
+        - type: object
+          additionalProperties: false
+          required: [kind, memberIds]
+          properties:
+            kind: { type: string, const: members }
+            memberIds: { type: array, minItems: 1, maxItems: 500, uniqueItems: true, items: { type: string, format: uuid } }
+            unitId: { type: string, format: uuid, description: Required for scoped actors; selects the existing responsibility and policy context. }
+    EntitlementBatchPreviewInput:
+      type: object
+      additionalProperties: false
+      required: [entitlementCode, audience, excludedMemberIds]
+      properties:
+        entitlementCode: { $ref: '#/components/schemas/EntitlementBatchCode' }
+        audience: { $ref: '#/components/schemas/EntitlementBatchAudience' }
+        excludedMemberIds: { type: array, maxItems: 500, uniqueItems: true, items: { type: string, format: uuid } }
+    EntitlementBatchConfirmInput:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        version: { type: integer, format: int64, minimum: 1 }
+    EntitlementBatchUnit:
+      type: object
+      additionalProperties: false
+      required: [id, name, kind, entitlementCodes]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        kind: { $ref: '#/components/schemas/OrgUnitKind' }
+        entitlementCodes: { type: array, items: { $ref: '#/components/schemas/EntitlementBatchCode' } }
+    EntitlementBatchOptions:
+      type: object
+      additionalProperties: false
+      required: [global, entitlementCodes, audienceKinds, units]
+      properties:
+        global: { type: boolean }
+        entitlementCodes: { type: array, items: { $ref: '#/components/schemas/EntitlementBatchCode' } }
+        audienceKinds: { type: array, items: { type: string, enum: [all, church, members] } }
+        units: { type: array, items: { $ref: '#/components/schemas/EntitlementBatchUnit' } }
+    EntitlementBatchCounts:
+      type: object
+      additionalProperties: false
+      required: [total, pending, granted, alreadyGranted, excluded, ineligible, skippedChanged, failed]
+      properties:
+        total: { type: integer, minimum: 0 }
+        pending: { type: integer, minimum: 0 }
+        granted: { type: integer, minimum: 0 }
+        alreadyGranted: { type: integer, minimum: 0 }
+        excluded: { type: integer, minimum: 0 }
+        ineligible: { type: integer, minimum: 0 }
+        skippedChanged: { type: integer, minimum: 0 }
+        failed: { type: integer, minimum: 0 }
+    EntitlementBatch:
+      type: object
+      additionalProperties: false
+      description: Immutable cohort, manual_assignment source only. Counts sum to total and describe processing history, never current effective access. Preview expires after thirty minutes; execution expires twenty-four hours after confirmation. Terminal items never return to pending.
+      required: [id, version, entitlementCode, source, audience, excludedMemberIds, status, counts, createdAt, expiresAt]
+      properties:
+        id: { type: string, format: uuid }
+        version: { type: integer, format: int64, minimum: 1 }
+        entitlementCode: { $ref: '#/components/schemas/EntitlementBatchCode' }
+        source: { type: string, const: manual_assignment }
+        audience: { $ref: '#/components/schemas/EntitlementBatchAudience' }
+        excludedMemberIds: { type: array, items: { type: string, format: uuid } }
+        status: { type: string, enum: [preview, confirmed, completed, expired] }
+        executionState:
+          type: string
+          enum: [queued, processing, retrying, stopped]
+          description: Durable execution state after confirmation. Stopped is terminal and cannot be resumed by confirmation or execution. Omitted for previews and completed jobs.
+        executionReason:
+          type: string
+          enum: [authorization_unavailable, execution_unavailable, actor_ineligible, authority_lost, deadline_expired]
+          description: Bounded reason for retrying or stopped execution; never contains internal errors.
+        counts: { $ref: '#/components/schemas/EntitlementBatchCounts' }
+        createdAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        confirmedAt: { type: string, format: date-time }
+        executeUntil: { type: string, format: date-time }
+    EntitlementBatchItemStatus:
+      type: string
+      enum: [pending, granted, already_granted, excluded, ineligible, skipped_changed, failed]
+    EntitlementBatchCandidatePage:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items: { type: array, maxItems: 50, items: { $ref: '#/components/schemas/MemberView' } }
+        nextCursor: { type: string, format: uuid }
+    EntitlementBatchItem:
+      type: object
+      additionalProperties: false
+      description: Member identity and current display label are returned only while visible and legally retained. Reasons never contain arbitrary internal error text.
+      required: [id, status]
+      properties:
+        id: { type: string, format: uuid }
+        memberId: { type: string, format: uuid }
+        displayName: { type: string }
+        displayEmail: { type: string, description: Current available authorized account email; never stored in the batch snapshot. }
+        status: { $ref: '#/components/schemas/EntitlementBatchItemStatus' }
+        assignmentId: { type: string, format: uuid }
+        reasonCode: { type: string, enum: [excluded, not_eligible, already_granted, membership_changed, entitlement_changed, scope_changed, policy_changed, processing_restricted, member_unavailable, failed] }
+    EntitlementBatchItemPage:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items: { type: array, maxItems: 50, items: { $ref: '#/components/schemas/EntitlementBatchItem' } }
+        nextCursor: { type: string }
     ManagedEntitlementCode:
       type: string
       enum: [bulletin.general.zh-Hant.access, bulletin.general.zh-Hans.access, bulletin.general.en.access, video.meeting-recordings.access]
@@ -2190,6 +2560,18 @@ components:
       properties:
         memberId: { type: string, format: uuid }
         orgUnitId: { type: string, format: uuid }
+        replaceAffiliations:
+          description: Exact active descendant bindings shown in the upward-move confirmation. Missing, changed, or extra bindings reject the entire move; church membership and other branches are preserved.
+          type: array
+          minItems: 1
+          maxItems: 200
+          items:
+            type: object
+            additionalProperties: false
+            required: [id, version]
+            properties:
+              id: { type: string, format: uuid }
+              version: { type: integer, minimum: 1 }
     OrgMembership:
       type: object
       additionalProperties: false
