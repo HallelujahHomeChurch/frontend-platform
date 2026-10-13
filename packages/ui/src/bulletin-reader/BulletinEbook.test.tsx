@@ -133,3 +133,31 @@ it('normalizes weekly verse roles and removes mobile announcement emphasis witho
   }
   expect(JSON.stringify(document)).toBe(original);
 });
+
+it.each([
+  ['v1', 'zh-Hant', UI.BULLETIN_RENDERER_V1_DIGEST],
+  ['v2', 'zh-Hans', UI.BULLETIN_RENDERER_V2_DIGEST],
+  ...(['v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'] as const).flatMap(version => {
+    const digests = {v3: UI.BULLETIN_RENDERER_V3_DIGEST, v4: UI.BULLETIN_RENDERER_V4_DIGEST, v5: UI.BULLETIN_RENDERER_V5_DIGEST, v6: UI.BULLETIN_RENDERER_V6_DIGEST, v7: UI.BULLETIN_RENDERER_V7_DIGEST, v8: UI.BULLETIN_RENDERER_V8_DIGEST, v9: UI.BULLETIN_RENDERER_V9_DIGEST, v10: UI.BULLETIN_RENDERER_V10_DIGEST};
+    return (['zh-Hant', 'zh-Hans'] as const).map(locale => [version, locale, digests[version]] as const);
+  }),
+] as const)('retains %s %s ebook anchors, canonical text and font roles', (version, locale, digest) => {
+  const document = fixture();
+  document.contentLocale = locale;
+  document.templateVersion = locale === 'zh-Hans' ? 'v2' : 'v1';
+  Object.assign(document.layoutManifest, {templateVersion: document.templateVersion, rendererVersion: version, rendererArtifactSha256: digest});
+  if (version === 'v9' || version === 'v10') document.templateSnapshot = {version: 1, visionMission: '福音同行', visionFellowship: '彼此成全', visionCommitment: '愛中服事'};
+  const cover = document.components.find(component => component.type === 'cover');
+  if (cover?.type !== 'cover') throw new Error('cover fixture missing');
+  cover.cover.welcome[0].sentences[0].spans = [{text: 'wel', fontRole: 'body'}, {text: 'come', fontRole: 'emphasis'}];
+  const before = structuredClone(document);
+  const {container} = render(<UI.BulletinEbook document={document} chapter="cover" canonicalMetadata={{title: '主題😀', subtitle: '', date: '2026-10-13', issueNumber: 1739}}/>);
+  expect(container.querySelector('[data-sentence-id="canonical-title"]')).toHaveTextContent('主題😀');
+  expect(container.querySelector('[data-sentence-id="s-welcome"]')).toHaveAttribute('data-fragment-end', '7');
+  const span = container.querySelector('[data-sentence-id="s-welcome"] [data-font-role="body"]') as HTMLElement;
+  expect(span).not.toBeNull();
+  expect(span).toHaveStyle({fontFamily: ['v7', 'v8', 'v9', 'v10'].includes(version) && locale === 'zh-Hans' ? "'HHC Weekly Serif SC', 'HHC Weekly Serif'" : ''});
+  expect(container.querySelector('[data-sentence-id="s-welcome"] [data-font-role="emphasis"]')).toHaveStyle({fontFamily: ['v7', 'v8', 'v9', 'v10'].includes(version) ? (locale === 'zh-Hans' ? "'HHC Weekly Serif SC', 'HHC Weekly Serif'" : "'HHC Weekly Serif'") : ''});
+  if (version === 'v9' || version === 'v10') expect(container.querySelector('[data-fixed-element="visionMission"]')).toHaveTextContent('福音同行');
+  expect(document).toEqual(before);
+});
