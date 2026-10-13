@@ -34,14 +34,6 @@ jobs:
       - run: corepack pnpm build
       - name: Verify immutable bulletin renderer
         run: |
-          node scripts/verify-bulletin-renderer.mjs --base-ref origin/main
-          node scripts/verify-bulletin-renderer-v3.mjs --base-ref origin/main
-          node scripts/verify-bulletin-renderer-v4.mjs --base-ref origin/main
-          node scripts/verify-bulletin-renderer-v5.mjs --base-ref origin/main
-          node scripts/verify-bulletin-renderer-v6.mjs --base-ref origin/main
-          node scripts/verify-bulletin-renderer-v7.mjs --base-ref origin/main
-          node scripts/verify-bulletin-renderer-v8.mjs --base-ref origin/main
-          node scripts/verify-bulletin-renderer-v9.mjs --base-ref origin/main
           node scripts/verify-bulletin-renderer-v10.mjs --base-ref origin/main
           node --test scripts/verify-bulletin-renderer.test.mjs
           python3 -m unittest discover -s scripts -p test_bulletin_corpus.py

@@ -76,6 +76,22 @@ for (const version of ['v6', 'v8', 'v9', 'v10']) test(`${version} hashes its dep
       assert.throws(verify, /immutable/);
       await writeFile(path, bytes);
     }
+    if (version === 'v10') for (let predecessor = 1; predecessor <= 10; predecessor++) {
+      const prefix = predecessor === 1 ? '' : `v${predecessor}/`;
+      // Source-only edits must be caught even when compiled bytes are untouched.
+      for (const file of [
+        `packages/ui/src/bulletin-reader/${prefix}BulletinDocumentRenderer.tsx`,
+        `packages/ui/dist/bulletin-reader/${prefix}BulletinDocumentRenderer.js`,
+      ]) {
+        const path = join(fixture, file), bytes = await readFile(path);
+        await writeFile(path, Buffer.concat([bytes, Buffer.from('\n/* changed */\n')]));
+        assert.throws(verify, /immutable|Renderer artifact changed/, file);
+        await writeFile(path, bytes);
+        await rm(path);
+        assert.throws(verify, /ENOENT/, file);
+        await writeFile(path, bytes);
+      }
+    }
     await rm(join(fixture, 'packages/ui/dist/bulletin-reader/v6/fixed.js'));
     assert.throws(verify, /ENOENT/);
   } finally {await rm(fixture, {recursive: true, force: true});}
