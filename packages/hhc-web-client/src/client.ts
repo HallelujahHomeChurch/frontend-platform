@@ -68,6 +68,9 @@ export type BroadcastUpdateInput = components['schemas']['BroadcastUpdateInput']
 export type BroadcastMutationInput = components['schemas']['BroadcastMutationInput']
 export type BroadcastMutationResult = components['schemas']['BroadcastMutationResult']
 export type BroadcastBindInput = components['schemas']['BroadcastBindInput']
+export type BroadcastStreamKey = components['schemas']['BroadcastStreamKey']
+export type BroadcastStreamKeySetInput = components['schemas']['BroadcastStreamKeySetInput']
+export type BroadcastStreamKeyBindInput = components['schemas']['BroadcastStreamKeyBindInput']
 export type BroadcastEmergencyCloseInput = components['schemas']['BroadcastEmergencyCloseInput']
 export type BroadcastPreviewInput = components['schemas']['BroadcastPreviewInput']
 export type BroadcastPreviewAccess = components['schemas']['BroadcastPreviewAccess']
@@ -270,6 +273,15 @@ export function createHhcWebClient(options: {
     },
     async bindBroadcast(recordingId:string,body:BroadcastBindInput,signal?:AbortSignal) {
       return (await unwrap(client.POST('/admin/broadcasts/{recordingId}/bindings', {params:{path:{recordingId}},body,signal,cache:'no-store'}))).data
+    },
+    async getBroadcastStreamKey(recordingId:string,signal?:AbortSignal) {
+      return (await unwrap(client.GET('/admin/broadcasts/{recordingId}/stream-key', {params:{path:{recordingId}},signal,cache:'no-store',redirect:'error'}))).data
+    },
+    async setBroadcastStreamKey(recordingId:string,body:BroadcastStreamKeySetInput,signal?:AbortSignal) {
+      return (await unwrap(client.PUT('/admin/broadcasts/{recordingId}/stream-key', {params:{path:{recordingId}},body,signal,cache:'no-store',redirect:'error'}))).data
+    },
+    async bindBroadcastStreamKey(recordingId:string,body:BroadcastStreamKeyBindInput,signal?:AbortSignal) {
+      return (await unwrap(client.POST('/admin/broadcasts/{recordingId}/stream-key-bindings', {params:{path:{recordingId}},body,signal,cache:'no-store',redirect:'error'}))).data
     },
     async startBroadcast(recordingId:string,body:BroadcastMutationInput,signal?:AbortSignal) {
       return (await unwrap(client.POST('/admin/broadcasts/{recordingId}/start', {params:{path:{recordingId}},body,signal,cache:'no-store'}))).data

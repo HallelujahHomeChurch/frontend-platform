@@ -77,7 +77,7 @@ try {
 import {createRoot} from 'react-dom/client';
 import {createAccountSessionClient, createBrowserAccountAuthRuntime, type AccountSessionUser} from '@hallelujahhomechurch/account-client';
 import {canAccessAdmin} from '@hallelujahhomechurch/account-client/admin-access';
-import {createHhcWebClient, type ContentStatus, type PageGroupManifest} from '@hallelujahhomechurch/hhc-web-client';
+import {createHhcWebClient, type ContentStatus, type PageGroupManifest, type BroadcastStreamKey, type BroadcastStreamKeySetInput, type BroadcastStreamKeyBindInput, type BroadcastMutationResult} from '@hallelujahhomechurch/hhc-web-client';
 import {createOperationsClient, type ManagedMemberView, type ManagedUnitFolder} from '@hallelujahhomechurch/operations-client';
 import {getInitialTheme, readAnonymousStatementDismissal, writeAnonymousStatementDismissal, statementRefKey} from '@hallelujahhomechurch/preferences';
 import {AccountMenu, Button, ContextMenu, BulletinDocumentRenderer, ExpandableSearchField} from '@hallelujahhomechurch/ui';
@@ -112,6 +112,13 @@ void createAccountSessionClient;
 void canAccessAdmin;
 void operationsClient;
 authRuntime.dispose();
+async function checkBroadcastStreamKey(id: string, input: BroadcastStreamKeySetInput, binding: BroadcastStreamKeyBindInput) {
+  const metadata: BroadcastStreamKey = await statementClient.getBroadcastStreamKey(id);
+  const updated: BroadcastStreamKey = await statementClient.setBroadcastStreamKey(id, input);
+  const result: BroadcastMutationResult = await statementClient.bindBroadcastStreamKey(id, binding);
+  return {metadata, updated, result};
+}
+void checkBroadcastStreamKey;
 void createHhcWebClient;
 void contentStatus;
 void groupManifest;
@@ -160,7 +167,7 @@ export default function Layout({children}: {children: React.ReactNode}) {
   write(resolve(next, 'app/page.tsx'), `'use client';
 import {createAccountSessionClient, createBrowserAccountAuthRuntime, type AccountSessionUser} from '@hallelujahhomechurch/account-client';
 import {canAccessAdmin} from '@hallelujahhomechurch/account-client/admin-access';
-import {createHhcWebClient, type ContentStatus, type PageGroupManifest} from '@hallelujahhomechurch/hhc-web-client';
+import {createHhcWebClient, type ContentStatus, type PageGroupManifest, type BroadcastStreamKey, type BroadcastStreamKeySetInput, type BroadcastStreamKeyBindInput, type BroadcastMutationResult} from '@hallelujahhomechurch/hhc-web-client';
 import {createOperationsClient, type ManagedMemberView, type ManagedUnitFolder} from '@hallelujahhomechurch/operations-client';
 import {getInitialTheme, readAnonymousStatementDismissal, writeAnonymousStatementDismissal, statementRefKey} from '@hallelujahhomechurch/preferences';
 import {AccountMenu, Button, ContextMenu, BulletinDocumentRenderer, ExpandableSearchField} from '@hallelujahhomechurch/ui';
@@ -193,6 +200,13 @@ void createAccountSessionClient;
 void canAccessAdmin;
 void operationsClient;
 authRuntime.dispose();
+async function checkBroadcastStreamKey(id: string, input: BroadcastStreamKeySetInput, binding: BroadcastStreamKeyBindInput) {
+  const metadata: BroadcastStreamKey = await statementClient.getBroadcastStreamKey(id);
+  const updated: BroadcastStreamKey = await statementClient.setBroadcastStreamKey(id, input);
+  const result: BroadcastMutationResult = await statementClient.bindBroadcastStreamKey(id, binding);
+  return {metadata, updated, result};
+}
+void checkBroadcastStreamKey;
 void createHhcWebClient;
 void contentStatus;
 void groupManifest;

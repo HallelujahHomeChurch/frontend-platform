@@ -2956,6 +2956,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/broadcasts/{recordingId}/stream-key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * getBroadcastStreamKey
+         * @description K1 human-only event credential metadata; never returns a secret or digest.
+         */
+        get: operations["getBroadcastStreamKey"];
+        /**
+         * setBroadcastStreamKey
+         * @description K1 requires BROADCAST_WRITERS_ENABLED and preserves the existing B1/C1 pipeline. Retry ambiguous failures with the same operationKey and exact input. Never persist the raw credential in logs or mutation receipts. Allowed only before the first capture intent, in draft or scheduled phase. Client generates 32 WebCrypto random bytes; only SHA-256 and a four-character suffix persist. Replayed writes return current metadata only while the same credential remains current; replay after a later rotation returns broadcast_operation_conflict.
+         */
+        put: operations["setBroadcastStreamKey"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcasts/{recordingId}/stream-key-bindings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * bindBroadcastWithStreamKey
+         * @description K1 requires BROADCAST_WRITERS_ENABLED and preserves the existing B1/C1 pipeline. Retry ambiguous failures with the same operationKey and exact input. Never persist the raw credential in logs or mutation receipts. Requires publish scope when autoStart or autoPublish is enabled. Wrong or absent key returns 403 broadcast_stream_key_invalid. The current producer returns 200; clients must also retain B1 202/null binding polling compatibility. A 503 may follow durable intent reservation; retry the same input and GET the broadcast for recovery, never fall back to C1.
+         */
+        post: operations["bindBroadcastWithStreamKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/broadcasts/{recordingId}/bindings": {
         parameters: {
             query?: never;
@@ -3341,6 +3385,43 @@ export interface components {
             scheduledAt?: string | null;
             policy?: components["schemas"]["BroadcastPolicy"];
             cover?: components["schemas"]["LiveCoverSelection"];
+        };
+        BroadcastStreamKey: {
+            configured: boolean;
+            canRotate: boolean;
+            revision: number;
+            suffix: string | null;
+        };
+        BroadcastStreamKeyEnvelope: {
+            data: components["schemas"]["BroadcastStreamKey"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        BroadcastStreamKeySetInput: {
+            operationKey: string;
+            expectedRevision: number;
+            /** @description Event UUID must match the path; suffix decodes canonically to exactly 32 random bytes. Keep only in memory or OS credential storage. */
+            streamKey: string;
+        };
+        BroadcastStreamKeyBindInput: {
+            operationKey: string;
+            expectedRevision: number;
+            /** @description Event UUID must match the path; suffix decodes canonically to exactly 32 random bytes. Keep only in memory or OS credential storage. */
+            streamKey: string;
+            protocolVersion: string;
+        };
+        BroadcastStreamKeyErrorEnvelope: {
+            data: null;
+            meta: {
+                [key: string]: unknown;
+            };
+            error: {
+                /** @enum {string} */
+                code: "broadcast_stream_key_invalid" | "broadcast_invalid" | "broadcast_not_found" | "broadcast_state_conflict" | "broadcast_already_bound" | "broadcast_active_limit" | "broadcast_epoch_mismatch" | "broadcast_boundary_conflict" | "broadcast_operation_conflict" | "broadcast_revision_conflict" | "broadcast_protocol_unsupported" | "unauthorized" | "forbidden" | "rate_limited" | "unavailable";
+                message: string;
+            };
         };
         BroadcastBindInput: {
             operationKey: string;
@@ -7140,6 +7221,15 @@ export interface components {
         };
     };
     responses: {
+        /** @description K1 failure; unauthorized or wrong key never bypasses OAuth, actor, epoch or active-capture fencing. */
+        BroadcastStreamKeyFailure: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["BroadcastStreamKeyErrorEnvelope"];
+            };
+        };
         /** @description B1 operation rejected or dependency unavailable; failed responses never prove a state transition. */
         BroadcastFailure: {
             headers: {
@@ -13852,6 +13942,107 @@ export interface operations {
             422: components["responses"]["BroadcastFailure"];
             429: components["responses"]["BroadcastFailure"];
             503: components["responses"]["BroadcastFailure"];
+        };
+    };
+    getBroadcastStreamKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastStreamKeyEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastStreamKeyFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastStreamKeyFailure"];
+            409: components["responses"]["BroadcastStreamKeyFailure"];
+            412: components["responses"]["BroadcastStreamKeyFailure"];
+            422: components["responses"]["BroadcastStreamKeyFailure"];
+            429: components["responses"]["BroadcastStreamKeyFailure"];
+            503: components["responses"]["BroadcastStreamKeyFailure"];
+        };
+    };
+    setBroadcastStreamKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastStreamKeySetInput"];
+            };
+        };
+        responses: {
+            /** @description Current operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastStreamKeyEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastStreamKeyFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastStreamKeyFailure"];
+            409: components["responses"]["BroadcastStreamKeyFailure"];
+            412: components["responses"]["BroadcastStreamKeyFailure"];
+            422: components["responses"]["BroadcastStreamKeyFailure"];
+            429: components["responses"]["BroadcastStreamKeyFailure"];
+            503: components["responses"]["BroadcastStreamKeyFailure"];
+        };
+    };
+    bindBroadcastWithStreamKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastStreamKeyBindInput"];
+            };
+        };
+        responses: {
+            /** @description Current operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastMutationResultEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastStreamKeyFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastStreamKeyFailure"];
+            409: components["responses"]["BroadcastStreamKeyFailure"];
+            412: components["responses"]["BroadcastStreamKeyFailure"];
+            422: components["responses"]["BroadcastStreamKeyFailure"];
+            429: components["responses"]["BroadcastStreamKeyFailure"];
+            503: components["responses"]["BroadcastStreamKeyFailure"];
         };
     };
     bindBroadcast: {
