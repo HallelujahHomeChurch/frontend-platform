@@ -4,6 +4,106 @@
  */
 
 export interface paths {
+    "/admin/broadcast-source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * getBroadcastSource
+         * @description K2 singleton reusable source; human OAuth required. All secrets stay in the request body. No schedule guessing or C1 fallback. See docs/obs-capture/stream-source-v1/contract.md. Invalid credential: 403 broadcast_stream_key_invalid. No eligible target: 409 broadcast_source_not_prepared. Occupied input: 409 broadcast_source_busy. Revision mismatch: 412 broadcast_revision_conflict. Stale replay: 409 broadcast_operation_conflict. Bind requires publish permission when the locked policy has autoStart or autoPublish; 503 retries keep identical input and operation key.
+         */
+        get: operations["getBroadcastSource"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcast-source/stream-key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * setBroadcastSourceStreamKey
+         * @description K2 singleton reusable source; human OAuth required. All secrets stay in the request body. No schedule guessing or C1 fallback. See docs/obs-capture/stream-source-v1/contract.md. Invalid credential: 403 broadcast_stream_key_invalid. No eligible target: 409 broadcast_source_not_prepared. Occupied input: 409 broadcast_source_busy. Revision mismatch: 412 broadcast_revision_conflict. Stale replay: 409 broadcast_operation_conflict. Bind requires publish permission when the locked policy has autoStart or autoPublish; 503 retries keep identical input and operation key.
+         */
+        put: operations["setBroadcastSourceStreamKey"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcast-source/target": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * setBroadcastSourceTarget
+         * @description K2 singleton reusable source; human OAuth required. All secrets stay in the request body. No schedule guessing or C1 fallback. See docs/obs-capture/stream-source-v1/contract.md. Invalid credential: 403 broadcast_stream_key_invalid. No eligible target: 409 broadcast_source_not_prepared. Occupied input: 409 broadcast_source_busy. Revision mismatch: 412 broadcast_revision_conflict. Stale replay: 409 broadcast_operation_conflict. Bind requires publish permission when the locked policy has autoStart or autoPublish; 503 retries keep identical input and operation key.
+         */
+        put: operations["setBroadcastSourceTarget"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcast-source/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * resolveBroadcastSource
+         * @description K2 singleton reusable source; human OAuth required. All secrets stay in the request body. No schedule guessing or C1 fallback. See docs/obs-capture/stream-source-v1/contract.md. Invalid credential: 403 broadcast_stream_key_invalid. No eligible target: 409 broadcast_source_not_prepared. Occupied input: 409 broadcast_source_busy. Revision mismatch: 412 broadcast_revision_conflict. Stale replay: 409 broadcast_operation_conflict. Bind requires publish permission when the locked policy has autoStart or autoPublish; 503 retries keep identical input and operation key.
+         */
+        post: operations["resolveBroadcastSource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcast-source/bindings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * bindBroadcastSource
+         * @description K2 singleton reusable source; human OAuth required. All secrets stay in the request body. No schedule guessing or C1 fallback. See docs/obs-capture/stream-source-v1/contract.md. Invalid credential: 403 broadcast_stream_key_invalid. No eligible target: 409 broadcast_source_not_prepared. Occupied input: 409 broadcast_source_busy. Revision mismatch: 412 broadcast_revision_conflict. Stale replay: 409 broadcast_operation_conflict. Bind requires publish permission when the locked policy has autoStart or autoPublish; 503 retries keep identical input and operation key.
+         */
+        post: operations["bindBroadcastSource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/recordings/retention-policy": {
         parameters: {
             query?: never;
@@ -3385,6 +3485,61 @@ export interface components {
             scheduledAt?: string | null;
             policy?: components["schemas"]["BroadcastPolicy"];
             cover?: components["schemas"]["LiveCoverSelection"];
+        };
+        BroadcastSource: {
+            revision: number;
+            configured: boolean;
+            canRotate: boolean;
+            inputBusy: boolean;
+            suffix: string | null;
+            targetRecordingId: string | null;
+        };
+        BroadcastSourceStreamKeyInput: {
+            operationKey: string;
+            expectedSourceRevision: number;
+            /** @description Canonical 32 CSPRNG bytes. Never log or persist raw value; OBS uses OS credential storage. */
+            streamKey: string;
+        };
+        BroadcastSourceTargetInput: {
+            operationKey: string;
+            expectedSourceRevision: number;
+            /** Format: uuid */
+            recordingId: string;
+            expectedRevision: number;
+        };
+        BroadcastSourceResolveInput: {
+            /** @description Canonical 32 CSPRNG bytes. Never log or persist raw value; OBS uses OS credential storage. */
+            streamKey: string;
+        };
+        BroadcastSourceResolved: {
+            sourceRevision: number;
+            /** Format: uuid */
+            recordingId: string;
+            broadcastRevision: number;
+        };
+        BroadcastSourceBindInput: {
+            /** @description Canonical 32 CSPRNG bytes. Never log or persist raw value; OBS uses OS credential storage. */
+            streamKey: string;
+            operationKey: string;
+            expectedSourceRevision: number;
+            /** Format: uuid */
+            recordingId: string;
+            expectedRevision: number;
+            protocolVersion: string;
+        };
+        BroadcastSourceEnvelope: {
+            data: components["schemas"]["BroadcastSource"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        BroadcastSourceResolvedEnvelope: {
+            data: components["schemas"]["BroadcastSourceResolved"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
         };
         BroadcastStreamKey: {
             configured: boolean;
@@ -7684,6 +7839,167 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getBroadcastSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastSourceEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastStreamKeyFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastStreamKeyFailure"];
+            409: components["responses"]["BroadcastStreamKeyFailure"];
+            412: components["responses"]["BroadcastStreamKeyFailure"];
+            422: components["responses"]["BroadcastStreamKeyFailure"];
+            429: components["responses"]["BroadcastStreamKeyFailure"];
+            503: components["responses"]["BroadcastStreamKeyFailure"];
+        };
+    };
+    setBroadcastSourceStreamKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastSourceStreamKeyInput"];
+            };
+        };
+        responses: {
+            /** @description Current operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastSourceEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastStreamKeyFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastStreamKeyFailure"];
+            409: components["responses"]["BroadcastStreamKeyFailure"];
+            412: components["responses"]["BroadcastStreamKeyFailure"];
+            422: components["responses"]["BroadcastStreamKeyFailure"];
+            429: components["responses"]["BroadcastStreamKeyFailure"];
+            503: components["responses"]["BroadcastStreamKeyFailure"];
+        };
+    };
+    setBroadcastSourceTarget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastSourceTargetInput"];
+            };
+        };
+        responses: {
+            /** @description Current operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastSourceEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastStreamKeyFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastStreamKeyFailure"];
+            409: components["responses"]["BroadcastStreamKeyFailure"];
+            412: components["responses"]["BroadcastStreamKeyFailure"];
+            422: components["responses"]["BroadcastStreamKeyFailure"];
+            429: components["responses"]["BroadcastStreamKeyFailure"];
+            503: components["responses"]["BroadcastStreamKeyFailure"];
+        };
+    };
+    resolveBroadcastSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastSourceResolveInput"];
+            };
+        };
+        responses: {
+            /** @description Current operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastSourceResolvedEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastStreamKeyFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastStreamKeyFailure"];
+            409: components["responses"]["BroadcastStreamKeyFailure"];
+            412: components["responses"]["BroadcastStreamKeyFailure"];
+            422: components["responses"]["BroadcastStreamKeyFailure"];
+            429: components["responses"]["BroadcastStreamKeyFailure"];
+            503: components["responses"]["BroadcastStreamKeyFailure"];
+        };
+    };
+    bindBroadcastSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastSourceBindInput"];
+            };
+        };
+        responses: {
+            /** @description Current operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastMutationResultEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastStreamKeyFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastStreamKeyFailure"];
+            409: components["responses"]["BroadcastStreamKeyFailure"];
+            412: components["responses"]["BroadcastStreamKeyFailure"];
+            422: components["responses"]["BroadcastStreamKeyFailure"];
+            429: components["responses"]["BroadcastStreamKeyFailure"];
+            503: components["responses"]["BroadcastStreamKeyFailure"];
+        };
+    };
     getRecordingRetentionPolicy: {
         parameters: {
             query?: never;

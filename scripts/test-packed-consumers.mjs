@@ -77,7 +77,7 @@ try {
 import {createRoot} from 'react-dom/client';
 import {createAccountSessionClient, createBrowserAccountAuthRuntime, type AccountSessionUser} from '@hallelujahhomechurch/account-client';
 import {canAccessAdmin} from '@hallelujahhomechurch/account-client/admin-access';
-import {createHhcWebClient, type ContentStatus, type PageGroupManifest, type BroadcastStreamKey, type BroadcastStreamKeySetInput, type BroadcastStreamKeyBindInput, type BroadcastMutationResult} from '@hallelujahhomechurch/hhc-web-client';
+import {createHhcWebClient, type ContentStatus, type PageGroupManifest, type BroadcastStreamKey, type BroadcastStreamKeySetInput, type BroadcastStreamKeyBindInput, type BroadcastMutationResult, type BroadcastSource, type BroadcastSourceStreamKeyInput, type BroadcastSourceTargetInput, type BroadcastSourceResolveInput, type BroadcastSourceResolved, type BroadcastSourceBindInput} from '@hallelujahhomechurch/hhc-web-client';
 import {createOperationsClient, type ManagedMemberView, type ManagedUnitFolder} from '@hallelujahhomechurch/operations-client';
 import {getInitialTheme, readAnonymousStatementDismissal, writeAnonymousStatementDismissal, statementRefKey} from '@hallelujahhomechurch/preferences';
 import {AccountMenu, Button, ContextMenu, BulletinDocumentRenderer, ExpandableSearchField} from '@hallelujahhomechurch/ui';
@@ -119,6 +119,15 @@ async function checkBroadcastStreamKey(id: string, input: BroadcastStreamKeySetI
   return {metadata, updated, result};
 }
 void checkBroadcastStreamKey;
+async function checkBroadcastSource(key: BroadcastSourceStreamKeyInput, target: BroadcastSourceTargetInput, credential: BroadcastSourceResolveInput, binding: BroadcastSourceBindInput) {
+  const metadata: BroadcastSource = await statementClient.getBroadcastSource();
+  const updated: BroadcastSource = await statementClient.setBroadcastSourceStreamKey(key);
+  const prepared: BroadcastSource = await statementClient.setBroadcastSourceTarget(target);
+  const resolved: BroadcastSourceResolved = await statementClient.resolveBroadcastSource(credential);
+  const result: BroadcastMutationResult = await statementClient.bindBroadcastSource(binding);
+  return {metadata, updated, prepared, resolved, result};
+}
+void checkBroadcastSource;
 void createHhcWebClient;
 void contentStatus;
 void groupManifest;
