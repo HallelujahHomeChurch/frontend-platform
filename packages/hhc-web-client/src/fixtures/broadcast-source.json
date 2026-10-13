@@ -1,6 +1,6 @@
 {
   "version": "k2-2026-10-14.rc1",
-  "snapshotSha256": "36a534b09a3afbb2b120df8566d795adf2607b8898654abf37eb9924d217e54e",
+  "snapshotSha256": "c421d5dc1cf9173b89add6dc020478615bef124a72870e5ddd85a02a56c7180a",
   "note": "Synthetic all-zero bytes are schema fixtures only; clients generate CSPRNG keys.",
   "fixtures": [
     {
