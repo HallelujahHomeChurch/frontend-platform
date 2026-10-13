@@ -1,0 +1,176 @@
+✖ check is non-writing with default source (35305.367292ms)
+✖ check is non-writing with explicit source (22757.69325ms)
+✖ fails closed: relevant-shape (8777.224917ms)
+✖ fails closed: missing-reference (9288.18625ms)
+✖ fails closed: missing-input (8287.606542ms)
+✔ fails closed: stale-json (10825.008542ms)
+✔ fails closed: stale-types (7949.079ms)
+✔ unrelated schema does not drift; shared enums and recursive references remain complete (7224.257167ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 3
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 112142.385625
+
+✖ failing tests:
+
+test at packages/hhc-web-client/scripts/generate-bulletin-domain.test.mjs:36:39
+✖ check is non-writing with default source (35305.367292ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to: 0
+      at TestContext.<anonymous> (file:///Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/hhc-web-client/scripts/generate-bulletin-domain.test.mjs:46:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at packages/hhc-web-client/scripts/generate-bulletin-domain.test.mjs:36:39
+✖ check is non-writing with explicit source (22757.69325ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    [
+      Buffer(495) [Uint8Array] [
+        123,
+        34,
+        111,
+  ...
+      ],
+  +   Buffer(805) [Uint8Array] [
+  -   Buffer(749) [Uint8Array] [
+        123,
+        10,
+        32,
+        32,
+        34,
+  ...
+        125,
+  +     44,
+        10,
+        32,
+        32,
+        32,
+        32,
+        32,
+        32,
+  +     32,
+  +     32,
+  +     34,
+  +     100,
+  +     101,
+  +     115,
+  +     99,
+  +     114,
+  +     105,
+  +     112,
+  +     116,
+  +     105,
+  +     111,
+  +     110,
+  +     34,
+  +     58,
+  +     32,
+  +     34,
+  +     67,
+  +     97,
+  +     110,
+  +     111,
+  +     110,
+  +     105,
+  +     99,
+  +     97,
+  +     108,
+  +     32,
+  +     100,
+  +     101,
+  +     115,
+  +     99,
+  +     114,
+  +     105,
+  +     112,
+  +     116,
+  +     105,
+  +     111,
+  +     110,
+  +     32,
+  +     99,
+  +     104,
+  +     97,
+  +     110,
+  +     103,
+  +     101,
+  +     100,
+  +     34,
+  +     10,
+  +     32,
+  +     32,
+  +     32,
+  +     32,
+  +     32,
+  +     32,
+        125,
+        44,
+        10,
+        32,
+        32,
+  
+      at TestContext.<anonymous> (file:///Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/hhc-web-client/scripts/generate-bulletin-domain.test.mjs:47:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ <Buffer 7b 22 6f 70 65 6e 61 70 69 22 3a 22 33 2e 30 2e 33 22 2c 22 69 6e 66 6f 22 3a 7b 22 74 69 74 6c 65 22 3a 22 54 65 73 74 22 2c 22 76 65 72 73 69 6f 6e ... 445 more bytes>, <Buffer 7b 0a 20 20 22 6f 70 65 6e 61 70 69 22 3a 20 22 33 2e 30 2e 33 22 2c 0a 20 20 22 69 6e 66 6f 22 3a 20 7b 0a 20 20 20 20 22 74 69 74 6c 65 22 3a 20 22 ... 755 more bytes>, <Buffer 2f 2f 20 47 65 6e 65 72 61 74 65 64 20 66 72 6f 6d 20 68 68 63 2d 77 65 62 2d 61 70 69 20 4f 70 65 6e 41 50 49 20 63 6f 6d 70 6f 6e 65 6e 74 73 2e 20 ... 689 more bytes> ],
+    expected: [ <Buffer 7b 22 6f 70 65 6e 61 70 69 22 3a 22 33 2e 30 2e 33 22 2c 22 69 6e 66 6f 22 3a 7b 22 74 69 74 6c 65 22 3a 22 54 65 73 74 22 2c 22 76 65 72 73 69 6f 6e ... 445 more bytes>, <Buffer 7b 0a 20 20 22 6f 70 65 6e 61 70 69 22 3a 20 22 33 2e 30 2e 33 22 2c 0a 20 20 22 69 6e 66 6f 22 3a 20 7b 0a 20 20 20 20 22 74 69 74 6c 65 22 3a 20 22 ... 699 more bytes>, <Buffer 2f 2f 20 47 65 6e 65 72 61 74 65 64 20 66 72 6f 6d 20 68 68 63 2d 77 65 62 2d 61 70 69 20 4f 70 65 6e 41 50 49 20 63 6f 6d 70 6f 6e 65 6e 74 73 2e 20 ... 689 more bytes> ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at packages/hhc-web-client/scripts/generate-bulletin-domain.test.mjs:50:109
+✖ fails closed: relevant-shape (8777.224917ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to: 0
+      at TestContext.<anonymous> (file:///Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/hhc-web-client/scripts/generate-bulletin-domain.test.mjs:60:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at packages/hhc-web-client/scripts/generate-bulletin-domain.test.mjs:50:109
+✖ fails closed: missing-reference (9288.18625ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to: 0
+      at TestContext.<anonymous> (file:///Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/hhc-web-client/scripts/generate-bulletin-domain.test.mjs:60:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at packages/hhc-web-client/scripts/generate-bulletin-domain.test.mjs:50:109
+✖ fails closed: missing-input (8287.606542ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to: 0
+      at TestContext.<anonymous> (file:///Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/hhc-web-client/scripts/generate-bulletin-domain.test.mjs:60:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }

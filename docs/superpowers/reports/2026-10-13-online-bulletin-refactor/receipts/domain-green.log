@@ -1,0 +1,16 @@
+✔ check is non-writing with default source (15314.416625ms)
+✔ check is non-writing with explicit source (10806.562958ms)
+✔ fails closed: relevant-shape (7146.002709ms)
+✔ fails closed: missing-reference (4658.03275ms)
+✔ fails closed: missing-input (3391.310542ms)
+✔ fails closed: stale-json (2905.577667ms)
+✔ fails closed: stale-types (3785.359667ms)
+✔ unrelated schema does not drift; shared enums and recursive references remain complete (2347.140375ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 50561.488291

@@ -29,7 +29,7 @@
     "check:generated": "pnpm generate && git diff --exit-code -- src/generated.ts",
     "lint": "oxlint src",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "node --test scripts/generate-bulletin-domain.test.mjs && vitest run src"
   },
   "dependencies": {
     "openapi-fetch": "^0.15.0"

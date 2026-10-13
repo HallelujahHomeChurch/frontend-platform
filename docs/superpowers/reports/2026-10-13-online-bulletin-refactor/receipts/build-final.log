@@ -1,0 +1,21 @@
+
+> hhc-frontend-platform@1.0.62 build /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform
+> pnpm -r --if-present build
+
+(node:24530) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Scope: 7 of 8 workspace projects
+packages/account-client build$ tsc -p tsconfig.build.json
+packages/donation-client build$ tsc -p tsconfig.build.json
+packages/hhc-web-client build$ tsc -p tsconfig.build.json
+packages/preferences build$ tsc -p tsconfig.build.json
+packages/donation-client build: Done
+packages/ui build$ tsc -p tsconfig.json && cp src/styles.css dist/styles.css && cp src/bulletin-reader/paper.css dist/bulletin-reader/paper.css && cp src/bulletin-reader/v2/paper.css dist/bulletin-reader/v2/paper.css && cp src/bulletin-reader/v7/paper.css dist/bulletin-reader/v7/paper.css && cp src/bulletin-reader/ebook.css dist/bulletin-reader/ebook.css
+packages/preferences build: Done
+packages/account-client build: Done
+packages/hhc-web-client build: Done
+packages/ui build: Done
+packages/donation-ui build$ tsc -p tsconfig.json
+packages/operations-client build$ tsc -p tsconfig.build.json
+packages/operations-client build: Done
+packages/donation-ui build: Done

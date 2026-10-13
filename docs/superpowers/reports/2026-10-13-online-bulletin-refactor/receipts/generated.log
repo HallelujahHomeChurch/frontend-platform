@@ -1,0 +1,12 @@
+(node:22757) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+> @hallelujahhomechurch/hhc-web-client@1.0.62 check:generated /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/hhc-web-client
+> pnpm generate && git diff --exit-code -- src/generated.ts
+
+
+> @hallelujahhomechurch/hhc-web-client@1.0.62 generate /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/hhc-web-client
+> openapi-typescript openapi/hhc-web-api.yaml -o src/generated.ts
+
+✨ openapi-typescript 7.13.0
+🚀 openapi/hhc-web-api.yaml → src/generated.ts [7.7s]
