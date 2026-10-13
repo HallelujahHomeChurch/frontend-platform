@@ -1,0 +1,118 @@
+
+> hhc-frontend-platform@1.0.62 test:consumers /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform
+> node scripts/test-packed-consumers.mjs
+
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Progress: resolved 18, reused 11, downloaded 7, added 0
+Progress: resolved 69, reused 35, downloaded 8, added 0
+Packages: +44
+++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 73, reused 40, downloaded 8, added 16
+Progress: resolved 73, reused 40, downloaded 8, added 37
+Progress: resolved 73, reused 40, downloaded 8, added 42
+Progress: resolved 73, reused 40, downloaded 8, added 43
+Progress: resolved 73, reused 40, downloaded 9, added 43
+Progress: resolved 73, reused 40, downloaded 9, added 44
+Progress: resolved 73, reused 40, downloaded 9, added 44, done
+(node:62063) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+dependencies:
++ @hallelujahhomechurch/account-client 1.0.62
++ @hallelujahhomechurch/donation-client 1.0.62
++ @hallelujahhomechurch/donation-ui 1.0.62
++ @hallelujahhomechurch/hhc-web-client 1.0.62
++ @hallelujahhomechurch/operations-client 1.0.62
++ @hallelujahhomechurch/preferences 1.0.62
++ @hallelujahhomechurch/ui 1.0.62
++ @vitejs/plugin-react 6.0.3 (6.1.2 is available)
++ react 19.2.7
++ react-dom 19.2.7
++ vite 8.1.4 (8.3.3 is available)
+
+Done in 12.8s using pnpm v10.12.1
+
+> @ build /private/var/folders/44/xz7mr0l506l1xcg3g3n_nd8w0000gn/T/hhc-package-smoke-GwZzWI/vite
+> vite build
+
+vite v8.1.4 building client environment for production...
+[2Ktransforming...
+/assets/weekly/v1/symbol-89ed6ff28006ceddbfb893fc2812b5868c5b691341c48959a092b25f33ec5bdd.woff2 referenced in /assets/weekly/v1/symbol-89ed6ff28006ceddbfb893fc2812b5868c5b691341c48959a092b25f33ec5bdd.woff2 didn't resolve at build time, it will remain unchanged to be resolved at runtime
+
+/assets/weekly/v1/body-ba497525931c22348ff17863ecd1b49a0d54010145cd2f2adce115505dbde7b0.woff2 referenced in /assets/weekly/v1/body-ba497525931c22348ff17863ecd1b49a0d54010145cd2f2adce115505dbde7b0.woff2 didn't resolve at build time, it will remain unchanged to be resolved at runtime
+
+/assets/weekly/v1/scripture-b330d18e5aee29a4035c7ea34581f4268b9913ce9051cd978218caf51c16ca2d.woff2 referenced in /assets/weekly/v1/scripture-b330d18e5aee29a4035c7ea34581f4268b9913ce9051cd978218caf51c16ca2d.woff2 didn't resolve at build time, it will remain unchanged to be resolved at runtime
+
+/assets/weekly/v1/emphasis-9c02738cbfdf263d60baceaf5e97dd1dd39230daf64e98bf91be07a8609fb962.woff2 referenced in /assets/weekly/v1/emphasis-9c02738cbfdf263d60baceaf5e97dd1dd39230daf64e98bf91be07a8609fb962.woff2 didn't resolve at build time, it will remain unchanged to be resolved at runtime
+✓ 3287 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.16 kB │ gzip:   0.14 kB
+dist/assets/index-D60yVfT2.css   31.41 kB │ gzip:   6.32 kB
+dist/assets/index-S7l5Mhx6.js   748.58 kB │ gzip: 166.04 kB
+
+✓ built in 1.37s
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Progress: resolved 27, reused 19, downloaded 0, added 0
+Progress: resolved 75, reused 46, downloaded 0, added 0
+Packages: +50
+++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 80, reused 51, downloaded 0, added 18
+Progress: resolved 80, reused 51, downloaded 0, added 32
+Progress: resolved 80, reused 51, downloaded 0, added 47
+Progress: resolved 80, reused 51, downloaded 0, added 48
+Progress: resolved 80, reused 51, downloaded 0, added 49
+Progress: resolved 80, reused 51, downloaded 0, added 50, done
+(node:62492) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+dependencies:
++ @hallelujahhomechurch/account-client 1.0.62
++ @hallelujahhomechurch/donation-client 1.0.62
++ @hallelujahhomechurch/donation-ui 1.0.62
++ @hallelujahhomechurch/hhc-web-client 1.0.62
++ @hallelujahhomechurch/operations-client 1.0.62
++ @hallelujahhomechurch/preferences 1.0.62
++ @hallelujahhomechurch/ui 1.0.62
++ next 16.2.9 (16.3.8 is available)
++ react 19.2.7
++ react-dom 19.2.7
+
+devDependencies:
++ @types/node 24.10.13 (26.6.5 is available)
++ @types/react 19.2.17
++ @types/react-dom 19.2.3
++ typescript 6.0.3 (7.0.2 is available)
+
+Done in 8.8s using pnpm v10.12.1
+
+> @ build /private/var/folders/44/xz7mr0l506l1xcg3g3n_nd8w0000gn/T/hhc-package-smoke-GwZzWI/next
+> next build
+
+▲ Next.js 16.2.9 (Turbopack)
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 4.5s
+  Running TypeScript ...
+
+  We detected TypeScript in your project and created a tsconfig.json file for you.
+  Finished TypeScript in 3.3s ...
+  Collecting page data using 4 workers ...
+  Generating static pages using 4 workers (0/3) ...
+✓ Generating static pages using 4 workers (3/3) in 358ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+└ ○ /_not-found
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+Packed consumer builds pass (artifacts).

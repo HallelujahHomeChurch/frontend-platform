@@ -1,0 +1,17 @@
+{
+  "build": 0,
+  "pretest": 0,
+  "test": 0,
+  "lint": 0,
+  "generated": 0,
+  "bulletin": 0,
+  "contracts": 0,
+  "pack": 0,
+  "consumers": 0,
+  "immutable": 0,
+  "package-test": 0,
+  "package": 0,
+  "container-build": 0,
+  "container-1": 0,
+  "container-9": 0
+}

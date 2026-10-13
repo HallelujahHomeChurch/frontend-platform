@@ -1,6 +1,6 @@
 {
   "name": "@hallelujahhomechurch/hhc-web-client",
-  "version": "1.0.62",
+  "version": "1.0.63",
   "license": "UNLICENSED",
   "type": "module",
   "files": [
@@ -28,8 +28,8 @@
     "check:bulletin": "node scripts/generate-bulletin-domain.mjs --check",
     "check:generated": "pnpm generate && git diff --exit-code -- src/generated.ts",
     "lint": "oxlint src",
-    "test": "vitest",
-    "test:run": "vitest run"
+    "test": "vitest src",
+    "test:run": "node --test scripts/generate-bulletin-domain.test.mjs && vitest run src"
   },
   "dependencies": {
     "openapi-fetch": "^0.15.0"

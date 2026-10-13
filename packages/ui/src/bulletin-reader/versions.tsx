@@ -22,21 +22,46 @@ export {BULLETIN_RENDERER_V2_DIGEST} from './v2/artifact.js';
 export {BULLETIN_RENDERER_V3_DIGEST} from './v3/artifact.js';
 export {BULLETIN_RENDERER_V4_DIGEST} from './v4/artifact.js';
 
+export interface BulletinRendererCapabilities {
+  usesTemplateSnapshot: boolean;
+  fontFamily: 'legacy' | 'v7';
+  fixedTextFamily: 'legacy' | 'historical' | 'snapshot';
+  composerOwnsCoverSpacing: boolean;
+}
+
+type RendererEntry = {
+  Renderer: typeof V1;
+  require: typeof requireV1;
+  capabilities: Readonly<BulletinRendererCapabilities>;
+};
+
+const renderers: Record<string, RendererEntry> = {
+  v1: {Renderer: V1, require: requireV1, capabilities: Object.freeze({usesTemplateSnapshot: false, fontFamily: 'legacy', fixedTextFamily: 'legacy', composerOwnsCoverSpacing: false})},
+  v2: {Renderer: V2, require: requireV2, capabilities: Object.freeze({usesTemplateSnapshot: false, fontFamily: 'legacy', fixedTextFamily: 'legacy', composerOwnsCoverSpacing: false})},
+  v3: {Renderer: V3, require: requireV3, capabilities: Object.freeze({usesTemplateSnapshot: false, fontFamily: 'legacy', fixedTextFamily: 'legacy', composerOwnsCoverSpacing: false})},
+  v4: {Renderer: V4, require: requireV4, capabilities: Object.freeze({usesTemplateSnapshot: false, fontFamily: 'legacy', fixedTextFamily: 'legacy', composerOwnsCoverSpacing: false})},
+  v5: {Renderer: V5, require: requireV5, capabilities: Object.freeze({usesTemplateSnapshot: false, fontFamily: 'legacy', fixedTextFamily: 'legacy', composerOwnsCoverSpacing: false})},
+  v6: {Renderer: V6, require: requireV6, capabilities: Object.freeze({usesTemplateSnapshot: false, fontFamily: 'legacy', fixedTextFamily: 'historical', composerOwnsCoverSpacing: false})},
+  v7: {Renderer: V7, require: requireV7, capabilities: Object.freeze({usesTemplateSnapshot: false, fontFamily: 'v7', fixedTextFamily: 'historical', composerOwnsCoverSpacing: false})},
+  v8: {Renderer: V8, require: requireV8, capabilities: Object.freeze({usesTemplateSnapshot: false, fontFamily: 'v7', fixedTextFamily: 'historical', composerOwnsCoverSpacing: true})},
+  v9: {Renderer: V9, require: requireV9, capabilities: Object.freeze({usesTemplateSnapshot: true, fontFamily: 'v7', fixedTextFamily: 'snapshot', composerOwnsCoverSpacing: true})},
+  v10: {Renderer: V10, require: requireV10, capabilities: Object.freeze({usesTemplateSnapshot: true, fontFamily: 'v7', fixedTextFamily: 'snapshot', composerOwnsCoverSpacing: true})},
+};
+
+function rendererEntry(version: string): RendererEntry {
+  if (!Object.hasOwn(renderers, version)) throw new Error('update_required');
+  return renderers[version];
+}
+
+export function getBulletinRendererCapabilities(version: string): Readonly<BulletinRendererCapabilities> {
+  return rendererEntry(version).capabilities;
+}
+
 export function requireBulletinRenderer(manifest: BulletinLayoutManifest) {
-  if (manifest.rendererVersion === 'v10') requireV10(manifest);
-  else if (manifest.rendererVersion === 'v9') requireV9(manifest);
-  else if (manifest.rendererVersion === 'v8') requireV8(manifest);
-  else if (manifest.rendererVersion === 'v7') requireV7(manifest);
-  else if (manifest.rendererVersion === 'v6') requireV6(manifest);
-  else if (manifest.rendererVersion === 'v5') requireV5(manifest);
-  else if (manifest.rendererVersion === 'v4') requireV4(manifest);
-  else if (manifest.rendererVersion === 'v3') requireV3(manifest);
-  else if (manifest.rendererVersion === 'v2') requireV2(manifest);
-  else requireV1(manifest);
+  rendererEntry(manifest.rendererVersion).require(manifest);
 }
 
 export function BulletinDocumentRenderer(props: BulletinDocumentRendererProps) {
-  const version=(props.manifest ?? props.document.layoutManifest).rendererVersion;
-  const Renderer = version==='v10'?V10:version==='v9'?V9:version==='v8'?V8:version==='v7'?V7:version==='v6'?V6:version==='v5'?V5:version==='v4'?V4:version==='v3'?V3:version==='v2'?V2:V1;
+  const {Renderer} = rendererEntry((props.manifest ?? props.document.layoutManifest).rendererVersion);
   return <Renderer {...props} />;
 }

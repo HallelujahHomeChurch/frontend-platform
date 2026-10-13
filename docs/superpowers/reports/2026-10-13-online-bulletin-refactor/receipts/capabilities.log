@@ -1,0 +1,11 @@
+(node:51893) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+ RUN  v4.1.10 /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/ui
+
+
+ Test Files  2 passed (2)
+      Tests  46 passed (46)
+   Start at  16:58:38
+   Duration  6.57s (transform 694ms, setup 406ms, import 3.19s, tests 581ms, environment 1.99s)
+

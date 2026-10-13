@@ -1,0 +1,13 @@
+✔ unrelated package releases retain V1 while mutation and removal fail closed (862.17075ms)
+✔ v6 hashes its dependencies and preserves every frozen version (8407.520917ms)
+✔ v8 hashes its dependencies and preserves every frozen version (38163.578166ms)
+✔ v9 hashes its dependencies and preserves every frozen version (100791.002709ms)
+✔ v10 hashes its dependencies and preserves every frozen version (208795.124333ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 357088.484209

@@ -1,0 +1,8 @@
+file:///Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/hhc-web-client/scripts/generate-bulletin-domain.mjs:26
+  if (await readFile(contract, 'utf8') !== json) throw new Error('Bulletin domain schema is stale; regenerate it.');
+                                                       ^
+
+Error: Bulletin domain schema is stale; regenerate it.
+    at file:///Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/hhc-web-client/scripts/generate-bulletin-domain.mjs:26:56
+
+Node.js v24.21.0

@@ -1,0 +1,6 @@
+(node:61719) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+> @hallelujahhomechurch/hhc-web-client@1.0.62 check:bulletin /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/hhc-web-client
+> node scripts/generate-bulletin-domain.mjs --check
+

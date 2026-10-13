@@ -1,0 +1,36 @@
+(node:61625) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+> @hallelujahhomechurch/hhc-web-client@1.0.62 check:generated /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/hhc-web-client
+> pnpm generate && git diff --exit-code -- src/generated.ts
+
+
+> @hallelujahhomechurch/hhc-web-client@1.0.62 generate /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/hhc-web-client
+> openapi-typescript openapi/hhc-web-api.yaml -o src/generated.ts
+
+✨ openapi-typescript 7.13.0
+🚀 openapi/hhc-web-api.yaml → src/generated.ts [571.5ms]
+(node:61656) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+> @hallelujahhomechurch/donation-client@1.0.62 check:generated /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/donation-client
+> pnpm generate && git diff --exit-code -- src/generated.ts
+
+
+> @hallelujahhomechurch/donation-client@1.0.62 generate /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/donation-client
+> openapi-typescript openapi/donation-api.yaml -o src/generated.ts
+
+✨ openapi-typescript 7.13.0
+🚀 openapi/donation-api.yaml → src/generated.ts [59.1ms]
+(node:61690) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+> @hallelujahhomechurch/operations-client@1.0.62 check:generated /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/operations-client
+> pnpm generate && git diff --exit-code -- src/generated.ts
+
+
+> @hallelujahhomechurch/operations-client@1.0.62 generate /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/operations-client
+> openapi-typescript openapi/operations-api.yaml -o src/generated.ts
+
+✨ openapi-typescript 7.13.0
+🚀 openapi/operations-api.yaml → src/generated.ts [233.1ms]

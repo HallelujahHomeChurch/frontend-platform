@@ -1,0 +1,21 @@
+
+> hhc-frontend-platform@1.0.62 lint /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform
+> pnpm -r --if-present lint
+
+(node:61438) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Scope: 7 of 8 workspace projects
+packages/account-client lint$ tsc -p tsconfig.json --noEmit
+packages/hhc-web-client lint$ oxlint src
+packages/donation-client lint$ oxlint src && tsc -p tsconfig.json --noEmit
+packages/preferences lint$ tsc -p tsconfig.json --noEmit
+packages/hhc-web-client lint: Done
+packages/ui lint$ tsc -p tsconfig.json --noEmit
+packages/donation-client lint: Done
+packages/preferences lint: Done
+packages/account-client lint: Done
+packages/ui lint: Done
+packages/donation-ui lint$ tsc -p tsconfig.json --noEmit
+packages/operations-client lint$ oxlint src && tsc -p tsconfig.json --noEmit
+packages/donation-ui lint: Done
+packages/operations-client lint: Done

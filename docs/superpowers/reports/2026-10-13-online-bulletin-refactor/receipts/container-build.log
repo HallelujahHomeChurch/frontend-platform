@@ -1,0 +1,72 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile:
+#1 transferring dockerfile: 1.10kB 0.0s done
+#1 DONE 0.6s
+
+#2 [internal] load metadata for docker.io/library/node:24-trixie-slim@sha256:8ec5d7557396cfe32d21c3f9c13072355ceab22b584578ca4bb28af31120cffe
+#2 DONE 11.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context:
+#3 transferring context: 2B 0.0s done
+#3 DONE 1.1s
+
+#4 [1/9] FROM docker.io/library/node:24-trixie-slim@sha256:8ec5d7557396cfe32d21c3f9c13072355ceab22b584578ca4bb28af31120cffe
+#4 ...
+
+#5 [internal] load build context
+#5 DONE 0.0s
+
+#4 [1/9] FROM docker.io/library/node:24-trixie-slim@sha256:8ec5d7557396cfe32d21c3f9c13072355ceab22b584578ca4bb28af31120cffe
+#4 resolve docker.io/library/node:24-trixie-slim@sha256:8ec5d7557396cfe32d21c3f9c13072355ceab22b584578ca4bb28af31120cffe
+#4 resolve docker.io/library/node:24-trixie-slim@sha256:8ec5d7557396cfe32d21c3f9c13072355ceab22b584578ca4bb28af31120cffe 0.4s done
+#4 DONE 0.6s
+
+#5 [internal] load build context
+#5 transferring context: 6.99MB 3.6s
+#5 transferring context: 25.80MB 8.7s
+#5 transferring context: 41.13MB 13.8s
+#5 transferring context: 41.76MB 14.1s done
+#5 DONE 15.1s
+
+#6 [2/9] WORKDIR /opt/bulletin-renderer
+#6 CACHED
+
+#7 [3/9] COPY package.json package-lock.json ./
+#7 CACHED
+
+#8 [4/9] RUN npm ci --ignore-scripts --no-audit --no-fund     && npx playwright install --with-deps --only-shell chromium     && apt-get install -y --no-install-recommends        libpcre2-8-0=10.46-1~deb13u3 libssl3t64=3.5.7-1~deb13u3 openssl-provider-legacy=3.5.7-1~deb13u3     && rm -rf /var/lib/apt/lists/* /root/.npm        /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /opt/yarn-v1.22.22     && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg
+#8 CACHED
+
+#9 [5/9] COPY packages ./packages
+#9 DONE 2.9s
+
+#10 [6/9] COPY scripts ./scripts
+#10 DONE 2.6s
+
+#11 [7/9] COPY assets ./assets
+#11 DONE 4.6s
+
+#12 [8/9] COPY LICENSE ./LICENSE
+#12 DONE 1.8s
+
+#13 [9/9] RUN node scripts/verify-bulletin-renderer-v9.mjs
+#13 78.42 Bulletin renderer V9: e38c5bb6fea134ffdf56cbc542f5c20a9a82c8e03b7a5653ebf0eabfd7bb0997
+#13 DONE 79.1s
+
+#14 exporting to image
+#14 exporting layers
+#14 exporting layers 11.6s done
+#14 exporting manifest sha256:31ba8b213a5b76e84f86d1d44175ab1857ffd74f59a92622b4f9437602e336f1 0.1s done
+#14 exporting config sha256:fcdd0bcc316be52116a3c99724618a04e8ac9ca2bc8f7c37636a7d4881d955cf 0.1s done
+#14 exporting attestation manifest sha256:4e9b7c563cc0a336a2425442e54e5db0a0bad6898c5cf5442cc1c07e8016f8f5
+#14 exporting attestation manifest sha256:4e9b7c563cc0a336a2425442e54e5db0a0bad6898c5cf5442cc1c07e8016f8f5 0.2s done
+#14 exporting manifest list sha256:ced17c499fea4c05e9b368b05ae65303249ecb5f16bd37f9d51ec7b0cab02901
+#14 exporting manifest list sha256:ced17c499fea4c05e9b368b05ae65303249ecb5f16bd37f9d51ec7b0cab02901 0.2s done
+#14 naming to docker.io/library/hhc-bulletin-renderer:refactor-20261013
+#14 naming to docker.io/library/hhc-bulletin-renderer:refactor-20261013 0.0s done
+#14 unpacking to docker.io/library/hhc-bulletin-renderer:refactor-20261013
+#14 unpacking to docker.io/library/hhc-bulletin-renderer:refactor-20261013 3.3s done
+#14 DONE 16.2s

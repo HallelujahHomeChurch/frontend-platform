@@ -1,0 +1,7 @@
+
+> hhc-frontend-platform@1.0.63 check:packages /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform
+> pnpm --filter @hallelujahhomechurch/hhc-web-client exec tsc -p tsconfig.locale-contract.json && node scripts/check-package-contracts.mjs
+
+(node:76634) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Package contracts pass (7 packages checked).
