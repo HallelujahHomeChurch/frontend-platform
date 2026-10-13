@@ -1,0 +1,45 @@
+✔ worker CLI composes the same anchored document and emits only a JSON result (16481.919965ms)
+✔ worker CLI rejects oversized or malformed requests without exposing input or paths (1684.13821ms)
+✔ rejects stale content before any browser or file access (3.356958ms)
+✔ canonical metadata belongs to the same content identity as the page text (1.165792ms)
+✔ rejects unavailable glyphs instead of measuring a platform fallback font (1.330583ms)
+﹣ hanging whitespace does not reject fitting ink, but visible overflow still fails (0.122417ms) # SKIP
+✔ verified hymn stars use their immutable symbol font and Unicode scalar anchors (2860.396876ms)
+✔ rejects an unbounded or invalid timeout before starting the browser (5.1015ms)
+✔ rejects modified or missing fonts rather than measuring fallback glyphs (1.981375ms)
+✔ post-font-load measurement is deterministic and reports source slot overflow (9743.500338ms)
+✔ fixed template labels are measured and can block overflow too (3086.534835ms)
+✔ individually fitting text slots still block publication when their glyphs overlap (6952.400461ms)
+✔ template ornament bounds do not masquerade as text overflow (7670.269503ms)
+✔ native cover masthead preserves the reference word gap at printed size (3396.922002ms)
+✔ body issue and contributor captions use legal glyphs and never become editable sentence anchors (3810.007252ms)
+✔ native body canonical art retains transformed sentence bounds without covering metadata (8288.292962ms)
+✔ fixed back sidebar uses vertical native glyphs at the source column positions (4528.281085ms)
+✔ source back frames remain behind text and outside sentence anchors in both originals (6567.251252ms)
+✔ fixed graphics must be declared trusted assets and loaded before measurement (4892.583586ms)
+✔ one immutable font asset serves its code-owned role aliases without duplicate URLs (6142.882836ms)
+✔ legal substitute fonts use their declared typographic metrics without reducing glyph size (13547.147881ms)
+✔ controlled full-page diagnostics preserve geometry and surface every unresolved overflow (8495.293253ms)
+✔ mixed inline source sizes are measured at their declared PDF-point proportion (2852.873335ms)
+✔ body composition reclaims excessive gaps without adding pages or changing text (16254.0108ms)
+✔ oversized text fails closed instead of adding source pages (17142.804966ms)
+﹣ dense Letter lyrics use safe bottom whitespace without shrinking below 12pt or adding pages (0.163916ms) # SKIP
+﹣ complete dense cover retains verse text and readable size within a 24pt bottom margin (0.057417ms) # SKIP
+✔ an oversized cover rejects composition instead of silently adding another cover page (3553.850168ms)
+✔ cover keeps its compact rows and aligned work on one page, ending at the full-width verse (8533.555795ms)
+✔ staggered columns retain their independent source-page flow (4927.579378ms)
+✔ cover composition retains every sentence while separating its variable-length sections (8744.941254ms)
+✔ composition keeps the lecture date clear of its fixed marker (6786.469837ms)
+✔ body contributor captions use readable tracking and reserve space before names (5631.658002ms)
+✔ retained back panels grow around their text without importing excluded table regions (6572.742212ms)
+✔ composition keeps normal glyph spacing and distinct text lines for compressed source paragraphs (8754.304087ms)
+✔ overlapping mixed-size lines are rejected even when all ink stays inside one slot (2350.603834ms)
+✔ body captions move with expanded preceding rows (5406.556877ms)
+ℹ tests 37
+ℹ suites 0
+ℹ pass 34
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 3
+ℹ todo 0
+ℹ duration_ms 207023.623638

@@ -1,0 +1,60 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.10kB done
+#1 DONE 0.1s
+
+#2 [internal] load metadata for docker.io/library/node:24-trixie-slim@sha256:8ec5d7557396cfe32d21c3f9c13072355ceab22b584578ca4bb28af31120cffe
+#2 DONE 4.8s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.1s
+
+#4 [internal] load build context
+#4 DONE 0.0s
+
+#5 [1/9] FROM docker.io/library/node:24-trixie-slim@sha256:8ec5d7557396cfe32d21c3f9c13072355ceab22b584578ca4bb28af31120cffe
+#5 resolve docker.io/library/node:24-trixie-slim@sha256:8ec5d7557396cfe32d21c3f9c13072355ceab22b584578ca4bb28af31120cffe 0.0s done
+#5 DONE 0.0s
+
+#4 [internal] load build context
+#4 transferring context: 41.77MB 1.6s done
+#4 DONE 1.6s
+
+#6 [2/9] WORKDIR /opt/bulletin-renderer
+#6 CACHED
+
+#7 [3/9] COPY package.json package-lock.json ./
+#7 CACHED
+
+#8 [4/9] RUN npm ci --ignore-scripts --no-audit --no-fund     && npx playwright install --with-deps --only-shell chromium     && apt-get install -y --no-install-recommends        libpcre2-8-0=10.46-1~deb13u3 libssl3t64=3.5.7-1~deb13u3 openssl-provider-legacy=3.5.7-1~deb13u3     && rm -rf /var/lib/apt/lists/* /root/.npm        /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /opt/yarn-v1.22.22     && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg
+#8 CACHED
+
+#9 [5/9] COPY packages ./packages
+#9 DONE 0.2s
+
+#10 [6/9] COPY scripts ./scripts
+#10 DONE 0.1s
+
+#11 [7/9] COPY assets ./assets
+#11 DONE 0.3s
+
+#12 [8/9] COPY LICENSE ./LICENSE
+#12 DONE 0.1s
+
+#13 [9/9] RUN node scripts/verify-bulletin-renderer-v9.mjs
+#13 3.856 Bulletin renderer V9: e38c5bb6fea134ffdf56cbc542f5c20a9a82c8e03b7a5653ebf0eabfd7bb0997
+#13 DONE 3.9s
+
+#14 exporting to image
+#14 exporting layers
+#14 exporting layers 1.4s done
+#14 exporting manifest sha256:9c420f66a30c998a4d6f180aeed97586358e5ccf89db9931e766ab6ae8f93ac9 done
+#14 exporting config sha256:c9a79035e4cad7771c2f7ebf13847f514b3863a2079788036549a5882f3c7208 done
+#14 exporting attestation manifest sha256:3920c908ef3310b625904ba264ef1bc44f53cfcd6678fe4d156aa752b2b694a0 0.0s done
+#14 exporting manifest list sha256:1fd4f8db5a3ca9bbd40b6e7aa263de24deabb193171998cb9b3624431e81251b 0.0s done
+#14 naming to docker.io/library/hhc-bulletin-renderer:refactor-final-20261013 done
+#14 unpacking to docker.io/library/hhc-bulletin-renderer:refactor-final-20261013
+#14 unpacking to docker.io/library/hhc-bulletin-renderer:refactor-final-20261013 0.3s done
+#14 DONE 1.8s

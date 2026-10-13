@@ -1,0 +1,110 @@
+(node:61144) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Scope: 7 of 8 workspace projects
+
+> @hallelujahhomechurch/account-client@1.0.62 test:run /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/account-client
+> vitest run
+
+
+ RUN  v4.1.10 /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/account-client
+
+
+ Test Files  8 passed (8)
+      Tests  82 passed (82)
+   Start at  17:09:13
+   Duration  527ms (transform 1.27s, setup 0ms, import 1.77s, tests 341ms, environment 1ms)
+
+
+> @hallelujahhomechurch/donation-client@1.0.62 test:run /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/donation-client
+> vitest run
+
+
+ RUN  v4.1.10 /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/donation-client
+
+
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+   Start at  17:09:14
+   Duration  205ms (transform 31ms, setup 0ms, import 43ms, tests 45ms, environment 0ms)
+
+
+> @hallelujahhomechurch/hhc-web-client@1.0.62 test:run /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/hhc-web-client
+> node --test scripts/generate-bulletin-domain.test.mjs && vitest run src
+
+✔ check is non-writing with default source (1348.822375ms)
+✔ check is non-writing with explicit source (1269.738458ms)
+✔ fails closed: relevant-shape (1030.768792ms)
+✔ fails closed: missing-reference (1753.417625ms)
+✔ fails closed: missing-input (1595.113208ms)
+✔ fails closed: stale-json (2200.206958ms)
+✔ fails closed: stale-types (1450.168583ms)
+✔ unrelated schema does not drift; shared enums and recursive references remain complete (1247.724041ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 11969.925416
+
+ RUN  v4.1.10 /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/hhc-web-client
+
+
+ Test Files  9 passed (9)
+      Tests  99 passed (99)
+   Start at  17:09:26
+   Duration  600ms (transform 1.06s, setup 0ms, import 1.58s, tests 905ms, environment 1ms)
+
+
+> @hallelujahhomechurch/preferences@1.0.62 test:run /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/preferences
+> vitest run
+
+
+ RUN  v4.1.10 /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/preferences
+
+
+ Test Files  4 passed (4)
+      Tests  33 passed (33)
+   Start at  17:09:28
+   Duration  351ms (transform 319ms, setup 0ms, import 471ms, tests 34ms, environment 1ms)
+
+
+> @hallelujahhomechurch/ui@1.0.62 test:run /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/ui
+> vitest run
+
+
+ RUN  v4.1.10 /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/ui
+
+
+ Test Files  11 passed (11)
+      Tests  192 passed (192)
+   Start at  17:09:28
+   Duration  14.29s (transform 5.47s, setup 10.44s, import 27.18s, tests 9.73s, environment 36.28s)
+
+
+> @hallelujahhomechurch/donation-ui@1.0.62 test:run /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/donation-ui
+> vitest run
+
+
+ RUN  v4.1.10 /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/donation-ui
+
+
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+   Start at  17:09:44
+   Duration  2.87s (transform 252ms, setup 254ms, import 696ms, tests 930ms, environment 817ms)
+
+
+> @hallelujahhomechurch/operations-client@1.0.62 test:run /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/operations-client
+> vitest run
+
+
+ RUN  v4.1.10 /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/operations-client
+
+
+ Test Files  3 passed (3)
+      Tests  25 passed (25)
+   Start at  17:09:48
+   Duration  464ms (transform 389ms, setup 0ms, import 493ms, tests 165ms, environment 0ms)
+

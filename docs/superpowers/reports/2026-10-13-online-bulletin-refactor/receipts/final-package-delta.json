@@ -1,0 +1,28 @@
+{
+  "baselineFiles": 205,
+  "finalFiles": 205,
+  "unchangedFiles": 196,
+  "changedOutsideFrozenClosure": [
+    "packages/ui/dist/bulletin-reader/BulletinEbook.d.ts.map",
+    "packages/ui/dist/bulletin-reader/BulletinEbook.js",
+    "packages/ui/dist/bulletin-reader/generated.d.ts",
+    "packages/ui/dist/bulletin-reader/versions.d.ts",
+    "packages/ui/dist/bulletin-reader/versions.d.ts.map",
+    "packages/ui/dist/bulletin-reader/versions.js",
+    "packages/ui/src/bulletin-reader/BulletinEbook.tsx",
+    "packages/ui/src/bulletin-reader/generated.ts",
+    "packages/ui/src/bulletin-reader/versions.tsx"
+  ],
+  "added": [],
+  "changedSHA256": {
+    "packages/ui/dist/bulletin-reader/BulletinEbook.d.ts.map": "e0a080955ac6f9aaea0ffc99b9c153d68e218febf4bc0df8e5483f7bfe535d02",
+    "packages/ui/dist/bulletin-reader/BulletinEbook.js": "98460fab3eb7d7da6a7c545dd18b2b50a0572a036b0d9f0ea6278632e3cf5d2e",
+    "packages/ui/dist/bulletin-reader/generated.d.ts": "ed6836a9ba1e9d10f12c32787318c78f261206fa29050dd68f872e296781e96e",
+    "packages/ui/dist/bulletin-reader/versions.d.ts": "743df09ea1e9674de64e3197688782a2c91d2bacc1393cf586b510a02e7eaf86",
+    "packages/ui/dist/bulletin-reader/versions.d.ts.map": "59644940232fa3b67da2cd607a69aaf36d2da0aaf8ebcc5e2955cb6b3c3f4bb0",
+    "packages/ui/dist/bulletin-reader/versions.js": "7b037a83d2c03bb91d68c6c54def2ab73a88f08d574a31ba183cdd5d4fa76904",
+    "packages/ui/src/bulletin-reader/BulletinEbook.tsx": "34f7991eed205bc006ad9d9238822bf05382681034ae818758b5d2d30d4504b0",
+    "packages/ui/src/bulletin-reader/generated.ts": "f6661eb5a7bc4eaeb836cd3912b66af35feec442e3788a74af6b6953c3b75d56",
+    "packages/ui/src/bulletin-reader/versions.tsx": "eee788f50bb3a1d6d6091004573caa5d31f48350923c26848e15a79ffd29333d"
+  }
+}

@@ -29,3 +29,7 @@ Author independently identified Node `node:test` tests being picked up by Vitest
 Remaining Critical = 0; Important = 0 in reviewed source after P1 correction. No further code change requested. Acceptance remains conditional on candidate full tests/build/lint, completed tamper suite, immutable package manifest parity, required container/browser gates and CI. This is not a release/production-ready verdict and author test claims were not substituted for independent execution.
 
 Not checked: no package publication, live deployment, physical devices, full Platform suites or container/browser suite by this reviewer. Heavy verifier reruns are coordinated by root because of host resource contention.
+
+## Watch-script follow-up review
+
+Independent advisor `/root/admin_advisor` inspected the additional `test: "vitest src"` change: all nine existing client suites are under `src`, avoiding accidental Node test discovery in developer watch mode; `test:run` still explicitly runs Node generator tests then source Vitest tests. C0/I0, no further correction requested. Final serialized all-package test run includes 443 Vitest tests and 8 Node tests, all passing.

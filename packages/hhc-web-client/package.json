@@ -28,7 +28,7 @@
     "check:bulletin": "node scripts/generate-bulletin-domain.mjs --check",
     "check:generated": "pnpm generate && git diff --exit-code -- src/generated.ts",
     "lint": "oxlint src",
-    "test": "vitest",
+    "test": "vitest src",
     "test:run": "node --test scripts/generate-bulletin-domain.test.mjs && vitest run src"
   },
   "dependencies": {

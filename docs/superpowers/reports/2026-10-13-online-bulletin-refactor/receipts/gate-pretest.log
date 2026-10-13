@@ -1,0 +1,17 @@
+
+> hhc-frontend-platform@1.0.62 pretest /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform
+> pnpm --filter @hallelujahhomechurch/account-client build && pnpm --filter @hallelujahhomechurch/donation-ui^... build
+
+(node:61030) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+> @hallelujahhomechurch/account-client@1.0.62 build /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/packages/account-client
+> tsc -p tsconfig.build.json
+
+(node:61074) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Scope: 2 of 8 workspace projects
+packages/donation-client build$ tsc -p tsconfig.build.json
+packages/ui build$ tsc -p tsconfig.json && cp src/styles.css dist/styles.css && cp src/bulletin-reader/paper.css dist/bulletin-reader/paper.css && cp src/bulletin-reader/v2/paper.css dist/bulletin-reader/v2/paper.css && cp src/bulletin-reader/v7/paper.css dist/bulletin-reader/v7/paper.css && cp src/bulletin-reader/ebook.css dist/bulletin-reader/ebook.css
+packages/donation-client build: Done
+packages/ui build: Done
