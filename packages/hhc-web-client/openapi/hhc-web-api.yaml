@@ -5702,8 +5702,8 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/BroadcastStreamKeyEnvelope' }
         '400': { $ref: '#/components/responses/BroadcastStreamKeyFailure' }
-        '401': { $ref: '#/components/responses/BroadcastStreamKeyFailure' }
-        '403': { $ref: '#/components/responses/BroadcastStreamKeyFailure' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
         '404': { $ref: '#/components/responses/BroadcastStreamKeyFailure' }
         '409': { $ref: '#/components/responses/BroadcastStreamKeyFailure' }
         '412': { $ref: '#/components/responses/BroadcastStreamKeyFailure' }
@@ -5733,8 +5733,8 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/BroadcastStreamKeyEnvelope' }
         '400': { $ref: '#/components/responses/BroadcastStreamKeyFailure' }
-        '401': { $ref: '#/components/responses/BroadcastStreamKeyFailure' }
-        '403': { $ref: '#/components/responses/BroadcastStreamKeyFailure' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
         '404': { $ref: '#/components/responses/BroadcastStreamKeyFailure' }
         '409': { $ref: '#/components/responses/BroadcastStreamKeyFailure' }
         '412': { $ref: '#/components/responses/BroadcastStreamKeyFailure' }
@@ -5770,8 +5770,8 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/BroadcastMutationResultEnvelope' }
         '400': { $ref: '#/components/responses/BroadcastStreamKeyFailure' }
-        '401': { $ref: '#/components/responses/BroadcastStreamKeyFailure' }
-        '403': { $ref: '#/components/responses/BroadcastStreamKeyFailure' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
         '404': { $ref: '#/components/responses/BroadcastStreamKeyFailure' }
         '409': { $ref: '#/components/responses/BroadcastStreamKeyFailure' }
         '412': { $ref: '#/components/responses/BroadcastStreamKeyFailure' }

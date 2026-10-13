@@ -13965,8 +13965,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BroadcastStreamKeyFailure"];
-            401: components["responses"]["BroadcastStreamKeyFailure"];
-            403: components["responses"]["BroadcastStreamKeyFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
             404: components["responses"]["BroadcastStreamKeyFailure"];
             409: components["responses"]["BroadcastStreamKeyFailure"];
             412: components["responses"]["BroadcastStreamKeyFailure"];
@@ -14000,8 +14000,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BroadcastStreamKeyFailure"];
-            401: components["responses"]["BroadcastStreamKeyFailure"];
-            403: components["responses"]["BroadcastStreamKeyFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
             404: components["responses"]["BroadcastStreamKeyFailure"];
             409: components["responses"]["BroadcastStreamKeyFailure"];
             412: components["responses"]["BroadcastStreamKeyFailure"];
@@ -14035,8 +14035,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BroadcastStreamKeyFailure"];
-            401: components["responses"]["BroadcastStreamKeyFailure"];
-            403: components["responses"]["BroadcastStreamKeyFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
             404: components["responses"]["BroadcastStreamKeyFailure"];
             409: components["responses"]["BroadcastStreamKeyFailure"];
             412: components["responses"]["BroadcastStreamKeyFailure"];
