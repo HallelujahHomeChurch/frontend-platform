@@ -68,6 +68,12 @@ export type BroadcastUpdateInput = components['schemas']['BroadcastUpdateInput']
 export type BroadcastMutationInput = components['schemas']['BroadcastMutationInput']
 export type BroadcastMutationResult = components['schemas']['BroadcastMutationResult']
 export type BroadcastBindInput = components['schemas']['BroadcastBindInput']
+export type BroadcastSource = components['schemas']['BroadcastSource']
+export type BroadcastSourceStreamKeyInput = components['schemas']['BroadcastSourceStreamKeyInput']
+export type BroadcastSourceTargetInput = components['schemas']['BroadcastSourceTargetInput']
+export type BroadcastSourceResolveInput = components['schemas']['BroadcastSourceResolveInput']
+export type BroadcastSourceResolved = components['schemas']['BroadcastSourceResolved']
+export type BroadcastSourceBindInput = components['schemas']['BroadcastSourceBindInput']
 export type BroadcastStreamKey = components['schemas']['BroadcastStreamKey']
 export type BroadcastStreamKeySetInput = components['schemas']['BroadcastStreamKeySetInput']
 export type BroadcastStreamKeyBindInput = components['schemas']['BroadcastStreamKeyBindInput']
@@ -273,6 +279,21 @@ export function createHhcWebClient(options: {
     },
     async bindBroadcast(recordingId:string,body:BroadcastBindInput,signal?:AbortSignal) {
       return (await unwrap(client.POST('/admin/broadcasts/{recordingId}/bindings', {params:{path:{recordingId}},body,signal,cache:'no-store'}))).data
+    },
+    async getBroadcastSource(signal?:AbortSignal) {
+      return (await unwrap(client.GET('/admin/broadcast-source', {signal,cache:'no-store',redirect:'error'}))).data
+    },
+    async setBroadcastSourceStreamKey(body:BroadcastSourceStreamKeyInput,signal?:AbortSignal) {
+      return (await unwrap(client.PUT('/admin/broadcast-source/stream-key', {body,signal,cache:'no-store',redirect:'error'}))).data
+    },
+    async setBroadcastSourceTarget(body:BroadcastSourceTargetInput,signal?:AbortSignal) {
+      return (await unwrap(client.PUT('/admin/broadcast-source/target', {body,signal,cache:'no-store',redirect:'error'}))).data
+    },
+    async resolveBroadcastSource(body:BroadcastSourceResolveInput,signal?:AbortSignal) {
+      return (await unwrap(client.POST('/admin/broadcast-source/resolve', {body,signal,cache:'no-store',redirect:'error'}))).data
+    },
+    async bindBroadcastSource(body:BroadcastSourceBindInput,signal?:AbortSignal) {
+      return (await unwrap(client.POST('/admin/broadcast-source/bindings', {body,signal,cache:'no-store',redirect:'error'}))).data
     },
     async getBroadcastStreamKey(recordingId:string,signal?:AbortSignal) {
       return (await unwrap(client.GET('/admin/broadcasts/{recordingId}/stream-key', {params:{path:{recordingId}},signal,cache:'no-store',redirect:'error'}))).data

@@ -251,3 +251,16 @@ body with OAuth authorization, disable caching, and reject redirects. Keep the
 same secret, operation key, and expected revision when retrying an uncertain save;
 these methods never retry a mutation or fall back to unkeyed binding themselves.
 Publish the coordinated 1.0.64 package before consumers pin that registry version.
+
+## Reusable broadcast source
+
+K2 adds `getBroadcastSource`, `setBroadcastSourceStreamKey`,
+`setBroadcastSourceTarget`, `resolveBroadcastSource`, and `bindBroadcastSource`.
+The singleton source keeps one credential across explicitly prepared events.
+Source and event revisions remain separate; preparing an event may require
+refreshing its revision. `inputBusy` describes input occupancy; `canRotate`
+controls credential reset. No method guesses a target, retries a mutation, or
+falls back to K1/B1. Retry an uncertain bind with the exact original input and
+operation key, without resolving a newer target. Secrets use JSON bodies only;
+transport disables caching and redirects. Existing K1 and B1 types stay unchanged.
+Publish coordinated 1.0.65 before consumers pin its registry version.
