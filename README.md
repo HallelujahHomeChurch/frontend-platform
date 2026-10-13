@@ -241,3 +241,13 @@ Publish the reviewed shared client through the existing version/tag workflow
 before pinning Admin and Website registry lockfiles. Local packed builds do not
 prove a package release or production acceptance. C1 and OBS wire contracts remain
 unchanged.
+
+## Broadcast event stream keys
+
+The K1 client adds `getBroadcastStreamKey`, `setBroadcastStreamKey`, and
+`bindBroadcastStreamKey` independently of B1 views and capabilities. Reads return
+configuration metadata only. Management and binding send the secret in the JSON
+body with OAuth authorization, disable caching, and reject redirects. Keep the
+same secret, operation key, and expected revision when retrying an uncertain save;
+these methods never retry a mutation or fall back to unkeyed binding themselves.
+Publish the coordinated 1.0.64 package before consumers pin that registry version.
