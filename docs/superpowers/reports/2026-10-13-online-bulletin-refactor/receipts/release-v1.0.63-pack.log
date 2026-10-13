@@ -1,0 +1,239 @@
+
+> hhc-frontend-platform@1.0.63 pack:packages /Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform
+> node scripts/pack-packages.mjs
+
+📦  @hallelujahhomechurch/preferences@1.0.63
+Tarball Contents
+dist/analytics-copy.d.ts
+dist/analytics-copy.js
+dist/analytics.d.ts
+dist/analytics.js
+dist/index.d.ts
+dist/index.js
+dist/statement-dismissal.d.ts
+dist/statement-dismissal.js
+package.json
+Tarball Details
+/Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/artifacts/hallelujahhomechurch-preferences-1.0.63.tgz
+📦  @hallelujahhomechurch/account-client@1.0.63
+Tarball Contents
+dist/admin-access.d.ts
+dist/admin-access.d.ts.map
+dist/admin-access.js
+dist/browser-runtime.d.ts
+dist/browser-runtime.d.ts.map
+dist/browser-runtime.js
+dist/conformance.d.ts
+dist/conformance.d.ts.map
+dist/conformance.js
+dist/index.d.ts
+dist/index.d.ts.map
+dist/index.js
+dist/legal.d.ts
+dist/legal.d.ts.map
+dist/legal.js
+dist/navigation-presentation.d.ts
+dist/navigation-presentation.d.ts.map
+dist/navigation-presentation.js
+dist/oauth.d.ts
+dist/oauth.d.ts.map
+dist/oauth.js
+dist/session-client.d.ts
+dist/session-client.d.ts.map
+dist/session-client.js
+LICENSE
+package.json
+Tarball Details
+/Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/artifacts/hallelujahhomechurch-account-client-1.0.63.tgz
+📦  @hallelujahhomechurch/hhc-web-client@1.0.63
+Tarball Contents
+dist/client.d.ts
+dist/client.d.ts.map
+dist/client.js
+dist/generated.d.ts
+dist/generated.d.ts.map
+dist/generated.js
+dist/index.d.ts
+dist/index.d.ts.map
+dist/index.js
+package.json
+Tarball Details
+/Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/artifacts/hallelujahhomechurch-hhc-web-client-1.0.63.tgz
+📦  @hallelujahhomechurch/operations-client@1.0.63
+Tarball Contents
+dist/access.d.ts
+dist/access.d.ts.map
+dist/access.js
+dist/client.d.ts
+dist/client.d.ts.map
+dist/client.js
+dist/generated.d.ts
+dist/generated.d.ts.map
+dist/generated.js
+dist/index.d.ts
+dist/index.d.ts.map
+dist/index.js
+package.json
+Tarball Details
+/Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/artifacts/hallelujahhomechurch-operations-client-1.0.63.tgz
+📦  @hallelujahhomechurch/ui@1.0.63
+Tarball Contents
+dist/bulletin-reader/artifact.d.ts
+dist/bulletin-reader/artifact.d.ts.map
+dist/bulletin-reader/artifact.js
+dist/bulletin-reader/backPanelPresentation.d.ts
+dist/bulletin-reader/backPanelPresentation.d.ts.map
+dist/bulletin-reader/backPanelPresentation.js
+dist/bulletin-reader/BulletinDocumentRenderer.d.ts
+dist/bulletin-reader/BulletinDocumentRenderer.d.ts.map
+dist/bulletin-reader/BulletinDocumentRenderer.js
+dist/bulletin-reader/BulletinEbook.d.ts
+dist/bulletin-reader/BulletinEbook.d.ts.map
+dist/bulletin-reader/BulletinEbook.js
+dist/bulletin-reader/ebook.css
+dist/bulletin-reader/fixed.d.ts
+dist/bulletin-reader/fixed.d.ts.map
+dist/bulletin-reader/fixed.js
+dist/bulletin-reader/generated.d.ts
+dist/bulletin-reader/generated.d.ts.map
+dist/bulletin-reader/generated.js
+dist/bulletin-reader/measure.d.ts
+dist/bulletin-reader/measure.d.ts.map
+dist/bulletin-reader/measure.js
+dist/bulletin-reader/paper.css
+dist/bulletin-reader/paperPresentation.d.ts
+dist/bulletin-reader/paperPresentation.d.ts.map
+dist/bulletin-reader/paperPresentation.js
+dist/bulletin-reader/ReaderWatermark.d.ts
+dist/bulletin-reader/ReaderWatermark.d.ts.map
+dist/bulletin-reader/ReaderWatermark.js
+dist/bulletin-reader/template-assets.json
+dist/bulletin-reader/v10/artifact.d.ts
+dist/bulletin-reader/v10/artifact.d.ts.map
+dist/bulletin-reader/v10/artifact.js
+dist/bulletin-reader/v10/BulletinDocumentRenderer.d.ts
+dist/bulletin-reader/v10/BulletinDocumentRenderer.d.ts.map
+dist/bulletin-reader/v10/BulletinDocumentRenderer.js
+dist/bulletin-reader/v2/artifact.d.ts
+dist/bulletin-reader/v2/artifact.d.ts.map
+dist/bulletin-reader/v2/artifact.js
+dist/bulletin-reader/v2/BulletinDocumentRenderer.d.ts
+dist/bulletin-reader/v2/BulletinDocumentRenderer.d.ts.map
+dist/bulletin-reader/v2/BulletinDocumentRenderer.js
+dist/bulletin-reader/v2/fixed.d.ts
+dist/bulletin-reader/v2/fixed.d.ts.map
+dist/bulletin-reader/v2/fixed.js
+dist/bulletin-reader/v2/paper.css
+dist/bulletin-reader/v2/template-assets.json
+dist/bulletin-reader/v3/artifact.d.ts
+dist/bulletin-reader/v3/artifact.d.ts.map
+dist/bulletin-reader/v3/artifact.js
+dist/bulletin-reader/v3/BulletinDocumentRenderer.d.ts
+dist/bulletin-reader/v3/BulletinDocumentRenderer.d.ts.map
+dist/bulletin-reader/v3/BulletinDocumentRenderer.js
+dist/bulletin-reader/v3/measure.d.ts
+dist/bulletin-reader/v3/measure.d.ts.map
+dist/bulletin-reader/v3/measure.js
+dist/bulletin-reader/v4/artifact.d.ts
+dist/bulletin-reader/v4/artifact.d.ts.map
+dist/bulletin-reader/v4/artifact.js
+dist/bulletin-reader/v4/BulletinDocumentRenderer.d.ts
+dist/bulletin-reader/v4/BulletinDocumentRenderer.d.ts.map
+dist/bulletin-reader/v4/BulletinDocumentRenderer.js
+dist/bulletin-reader/v4/measure.d.ts
+dist/bulletin-reader/v4/measure.d.ts.map
+dist/bulletin-reader/v4/measure.js
+dist/bulletin-reader/v5/artifact.d.ts
+dist/bulletin-reader/v5/artifact.d.ts.map
+dist/bulletin-reader/v5/artifact.js
+dist/bulletin-reader/v5/BulletinDocumentRenderer.d.ts
+dist/bulletin-reader/v5/BulletinDocumentRenderer.d.ts.map
+dist/bulletin-reader/v5/BulletinDocumentRenderer.js
+dist/bulletin-reader/v5/measure.d.ts
+dist/bulletin-reader/v5/measure.d.ts.map
+dist/bulletin-reader/v5/measure.js
+dist/bulletin-reader/v6/artifact.d.ts
+dist/bulletin-reader/v6/artifact.d.ts.map
+dist/bulletin-reader/v6/artifact.js
+dist/bulletin-reader/v6/BulletinDocumentRenderer.d.ts
+dist/bulletin-reader/v6/BulletinDocumentRenderer.d.ts.map
+dist/bulletin-reader/v6/BulletinDocumentRenderer.js
+dist/bulletin-reader/v6/fixed.d.ts
+dist/bulletin-reader/v6/fixed.d.ts.map
+dist/bulletin-reader/v6/fixed.js
+dist/bulletin-reader/v6/measure.d.ts
+dist/bulletin-reader/v6/measure.d.ts.map
+dist/bulletin-reader/v6/measure.js
+dist/bulletin-reader/v7/artifact.d.ts
+dist/bulletin-reader/v7/artifact.d.ts.map
+dist/bulletin-reader/v7/artifact.js
+dist/bulletin-reader/v7/BulletinDocumentRenderer.d.ts
+dist/bulletin-reader/v7/BulletinDocumentRenderer.d.ts.map
+dist/bulletin-reader/v7/BulletinDocumentRenderer.js
+dist/bulletin-reader/v7/fonts.d.ts
+dist/bulletin-reader/v7/fonts.d.ts.map
+dist/bulletin-reader/v7/fonts.js
+dist/bulletin-reader/v7/paper.css
+dist/bulletin-reader/v7/template-assets.json
+dist/bulletin-reader/v8/artifact.d.ts
+dist/bulletin-reader/v8/artifact.d.ts.map
+dist/bulletin-reader/v8/artifact.js
+dist/bulletin-reader/v8/BulletinDocumentRenderer.d.ts
+dist/bulletin-reader/v8/BulletinDocumentRenderer.d.ts.map
+dist/bulletin-reader/v8/BulletinDocumentRenderer.js
+dist/bulletin-reader/v9/artifact.d.ts
+dist/bulletin-reader/v9/artifact.d.ts.map
+dist/bulletin-reader/v9/artifact.js
+dist/bulletin-reader/v9/BulletinDocumentRenderer.d.ts
+dist/bulletin-reader/v9/BulletinDocumentRenderer.d.ts.map
+dist/bulletin-reader/v9/BulletinDocumentRenderer.js
+dist/bulletin-reader/v9/fixed.d.ts
+dist/bulletin-reader/v9/fixed.d.ts.map
+dist/bulletin-reader/v9/fixed.js
+dist/bulletin-reader/versions.d.ts
+dist/bulletin-reader/versions.d.ts.map
+dist/bulletin-reader/versions.js
+dist/controls.d.ts
+dist/controls.d.ts.map
+dist/controls.js
+dist/data.d.ts
+dist/data.d.ts.map
+dist/data.js
+dist/forms.d.ts
+dist/forms.d.ts.map
+dist/forms.js
+dist/index.d.ts
+dist/index.d.ts.map
+dist/index.js
+dist/layout.d.ts
+dist/layout.d.ts.map
+dist/layout.js
+dist/load-more.d.ts
+dist/load-more.d.ts.map
+dist/load-more.js
+dist/overlays.d.ts
+dist/overlays.d.ts.map
+dist/overlays.js
+dist/styles.css
+package.json
+Tarball Details
+/Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/artifacts/hallelujahhomechurch-ui-1.0.63.tgz
+📦  @hallelujahhomechurch/donation-client@1.0.63
+Tarball Contents
+dist/generated.d.ts
+dist/generated.d.ts.map
+dist/generated.js
+dist/index.d.ts
+dist/index.d.ts.map
+dist/index.js
+package.json
+Tarball Details
+/Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/artifacts/hallelujahhomechurch-donation-client-1.0.63.tgz
+📦  @hallelujahhomechurch/donation-ui@1.0.63
+Tarball Contents
+dist/index.d.ts
+dist/index.d.ts.map
+dist/index.js
+package.json
+Tarball Details
+/Users/rayselfs/Projects/hhc/website/.worktrees/online-bulletin-refactor-20261013/frontend-platform/artifacts/hallelujahhomechurch-donation-ui-1.0.63.tgz
