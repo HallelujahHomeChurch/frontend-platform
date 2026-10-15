@@ -104,6 +104,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/broadcasts/{recordingId}/stream-key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * getBroadcastStreamKey
+         * @description K1 human-only event credential metadata; never returns a secret or digest.
+         */
+        get: operations["getBroadcastStreamKey"];
+        /**
+         * setBroadcastStreamKey
+         * @description K1 requires BROADCAST_WRITERS_ENABLED and preserves the existing B1/C1 pipeline. Retry ambiguous failures with the same operationKey and exact input. Never persist the raw credential in logs or mutation receipts. Allowed only before the first capture intent, in draft or scheduled phase. Client generates 32 WebCrypto random bytes; only SHA-256 and a four-character suffix persist. Replayed writes return current metadata only while the same credential remains current; replay after a later rotation returns broadcast_operation_conflict.
+         */
+        put: operations["setBroadcastStreamKey"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcasts/{recordingId}/stream-key-bindings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * bindBroadcastWithStreamKey
+         * @description K1 requires BROADCAST_WRITERS_ENABLED and preserves the existing B1/C1 pipeline. Retry ambiguous failures with the same operationKey and exact input. Never persist the raw credential in logs or mutation receipts. Requires publish scope when autoStart or autoPublish is enabled. Wrong or absent key returns 403 broadcast_stream_key_invalid. The current producer returns 200; clients must also retain B1 202/null binding polling compatibility. A 503 may follow durable intent reservation; retry the same input and GET the broadcast for recovery, never fall back to C1.
+         */
+        post: operations["bindBroadcastWithStreamKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/recordings/retention-policy": {
         parameters: {
             query?: never;
@@ -2149,7 +2193,7 @@ export interface paths {
         };
         /**
          * List or search published recordings after membership and video entitlement checks
-         * @description Without limit, retains the legacy array response. With limit, returns uploadedAt DESC and id DESC keyset batches and meta.nextCursor (null at exhaustion). Empty batches may still carry a cursor when media is no longer available; continue until nextCursor is null. Every batch rechecks current visibility and ready media. q normalizes Unicode whitespace and case, splits into words, and requires every word to occur literally in the title or description. Nonempty q requires limit. Search is applied before the batch limit. Cursor binds the normalized query digest and sort version; legacy cursors are accepted only without a query. Duplicate q values and malformed queries are rejected.
+         * @description Without limit, retains the legacy array response. With limit, returns uploadedAt DESC and id DESC keyset batches and meta.nextCursor (null at exhaustion). Empty batches may still carry a cursor when media is no longer available; continue until nextCursor is null. Every batch rechecks current visibility and ready media. durationSeconds describes the verified public range for B1 broadcasts and the ready package duration for standalone recordings. B1 items without a ready public duration are omitted instead of exposing the private raw-capture duration. q normalizes Unicode whitespace and case, splits into words, and requires every word to occur literally in the title or description. Nonempty q requires limit. Search is applied before the batch limit. Cursor binds the normalized query digest and sort version; legacy cursors are accepted only without a query. Duplicate q values and malformed queries are rejected.
          */
         get: operations["listMemberRecordings"];
         put?: never;
@@ -2355,7 +2399,10 @@ export interface paths {
         /** List recording drafts and published entries */
         get: operations["listAdminRecordings"];
         put?: never;
-        /** Create a titled single-upload draft */
+        /**
+         * Create a titled single-upload draft
+         * @description At most two unexpired, undeleted ordinary recordings awaiting upload may exist per creator. Broadcast records do not consume this upload quota. An accepted idempotency key replays its existing recording even when the quota is full.
+         */
         post: operations["createAdminRecording"];
         delete?: never;
         options?: never;
@@ -2767,7 +2814,7 @@ export interface paths {
         put?: never;
         /**
          * createMemberLivePlayback
-         * @description Staged C1 contract. Producer implementation and deployment gates must pass before use. All mutations are actor/recording/capture bound; no service-principal upload identity in the initial OBS release.
+         * @description Issues or renews an account-bound live playback scope. After B1 End enters processing or archived, only an already registered scope for the same account may renew within the original replay, capture and retention deadlines. New scopes are rejected after processing or Stop. Revocation, membership and public segment boundaries are checked independently; archive processing is not replay expiry. C1/B1 request and response schemas are unchanged.
          */
         post: operations["createMemberLivePlayback"];
         delete?: never;
@@ -2938,7 +2985,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Read the current visible live thumbnail without creating a playback grant */
+        /**
+         * Read the current visible live thumbnail without creating a playback grant
+         * @description Supports legacy live captures and B1 broadcasts through the exact bound capture. B1 requires an announced, unrevoked broadcast in live or end_pending phase and an available, unstopped, unexpired capture. Eligibility and selected cover identity are rechecked after Asset I/O. Automatic and custom covers reuse broadcast ownership; this does not enable legacy capture-scoped administrator writes. Member live list, search and watch.live expose the same ready coverRevision. B1 coverRevision comes from the readable broadcast cover snapshot, not pending capture readiness.
+         */
         get: operations["getMemberLiveCover"];
         put?: never;
         post?: never;
@@ -3050,50 +3100,6 @@ export interface paths {
          * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
          */
         post: operations["cancelBroadcast"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/broadcasts/{recordingId}/stream-key": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * getBroadcastStreamKey
-         * @description K1 human-only event credential metadata; never returns a secret or digest.
-         */
-        get: operations["getBroadcastStreamKey"];
-        /**
-         * setBroadcastStreamKey
-         * @description K1 requires BROADCAST_WRITERS_ENABLED and preserves the existing B1/C1 pipeline. Retry ambiguous failures with the same operationKey and exact input. Never persist the raw credential in logs or mutation receipts. Allowed only before the first capture intent, in draft or scheduled phase. Client generates 32 WebCrypto random bytes; only SHA-256 and a four-character suffix persist. Replayed writes return current metadata only while the same credential remains current; replay after a later rotation returns broadcast_operation_conflict.
-         */
-        put: operations["setBroadcastStreamKey"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/broadcasts/{recordingId}/stream-key-bindings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * bindBroadcastWithStreamKey
-         * @description K1 requires BROADCAST_WRITERS_ENABLED and preserves the existing B1/C1 pipeline. Retry ambiguous failures with the same operationKey and exact input. Never persist the raw credential in logs or mutation receipts. Requires publish scope when autoStart or autoPublish is enabled. Wrong or absent key returns 403 broadcast_stream_key_invalid. The current producer returns 200; clients must also retain B1 202/null binding polling compatibility. A 503 may follow durable intent reservation; retry the same input and GET the broadcast for recovery, never fall back to C1.
-         */
-        post: operations["bindBroadcastWithStreamKey"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3400,91 +3406,550 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/ingest/broadcast-source/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Key-only OBS resolve
+         * @description K3 key-only OBS transport. Console owns metadata and publication policy. No Account login; no proxy retry. Bootstrap/renewal use body-only stream key; session requests use the event-scoped bearer. Existing B1/C1 validation and idempotency are unchanged.
+         */
+        post: operations["ingestIngestBroadcastSourceResolvePost"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ingest/broadcast-source/bindings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Key-only OBS bindings
+         * @description K3 key-only OBS transport. Console owns metadata and publication policy. No Account login; no proxy retry. Bootstrap/renewal use body-only stream key; session requests use the event-scoped bearer. Existing B1/C1 validation and idempotency are unchanged.
+         */
+        post: operations["ingestIngestBroadcastSourceBindingsPost"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ingest/broadcast-source/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Key-only OBS session
+         * @description K3 key-only OBS transport. Console owns metadata and publication policy. No Account login; no proxy retry. Bootstrap/renewal use body-only stream key; session requests use the event-scoped bearer. Existing B1/C1 validation and idempotency are unchanged.
+         */
+        post: operations["ingestIngestBroadcastSourceSessionPost"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ingest/broadcasts/{id}/captures/{captureId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Key-only OBS {captureId}
+         * @description K3 key-only OBS transport. Console owns metadata and publication policy. No Account login; no proxy retry. Bootstrap/renewal use body-only stream key; session requests use the event-scoped bearer. Existing B1/C1 validation and idempotency are unchanged.
+         */
+        get: operations["ingestIngestBroadcastsIdCapturesCaptureidGet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ingest/broadcasts/{id}/captures/{captureId}/objects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Key-only OBS objects
+         * @description K3 key-only OBS transport. Console owns metadata and publication policy. No Account login; no proxy retry. Bootstrap/renewal use body-only stream key; session requests use the event-scoped bearer. Existing B1/C1 validation and idempotency are unchanged.
+         */
+        post: operations["ingestIngestBroadcastsIdCapturesCaptureidObjectsPost"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ingest/broadcasts/{id}/captures/{captureId}/sign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Key-only OBS sign
+         * @description K3 key-only OBS transport. Console owns metadata and publication policy. No Account login; no proxy retry. Bootstrap/renewal use body-only stream key; session requests use the event-scoped bearer. Existing B1/C1 validation and idempotency are unchanged.
+         */
+        post: operations["ingestIngestBroadcastsIdCapturesCaptureidSignPost"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ingest/broadcasts/{id}/captures/{captureId}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Key-only OBS confirm
+         * @description K3 key-only OBS transport. Console owns metadata and publication policy. No Account login; no proxy retry. Bootstrap/renewal use body-only stream key; session requests use the event-scoped bearer. Existing B1/C1 validation and idempotency are unchanged.
+         */
+        post: operations["ingestIngestBroadcastsIdCapturesCaptureidConfirmPost"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ingest/broadcasts/{id}/captures/{captureId}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Key-only OBS stop
+         * @description K3 key-only OBS transport. Console owns metadata and publication policy. No Account login; no proxy retry. Bootstrap/renewal use body-only stream key; session requests use the event-scoped bearer. Existing B1/C1 validation and idempotency are unchanged.
+         */
+        post: operations["ingestIngestBroadcastsIdCapturesCaptureidStopPost"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ingest/broadcasts/{id}/captures/{captureId}/seal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Key-only OBS seal
+         * @description K3 key-only OBS transport. Console owns metadata and publication policy. No Account login; no proxy retry. Bootstrap/renewal use body-only stream key; session requests use the event-scoped bearer. Existing B1/C1 validation and idempotency are unchanged.
+         */
+        post: operations["ingestIngestBroadcastsIdCapturesCaptureidSealPost"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ingest/broadcasts/{id}/captures/{captureId}/abort": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Key-only OBS abort
+         * @description K3 key-only OBS transport. Console owns metadata and publication policy. No Account login; no proxy retry. Bootstrap/renewal use body-only stream key; session requests use the event-scoped bearer. Existing B1/C1 validation and idempotency are unchanged.
+         */
+        post: operations["ingestIngestBroadcastsIdCapturesCaptureidAbortPost"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ingest/broadcasts/{id}/control": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Key-only OBS control
+         * @description K3 key-only OBS transport. Console owns metadata and publication policy. No Account login; no proxy retry. Bootstrap/renewal use body-only stream key; session requests use the event-scoped bearer. Existing B1/C1 validation and idempotency are unchanged.
+         */
+        get: operations["ingestIngestBroadcastsIdControlGet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ingest/broadcasts/{id}/commands/{commandId}/ack": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Key-only OBS ack
+         * @description K3 key-only OBS transport. Console owns metadata and publication policy. No Account login; no proxy retry. Bootstrap/renewal use body-only stream key; session requests use the event-scoped bearer. Existing B1/C1 validation and idempotency are unchanged.
+         */
+        post: operations["ingestIngestBroadcastsIdCommandsCommandidAckPost"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ingest/streams/open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Open or resume one durable OBS output
+         * @description Open or resume the durable original output. New outputs require STUDIO_WRITERS_ENABLED; existing intents can recover while disabled.
+         */
+        post: operations["openBroadcastOutput"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcast-sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List named stream keys */
+        get: operations["listStudioSources"];
+        put?: never;
+        /** Create a named stream key */
+        post: operations["createStudioSource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcast-sources/{sourceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove an idle stream key */
+        delete: operations["deleteStudioSource"];
+        options?: never;
+        head?: never;
+        /** Rename a stream key */
+        patch: operations["renameStudioSource"];
+        trace?: never;
+    };
+    "/admin/broadcast-sources/{sourceId}/stream-key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Rotate an idle stream key */
+        put: operations["rotateStudioSource"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/studio/broadcasts/{id}/source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Change an unbound scheduled event source */
+        put: operations["assignStudioSource"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcast-sources/{sourceId}/target": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Prepare exclusive receiving target */
+        put: operations["prepareStudioSource"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcast-sources/{sourceId}/direct/ensure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ensure the current direct event */
+        post: operations["ensureStudioDirect"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/studio/broadcasts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create scheduled event without reserving input */
+        post: operations["createStudioSchedule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcasts/{id}/studio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read event source and mode without creating an event */
+        get: operations["getStudioBroadcast"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        BroadcastPolicy: {
-            autoStart: boolean;
-            autoEnd: boolean;
-            autoPublish: boolean;
-        };
-        BroadcastBinding: {
-            captureId: string;
-            epoch: number;
+        BroadcastOutputOpenInput: {
+            /** @constant */
+            protocolVersion: "k4-2026-10-15.rc1";
             /** Format: uuid */
-            actorId: string;
+            outputSessionId: string;
+            /** @description Canonical 32 CSPRNG bytes. Never log or persist raw value; OBS uses OS credential storage. */
+            streamKey: string;
         };
-        BroadcastBoundaries: {
-            startSequence: number | null;
-            endSequenceExclusive: number | null;
+        BroadcastOutputOpened: {
+            broadcast: components["schemas"]["BroadcastView"] & {
+                binding: components["schemas"]["BroadcastBinding"];
+            };
+            receipt: components["schemas"]["BroadcastReceipt"] & {
+                /** @constant */
+                operation?: "bind";
+                /** @constant */
+                state?: "completed";
+            };
+            session: components["schemas"]["BroadcastIngestSession"];
+            /** @constant */
+            protocolVersion: "k4-2026-10-15.rc1";
+            /** Format: uuid */
+            outputSessionId: string;
+            /** Format: uuid */
+            sourceId: string;
+        };
+        BroadcastOutputOpenedEnvelope: {
+            data: components["schemas"]["BroadcastOutputOpened"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        StudioSource: {
             revision: number;
-        };
-        BroadcastCommand: {
+            configured: boolean;
+            canRotate: boolean;
+            inputBusy: boolean;
+            suffix: string | null;
+            targetRecordingId: string | null;
             /** Format: uuid */
-            commandId: string;
+            id: string;
+            name: string;
+            directEnabled: boolean;
+        };
+        StudioSourceAssignment: {
+            operationKey: string;
+            expectedRevision: number;
+            /** Format: uuid */
+            sourceId: string;
+            expectedSourceRevision: number;
+        };
+        StudioSourceInput: {
+            operationKey: string;
+            expectedRevision?: number;
+            name?: string;
+            streamKey?: string;
+        };
+        StudioBroadcast: {
+            broadcast: components["schemas"]["BroadcastView"];
+            /** Format: uuid */
+            sourceId: string | null;
             /** @enum {string} */
-            kind: "start" | "end";
-            captureId: string;
-            epoch: number;
+            mode: "legacy" | "direct" | "scheduled";
+        };
+        StudioScheduleInput: {
+            operationKey: string;
+            /** Format: uuid */
+            sourceId: string;
+            title: string;
+            description: components["schemas"]["RecordingDescription"];
             /** Format: date-time */
-            requestedAt: string;
-            /** @enum {string} */
-            status: "pending" | "acknowledged" | "cancelled" | "rejected";
-            boundarySequence: number | null;
+            scheduledAt: string;
+            cover?: components["schemas"]["LiveCoverSelection"];
         };
-        BroadcastHealth: {
-            /** @enum {string} */
-            state: "waiting" | "healthy" | "interrupted" | "recovering";
-            lastConfirmedAt: string | null;
-            lastPublishedAt: string | null;
-            verifiedEndSeconds: number | null;
-            queuedObjects: number | null;
-            reason: string | null;
+        StudioSourceEnvelope: {
+            data: components["schemas"]["StudioSource"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
         };
-        BroadcastArchive: {
-            /** @enum {string} */
-            state: "none" | "processing" | "ready" | "published" | "failed";
-            reason: string | null;
+        StudioSourceListEnvelope: {
+            data: components["schemas"]["StudioSource"][];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
         };
-        BroadcastView: {
+        StudioBroadcastEnvelope: {
+            data: components["schemas"]["StudioBroadcast"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        BroadcastIngestSession: {
+            /** @description Opaque 15-minute event-scoped credential; store in OS credential storage, never log or journal. */
+            readonly token: string;
+            /** Format: date-time */
+            expiresAt: string;
             /** Format: uuid */
             recordingId: string;
-            revision: number;
-            /** @enum {string} */
-            phase: "draft" | "scheduled" | "preview" | "start_pending" | "live" | "end_pending" | "processing" | "archived" | "cancelled" | "failed";
-            announced: boolean;
-            scheduledAt: string | null;
-            title: string;
-            description: components["schemas"]["RecordingDescription"];
-            policy: components["schemas"]["BroadcastPolicy"];
-            cover: components["schemas"]["LiveCoverSettings"];
-            binding: components["schemas"]["BroadcastBinding"] | null;
-            boundaries: components["schemas"]["BroadcastBoundaries"];
-            health: components["schemas"]["BroadcastHealth"];
-            pendingCommand: components["schemas"]["BroadcastCommand"] | null;
-            archive: components["schemas"]["BroadcastArchive"];
+            captureId: string;
+            epoch: number;
         };
-        BroadcastMutationInput: {
-            operationKey: string;
-            expectedRevision: number;
+        BroadcastIngestRenewInput: {
+            /** @description Canonical 32 CSPRNG bytes. Never log or persist raw value; OBS uses OS credential storage. */
+            streamKey: string;
+            sessionToken: string;
         };
-        BroadcastCreateInput: {
-            operationKey: string;
-            title: string;
-            description: components["schemas"]["RecordingDescription"];
-            scheduledAt: string | null;
-            policy: components["schemas"]["BroadcastPolicy"];
-            cover?: components["schemas"]["LiveCoverSelection"];
+        BroadcastIngestBinding: {
+            broadcast: components["schemas"]["BroadcastView"];
+            receipt: components["schemas"]["BroadcastReceipt"];
+            session: components["schemas"]["BroadcastIngestSession"];
         };
-        BroadcastUpdateInput: {
-            operationKey: string;
-            expectedRevision: number;
-            title?: string;
-            description?: components["schemas"]["RecordingDescription"];
-            scheduledAt?: string | null;
-            policy?: components["schemas"]["BroadcastPolicy"];
-            cover?: components["schemas"]["LiveCoverSelection"];
+        BroadcastIngestSessionEnvelope: {
+            data: components["schemas"]["BroadcastIngestSession"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        BroadcastIngestBindingEnvelope: {
+            data: components["schemas"]["BroadcastIngestBinding"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        BroadcastIngestErrorEnvelope: {
+            data: null;
+            meta: {
+                [key: string]: unknown;
+            };
+            error: {
+                code: string;
+                message: string;
+                details?: {
+                    [key: string]: unknown;
+                };
+            };
         };
         BroadcastSource: {
             revision: number;
@@ -3577,6 +4042,88 @@ export interface components {
                 code: "broadcast_stream_key_invalid" | "broadcast_invalid" | "broadcast_not_found" | "broadcast_state_conflict" | "broadcast_already_bound" | "broadcast_active_limit" | "broadcast_epoch_mismatch" | "broadcast_boundary_conflict" | "broadcast_operation_conflict" | "broadcast_revision_conflict" | "broadcast_protocol_unsupported" | "unauthorized" | "forbidden" | "rate_limited" | "unavailable";
                 message: string;
             };
+        };
+        BroadcastPolicy: {
+            autoStart: boolean;
+            autoEnd: boolean;
+            autoPublish: boolean;
+        };
+        BroadcastBinding: {
+            captureId: string;
+            epoch: number;
+            /** Format: uuid */
+            actorId: string;
+        };
+        BroadcastBoundaries: {
+            startSequence: number | null;
+            endSequenceExclusive: number | null;
+            revision: number;
+        };
+        BroadcastCommand: {
+            /** Format: uuid */
+            commandId: string;
+            /** @enum {string} */
+            kind: "start" | "end";
+            captureId: string;
+            epoch: number;
+            /** Format: date-time */
+            requestedAt: string;
+            /** @enum {string} */
+            status: "pending" | "acknowledged" | "cancelled" | "rejected";
+            boundarySequence: number | null;
+        };
+        BroadcastHealth: {
+            /** @enum {string} */
+            state: "waiting" | "healthy" | "interrupted" | "recovering";
+            lastConfirmedAt: string | null;
+            lastPublishedAt: string | null;
+            verifiedEndSeconds: number | null;
+            queuedObjects: number | null;
+            reason: string | null;
+        };
+        BroadcastArchive: {
+            /** @enum {string} */
+            state: "none" | "processing" | "ready" | "published" | "failed";
+            reason: string | null;
+        };
+        BroadcastView: {
+            /** Format: uuid */
+            recordingId: string;
+            revision: number;
+            /** @enum {string} */
+            phase: "draft" | "scheduled" | "preview" | "start_pending" | "live" | "end_pending" | "processing" | "archived" | "cancelled" | "failed";
+            announced: boolean;
+            scheduledAt: string | null;
+            title: string;
+            description: components["schemas"]["RecordingDescription"];
+            policy: components["schemas"]["BroadcastPolicy"];
+            cover: components["schemas"]["LiveCoverSettings"];
+            binding: components["schemas"]["BroadcastBinding"] | null;
+            boundaries: components["schemas"]["BroadcastBoundaries"];
+            health: components["schemas"]["BroadcastHealth"];
+            pendingCommand: components["schemas"]["BroadcastCommand"] | null;
+            archive: components["schemas"]["BroadcastArchive"];
+        };
+        BroadcastMutationInput: {
+            operationKey: string;
+            expectedRevision: number;
+        };
+        BroadcastCreateInput: {
+            operationKey: string;
+            title: string;
+            description: components["schemas"]["RecordingDescription"];
+            scheduledAt: string | null;
+            policy: components["schemas"]["BroadcastPolicy"];
+            cover?: components["schemas"]["LiveCoverSelection"];
+        };
+        BroadcastUpdateInput: {
+            operationKey: string;
+            expectedRevision: number;
+            title?: string;
+            description?: components["schemas"]["RecordingDescription"];
+            scheduledAt?: string | null;
+            policy?: components["schemas"]["BroadcastPolicy"];
+            cover?: components["schemas"]["LiveCoverSelection"];
         };
         BroadcastBindInput: {
             operationKey: string;
@@ -5492,7 +6039,10 @@ export interface components {
             captureId: string;
             liveEnabled: boolean;
             liveState: components["schemas"]["MemberLiveRecording"]["liveState"];
-            /** @enum {string} */
+            /**
+             * @description Effective automatic-publication intent. Bound B1 captures with enabled policy remain pending while awaiting public archive activation unless explicitly cancelled or terminal; standalone C1 retains its capture state.
+             * @enum {string}
+             */
             autoPublish: "pending" | "published" | "cancelled" | "blocked";
         };
         AdminRecording: {
@@ -7977,6 +8527,107 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["BroadcastSourceBindInput"];
+            };
+        };
+        responses: {
+            /** @description Current operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastMutationResultEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastStreamKeyFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastStreamKeyFailure"];
+            409: components["responses"]["BroadcastStreamKeyFailure"];
+            412: components["responses"]["BroadcastStreamKeyFailure"];
+            422: components["responses"]["BroadcastStreamKeyFailure"];
+            429: components["responses"]["BroadcastStreamKeyFailure"];
+            503: components["responses"]["BroadcastStreamKeyFailure"];
+        };
+    };
+    getBroadcastStreamKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastStreamKeyEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastStreamKeyFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastStreamKeyFailure"];
+            409: components["responses"]["BroadcastStreamKeyFailure"];
+            412: components["responses"]["BroadcastStreamKeyFailure"];
+            422: components["responses"]["BroadcastStreamKeyFailure"];
+            429: components["responses"]["BroadcastStreamKeyFailure"];
+            503: components["responses"]["BroadcastStreamKeyFailure"];
+        };
+    };
+    setBroadcastStreamKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastStreamKeySetInput"];
+            };
+        };
+        responses: {
+            /** @description Current operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastStreamKeyEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastStreamKeyFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastStreamKeyFailure"];
+            409: components["responses"]["BroadcastStreamKeyFailure"];
+            412: components["responses"]["BroadcastStreamKeyFailure"];
+            422: components["responses"]["BroadcastStreamKeyFailure"];
+            429: components["responses"]["BroadcastStreamKeyFailure"];
+            503: components["responses"]["BroadcastStreamKeyFailure"];
+        };
+    };
+    bindBroadcastWithStreamKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastStreamKeyBindInput"];
             };
         };
         responses: {
@@ -12054,7 +12705,10 @@ export interface operations {
     };
     listAdminRecordings: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Filter by immutable origin. Live replays remain live; omitted returns both origins. */
+                origin?: "upload" | "live";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -12070,6 +12724,7 @@ export interface operations {
                     "application/json": components["schemas"]["RecordingListEnvelope"];
                 };
             };
+            400: components["responses"]["Error"];
             401: components["responses"]["AdminUnauthorized"];
             403: components["responses"]["AdminForbidden"];
         };
@@ -12103,7 +12758,15 @@ export interface operations {
             400: components["responses"]["Error"];
             401: components["responses"]["AdminUnauthorized"];
             403: components["responses"]["AdminForbidden"];
-            409: components["responses"]["Error"];
+            /** @description error.code is recording_draft_limit when the creator already has two unexpired, undeleted ordinary recordings awaiting upload; broadcast records do not count. Other conflicts, including a changed title or creator for an accepted idempotency key, use recording_conflict. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
             503: components["responses"]["Error"];
         };
     };
@@ -14260,107 +14923,6 @@ export interface operations {
             503: components["responses"]["BroadcastFailure"];
         };
     };
-    getBroadcastStreamKey: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                recordingId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Current operation result */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastStreamKeyEnvelope"];
-                };
-            };
-            400: components["responses"]["BroadcastStreamKeyFailure"];
-            401: components["responses"]["AdminUnauthorized"];
-            403: components["responses"]["AdminForbidden"];
-            404: components["responses"]["BroadcastStreamKeyFailure"];
-            409: components["responses"]["BroadcastStreamKeyFailure"];
-            412: components["responses"]["BroadcastStreamKeyFailure"];
-            422: components["responses"]["BroadcastStreamKeyFailure"];
-            429: components["responses"]["BroadcastStreamKeyFailure"];
-            503: components["responses"]["BroadcastStreamKeyFailure"];
-        };
-    };
-    setBroadcastStreamKey: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                recordingId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BroadcastStreamKeySetInput"];
-            };
-        };
-        responses: {
-            /** @description Current operation result */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastStreamKeyEnvelope"];
-                };
-            };
-            400: components["responses"]["BroadcastStreamKeyFailure"];
-            401: components["responses"]["AdminUnauthorized"];
-            403: components["responses"]["AdminForbidden"];
-            404: components["responses"]["BroadcastStreamKeyFailure"];
-            409: components["responses"]["BroadcastStreamKeyFailure"];
-            412: components["responses"]["BroadcastStreamKeyFailure"];
-            422: components["responses"]["BroadcastStreamKeyFailure"];
-            429: components["responses"]["BroadcastStreamKeyFailure"];
-            503: components["responses"]["BroadcastStreamKeyFailure"];
-        };
-    };
-    bindBroadcastWithStreamKey: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                recordingId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BroadcastStreamKeyBindInput"];
-            };
-        };
-        responses: {
-            /** @description Current operation result */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BroadcastMutationResultEnvelope"];
-                };
-            };
-            400: components["responses"]["BroadcastStreamKeyFailure"];
-            401: components["responses"]["AdminUnauthorized"];
-            403: components["responses"]["AdminForbidden"];
-            404: components["responses"]["BroadcastStreamKeyFailure"];
-            409: components["responses"]["BroadcastStreamKeyFailure"];
-            412: components["responses"]["BroadcastStreamKeyFailure"];
-            422: components["responses"]["BroadcastStreamKeyFailure"];
-            429: components["responses"]["BroadcastStreamKeyFailure"];
-            503: components["responses"]["BroadcastStreamKeyFailure"];
-        };
-    };
     bindBroadcast: {
         parameters: {
             query?: never;
@@ -14867,6 +15429,1918 @@ export interface operations {
             422: components["responses"]["BroadcastFailure"];
             429: components["responses"]["BroadcastFailure"];
             503: components["responses"]["BroadcastFailure"];
+        };
+    };
+    ingestIngestBroadcastSourceResolvePost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastSourceResolveInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted transport result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastSourceResolvedEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+        };
+    };
+    ingestIngestBroadcastSourceBindingsPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastSourceBindInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted transport result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestBindingEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+        };
+    };
+    ingestIngestBroadcastSourceSessionPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastIngestRenewInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted transport result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestSessionEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+        };
+    };
+    ingestIngestBroadcastsIdCapturesCaptureidGet: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+                captureId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted transport result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+        };
+    };
+    ingestIngestBroadcastsIdCapturesCaptureidObjectsPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                captureId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCaptureDeclareInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted transport result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureResultEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+        };
+    };
+    ingestIngestBroadcastsIdCapturesCaptureidSignPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                captureId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCaptureSignInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted transport result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureSignedEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+        };
+    };
+    ingestIngestBroadcastsIdCapturesCaptureidConfirmPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                captureId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCaptureConfirmInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted transport result */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureResultEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+        };
+    };
+    ingestIngestBroadcastsIdCapturesCaptureidStopPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                captureId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCaptureOperationInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted transport result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureResultEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+        };
+    };
+    ingestIngestBroadcastsIdCapturesCaptureidSealPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                captureId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCaptureSealInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted transport result */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureResultEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+        };
+    };
+    ingestIngestBroadcastsIdCapturesCaptureidAbortPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                captureId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCaptureAbortInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted transport result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCaptureResultEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+        };
+    };
+    ingestIngestBroadcastsIdControlGet: {
+        parameters: {
+            query: {
+                captureId: string;
+                epoch: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted transport result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastControlEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+        };
+    };
+    ingestIngestBroadcastsIdCommandsCommandidAckPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                commandId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastMarkerAckInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted transport result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastMutationResultEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rejected or retryable transport request; see fixed K3 contract. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+        };
+    };
+    openBroadcastOutput: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastOutputOpenInput"];
+            };
+        };
+        responses: {
+            /** @description Bound original output; session is renewable, not byte-identical on replay */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastOutputOpenedEnvelope"];
+                };
+            };
+            /** @description Invalid input; retain identity */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Invalid key or delegate denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Route unavailable; never fall back */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Wait, busy, capacity, terminal or operation conflict; classify by code */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Body exceeds 4096 bytes */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Protocol unsupported */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Rate limited; Retry-After */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+            /** @description Disabled or dependency unavailable; preserve identity */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastIngestErrorEnvelope"];
+                };
+            };
+        };
+    };
+    listStudioSources: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudioSourceListEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    createStudioSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudioSourceInput"];
+            };
+        };
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudioSourceEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    deleteStudioSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sourceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudioSourceInput"];
+            };
+        };
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudioSourceEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    renameStudioSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sourceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudioSourceInput"];
+            };
+        };
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudioSourceEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    rotateStudioSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sourceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudioSourceInput"];
+            };
+        };
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudioSourceEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    assignStudioSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudioSourceAssignment"];
+            };
+        };
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudioBroadcastEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    prepareStudioSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sourceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastSourceTargetInput"];
+            };
+        };
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastSourceEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    ensureStudioDirect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sourceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastMutationInput"];
+            };
+        };
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastViewEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    createStudioSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudioScheduleInput"];
+            };
+        };
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudioBroadcastEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getStudioBroadcast: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudioBroadcastEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            503: components["responses"]["Error"];
         };
     };
 }

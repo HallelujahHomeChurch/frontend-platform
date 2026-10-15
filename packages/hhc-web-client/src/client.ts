@@ -68,6 +68,11 @@ export type BroadcastUpdateInput = components['schemas']['BroadcastUpdateInput']
 export type BroadcastMutationInput = components['schemas']['BroadcastMutationInput']
 export type BroadcastMutationResult = components['schemas']['BroadcastMutationResult']
 export type BroadcastBindInput = components['schemas']['BroadcastBindInput']
+export type StudioSourceAssignment = components['schemas']['StudioSourceAssignment']
+export type StudioSource = components['schemas']['StudioSource']
+export type StudioSourceInput = components['schemas']['StudioSourceInput']
+export type StudioBroadcast = components['schemas']['StudioBroadcast']
+export type StudioScheduleInput = components['schemas']['StudioScheduleInput']
 export type BroadcastSource = components['schemas']['BroadcastSource']
 export type BroadcastSourceStreamKeyInput = components['schemas']['BroadcastSourceStreamKeyInput']
 export type BroadcastSourceTargetInput = components['schemas']['BroadcastSourceTargetInput']
@@ -256,6 +261,36 @@ export function createHhcWebClient(options: {
   }
 
   return {
+    async assignStudioSource(id:string,body:StudioSourceAssignment,signal?:AbortSignal) {
+      return (await unwrap(client.PUT('/admin/studio/broadcasts/{id}/source', {params:{path:{id}},body,signal,cache:'no-store',redirect:'error'}))).data
+    },
+    async listStudioSources(signal?:AbortSignal) {
+      return (await unwrap(client.GET('/admin/broadcast-sources', {signal,cache:'no-store',redirect:'error'}))).data
+    },
+    async createStudioSource(body:StudioSourceInput,signal?:AbortSignal) {
+      return (await unwrap(client.POST('/admin/broadcast-sources', {body,signal,cache:'no-store',redirect:'error'}))).data
+    },
+    async renameStudioSource(sourceId:string,body:StudioSourceInput,signal?:AbortSignal) {
+      return (await unwrap(client.PATCH('/admin/broadcast-sources/{sourceId}', {params:{path:{sourceId}},body,signal,cache:'no-store',redirect:'error'}))).data
+    },
+    async deleteStudioSource(sourceId:string,body:StudioSourceInput,signal?:AbortSignal) {
+      return (await unwrap(client.DELETE('/admin/broadcast-sources/{sourceId}', {params:{path:{sourceId}},body,signal,cache:'no-store',redirect:'error'}))).data
+    },
+    async setStudioSourceKey(sourceId:string,body:StudioSourceInput,signal?:AbortSignal) {
+      return (await unwrap(client.PUT('/admin/broadcast-sources/{sourceId}/stream-key', {params:{path:{sourceId}},body,signal,cache:'no-store',redirect:'error'}))).data
+    },
+    async ensureDirectBroadcast(sourceId:string,body:BroadcastMutationInput,signal?:AbortSignal) {
+      return (await unwrap(client.POST('/admin/broadcast-sources/{sourceId}/direct/ensure', {params:{path:{sourceId}},body,signal,cache:'no-store',redirect:'error'}))).data
+    },
+    async prepareStudioSource(sourceId:string,body:BroadcastSourceTargetInput,signal?:AbortSignal) {
+      return (await unwrap(client.PUT('/admin/broadcast-sources/{sourceId}/target', {params:{path:{sourceId}},body,signal,cache:'no-store',redirect:'error'}))).data
+    },
+    async getStudioBroadcast(id:string,signal?:AbortSignal) {
+      return (await unwrap(client.GET('/admin/broadcasts/{id}/studio', {params:{path:{id}},signal,cache:'no-store',redirect:'error'}))).data
+    },
+    async createStudioSchedule(body:StudioScheduleInput,signal?:AbortSignal) {
+      return (await unwrap(client.POST('/admin/studio/broadcasts', {body,signal,cache:'no-store',redirect:'error'}))).data
+    },
     async getBroadcastCapabilities(signal?: AbortSignal) {
       return (await unwrap(client.GET('/admin/broadcast-capabilities', {signal, cache:'no-store'}))).data
     },
@@ -546,8 +581,8 @@ export function createHhcWebClient(options: {
         params: { path: { id } }, body: { playbackScopeId, expectedAssetVersionId }, signal, cache: 'no-store',
       }))).data
     },
-    async listAdminRecordings(signal?: AbortSignal) {
-      return (await unwrap(client.GET('/admin/recordings', { signal, cache: 'no-store' }))).data
+    async listAdminRecordings(signal?: AbortSignal, origin?: 'upload' | 'live') {
+      return (await unwrap(client.GET('/admin/recordings', { params: {query: {origin}}, signal, cache: 'no-store' }))).data
     },
     async getAdminRecording(id: string, signal?: AbortSignal) {
       return (await unwrap(client.GET('/admin/recordings/{id}', { params: { path: { id } }, signal, cache: 'no-store' }))).data
