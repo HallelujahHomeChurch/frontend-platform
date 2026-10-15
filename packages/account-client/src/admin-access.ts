@@ -10,7 +10,6 @@ export const staffPermissionCatalog = [
   'campaigns:read', 'campaigns:write', 'campaigns:send',
   'assets:read', 'assets:write',
   'presenter:cloud:manage', 'presenter:line:manage',
-  'dsr:read', 'dsr:manage',
   'donations:sandbox:test',
   'cms:pages:read', 'cms:pages:write', 'cms:pages:publish',
   'cms:news:read', 'cms:news:write', 'cms:news:publish',
@@ -46,7 +45,6 @@ export const adminDestinations = [
   {id: 'assets', path: '/assets', permission: 'assets:read'},
   {id: 'presenter-cloud', path: '/presenter/cloud', permission: 'presenter:cloud:manage'},
   {id: 'presenter-line', path: '/presenter/line', permission: 'presenter:line:manage'},
-  {id: 'dsr', path: '/dsr', permission: 'dsr:read'},
   {id: 'donation-sandbox', path: '/donations/sandbox', permission: 'donations:sandbox:test'}
 ] as const;
 

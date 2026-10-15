@@ -1,4 +1,5 @@
 import {describe, expect, it} from 'vitest';
+import {hasPermission} from './index';
 import {
   adminDestinations,
   authorizedAdminDestinations,
@@ -10,6 +11,19 @@ import {
 } from './admin-access';
 
 describe('Admin destination projection', () => {
+  it('retires DSR destinations while preserving opaque historical permissions', () => {
+    expect(staffPermissionCatalog).not.toContain('dsr:read');
+    expect(staffPermissionCatalog).not.toContain('dsr:manage');
+    expect(findAdminDestination('dsr')).toBeUndefined();
+    expect(authorizedAdminDestinations(['dsr:read', 'dsr:manage'])).toEqual([]);
+    expect(canAccessAdmin(['dsr:read', 'dsr:manage'])).toBe(false);
+    expect(authorizedAdminDestinations(['dsr:read', 'users:read'])).toEqual([
+      {id: 'users', path: '/users', permission: 'users:read'}
+    ]);
+    expect(hasPermission(['dsr:read'], 'dsr:read')).toBe(true);
+    expect(authorizedAdminDestinations(['*'])).toEqual(adminDestinations);
+  });
+
   it('keeps recording investigation independent from recording editors and weekly investigators', () => {
     expect(authorizedAdminDestinations(['cms:recordings:investigate'])).toEqual([{id:'recording-investigations',path:'/content/recordings/investigations',permission:'cms:recordings:investigate'}]);
     expect(authorizedAdminDestinations(['cms:recordings:write','cms:bulletins:investigate']).some(({id}) => id === 'recording-investigations')).toBe(false);
