@@ -4,6 +4,214 @@
  */
 
 export interface paths {
+    "/member/recordings/{id}/interactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * getRecordingInteractions
+         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; only one reply level. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+         */
+        get: operations["getRecordingInteractions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/recordings/{id}/like": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * setRecordingLike
+         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; only one reply level. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+         */
+        put: operations["setRecordingLike"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/recordings/{id}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * listRecordingComments
+         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; only one reply level. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+         */
+        get: operations["listRecordingComments"];
+        put?: never;
+        /**
+         * createRecordingComment
+         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; only one reply level. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+         */
+        post: operations["createRecordingComment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/recordings/{id}/comments/{commentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * deleteRecordingComment
+         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; only one reply level. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+         */
+        delete: operations["deleteRecordingComment"];
+        options?: never;
+        head?: never;
+        /**
+         * updateRecordingComment
+         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; only one reply level. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+         */
+        patch: operations["updateRecordingComment"];
+        trace?: never;
+    };
+    "/member/recordings/{id}/comments/{commentId}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * reportRecordingComment
+         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; only one reply level. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+         */
+        put: operations["reportRecordingComment"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/recordings/{id}/heartbeat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * recordPlaybackHeartbeat
+         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; only one reply level. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+         */
+        post: operations["recordPlaybackHeartbeat"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/recordings/{id}/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * getMemberRecordingMetrics
+         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; only one reply level. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+         */
+        get: operations["getMemberRecordingMetrics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * getAdminRecordingMetrics
+         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; only one reply level. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+         */
+        get: operations["getAdminRecordingMetrics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * listRecordingModeration
+         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; only one reply level. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+         */
+        get: operations["listRecordingModeration"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recordings/{id}/comments/moderation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * moderateRecordingComments
+         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; only one reply level. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+         */
+        put: operations["moderateRecordingComments"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/broadcast-source": {
         parameters: {
             query?: never;
@@ -3400,10 +3608,218 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/broadcast-sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List named stream keys */
+        get: operations["listStudioSources"];
+        put?: never;
+        /** Create a named stream key */
+        post: operations["createStudioSource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcast-sources/{sourceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove an idle stream key */
+        delete: operations["deleteStudioSource"];
+        options?: never;
+        head?: never;
+        /** Rename a stream key */
+        patch: operations["renameStudioSource"];
+        trace?: never;
+    };
+    "/admin/broadcast-sources/{sourceId}/stream-key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Rotate an idle stream key */
+        put: operations["rotateStudioSource"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/studio/broadcasts/{id}/source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Change an unbound scheduled event source */
+        put: operations["assignStudioSource"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcast-sources/{sourceId}/target": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Prepare exclusive receiving target */
+        put: operations["prepareStudioSource"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcast-sources/{sourceId}/direct/ensure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ensure the current direct event */
+        post: operations["ensureStudioDirect"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/studio/broadcasts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create scheduled event without reserving input */
+        post: operations["createStudioSchedule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/broadcasts/{id}/studio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read event source and mode without creating an event */
+        get: operations["getStudioBroadcast"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        StudioBroadcastEnvelope: {
+            data: components["schemas"]["StudioBroadcast"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        StudioSourceListEnvelope: {
+            data: components["schemas"]["StudioSource"][];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        StudioSourceEnvelope: {
+            data: components["schemas"]["StudioSource"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        StudioScheduleInput: {
+            operationKey: string;
+            /** Format: uuid */
+            sourceId: string;
+            title: string;
+            description: components["schemas"]["RecordingDescription"];
+            /** Format: date-time */
+            scheduledAt: string;
+            cover?: components["schemas"]["LiveCoverSelection"];
+        };
+        StudioBroadcast: {
+            durationSeconds?: number;
+            signalHistory?: {
+                phase: string;
+                signal: string;
+                /** Format: date-time */
+                observedAt: string;
+            }[];
+            broadcast: components["schemas"]["BroadcastView"];
+            /** Format: uuid */
+            sourceId: string | null;
+            /** @enum {string} */
+            mode: "legacy" | "direct" | "scheduled";
+        };
+        StudioSourceInput: {
+            operationKey: string;
+            expectedRevision?: number;
+            name?: string;
+            streamKey?: string;
+        };
+        StudioSourceAssignment: {
+            operationKey: string;
+            expectedRevision: number;
+            /** Format: uuid */
+            sourceId: string;
+            expectedSourceRevision: number;
+        };
+        StudioSource: {
+            revision: number;
+            configured: boolean;
+            canRotate: boolean;
+            inputBusy: boolean;
+            suffix: string | null;
+            targetRecordingId: string | null;
+            /** Format: uuid */
+            id: string;
+            name: string;
+            directEnabled: boolean;
+        };
         BroadcastPolicy: {
             autoStart: boolean;
             autoEnd: boolean;
@@ -7374,6 +7790,186 @@ export interface components {
             };
             error?: null;
         };
+        RecordingInteractionSummary: {
+            liked: boolean;
+            likes: number;
+            commentsEnabled: boolean;
+        };
+        RecordingLikeInput: {
+            liked: boolean;
+        };
+        RecordingComment: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            parentId?: string;
+            text: string;
+            displayName: string;
+            mine: boolean;
+            deleted: boolean;
+            hidden: boolean;
+            revision: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            editedAt?: string;
+            replyCount: number;
+        };
+        RecordingCommentInput: {
+            /** Format: uuid */
+            clientMutationId: string;
+            /** Format: uuid */
+            parentId?: string;
+            text: string;
+        };
+        RecordingCommentUpdate: {
+            text: string;
+            expectedRevision: number;
+        };
+        RecordingCommentDelete: {
+            expectedRevision: number;
+        };
+        RecordingCommentReport: {
+            reason: string;
+        };
+        RecordingCommentPage: {
+            items: components["schemas"]["RecordingComment"][];
+            /** Format: uuid */
+            nextCursor?: string;
+        };
+        RecordingModerationInput: {
+            /** @enum {string} */
+            operation: "settings" | "hide" | "restore" | "resolve";
+            /** Format: uuid */
+            commentId?: string;
+            expectedRevision: number;
+            enabled?: boolean;
+        };
+        RecordingModerationPage: {
+            items: {
+                comment: components["schemas"]["RecordingComment"];
+                reports: number;
+                reasons: string[];
+            }[];
+            /** Format: uuid */
+            nextCursor?: string;
+            commentsEnabled: boolean;
+            revision: number;
+        };
+        RecordingHeartbeatInput: {
+            /** Format: uuid */
+            playbackSessionId: string;
+            sequence: number;
+            /** @enum {string} */
+            state: "playing" | "paused" | "waiting" | "ended";
+            position: number;
+            deltaPlayingMs: number;
+        };
+        RecordingHeartbeatResult: {
+            accepted: boolean;
+            /** @constant */
+            heartbeatIntervalSeconds: 15;
+            /** @constant */
+            metricVersion: "hhc-video-1";
+        };
+        RecordingMemberMetrics: {
+            currentViewers: number;
+            totalViews: number;
+            /** Format: date-time */
+            measuredAt: string;
+            /** Format: date-time */
+            trackingSince: string;
+            /** @constant */
+            metricVersion: "hhc-video-1";
+            /** @enum {string} */
+            status: "available" | "not_started";
+        };
+        RecordingAdminMetrics: {
+            currentViewers: number;
+            totalViews: number;
+            /** Format: date-time */
+            measuredAt: string;
+            /** Format: date-time */
+            trackingSince: string;
+            /** @constant */
+            metricVersion: "hhc-video-1";
+            /** @enum {string} */
+            status: "available" | "not_started";
+            peakConcurrent: number;
+            liveViews: number;
+            replayViews: number;
+            uniqueViewers: number;
+            watchSeconds: number;
+        };
+        RecordingReported: {
+            reported: boolean;
+        };
+        RecordingModerated: {
+            updated: boolean;
+        };
+        RecordingInteractionSummaryEnvelope: {
+            data: components["schemas"]["RecordingInteractionSummary"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        RecordingCommentEnvelope: {
+            data: components["schemas"]["RecordingComment"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        RecordingCommentPageEnvelope: {
+            data: components["schemas"]["RecordingCommentPage"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        RecordingModerationPageEnvelope: {
+            data: components["schemas"]["RecordingModerationPage"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        RecordingHeartbeatResultEnvelope: {
+            data: components["schemas"]["RecordingHeartbeatResult"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        RecordingMemberMetricsEnvelope: {
+            data: components["schemas"]["RecordingMemberMetrics"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        RecordingAdminMetricsEnvelope: {
+            data: components["schemas"]["RecordingAdminMetrics"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        RecordingReportedEnvelope: {
+            data: components["schemas"]["RecordingReported"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        RecordingModeratedEnvelope: {
+            data: components["schemas"]["RecordingModerated"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
     };
     responses: {
         /** @description K1 failure; unauthorized or wrong key never bypasses OAuth, actor, epoch or active-capture fencing. */
@@ -7839,6 +8435,405 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getRecordingInteractions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingInteractionSummaryEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    setRecordingLike: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingLikeInput"];
+            };
+        };
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingInteractionSummaryEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listRecordingComments: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+                parentId?: string;
+                order?: "newest" | "oldest";
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCommentPageEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    createRecordingComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCommentInput"];
+            };
+        };
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCommentEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    deleteRecordingComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                commentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCommentDelete"];
+            };
+        };
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCommentEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    updateRecordingComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                commentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCommentUpdate"];
+            };
+        };
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCommentEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    reportRecordingComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                commentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCommentReport"];
+            };
+        };
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingReportedEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    recordPlaybackHeartbeat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingHeartbeatInput"];
+            };
+        };
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingHeartbeatResultEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getMemberRecordingMetrics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingMemberMetricsEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getAdminRecordingMetrics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingAdminMetricsEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listRecordingModeration: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingModerationPageEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    moderateRecordingComments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingModerationInput"];
+            };
+        };
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingModeratedEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
     getBroadcastSource: {
         parameters: {
             query?: never;
@@ -12054,7 +13049,10 @@ export interface operations {
     };
     listAdminRecordings: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Filter by immutable origin. Live replays remain live; omitted returns both origins. */
+                origin?: "upload" | "live";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -12070,6 +13068,7 @@ export interface operations {
                     "application/json": components["schemas"]["RecordingListEnvelope"];
                 };
             };
+            400: components["responses"]["Error"];
             401: components["responses"]["AdminUnauthorized"];
             403: components["responses"]["AdminForbidden"];
         };
@@ -14867,6 +15866,322 @@ export interface operations {
             422: components["responses"]["BroadcastFailure"];
             429: components["responses"]["BroadcastFailure"];
             503: components["responses"]["BroadcastFailure"];
+        };
+    };
+    listStudioSources: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudioSourceListEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    createStudioSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudioSourceInput"];
+            };
+        };
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudioSourceEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    deleteStudioSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sourceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudioSourceInput"];
+            };
+        };
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudioSourceEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    renameStudioSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sourceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudioSourceInput"];
+            };
+        };
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudioSourceEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    rotateStudioSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sourceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudioSourceInput"];
+            };
+        };
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudioSourceEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    assignStudioSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudioSourceAssignment"];
+            };
+        };
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudioBroadcastEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    prepareStudioSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sourceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastSourceTargetInput"];
+            };
+        };
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastSourceEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    ensureStudioDirect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sourceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastMutationInput"];
+            };
+        };
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastViewEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    createStudioSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudioScheduleInput"];
+            };
+        };
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudioBroadcastEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getStudioBroadcast: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudioBroadcastEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            503: components["responses"]["Error"];
         };
     };
 }

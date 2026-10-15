@@ -23,6 +23,587 @@ servers:
   - url: https://www.alive.org.tw/api
     description: Public and admin gateway surface; api-gateway validates browser JWTs and injects trusted identity headers.
 paths:
+  /member/recordings/{id}/interactions:
+    get:
+      operationId: getRecordingInteractions
+      summary: getRecordingInteractions
+      description: Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply.
+        Private no-store. Comments are plain text; only one reply level. CAS conflicts require
+        refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordingInteractionSummaryEnvelope"
+        "400":
+          $ref: "#/components/responses/Error"
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "412":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "503":
+          $ref: "#/components/responses/Error"
+  /member/recordings/{id}/like:
+    put:
+      operationId: setRecordingLike
+      summary: setRecordingLike
+      description: Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply.
+        Private no-store. Comments are plain text; only one reply level. CAS conflicts require
+        refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordingInteractionSummaryEnvelope"
+        "400":
+          $ref: "#/components/responses/Error"
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "412":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "503":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordingLikeInput"
+  /member/recordings/{id}/comments:
+    get:
+      operationId: listRecordingComments
+      summary: listRecordingComments
+      description: Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply.
+        Private no-store. Comments are plain text; only one reply level. CAS conflicts require
+        refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: cursor
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+        - name: parentId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum:
+              - newest
+              - oldest
+            default: newest
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordingCommentPageEnvelope"
+        "400":
+          $ref: "#/components/responses/Error"
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "412":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "503":
+          $ref: "#/components/responses/Error"
+    post:
+      operationId: createRecordingComment
+      summary: createRecordingComment
+      description: Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply.
+        Private no-store. Comments are plain text; only one reply level. CAS conflicts require
+        refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordingCommentEnvelope"
+        "400":
+          $ref: "#/components/responses/Error"
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "412":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "503":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordingCommentInput"
+  /member/recordings/{id}/comments/{commentId}:
+    patch:
+      operationId: updateRecordingComment
+      summary: updateRecordingComment
+      description: Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply.
+        Private no-store. Comments are plain text; only one reply level. CAS conflicts require
+        refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordingCommentEnvelope"
+        "400":
+          $ref: "#/components/responses/Error"
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "412":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "503":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordingCommentUpdate"
+    delete:
+      operationId: deleteRecordingComment
+      summary: deleteRecordingComment
+      description: Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply.
+        Private no-store. Comments are plain text; only one reply level. CAS conflicts require
+        refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordingCommentEnvelope"
+        "400":
+          $ref: "#/components/responses/Error"
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "412":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "503":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordingCommentDelete"
+  /member/recordings/{id}/comments/{commentId}/report:
+    put:
+      operationId: reportRecordingComment
+      summary: reportRecordingComment
+      description: Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply.
+        Private no-store. Comments are plain text; only one reply level. CAS conflicts require
+        refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordingReportedEnvelope"
+        "400":
+          $ref: "#/components/responses/Error"
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "412":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "503":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordingCommentReport"
+  /member/recordings/{id}/heartbeat:
+    post:
+      operationId: recordPlaybackHeartbeat
+      summary: recordPlaybackHeartbeat
+      description: Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply.
+        Private no-store. Comments are plain text; only one reply level. CAS conflicts require
+        refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordingHeartbeatResultEnvelope"
+        "400":
+          $ref: "#/components/responses/Error"
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "412":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "503":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordingHeartbeatInput"
+  /member/recordings/{id}/metrics:
+    get:
+      operationId: getMemberRecordingMetrics
+      summary: getMemberRecordingMetrics
+      description: Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply.
+        Private no-store. Comments are plain text; only one reply level. CAS conflicts require
+        refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordingMemberMetricsEnvelope"
+        "400":
+          $ref: "#/components/responses/Error"
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "412":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "503":
+          $ref: "#/components/responses/Error"
+  /admin/recordings/{id}/metrics:
+    get:
+      operationId: getAdminRecordingMetrics
+      summary: getAdminRecordingMetrics
+      description: Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply.
+        Private no-store. Comments are plain text; only one reply level. CAS conflicts require
+        refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordingAdminMetricsEnvelope"
+        "400":
+          $ref: "#/components/responses/Error"
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "412":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "503":
+          $ref: "#/components/responses/Error"
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes: [cms:recordings:read]
+  /admin/recordings/{id}/comments:
+    get:
+      operationId: listRecordingModeration
+      summary: listRecordingModeration
+      description: Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply.
+        Private no-store. Comments are plain text; only one reply level. CAS conflicts require
+        refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: cursor
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordingModerationPageEnvelope"
+        "400":
+          $ref: "#/components/responses/Error"
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "412":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "503":
+          $ref: "#/components/responses/Error"
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes: [cms:recordings:read]
+  /admin/recordings/{id}/comments/moderation:
+    put:
+      operationId: moderateRecordingComments
+      summary: moderateRecordingComments
+      description: Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply.
+        Private no-store. Comments are plain text; only one reply level. CAS conflicts require
+        refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordingModeratedEnvelope"
+        "400":
+          $ref: "#/components/responses/Error"
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "412":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "503":
+          $ref: "#/components/responses/Error"
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes: [cms:recordings:write]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordingModerationInput"
   /admin/broadcast-source:
     get:
       operationId: getBroadcastSource
@@ -3908,8 +4489,14 @@ paths:
       x-required-scopes: [cms:recordings:read]
       security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }, { daprApiToken: [], daprCallerAppId: [], trustedPrincipalId: [], trustedPrincipalType: [], trustedClientId: [], trustedCredentialId: [], trustedAuthProvider: [], trustedScopes: [] }]
       servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+        - name: origin
+          in: query
+          description: Filter by immutable origin. Live replays remain live; omitted returns both origins.
+          schema: { type: string, enum: [upload, live] }
       responses:
         '200': { description: Recording entries, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingListEnvelope' } } } }
+        '400': { $ref: '#/components/responses/Error' }
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
         '403': { $ref: '#/components/responses/AdminForbidden' }
     post:
@@ -6725,6 +7312,415 @@ paths:
         schema:
           type: string
           format: uuid
+  /admin/broadcast-sources:
+    get:
+      operationId: listStudioSources
+      summary: List named stream keys
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes:
+      - cms:recordings:read
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      responses:
+        '200':
+          description: Operation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudioSourceListEnvelope'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '412':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: createStudioSource
+      summary: Create a named stream key
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes:
+      - cms:recordings:write
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudioSourceInput'
+      responses:
+        '200':
+          description: Operation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudioSourceEnvelope'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '412':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+  /admin/broadcast-sources/{sourceId}:
+    patch:
+      operationId: renameStudioSource
+      summary: Rename a stream key
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes:
+      - cms:recordings:write
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+      - name: sourceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudioSourceInput'
+      responses:
+        '200':
+          description: Operation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudioSourceEnvelope'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '412':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteStudioSource
+      summary: Remove an idle stream key
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes:
+      - cms:recordings:write
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+      - name: sourceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudioSourceInput'
+      responses:
+        '200':
+          description: Operation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudioSourceEnvelope'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '412':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+  /admin/broadcast-sources/{sourceId}/stream-key:
+    put:
+      operationId: rotateStudioSource
+      summary: Rotate an idle stream key
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes:
+      - cms:recordings:write
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+      - name: sourceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudioSourceInput'
+      responses:
+        '200':
+          description: Operation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudioSourceEnvelope'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '412':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+  /admin/studio/broadcasts/{id}/source:
+    put:
+      operationId: assignStudioSource
+      summary: Change an unbound scheduled event source
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes:
+      - cms:recordings:write
+      - cms:recordings:publish
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudioSourceAssignment'
+      responses:
+        '200':
+          description: Operation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudioBroadcastEnvelope'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '412':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+  /admin/broadcast-sources/{sourceId}/target:
+    put:
+      operationId: prepareStudioSource
+      summary: Prepare exclusive receiving target
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes:
+      - cms:recordings:write
+      - cms:recordings:publish
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+      - name: sourceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BroadcastSourceTargetInput'
+      responses:
+        '200':
+          description: Operation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BroadcastSourceEnvelope'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '412':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+  /admin/broadcast-sources/{sourceId}/direct/ensure:
+    post:
+      operationId: ensureStudioDirect
+      summary: Ensure the current direct event
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes:
+      - cms:recordings:write
+      - cms:recordings:publish
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+      - name: sourceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BroadcastMutationInput'
+      responses:
+        '200':
+          description: Operation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BroadcastViewEnvelope'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '412':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+  /admin/studio/broadcasts:
+    post:
+      operationId: createStudioSchedule
+      summary: Create scheduled event without reserving input
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes:
+      - cms:recordings:write
+      - cms:recordings:publish
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudioScheduleInput'
+      responses:
+        '200':
+          description: Operation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudioBroadcastEnvelope'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '412':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+  /admin/broadcasts/{id}/studio:
+    get:
+      operationId: getStudioBroadcast
+      summary: Read event source and mode without creating an event
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes:
+      - cms:recordings:read
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Operation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudioBroadcastEnvelope'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '412':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     daprApiToken:
@@ -7063,6 +8059,183 @@ components:
       description: Public revalidation policy for Site Layout projections.
       schema: { type: string, const: 'public, max-age=30, must-revalidate' }
   schemas:
+    StudioBroadcastEnvelope:
+      type: object
+      required:
+      - data
+      - meta
+      - error
+      properties:
+        data:
+          $ref: '#/components/schemas/StudioBroadcast'
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          type: 'null'
+    StudioSourceListEnvelope:
+      type: object
+      required:
+      - data
+      - meta
+      - error
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/StudioSource'
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          type: 'null'
+    StudioSourceEnvelope:
+      type: object
+      required:
+      - data
+      - meta
+      - error
+      properties:
+        data:
+          $ref: '#/components/schemas/StudioSource'
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          type: 'null'
+    StudioScheduleInput:
+      type: object
+      additionalProperties: false
+      required:
+      - operationKey
+      - sourceId
+      - title
+      - description
+      - scheduledAt
+      properties:
+        operationKey:
+          type: string
+          minLength: 1
+          maxLength: 128
+        sourceId:
+          type: string
+          format: uuid
+        title:
+          type: string
+          minLength: 1
+          maxLength: 180
+        description:
+          $ref: '#/components/schemas/RecordingDescription'
+        scheduledAt:
+          type: string
+          format: date-time
+        cover:
+          $ref: '#/components/schemas/LiveCoverSelection'
+    StudioBroadcast:
+      type: object
+      required:
+      - broadcast
+      - sourceId
+      - mode
+      properties:
+        durationSeconds:
+          type: number
+          minimum: 0
+        signalHistory:
+          type: array
+          maxItems: 200
+          items:
+            type: object
+            required: [phase, signal, observedAt]
+            properties:
+              phase: {type: string}
+              signal: {type: string}
+              observedAt: {type: string, format: date-time}
+        broadcast:
+          $ref: '#/components/schemas/BroadcastView'
+        sourceId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        mode:
+          type: string
+          enum:
+          - legacy
+          - direct
+          - scheduled
+    StudioSourceInput:
+      type: object
+      additionalProperties: false
+      required:
+      - operationKey
+      properties:
+        operationKey:
+          type: string
+          minLength: 1
+          maxLength: 128
+        expectedRevision:
+          type: integer
+          minimum: 0
+        name:
+          type: string
+          maxLength: 100
+        streamKey:
+          type: string
+          maxLength: 54
+          writeOnly: true
+    StudioSourceAssignment:
+      type: object
+      additionalProperties: false
+      required: [operationKey, expectedRevision, sourceId, expectedSourceRevision]
+      properties:
+        operationKey: {type: string, minLength: 1, maxLength: 128}
+        expectedRevision: {type: integer, minimum: 1}
+        sourceId: {type: string, format: uuid}
+        expectedSourceRevision: {type: integer, minimum: 1}
+    StudioSource:
+      type: object
+      additionalProperties: false
+      required:
+      - revision
+      - configured
+      - canRotate
+      - inputBusy
+      - suffix
+      - targetRecordingId
+      - id
+      - name
+      - directEnabled
+      properties:
+        revision:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        configured:
+          type: boolean
+        canRotate:
+          type: boolean
+        inputBusy:
+          type: boolean
+        suffix:
+          anyOf:
+          - type: string
+            pattern: ^[A-Za-z0-9_-]{4}$
+          - type: 'null'
+        targetRecordingId:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        directEnabled:
+          type: boolean
     BroadcastPolicy:
       type: object
       additionalProperties: false
@@ -13128,3 +14301,469 @@ components:
         data: { $ref: '#/components/schemas/ActiveStatement' }
         meta: { type: object, additionalProperties: true }
         error: { type: ['null'] }
+    RecordingInteractionSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - liked
+        - likes
+        - commentsEnabled
+      properties:
+        liked:
+          type: boolean
+        likes:
+          type: integer
+          minimum: 0
+        commentsEnabled:
+          type: boolean
+    RecordingLikeInput:
+      type: object
+      additionalProperties: false
+      required:
+        - liked
+      properties:
+        liked:
+          type: boolean
+    RecordingComment:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - text
+        - displayName
+        - mine
+        - deleted
+        - hidden
+        - revision
+        - createdAt
+        - replyCount
+      properties:
+        id:
+          type: string
+          format: uuid
+        parentId:
+          type: string
+          format: uuid
+        text:
+          type: string
+        displayName:
+          type: string
+        mine:
+          type: boolean
+        deleted:
+          type: boolean
+        hidden:
+          type: boolean
+        revision:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        editedAt:
+          type: string
+          format: date-time
+        replyCount:
+          type: integer
+          minimum: 0
+    RecordingCommentInput:
+      type: object
+      additionalProperties: false
+      required:
+        - clientMutationId
+        - text
+      properties:
+        clientMutationId:
+          type: string
+          format: uuid
+        parentId:
+          type: string
+          format: uuid
+        text:
+          type: string
+          minLength: 1
+          maxLength: 2000
+    RecordingCommentUpdate:
+      type: object
+      additionalProperties: false
+      required:
+        - text
+        - expectedRevision
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        expectedRevision:
+          type: integer
+          minimum: 1
+    RecordingCommentDelete:
+      type: object
+      additionalProperties: false
+      required:
+        - expectedRevision
+      properties:
+        expectedRevision:
+          type: integer
+          minimum: 1
+    RecordingCommentReport:
+      type: object
+      additionalProperties: false
+      required:
+        - reason
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+    RecordingCommentPage:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecordingComment"
+        nextCursor:
+          type: string
+          format: uuid
+    RecordingModerationInput:
+      type: object
+      additionalProperties: false
+      required:
+        - operation
+        - expectedRevision
+      properties:
+        operation:
+          type: string
+          enum:
+            - settings
+            - hide
+            - restore
+            - resolve
+        commentId:
+          type: string
+          format: uuid
+        expectedRevision:
+          type: integer
+          minimum: 1
+        enabled:
+          type: boolean
+    RecordingModerationPage:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - commentsEnabled
+        - revision
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - comment
+              - reports
+              - reasons
+            properties:
+              comment:
+                $ref: "#/components/schemas/RecordingComment"
+              reports:
+                type: integer
+                minimum: 0
+              reasons:
+                type: array
+                items:
+                  type: string
+        nextCursor:
+          type: string
+          format: uuid
+        commentsEnabled:
+          type: boolean
+        revision:
+          type: integer
+          minimum: 1
+    RecordingHeartbeatInput:
+      type: object
+      additionalProperties: false
+      required:
+        - playbackSessionId
+        - sequence
+        - state
+        - position
+        - deltaPlayingMs
+      properties:
+        playbackSessionId:
+          type: string
+          format: uuid
+        sequence:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        state:
+          type: string
+          enum:
+            - playing
+            - paused
+            - waiting
+            - ended
+        position:
+          type: number
+          minimum: 0
+          maximum: 604800
+        deltaPlayingMs:
+          type: integer
+          minimum: 0
+          maximum: 30000
+    RecordingHeartbeatResult:
+      type: object
+      additionalProperties: false
+      required:
+        - accepted
+        - heartbeatIntervalSeconds
+        - metricVersion
+      properties:
+        accepted:
+          type: boolean
+        heartbeatIntervalSeconds:
+          type: integer
+          const: 15
+        metricVersion:
+          type: string
+          const: hhc-video-1
+    RecordingMemberMetrics:
+      type: object
+      additionalProperties: false
+      required:
+        - currentViewers
+        - totalViews
+        - measuredAt
+        - trackingSince
+        - metricVersion
+        - status
+      properties:
+        currentViewers:
+          type: integer
+          minimum: 0
+        totalViews:
+          type: integer
+          minimum: 0
+        measuredAt:
+          type: string
+          format: date-time
+        trackingSince:
+          type: string
+          format: date-time
+        metricVersion:
+          type: string
+          const: hhc-video-1
+        status:
+          type: string
+          enum:
+            - available
+            - not_started
+    RecordingAdminMetrics:
+      type: object
+      additionalProperties: false
+      required:
+        - currentViewers
+        - totalViews
+        - measuredAt
+        - trackingSince
+        - metricVersion
+        - status
+        - peakConcurrent
+        - liveViews
+        - replayViews
+        - uniqueViewers
+        - watchSeconds
+      properties:
+        currentViewers:
+          type: integer
+          minimum: 0
+        totalViews:
+          type: integer
+          minimum: 0
+        measuredAt:
+          type: string
+          format: date-time
+        trackingSince:
+          type: string
+          format: date-time
+        metricVersion:
+          type: string
+          const: hhc-video-1
+        status:
+          type: string
+          enum:
+            - available
+            - not_started
+        peakConcurrent:
+          type: integer
+          minimum: 0
+        liveViews:
+          type: integer
+          minimum: 0
+        replayViews:
+          type: integer
+          minimum: 0
+        uniqueViewers:
+          type: integer
+          minimum: 0
+        watchSeconds:
+          type: number
+          minimum: 0
+    RecordingReported:
+      type: object
+      additionalProperties: false
+      required:
+        - reported
+      properties:
+        reported:
+          type: boolean
+    RecordingModerated:
+      type: object
+      additionalProperties: false
+      required:
+        - updated
+      properties:
+        updated:
+          type: boolean
+    RecordingInteractionSummaryEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+        - error
+      properties:
+        data:
+          $ref: "#/components/schemas/RecordingInteractionSummary"
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          type: "null"
+    RecordingCommentEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+        - error
+      properties:
+        data:
+          $ref: "#/components/schemas/RecordingComment"
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          type: "null"
+    RecordingCommentPageEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+        - error
+      properties:
+        data:
+          $ref: "#/components/schemas/RecordingCommentPage"
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          type: "null"
+    RecordingModerationPageEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+        - error
+      properties:
+        data:
+          $ref: "#/components/schemas/RecordingModerationPage"
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          type: "null"
+    RecordingHeartbeatResultEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+        - error
+      properties:
+        data:
+          $ref: "#/components/schemas/RecordingHeartbeatResult"
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          type: "null"
+    RecordingMemberMetricsEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+        - error
+      properties:
+        data:
+          $ref: "#/components/schemas/RecordingMemberMetrics"
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          type: "null"
+    RecordingAdminMetricsEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+        - error
+      properties:
+        data:
+          $ref: "#/components/schemas/RecordingAdminMetrics"
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          type: "null"
+    RecordingReportedEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+        - error
+      properties:
+        data:
+          $ref: "#/components/schemas/RecordingReported"
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          type: "null"
+    RecordingModeratedEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+        - error
+      properties:
+        data:
+          $ref: "#/components/schemas/RecordingModerated"
+        meta:
+          type: object
+          additionalProperties: true
+        error:
+          type: "null"
