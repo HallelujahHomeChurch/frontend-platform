@@ -71,6 +71,23 @@ export type BroadcastBindInput = components['schemas']['BroadcastBindInput']
 export type StudioSourceAssignment = components['schemas']['StudioSourceAssignment']
 export type StudioSource = components['schemas']['StudioSource']
 export type StudioSourceInput = components['schemas']['StudioSourceInput']
+export type RecordingInteractionSummary = components['schemas']['RecordingInteractionSummary']
+export type RecordingLikeInput = components['schemas']['RecordingLikeInput']
+export type RecordingComment = components['schemas']['RecordingComment']
+export type RecordingCommentInput = components['schemas']['RecordingCommentInput']
+export type RecordingCommentUpdate = components['schemas']['RecordingCommentUpdate']
+export type RecordingCommentDelete = components['schemas']['RecordingCommentDelete']
+export type RecordingCommentReport = components['schemas']['RecordingCommentReport']
+export type RecordingCommentPage = components['schemas']['RecordingCommentPage']
+export type RecordingModerationInput = components['schemas']['RecordingModerationInput']
+export type RecordingModerationPage = components['schemas']['RecordingModerationPage']
+export type RecordingHeartbeatInput = components['schemas']['RecordingHeartbeatInput']
+export type RecordingHeartbeatResult = components['schemas']['RecordingHeartbeatResult']
+export type RecordingMemberMetrics = components['schemas']['RecordingMemberMetrics']
+export type RecordingAdminMetrics = components['schemas']['RecordingAdminMetrics']
+export type RecordingReported = components['schemas']['RecordingReported']
+export type RecordingModerated = components['schemas']['RecordingModerated']
+
 export type StudioBroadcast = components['schemas']['StudioBroadcast']
 export type StudioScheduleInput = components['schemas']['StudioScheduleInput']
 export type BroadcastSource = components['schemas']['BroadcastSource']
@@ -261,6 +278,42 @@ export function createHhcWebClient(options: {
   }
 
   return {
+    async getRecordingInteractions(id: string, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/member/recordings/{id}/interactions', {params: {path: {id}}, signal, cache: 'no-store', redirect: 'error'}))).data
+    },
+    async setRecordingLike(id: string, body: RecordingLikeInput, signal?: AbortSignal) {
+      return (await unwrap(client.PUT('/member/recordings/{id}/like', {params: {path: {id}}, body, signal, cache: 'no-store', redirect: 'error'}))).data
+    },
+    async listRecordingComments(id: string, options: {cursor?: string; limit?: number; parentId?: string; order?: 'newest' | 'oldest'; signal?: AbortSignal} = {}) {
+      return (await unwrap(client.GET('/member/recordings/{id}/comments', {params: {path: {id}, query: {cursor: options.cursor, limit: options.limit, parentId: options.parentId, order: options.order}}, signal: options.signal, cache: 'no-store', redirect: 'error'}))).data
+    },
+    async createRecordingComment(id: string, body: RecordingCommentInput, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/member/recordings/{id}/comments', {params: {path: {id}}, body, signal, cache: 'no-store', redirect: 'error'}))).data
+    },
+    async updateRecordingComment(id: string, commentId: string, body: RecordingCommentUpdate, signal?: AbortSignal) {
+      return (await unwrap(client.PATCH('/member/recordings/{id}/comments/{commentId}', {params: {path: {id, commentId}}, body, signal, cache: 'no-store', redirect: 'error'}))).data
+    },
+    async deleteRecordingComment(id: string, commentId: string, body: RecordingCommentDelete, signal?: AbortSignal) {
+      return (await unwrap(client.DELETE('/member/recordings/{id}/comments/{commentId}', {params: {path: {id, commentId}}, body, signal, cache: 'no-store', redirect: 'error'}))).data
+    },
+    async reportRecordingComment(id: string, commentId: string, body: RecordingCommentReport, signal?: AbortSignal) {
+      return (await unwrap(client.PUT('/member/recordings/{id}/comments/{commentId}/report', {params: {path: {id, commentId}}, body, signal, cache: 'no-store', redirect: 'error'}))).data
+    },
+    async recordPlaybackHeartbeat(id: string, body: RecordingHeartbeatInput, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/member/recordings/{id}/heartbeat', {params: {path: {id}}, body, signal, cache: 'no-store', redirect: 'error'}))).data
+    },
+    async getMemberRecordingMetrics(id: string, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/member/recordings/{id}/metrics', {params: {path: {id}}, signal, cache: 'no-store', redirect: 'error'}))).data
+    },
+    async getAdminRecordingMetrics(id: string, signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/recordings/{id}/metrics', {params: {path: {id}}, signal, cache: 'no-store', redirect: 'error'}))).data
+    },
+    async listRecordingModeration(id: string, options: {cursor?: string; limit?: number; signal?: AbortSignal} = {}) {
+      return (await unwrap(client.GET('/admin/recordings/{id}/comments', {params: {path: {id}, query: {cursor: options.cursor, limit: options.limit}}, signal: options.signal, cache: 'no-store', redirect: 'error'}))).data
+    },
+    async moderateRecordingComments(id: string, body: RecordingModerationInput, signal?: AbortSignal) {
+      return (await unwrap(client.PUT('/admin/recordings/{id}/comments/moderation', {params: {path: {id}}, body, signal, cache: 'no-store', redirect: 'error'}))).data
+    },
     async assignStudioSource(id:string,body:StudioSourceAssignment,signal?:AbortSignal) {
       return (await unwrap(client.PUT('/admin/studio/broadcasts/{id}/source', {params:{path:{id}},body,signal,cache:'no-store',redirect:'error'}))).data
     },
