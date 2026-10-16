@@ -18,6 +18,11 @@ it('adds only the star destination after all existing destinations', () => {
 });
 
 describe('actual flat producer contract through existing session transport', () => {
+  it.each(b2.catalog_ineligible)('accepts producer catalog eligibility $eligibility.errorCode through the session transport', async body => {
+    const client = sdk.createAccountSessionClient({fetcher: async () => json(body)}).dataRequests;
+    await expect(client.catalog()).resolves.toEqual(body);
+  });
+
   it('uses every exact member/Admin method, payload and encoded opaque path', async () => {
     const replies = [b2.capability, b2.catalog, b2.factor_required, b2.ready, b2.mfa_required,
       {authorizationUrl: 'https://provider.invalid/authorize?state=ecr.opaque', expiresAt: b2.ready.expiresAt, requestVersion: 2},
@@ -124,6 +129,9 @@ describe('actual flat producer contract through existing session transport', () 
     {...b2.catalog, extra: 'unknown'},
     {...b2.catalog, items: [{...b2.catalog.items[0], fields: [{...b2.catalog.items[0].fields[0], key: 'password'}, b2.catalog.items[0].fields[1]]}]},
     {data: b2.catalog},
+    ...['ACC_UNKNOWN', null, 42, ['ACC_CORRECTION_REVIEWER_UNAVAILABLE'], {toString: 'ACC_CORRECTION_REVIEWER_UNAVAILABLE'}].map(errorCode => ({...b2.catalog_ineligible[3], eligibility: {status: 'ineligible', errorCode}})),
+    {...b2.catalog_ineligible[3], eligibility: {status: 'ineligible'}},
+    {...b2.catalog_ineligible[3], eligibility: {status: 'ineligible', errorCode: 'ACC_CORRECTION_REVIEWER_UNAVAILABLE', extra: true}},
   ])('rejects unsupported catalog wire at the SDK boundary', async body => {
     const client = sdk.createAccountSessionClient({fetcher: async () => json(body)}).dataRequests;
     await expect(client.catalog()).rejects.toMatchObject({code: 'INVALID_RESPONSE'});
