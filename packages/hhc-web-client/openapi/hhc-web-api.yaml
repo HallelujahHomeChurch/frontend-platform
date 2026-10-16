@@ -4385,7 +4385,7 @@ paths:
           description: Filter by immutable origin. Live replays remain live; omitted returns both origins.
           schema: { type: string, enum: [upload, live] }
       responses:
-        '200': { description: Recording entries, content: { application/json: { schema: { $ref: '#/components/schemas/RecordingListEnvelope' } } } }
+        '200': { description: Recording entries, content: { application/json: { schema: { $ref: '#/components/schemas/AdminRecordingListEnvelope' } } } }
         '400': { $ref: '#/components/responses/Error' }
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
         '403': { $ref: '#/components/responses/AdminForbidden' }
@@ -11603,8 +11603,6 @@ components:
       required: [id, title, uploadedAt, expiresAt, featured, hidden, status, version]
       properties:
         id: { type: string, format: uuid }
-        isBroadcast: {type: boolean, description: True for recordings originating from a broadcast; remains true after publication.}
-        broadcastStartedAt: {type: string, format: date-time, description: First verified public-live transition observed by CMS. Absent for historical events without a recorded timestamp; never inferred from schedule or upload completion.}
         selectedCoverId: { type: string, pattern: '^[A-Za-z0-9-]{1,128}$', description: Optional explicit CMS selection. An absent value may use default auto cover; member clients may lazily request the current cover endpoint. }
         title: { type: string, minLength: 1, maxLength: 180 }
         description: {$ref: '#/components/schemas/RecordingDescription'}
@@ -11655,8 +11653,8 @@ components:
         id: {$ref: '#/components/schemas/MemberRecording/properties/id'}
         title: {$ref: '#/components/schemas/MemberRecording/properties/title'}
         description: {$ref: '#/components/schemas/RecordingDescription'}
-        isBroadcast: {$ref: '#/components/schemas/MemberRecording/properties/isBroadcast'}
-        broadcastStartedAt: {$ref: '#/components/schemas/MemberRecording/properties/broadcastStartedAt'}
+        isBroadcast: {type: boolean, description: True for recordings originating from a broadcast; remains true after publication.}
+        broadcastStartedAt: {type: string, format: date-time, description: First verified public-live transition observed by CMS. Absent for historical events without a recorded timestamp; never inferred from schedule or upload completion.}
         selectedCoverId: {$ref: '#/components/schemas/MemberRecording/properties/selectedCoverId'}
         uploadedAt: {$ref: '#/components/schemas/MemberRecording/properties/uploadedAt'}
         expiresAt: {$ref: '#/components/schemas/MemberRecording/properties/expiresAt'}
@@ -11671,6 +11669,13 @@ components:
         version: {$ref: '#/components/schemas/MemberRecording/properties/version'}
         capture: {$ref: '#/components/schemas/AdminRecordingCaptureSummary'}
         processingProgress: {$ref: '#/components/schemas/RecordingProcessingProgress'}
+    AdminRecordingListEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: {type: array, items: {$ref: '#/components/schemas/AdminRecording'}}
+        meta: {type: object, additionalProperties: true}
+        error: {type: ['null']}
     AdminRecordingEnvelope:
       type: object
       required: [data, meta]
