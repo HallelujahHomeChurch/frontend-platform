@@ -1523,3 +1523,28 @@ it('lets the trigger close AccountMenu on a second touch', async () => {
  await user.pointer([{keys:'[TouchA>]',target:trigger},{keys:'[/TouchA]'}]);
  expect(trigger).toHaveAttribute('aria-expanded','false');
 });
+
+it.each(['mouse', 'touch'] as const)('toggles a custom Button Menu trigger repeatedly with %s', async (pointer) => {
+  const user = userEvent.setup();
+  const onAction = vi.fn();
+  const onOutside = vi.fn();
+  render(<><Menu label="Stream key" trigger={<Button>Key: Default</Button>} items={[{id: 'manage', label: 'Manage keys'}]} onAction={onAction}/><Button onPress={onOutside}>Outside</Button></>);
+  const trigger = screen.getByRole('button', {name: 'Key: Default'});
+  const press = () => pointer === 'mouse' ? user.click(trigger) : user.pointer([{keys: '[TouchA>]', target: trigger}, {keys: '[/TouchA]'}]);
+  for (let cycle = 0; cycle < 3; cycle++) {
+    await press();
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+    await press();
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  }
+  await press();
+  await user.click(screen.getByRole('menuitem', {name: 'Manage keys'}));
+  expect(onAction).toHaveBeenCalledExactlyOnceWith('manage');
+  expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  await press();
+  await user.click(screen.getByRole('button', {name: 'Outside'}));
+  expect(onOutside).toHaveBeenCalledOnce();
+  expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  expect(screen.getByRole('button', {name: 'Outside'})).toHaveFocus();
+});

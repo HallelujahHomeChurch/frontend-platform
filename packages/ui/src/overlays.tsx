@@ -84,12 +84,14 @@ export function Menu({label, items, onAction, trigger, header, focusTriggerRef}:
     if (!isOpen || !popover) return;
     const ownerDocument = popover.ownerDocument;
     const onPointerDown = (event: PointerEvent) => {
-      pointerStartedOutsideRef.current = event.button === 0 && !event.composedPath().includes(popover) && !(triggerContainerRef.current && event.composedPath().includes(triggerContainerRef.current));
+      pointerStartedOutsideRef.current = event.button === 0 && !event.composedPath().includes(popover) && !(event.pointerType === 'touch' && triggerContainerRef.current && event.composedPath().includes(triggerContainerRef.current));
       if (pointerStartedOutsideRef.current) shouldRestoreFocusRef.current = !isMeaningfullyFocusable(event.target);
     };
     const onClick = (event: MouseEvent) => {
       if (!pointerStartedOutsideRef.current || event.composedPath().includes(popover)) return;
       pointerStartedOutsideRef.current = false;
+      // Mouse presses only open React Aria menus; consume the closing click before its fallback reopens it.
+      if (triggerContainerRef.current && event.composedPath().includes(triggerContainerRef.current)) event.stopPropagation();
       setOpen(false);
       if (shouldRestoreFocusRef.current) focusTriggerRef?.current?.focus();
     };
