@@ -5791,6 +5791,13 @@ export interface components {
             id: components["schemas"]["MemberRecording"]["id"];
             title: components["schemas"]["MemberRecording"]["title"];
             description?: components["schemas"]["RecordingDescription"];
+            /** @description True for recordings originating from a broadcast; remains true after publication. */
+            isBroadcast?: boolean;
+            /**
+             * Format: date-time
+             * @description First verified public-live transition observed by CMS. Absent for historical events without a recorded timestamp; never inferred from schedule or upload completion.
+             */
+            broadcastStartedAt?: string;
             selectedCoverId?: components["schemas"]["MemberRecording"]["selectedCoverId"];
             uploadedAt: components["schemas"]["MemberRecording"]["uploadedAt"];
             expiresAt: components["schemas"]["MemberRecording"]["expiresAt"];
@@ -5805,6 +5812,13 @@ export interface components {
             version: components["schemas"]["MemberRecording"]["version"];
             capture?: components["schemas"]["AdminRecordingCaptureSummary"];
             processingProgress?: components["schemas"]["RecordingProcessingProgress"];
+        };
+        AdminRecordingListEnvelope: {
+            data: components["schemas"]["AdminRecording"][];
+            meta: {
+                [key: string]: unknown;
+            };
+            error?: null;
         };
         AdminRecordingEnvelope: {
             data: components["schemas"]["AdminRecording"];
@@ -12713,7 +12727,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RecordingListEnvelope"];
+                    "application/json": components["schemas"]["AdminRecordingListEnvelope"];
                 };
             };
             400: components["responses"]["Error"];
