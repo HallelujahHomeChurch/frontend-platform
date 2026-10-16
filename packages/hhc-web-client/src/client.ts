@@ -1034,6 +1034,7 @@ export function createHhcWebClient(options: {
       if (!/^[a-f0-9]{64}$/.test(signature) || !Number.isSafeInteger(version) || version < 1) throw new Error('Invalid bulletin learning signature or version')
       return (await unwrap(client.PUT('/admin/bulletin-learning-rules/{signature}', {params: {path: {signature}, header: {'If-Match': `"${version}"`}}, body: {enabled}, signal, cache: 'no-store'}))).data
     },
+    /** @deprecated Backend conversion rules own cover values; current producers return 410. */
     async saveBulletinTemplateSettings(version: number, input: BulletinTemplateText, signal?: AbortSignal): Promise<BulletinTemplateSettings> {
       if (!Number.isSafeInteger(version) || version < 1) throw new Error('Invalid bulletin template settings version')
       return (await unwrap(client.PUT('/admin/bulletins/template-settings', {

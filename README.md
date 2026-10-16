@@ -296,3 +296,13 @@ Version 1.0.71 adds optional `isBroadcast` and `broadcastStartedAt` to recording
 metadata. Broadcast origin persists after publication. Start time describes the
 platform's verified public-live transition, not encoder start or scheduled time;
 missing historical evidence remains absent. K4/B1/C1 ingest contracts are unchanged.
+
+## Bulletin review and navigation 1.0.72
+
+Adds optional job `resultRevision` (omitted means old producer; null means no
+result), fixed-area review locations, source-verified header speaker start IDs
+in the redacted member projection, and superseded learning evidence revisions.
+The cover settings write method remains for source compatibility but is
+deprecated: new producers return 410. Remove the Admin settings editor before
+releasing that producer. Consumers continue to tolerate older optional fields.
+Frozen renderer versions, assets and hashes are unchanged.

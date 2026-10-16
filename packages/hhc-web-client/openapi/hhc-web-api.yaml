@@ -2431,8 +2431,8 @@ paths:
   /admin/bulletins/template-settings:
     get:
       operationId: getBulletinTemplateSettings
-      summary: Read saved Traditional Chinese church values for future conversions
-      description: Human-only private settings. New extraction jobs capture this version atomically; existing jobs, drafts and published documents never follow later settings changes. Labels and other fixed template elements are not editable through this endpoint.
+      summary: Read historical church settings for compatibility
+      description: Historical read-only settings retained for compatibility. New extraction jobs use backend-owned conversion rules; this record no longer controls conversions. Existing snapshots remain immutable.
       tags: [Admin]
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
@@ -2454,8 +2454,9 @@ paths:
         '503': { $ref: '#/components/responses/Error' }
     put:
       operationId: saveBulletinTemplateSettings
-      summary: Save church values with version fencing and atomic audit
-      description: Human-only CAS save creates immutable history, never publishes or rewrites an issue. Three required values are trimmed plain single-line text of 1–64 Unicode characters; controls, format/bidi characters and line separators are rejected. Body limit is 4096 bytes. Restore by submitting a historical value with the current ETag; old history is never modified. Simplified text is derived during conversion, not edited here.
+      summary: Retired cover settings editor
+      deprecated: true
+      description: Returns 410 without changing settings. New conversions use versioned backend rules. Deploy the Admin removal before this producer change; historical settings and snapshots remain readable.
       tags: [Admin]
       x-hhc-visibility: admin
       x-hhc-callers: [api-gateway]
@@ -2472,19 +2473,13 @@ paths:
             schema: { $ref: '#/components/schemas/BulletinTemplateText' }
       responses:
         '200':
-          description: Saved settings version
-          headers:
-            Cache-Control: { schema: { type: string, const: 'private, no-store' } }
-            ETag: { description: Quoted new settings version, schema: { type: string } }
+          description: Legacy producer response retained for SDK compatibility. Retired producers always return 410.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/BulletinTemplateSettingsEnvelope' }
-        '400': { $ref: '#/components/responses/Error' }
+        '410': { $ref: '#/components/responses/Error' }
         '401': { $ref: '#/components/responses/AdminUnauthorized' }
         '403': { $ref: '#/components/responses/AdminForbidden' }
-        '412': { $ref: '#/components/responses/Error' }
-        '428': { $ref: '#/components/responses/Error' }
-        '503': { $ref: '#/components/responses/Error' }
   /admin/bulletins/template-settings/revisions:
     get:
       operationId: listBulletinTemplateSettingsRevisions
@@ -9262,6 +9257,7 @@ components:
         issueNumber: { type: integer, minimum: 1739 }
         documentId: { type: string, format: uuid }
         revision: { type: integer, format: int64, minimum: 1 }
+        supersededByRevision: { type: integer, format: int64, minimum: 1, description: Latest confirmation replacing this historical vote. Omitted for current evidence. }
         componentId: { $ref: '#/components/schemas/OnlineBulletinID' }
         sourcePage: { type: integer, minimum: 2, maximum: 39 }
         kind: { type: string, enum: [sermon, testimony, teaching, reflection] }
@@ -10514,6 +10510,9 @@ components:
           then: { required: [templateSnapshot] }
           else: { not: { required: [templateSnapshot] } }
       properties:
+        headerSpeakerStartComponentId:
+          allOf: [{ $ref: '#/components/schemas/OnlineBulletinID' }]
+          description: Source-verified first section for article-header speakers. Omitted when ambiguous; conveys no PDF coordinates.
         printedBodyPageCount: { type: integer, minimum: 2, maximum: 38, description: 'Visible printed body issue-summary count, independent of HTML pagination.' }
         schemaVersion: { type: string, const: '1' }
         templateVersion: { type: string, enum: [v1, v2] }
@@ -10808,6 +10807,9 @@ components:
         componentId: { $ref: '#/components/schemas/OnlineBulletinID' }
         blockId: { $ref: '#/components/schemas/OnlineBulletinID' }
         sentenceId: { $ref: '#/components/schemas/OnlineBulletinID' }
+        fixedElement:
+          description: Validated fixed template element at the failing layout location. This diagnostic cannot be waived.
+          $ref: '#/components/schemas/OnlineBulletinID'
         sourcePage:
           description: One-based original PDF page, never the composed online page index. Omitted when no exact source page is available.
           type: integer
@@ -10820,6 +10822,10 @@ components:
       properties:
         id: { type: string, format: uuid }
         status: { type: string, enum: [queued, parsing, converting, review_ready, validating, ready, failed] }
+        resultRevision:
+          description: This extraction job's saved candidate revision. Null means no saved candidate; omitted by older producers means unknown. Never infer this from the current Local or Incoming pointer.
+          type: [integer, 'null']
+          minimum: 1
         attempts: { type: integer, minimum: 0 }
         errorCode: { type: string, pattern: '^[a-z0-9_]{0,64}$' }
         reviewIssues:
