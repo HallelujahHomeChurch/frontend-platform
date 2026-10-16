@@ -7356,6 +7356,44 @@ paths:
           $ref: '#/components/responses/Error'
         '503':
           $ref: '#/components/responses/Error'
+  /admin/broadcast-sources/{sourceId}/stream-key/reveal:
+    post:
+      operationId: revealStudioSourceKey
+      summary: Reveal a securely retained stream key
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      x-required-scopes: [cms:recordings:write]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      description: Explicit audited staff action. Never cache, log, or persist this response in the browser. Legacy keys become recoverable after authenticated K4 open; 409 stream_key_not_retained never resets a key.
+      parameters:
+      - name: sourceId
+        in: path
+        required: true
+        schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Secret response; private, no-store
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    additionalProperties: false
+                    required: [streamKey]
+                    properties:
+                      streamKey: {type: string}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/AdminUnauthorized'}
+        '403': {$ref: '#/components/responses/AdminForbidden'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '503': {$ref: '#/components/responses/Error'}
   /admin/broadcast-sources/{sourceId}/stream-key:
     put:
       operationId: rotateStudioSource

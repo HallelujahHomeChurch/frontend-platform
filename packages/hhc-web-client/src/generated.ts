@@ -3567,6 +3567,26 @@ export interface paths {
         patch: operations["renameStudioSource"];
         trace?: never;
     };
+    "/admin/broadcast-sources/{sourceId}/stream-key/reveal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reveal a securely retained stream key
+         * @description Explicit audited staff action. Never cache, log, or persist this response in the browser. Legacy keys become recoverable after authenticated K4 open; 409 stream_key_not_retained never resets a key.
+         */
+        post: operations["revealStudioSourceKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/broadcast-sources/{sourceId}/stream-key": {
         parameters: {
             query?: never;
@@ -15617,6 +15637,38 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             412: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    revealStudioSourceKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sourceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Secret response; private, no-store */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            streamKey: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
             503: components["responses"]["Error"];
         };
     };

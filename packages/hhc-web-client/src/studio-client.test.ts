@@ -26,3 +26,10 @@ it('uses source-scoped authenticated mutations without redirects or implicit ret
   for(const r of requests){expect(r.cache).toBe('no-store');expect(r.redirect).toBe('error');expect(r.headers.get('Authorization')).toBe('Bearer staff')}
   expect(await requests[2].json()).toEqual(input)
 })
+
+it('reveals a key only through an explicit no-store authenticated POST',async()=>{
+ let request:Request|undefined
+ const api=createHhcWebClient({baseUrl:'https://admin.example/api',getAccessToken:()=> 'staff',fetcher:async value=>{request=value as Request;return Response.json({data:{streamKey:'fixture-only'}})}})
+ expect(await api.revealStudioSourceKey('source')).toEqual({streamKey:'fixture-only'})
+ expect(request?.method).toBe('POST');expect(new URL(request!.url).pathname).toBe('/api/admin/broadcast-sources/source/stream-key/reveal');expect(request?.cache).toBe('no-store');expect(request?.redirect).toBe('error');expect(request?.headers.get('Authorization')).toBe('Bearer staff')
+})
