@@ -45,7 +45,8 @@ export const adminDestinations = [
   {id: 'assets', path: '/assets', permission: 'assets:read'},
   {id: 'presenter-cloud', path: '/presenter/cloud', permission: 'presenter:cloud:manage'},
   {id: 'presenter-line', path: '/presenter/line', permission: 'presenter:line:manage'},
-  {id: 'donation-sandbox', path: '/donations/sandbox', permission: 'donations:sandbox:test'}
+  {id: 'donation-sandbox', path: '/donations/sandbox', permission: 'donations:sandbox:test'},
+  {id: 'data-requests', path: '/data-requests', permission: '*'}
 ] as const;
 
 export type AdminDestination = typeof adminDestinations[number];

@@ -264,3 +264,28 @@ falls back to K1/B1. Retry an uncertain bind with the exact original input and
 operation key, without resolving a newer target. Secrets use JSON bodies only;
 transport disables caching and redirects. Existing K1 and B1 types stay unchanged.
 Publish coordinated 1.0.65 before consumers pin its registry version.
+
+## Email correction client
+
+The Account client exports `createAccountDataRequestsClient` and the typed flat
+Email correction catalog, reauthentication, application and Admin contracts.
+Use an existing application request adapter, honoring its `auth: false`,
+`csrf: false`, `retry: false` and `credentials: 'omit'` options for the public
+body-only verification POST. `createAccountSessionClient().dataRequests` reuses
+its existing request/CSRF transport and configured fetcher. Protected Gateway
+routes still require the application's current bearer-token adapter.
+
+Keep proof, target and nonce in memory. After an uncertain submission, query
+`submission` with the original nonce; never create a replacement intent or
+silently retry with new input. Only true 401 uses the host's existing auth
+recovery; factor rejection and temporary unavailability preserve the draft.
+Responses retain server version, time and allowed actions. Errors normalize
+feature `errorCode` and middleware `error_code`, retaining status, request ID,
+server time and original `Retry-After`. Public verification needs no login or
+CSRF bootstrap. Successful submission schedules durable notification effects;
+it does not establish mailbox delivery.
+
+The `data-requests` Admin destination (`/data-requests`) requires existing `*`
+and follows all existing destinations. Navigation presentation remains separate
+from live authorization. Publish coordinated 1.0.70 after the Account contract
+and Gateway route releases are accepted, before consumers pin that version.

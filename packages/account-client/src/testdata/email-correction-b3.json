@@ -1,0 +1,129 @@
+{
+  "submit": {
+    "kind": "email_change",
+    "newEmail": "new@example.invalid",
+    "proof": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=.BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
+    "submissionNonce": "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC="
+  },
+  "pending_verification": {
+    "id": "019a0000-0000-7000-8000-000000000001",
+    "kind": "email_change",
+    "status": "pending_verification",
+    "requestVersion": 1,
+    "expiresAt": "2026-10-23T08:00:00Z",
+    "serverTime": "2026-10-16T08:00:00Z",
+    "allowedActions": [
+      "cancel",
+      "reapply",
+      "resend_verification"
+    ],
+    "currentEmail": "old@example.invalid",
+    "newEmail": "new@example.invalid",
+    "verificationExpiresAt": "2026-10-16T08:30:00Z"
+  },
+  "pending_approval": {
+    "id": "019a0000-0000-7000-8000-000000000001",
+    "kind": "email_change",
+    "status": "pending_approval",
+    "requestVersion": 2,
+    "expiresAt": "2026-10-23T08:00:00Z",
+    "serverTime": "2026-10-16T08:00:00Z",
+    "allowedActions": [
+      "cancel",
+      "reapply"
+    ],
+    "currentEmail": "old@example.invalid",
+    "newEmail": "new@example.invalid",
+    "verifiedAt": "2026-10-16T08:00:00Z"
+  },
+  "admin_pending_approval": {
+    "id": "019a0000-0000-7000-8000-000000000001",
+    "kind": "email_change",
+    "status": "pending_approval",
+    "requestVersion": 2,
+    "expiresAt": "2026-10-23T08:00:00Z",
+    "serverTime": "2026-10-16T08:00:00Z",
+    "allowedActions": [
+      "approve"
+    ],
+    "currentEmail": "old@example.invalid",
+    "newEmail": "new@example.invalid",
+    "verifiedAt": "2026-10-16T08:00:00Z",
+    "applicantId": "019a0000-0000-7000-8000-000000000002",
+    "applicantName": "Applicant"
+  },
+  "completed": {
+    "id": "019a0000-0000-7000-8000-000000000001",
+    "kind": "email_change",
+    "expiresAt": "2026-10-23T08:00:00Z",
+    "serverTime": "2026-10-16T08:00:00Z",
+    "status": "completed",
+    "requestVersion": 3,
+    "allowedActions": [],
+    "currentEmail": "new@example.invalid",
+    "verifiedAt": "2026-10-16T08:00:00Z",
+    "approvedBy": "019a0000-0000-7000-8000-000000000003",
+    "completedAt": "2026-10-16T08:00:00Z"
+  },
+  "cancelled": {
+    "id": "019a0000-0000-7000-8000-000000000001",
+    "kind": "email_change",
+    "expiresAt": "2026-10-23T08:00:00Z",
+    "serverTime": "2026-10-16T08:00:00Z",
+    "status": "cancelled",
+    "requestVersion": 3,
+    "allowedActions": []
+  },
+  "superseded": {
+    "id": "019a0000-0000-7000-8000-000000000001",
+    "kind": "email_change",
+    "expiresAt": "2026-10-23T08:00:00Z",
+    "serverTime": "2026-10-16T08:00:00Z",
+    "status": "superseded",
+    "requestVersion": 3,
+    "allowedActions": []
+  },
+  "expired": {
+    "id": "019a0000-0000-7000-8000-000000000001",
+    "kind": "email_change",
+    "expiresAt": "2026-10-23T08:00:00Z",
+    "serverTime": "2026-10-16T08:00:00Z",
+    "status": "expired",
+    "requestVersion": 3,
+    "allowedActions": []
+  },
+  "invalidated": {
+    "id": "019a0000-0000-7000-8000-000000000001",
+    "kind": "email_change",
+    "expiresAt": "2026-10-23T08:00:00Z",
+    "serverTime": "2026-10-16T08:00:00Z",
+    "status": "invalidated",
+    "requestVersion": 3,
+    "allowedActions": []
+  },
+  "public_verified": {
+    "status": "verified",
+    "serverTime": "2026-10-16T08:00:00Z"
+  },
+  "empty_current": {
+    "request": null,
+    "serverTime": "2026-10-16T08:00:00Z"
+  },
+  "empty_list": {
+    "items": [],
+    "serverTime": "2026-10-16T08:00:00Z"
+  },
+  "version_input": {
+    "requestVersion": 2
+  },
+  "not_found": {
+    "status": "error",
+    "errorCode": "ACC_CORRECTION_NOT_FOUND",
+    "serverTime": "2026-10-16T08:00:00Z"
+  },
+  "reviewer_unavailable": {
+    "status": "error",
+    "errorCode": "ACC_CORRECTION_REVIEWER_UNAVAILABLE",
+    "serverTime": "2026-10-16T08:00:00Z"
+  }
+}
