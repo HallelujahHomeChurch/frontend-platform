@@ -1,3 +1,5 @@
+import {createAccountDataRequestsClient} from './data-requests.js';
+
 export interface AccountSessionUser {
   id: string;
   email: string;
@@ -63,6 +65,8 @@ export type AccountDecodeStage = 'content_type' | 'json' | 'schema';
 export type AccountRequestMetadata = {
   requestId?: string;
   retryAt?: number;
+  retryAfter?: string;
+  serverTime?: string;
   endpoint?: AccountRequestEndpoint;
   method?: string;
   decodeStage?: AccountDecodeStage;
@@ -73,6 +77,8 @@ export class AccountSessionError extends Error {
   readonly code?: string;
   readonly requestId?: string;
   readonly retryAt?: number;
+  readonly retryAfter?: string;
+  readonly serverTime?: string;
   readonly endpoint?: AccountRequestEndpoint;
   readonly method?: string;
   readonly decodeStage?: AccountDecodeStage;
@@ -89,6 +95,8 @@ export class AccountSessionError extends Error {
     this.code = code;
     this.requestId = metadata.requestId;
     this.retryAt = metadata.retryAt;
+    this.retryAfter = metadata.retryAfter;
+    this.serverTime = metadata.serverTime;
     this.endpoint = metadata.endpoint;
     this.method = metadata.method;
     this.decodeStage = metadata.decodeStage;
@@ -114,7 +122,7 @@ export function createAccountSessionClient({
   async function request(path: string, init: RequestInit, validate?: (body: unknown) => boolean, invalidCode = 'INVALID_RESPONSE') {
     const response = await fetcher(`${normalizedBaseUrl}${path}`, {
       ...init,
-      credentials: 'include',
+      credentials: init.credentials ?? 'include',
       headers: {'accept': 'application/json', ...init.headers}
     });
     const metadata: AccountRequestMetadata = {...accountResponseMetadata(response, now()), endpoint: endpointFor(path), method: init.method ?? 'GET'};
@@ -161,6 +169,12 @@ export function createAccountSessionClient({
   }
 
   return {
+    dataRequests: createAccountDataRequestsClient((path, options) => {
+      const init: RequestInit = {method: options.method, cache: options.cache, redirect: options.redirect,
+        ...(options.credentials ? {credentials: options.credentials} : {}),
+        ...(options.body === undefined ? {} : {body: JSON.stringify(options.body), headers: {'content-type': 'application/json'}})};
+      return options.method === 'GET' || options.csrf === false ? request(path, init) : protectedRequest(path, init);
+    }),
     async getSession(): Promise<AccountSession> {
       const body = await request('/session', {method: 'GET', cache: 'no-store'}, isAccountSession);
       if (!isAccountSession(body)) throw new AccountSessionError(200, 'INVALID_RESPONSE');
@@ -188,7 +202,8 @@ export function createAccountSessionClient({
   };
 }
 
-export type AccountSessionClient = ReturnType<typeof createAccountSessionClient>;
+// Auth runtime consumers can continue supplying the existing five-method session interface.
+export type AccountSessionClient = Pick<ReturnType<typeof createAccountSessionClient>, 'getSession' | 'issueAccessToken' | 'refreshAccessToken' | 'logout' | 'logoutAll'>;
 
 export async function resolveAccountAuth(client: AccountSessionReader): Promise<AccountAuthResult> {
   try {
@@ -235,15 +250,16 @@ function responseError(response: Response, body: unknown, metadata: AccountReque
   const error = isRecord(body) ? body : {};
   return new AccountSessionError(
     response.status,
-    typeof error.error_code === 'string' ? error.error_code : undefined,
+    typeof error.errorCode === 'string' ? error.errorCode : typeof error.error_code === 'string' ? error.error_code : undefined,
     typeof error.message === 'string' ? error.message : undefined,
-    metadata
+    {...metadata, ...(typeof error.serverTime === 'string' ? {serverTime: error.serverTime} : {})}
   );
 }
 
 export function accountResponseMetadata(response: Response, currentTime = Date.now()) {
   return {
     requestId: safeRequestId(response.headers.get('x-hhc-request-id') ?? response.headers.get('x-request-id')),
+    retryAfter: response.headers.get('retry-after') ?? undefined,
     retryAt: response.status === 429
       ? retryAtFrom(response.headers.get('retry-after'), currentTime)
       : undefined

@@ -1,0 +1,208 @@
+{
+  "capability": {
+    "dataRequests": {
+      "emailCorrection": {
+        "enabled": false
+      }
+    }
+  },
+  "create": {
+    "kind": "email_change",
+    "newEmail": "new@example.com"
+  },
+  "catalog": {
+    "items": [
+      {
+        "kind": "email_change",
+        "fields": [
+          {
+            "key": "currentEmail",
+            "type": "email",
+            "labelKey": "dataRequests.currentEmail",
+            "readOnly": true,
+            "required": true
+          },
+          {
+            "key": "newEmail",
+            "type": "email",
+            "labelKey": "dataRequests.newEmail",
+            "readOnly": false,
+            "required": true
+          }
+        ]
+      }
+    ],
+    "currentEmail": "unit@example.com",
+    "serverTime": "2026-10-16T00:00:00Z",
+    "eligibility": {
+      "status": "eligible"
+    },
+    "allowedActions": [
+      "reauth"
+    ]
+  },
+  "factor_required": {
+    "kind": "email_change",
+    "intentId": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    "status": "factor_required",
+    "requestVersion": 1,
+    "currentEmail": "unit@example.com",
+    "newEmail": "new@example.com",
+    "methods": [
+      "password"
+    ],
+    "mfaRequired": false,
+    "expiresAt": "2026-10-16T00:05:00Z",
+    "serverTime": "2026-10-16T00:00:00Z",
+    "allowedActions": [
+      "password",
+      "cancel"
+    ]
+  },
+  "mfa_required": {
+    "kind": "email_change",
+    "intentId": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    "status": "mfa_required",
+    "requestVersion": 3,
+    "currentEmail": "unit@example.com",
+    "newEmail": "new@example.com",
+    "methods": [
+      "password"
+    ],
+    "mfaRequired": true,
+    "expiresAt": "2026-10-16T00:05:00Z",
+    "serverTime": "2026-10-16T00:00:00Z",
+    "allowedActions": [
+      "mfa",
+      "cancel"
+    ]
+  },
+  "ready": {
+    "kind": "email_change",
+    "intentId": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    "status": "ready",
+    "requestVersion": 3,
+    "currentEmail": "unit@example.com",
+    "newEmail": "new@example.com",
+    "methods": [
+      "password"
+    ],
+    "mfaRequired": false,
+    "expiresAt": "2026-10-16T00:05:00Z",
+    "serverTime": "2026-10-16T00:00:00Z",
+    "allowedActions": [
+      "submit",
+      "cancel"
+    ],
+    "proof": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    "submissionNonce": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+  },
+  "disabled": {
+    "kind": "email_change",
+    "intentId": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    "status": "disabled",
+    "requestVersion": 1,
+    "currentEmail": "unit@example.com",
+    "newEmail": "new@example.com",
+    "methods": [
+      "password"
+    ],
+    "mfaRequired": false,
+    "expiresAt": "2026-10-16T00:05:00Z",
+    "serverTime": "2026-10-16T00:00:00Z",
+    "allowedActions": [
+      "cancel"
+    ],
+    "errorCode": "ACC_CORRECTION_DISABLED"
+  },
+  "errors": [
+    {
+      "httpStatus": 400,
+      "body": {
+        "status": "error",
+        "errorCode": "ACC_CORRECTION_INVALID",
+        "serverTime": "2026-10-16T00:00:00Z"
+      }
+    },
+    {
+      "httpStatus": 401,
+      "body": {
+        "status": "error",
+        "errorCode": "ACC_AUTH_TOKEN_INVALID",
+        "serverTime": "2026-10-16T00:00:00Z"
+      }
+    },
+    {
+      "httpStatus": 403,
+      "body": {
+        "status": "error",
+        "errorCode": "ACC_CORRECTION_DISABLED",
+        "serverTime": "2026-10-16T00:00:00Z"
+      }
+    },
+    {
+      "httpStatus": 403,
+      "body": {
+        "status": "error",
+        "errorCode": "ACC_CORRECTION_INELIGIBLE",
+        "serverTime": "2026-10-16T00:00:00Z"
+      }
+    },
+    {
+      "httpStatus": 403,
+      "body": {
+        "status": "error",
+        "errorCode": "ACC_REAUTH_FACTOR_INVALID",
+        "serverTime": "2026-10-16T00:00:00Z"
+      }
+    },
+    {
+      "httpStatus": 403,
+      "body": {
+        "status": "error",
+        "errorCode": "ACC_REAUTH_MFA_REQUIRED",
+        "serverTime": "2026-10-16T00:00:00Z"
+      }
+    },
+    {
+      "httpStatus": 409,
+      "body": {
+        "status": "error",
+        "errorCode": "ACC_CORRECTION_TARGET_UNAVAILABLE",
+        "serverTime": "2026-10-16T00:00:00Z"
+      }
+    },
+    {
+      "httpStatus": 409,
+      "body": {
+        "status": "error",
+        "errorCode": "ACC_REAUTH_EXPIRED",
+        "serverTime": "2026-10-16T00:00:00Z"
+      }
+    },
+    {
+      "httpStatus": 409,
+      "body": {
+        "status": "error",
+        "errorCode": "ACC_REAUTH_CONFLICT",
+        "serverTime": "2026-10-16T00:00:00Z"
+      }
+    },
+    {
+      "httpStatus": 429,
+      "body": {
+        "status": "error",
+        "errorCode": "ACC_AUTH_RATE_LIMITED",
+        "serverTime": "2026-10-16T00:00:00Z"
+      }
+    },
+    {
+      "httpStatus": 503,
+      "body": {
+        "status": "error",
+        "errorCode": "ACC_SERVICE_UNAVAILABLE",
+        "serverTime": "2026-10-16T00:00:00Z"
+      }
+    }
+  ]
+}

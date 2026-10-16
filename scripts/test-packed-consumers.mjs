@@ -75,7 +75,7 @@ try {
   write(resolve(vite, 'src/bulletin.ts'), bulletinModule);
   write(resolve(vite, 'src/main.tsx'), `import React from 'react';
 import {createRoot} from 'react-dom/client';
-import {createAccountSessionClient, createBrowserAccountAuthRuntime, type AccountSessionUser} from '@hallelujahhomechurch/account-client';
+import {createAccountSessionClient, createBrowserAccountAuthRuntime, createAccountDataRequestsClient, type AccountSessionUser, type EmailReauthView, type EmailCorrectionSubmitInput, type EmailCorrectionRequest, type EmailCorrectionErrorCode} from '@hallelujahhomechurch/account-client';
 import {canAccessAdmin} from '@hallelujahhomechurch/account-client/admin-access';
 import {createHhcWebClient, type ContentStatus, type PageGroupManifest, type BroadcastStreamKey, type BroadcastStreamKeySetInput, type BroadcastStreamKeyBindInput, type BroadcastMutationResult, type BroadcastSource, type BroadcastSourceStreamKeyInput, type BroadcastSourceTargetInput, type BroadcastSourceResolveInput, type BroadcastSourceResolved, type BroadcastSourceBindInput} from '@hallelujahhomechurch/hhc-web-client';
 import {createOperationsClient, type ManagedMemberView, type ManagedUnitFolder} from '@hallelujahhomechurch/operations-client';
@@ -90,6 +90,18 @@ import {bulletin, bulletinV6} from './bulletin';
 const accountUser: AccountSessionUser = {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null};
 const accountSessionClient = createAccountSessionClient();
 const authRuntime = createBrowserAccountAuthRuntime({client: accountSessionClient});
+const dataRequests = createAccountDataRequestsClient(async () => {throw new Error('No network in consumer type check');});
+async function checkEmailCorrection(intent: EmailReauthView, result: EmailCorrectionRequest, code: EmailCorrectionErrorCode) {
+  if (intent.status === 'ready') {
+    const input: EmailCorrectionSubmitInput = {kind: intent.kind, newEmail: intent.newEmail, proof: intent.proof, submissionNonce: intent.submissionNonce};
+    await dataRequests.submit(input);
+    await dataRequests.submission(input.submissionNonce);
+  }
+  await accountSessionClient.dataRequests.approve(result.id, {requestVersion: result.requestVersion});
+  if (code === 'ACC_CORRECTION_NOT_FOUND') return;
+}
+void checkEmailCorrection;
+
 const operationsClient = createOperationsClient({baseUrl: '', getAccessToken: authRuntime.getAccessToken, refreshAfterUnauthorized: authRuntime.refreshAfterUnauthorized});
 const donationClient = createSandboxDonationClient({getAccessToken: authRuntime.getAccessToken, refreshAfterUnauthorized: authRuntime.refreshAfterUnauthorized});
 const donationForm = <DonationForm transport={donationClient} onOrder={() => {}} />;
@@ -174,7 +186,7 @@ export default function Layout({children}: {children: React.ReactNode}) {
 `);
   write(resolve(next, 'app/bulletin.ts'), bulletinModule);
   write(resolve(next, 'app/page.tsx'), `'use client';
-import {createAccountSessionClient, createBrowserAccountAuthRuntime, type AccountSessionUser} from '@hallelujahhomechurch/account-client';
+import {createAccountSessionClient, createBrowserAccountAuthRuntime, createAccountDataRequestsClient, type AccountSessionUser, type EmailReauthView, type EmailCorrectionSubmitInput, type EmailCorrectionRequest, type EmailCorrectionErrorCode} from '@hallelujahhomechurch/account-client';
 import {canAccessAdmin} from '@hallelujahhomechurch/account-client/admin-access';
 import {createHhcWebClient, type ContentStatus, type PageGroupManifest, type BroadcastStreamKey, type BroadcastStreamKeySetInput, type BroadcastStreamKeyBindInput, type BroadcastMutationResult} from '@hallelujahhomechurch/hhc-web-client';
 import {createOperationsClient, type ManagedMemberView, type ManagedUnitFolder} from '@hallelujahhomechurch/operations-client';
@@ -187,6 +199,18 @@ import {DonationForm} from '@hallelujahhomechurch/donation-ui';
 const accountUser: AccountSessionUser = {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null};
 const accountSessionClient = createAccountSessionClient();
 const authRuntime = createBrowserAccountAuthRuntime({client: accountSessionClient});
+const dataRequests = createAccountDataRequestsClient(async () => {throw new Error('No network in consumer type check');});
+async function checkEmailCorrection(intent: EmailReauthView, result: EmailCorrectionRequest, code: EmailCorrectionErrorCode) {
+  if (intent.status === 'ready') {
+    const input: EmailCorrectionSubmitInput = {kind: intent.kind, newEmail: intent.newEmail, proof: intent.proof, submissionNonce: intent.submissionNonce};
+    await dataRequests.submit(input);
+    await dataRequests.submission(input.submissionNonce);
+  }
+  await accountSessionClient.dataRequests.approve(result.id, {requestVersion: result.requestVersion});
+  if (code === 'ACC_CORRECTION_NOT_FOUND') return;
+}
+void checkEmailCorrection;
+
 const operationsClient = createOperationsClient({baseUrl: '', getAccessToken: authRuntime.getAccessToken, refreshAfterUnauthorized: authRuntime.refreshAfterUnauthorized});
 const donationClient = createSandboxDonationClient({getAccessToken: authRuntime.getAccessToken, refreshAfterUnauthorized: authRuntime.refreshAfterUnauthorized});
 const donationForm = <DonationForm transport={donationClient} onOrder={() => {}} />;
