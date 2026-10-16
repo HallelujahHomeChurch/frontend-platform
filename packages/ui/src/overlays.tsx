@@ -80,16 +80,20 @@ export function Menu({label, items, onAction, trigger, header, focusTriggerRef}:
     else if (shouldRestoreFocusRef.current) focusTriggerRef?.current?.focus();
   };
   useEffect(() => {
-    const popover = popoverRef.current;
-    if (!isOpen || !popover) return;
-    const ownerDocument = popover.ownerDocument;
+    // The portal ref may attach after this opening effect; the trigger is already mounted.
+    const ownerDocument = triggerContainerRef.current?.ownerDocument;
+    if (!isOpen || !ownerDocument) return;
     const onPointerDown = (event: PointerEvent) => {
-      pointerStartedOutsideRef.current = event.button === 0 && !event.composedPath().includes(popover) && !(triggerContainerRef.current && event.composedPath().includes(triggerContainerRef.current));
+      const popover = popoverRef.current;
+      pointerStartedOutsideRef.current = event.button === 0 && (!popover || !event.composedPath().includes(popover)) && !(event.pointerType === 'touch' && triggerContainerRef.current && event.composedPath().includes(triggerContainerRef.current));
       if (pointerStartedOutsideRef.current) shouldRestoreFocusRef.current = !isMeaningfullyFocusable(event.target);
     };
     const onClick = (event: MouseEvent) => {
-      if (!pointerStartedOutsideRef.current || event.composedPath().includes(popover)) return;
+      const popover = popoverRef.current;
+      if (!pointerStartedOutsideRef.current || (popover && event.composedPath().includes(popover))) return;
       pointerStartedOutsideRef.current = false;
+      // Mouse presses only open React Aria menus; consume the closing click before its fallback reopens it.
+      if (triggerContainerRef.current && event.composedPath().includes(triggerContainerRef.current)) event.stopPropagation();
       setOpen(false);
       if (shouldRestoreFocusRef.current) focusTriggerRef?.current?.focus();
     };
