@@ -204,5 +204,107 @@
         "serverTime": "2026-10-16T00:00:00Z"
       }
     }
+  ],
+  "catalog_ineligible": [
+    {
+      "items": [],
+      "currentEmail": "unit@example.com",
+      "serverTime": "2026-10-16T00:00:00Z",
+      "eligibility": {
+        "status": "ineligible",
+        "errorCode": "ACC_CORRECTION_DISABLED"
+      },
+      "allowedActions": []
+    },
+    {
+      "items": [
+        {
+          "kind": "email_change",
+          "fields": [
+            {
+              "key": "currentEmail",
+              "type": "email",
+              "labelKey": "dataRequests.currentEmail",
+              "readOnly": true,
+              "required": true
+            },
+            {
+              "key": "newEmail",
+              "type": "email",
+              "labelKey": "dataRequests.newEmail",
+              "readOnly": false,
+              "required": true
+            }
+          ]
+        }
+      ],
+      "currentEmail": "unit@example.com",
+      "serverTime": "2026-10-16T00:00:00Z",
+      "eligibility": {
+        "status": "ineligible",
+        "errorCode": "ACC_CORRECTION_EMAIL_UNVERIFIED"
+      },
+      "allowedActions": []
+    },
+    {
+      "items": [
+        {
+          "kind": "email_change",
+          "fields": [
+            {
+              "key": "currentEmail",
+              "type": "email",
+              "labelKey": "dataRequests.currentEmail",
+              "readOnly": true,
+              "required": true
+            },
+            {
+              "key": "newEmail",
+              "type": "email",
+              "labelKey": "dataRequests.newEmail",
+              "readOnly": false,
+              "required": true
+            }
+          ]
+        }
+      ],
+      "currentEmail": "unit@example.com",
+      "serverTime": "2026-10-16T00:00:00Z",
+      "eligibility": {
+        "status": "ineligible",
+        "errorCode": "ACC_CORRECTION_INELIGIBLE"
+      },
+      "allowedActions": []
+    },
+    {
+      "items": [
+        {
+          "kind": "email_change",
+          "fields": [
+            {
+              "key": "currentEmail",
+              "type": "email",
+              "labelKey": "dataRequests.currentEmail",
+              "readOnly": true,
+              "required": true
+            },
+            {
+              "key": "newEmail",
+              "type": "email",
+              "labelKey": "dataRequests.newEmail",
+              "readOnly": false,
+              "required": true
+            }
+          ]
+        }
+      ],
+      "currentEmail": "unit@example.com",
+      "serverTime": "2026-10-16T00:00:00Z",
+      "eligibility": {
+        "status": "ineligible",
+        "errorCode": "ACC_CORRECTION_REVIEWER_UNAVAILABLE"
+      },
+      "allowedActions": []
+    }
   ]
 }

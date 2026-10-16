@@ -26,7 +26,7 @@ export interface CorrectionCatalog {
   items: {kind: 'email_change'; fields: [CorrectionField, CorrectionField]}[];
   currentEmail: string;
   serverTime: string;
-  eligibility: {status: 'eligible'} | {status: 'ineligible'; errorCode: 'ACC_CORRECTION_DISABLED' | 'ACC_CORRECTION_EMAIL_UNVERIFIED' | 'ACC_CORRECTION_INELIGIBLE'};
+  eligibility: {status: 'eligible'} | {status: 'ineligible'; errorCode: 'ACC_CORRECTION_DISABLED' | 'ACC_CORRECTION_EMAIL_UNVERIFIED' | 'ACC_CORRECTION_INELIGIBLE' | 'ACC_CORRECTION_REVIEWER_UNAVAILABLE'};
   allowedActions: 'reauth'[];
 }
 export interface CreateEmailReauth {kind: 'email_change'; newEmail: string}
@@ -106,7 +106,8 @@ function catalog(v: unknown): boolean {
         && text(field.labelKey) && typeof field.readOnly === 'boolean' && typeof field.required === 'boolean'))
     && (shape(v.eligibility, ['status']) && v.eligibility.status === 'eligible'
       || shape(v.eligibility, ['status', 'errorCode']) && v.eligibility.status === 'ineligible'
-      && ['ACC_CORRECTION_DISABLED', 'ACC_CORRECTION_EMAIL_UNVERIFIED', 'ACC_CORRECTION_INELIGIBLE'].includes(String(v.eligibility.errorCode)));
+      && typeof v.eligibility.errorCode === 'string'
+      && ['ACC_CORRECTION_DISABLED', 'ACC_CORRECTION_EMAIL_UNVERIFIED', 'ACC_CORRECTION_INELIGIBLE', 'ACC_CORRECTION_REVIEWER_UNAVAILABLE'].includes(v.eligibility.errorCode));
 }
 function intent(v: unknown): boolean {
   return shape(v, ['kind', 'intentId', 'status', 'requestVersion', 'currentEmail', 'newEmail', 'methods', 'mfaRequired', 'expiresAt', 'serverTime', 'allowedActions'], ['errorCode', 'proof', 'submissionNonce'])
