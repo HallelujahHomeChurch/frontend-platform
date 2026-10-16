@@ -329,6 +329,9 @@ export function createHhcWebClient(options: {
     async deleteStudioSource(sourceId:string,body:StudioSourceInput,signal?:AbortSignal) {
       return (await unwrap(client.DELETE('/admin/broadcast-sources/{sourceId}', {params:{path:{sourceId}},body,signal,cache:'no-store',redirect:'error'}))).data
     },
+    async revealStudioSourceKey(sourceId:string,signal?:AbortSignal) {
+      return (await unwrap(client.POST('/admin/broadcast-sources/{sourceId}/stream-key/reveal', {params:{path:{sourceId}},signal,cache:'no-store',redirect:'error'}))).data
+    },
     async setStudioSourceKey(sourceId:string,body:StudioSourceInput,signal?:AbortSignal) {
       return (await unwrap(client.PUT('/admin/broadcast-sources/{sourceId}/stream-key', {params:{path:{sourceId}},body,signal,cache:'no-store',redirect:'error'}))).data
     },
