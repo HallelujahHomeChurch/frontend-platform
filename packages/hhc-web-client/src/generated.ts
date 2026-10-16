@@ -5730,6 +5730,13 @@ export interface components {
         MemberRecording: {
             /** Format: uuid */
             id: string;
+            /** @description True for recordings originating from a broadcast; remains true after publication. */
+            isBroadcast?: boolean;
+            /**
+             * Format: date-time
+             * @description First verified public-live transition observed by CMS. Absent for historical events without a recorded timestamp; never inferred from schedule or upload completion.
+             */
+            broadcastStartedAt?: string;
             /** @description Optional explicit CMS selection. An absent value may use default auto cover; member clients may lazily request the current cover endpoint. */
             selectedCoverId?: string;
             title: string;
@@ -5791,6 +5798,8 @@ export interface components {
             id: components["schemas"]["MemberRecording"]["id"];
             title: components["schemas"]["MemberRecording"]["title"];
             description?: components["schemas"]["RecordingDescription"];
+            isBroadcast?: components["schemas"]["MemberRecording"]["isBroadcast"];
+            broadcastStartedAt?: components["schemas"]["MemberRecording"]["broadcastStartedAt"];
             selectedCoverId?: components["schemas"]["MemberRecording"]["selectedCoverId"];
             uploadedAt: components["schemas"]["MemberRecording"]["uploadedAt"];
             expiresAt: components["schemas"]["MemberRecording"]["expiresAt"];

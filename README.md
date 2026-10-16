@@ -289,3 +289,10 @@ The `data-requests` Admin destination (`/data-requests`) requires existing `*`
 and follows all existing destinations. Navigation presentation remains separate
 from live authorization. Publish coordinated 1.0.70 after the Account contract
 and Gateway route releases are accepted, before consumers pin that version.
+
+## Completed live recording metadata
+
+Version 1.0.71 adds optional `isBroadcast` and `broadcastStartedAt` to recording
+metadata. Broadcast origin persists after publication. Start time describes the
+platform's verified public-live transition, not encoder start or scheduled time;
+missing historical evidence remains absent. K4/B1/C1 ingest contracts are unchanged.
