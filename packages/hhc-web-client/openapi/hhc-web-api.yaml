@@ -109,6 +109,58 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/RecordingLikeInput"
+  /member/recordings/{id}/comments/{commentId}/reaction:
+    put:
+      operationId: setRecordingCommentReaction
+      summary: setRecordingCommentReaction
+      description: Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply.
+        Private no-store. Comments are plain text; only one reply level. CAS conflicts require
+        refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordingCommentReactionEnvelope"
+        "400":
+          $ref: "#/components/responses/Error"
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "412":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "503":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordingCommentReactionInput"
   /member/recordings/{id}/comments:
     get:
       operationId: listRecordingComments
@@ -132,7 +184,7 @@ paths:
           in: query
           schema:
             type: string
-            format: uuid
+            maxLength: 128
         - name: limit
           in: query
           schema:
@@ -152,7 +204,11 @@ paths:
             enum:
               - newest
               - oldest
+              - top
             default: newest
+        - name: refresh
+          in: query
+          schema: {type: boolean}
       responses:
         "200":
           description: Operation result
@@ -6970,6 +7026,9 @@ paths:
         '429': { $ref: '#/components/responses/BroadcastFailure' }
         '503': { $ref: '#/components/responses/BroadcastFailure' }
       parameters:
+      - name: q
+        in: query
+        schema: {type: string, maxLength: 100}
       - name: limit
         in: query
         schema:
@@ -6981,7 +7040,7 @@ paths:
         in: query
         schema:
           type: string
-          format: uuid
+          maxLength: 256
   /admin/broadcasts/{recordingId}/cover-uploads:
     post:
       operationId: uploadBroadcastCover
@@ -9779,6 +9838,7 @@ components:
       - stopAcceptedAt
       - progress
       properties:
+        startedAt: {type: string, format: date-time}
         coverRevision: { type: string, maxLength: 128, description: Immutable active image identity; changes only after a ready image becomes effective. }
         id:
           type: string
@@ -13969,6 +14029,7 @@ components:
         - likes
         - commentsEnabled
       properties:
+        commentCount: {type: integer, minimum: 0}
         liked:
           type: boolean
         likes:
@@ -13984,6 +14045,26 @@ components:
       properties:
         liked:
           type: boolean
+    RecordingCommentReactionInput:
+      type: object
+      additionalProperties: false
+      required: [reaction]
+      properties:
+        reaction: {type: [string, 'null'], enum: [like, dislike, null]}
+    RecordingCommentReaction:
+      type: object
+      additionalProperties: false
+      required: [likes, reaction]
+      properties:
+        likes: {type: integer, minimum: 0}
+        reaction: {type: [string, 'null'], enum: [like, dislike, null]}
+    RecordingCommentReactionEnvelope:
+      type: object
+      required: [data, meta, error]
+      properties:
+        data: {$ref: '#/components/schemas/RecordingCommentReaction'}
+        meta: {type: object}
+        error: {type: 'null'}
     RecordingComment:
       type: object
       additionalProperties: false
@@ -13998,6 +14079,15 @@ components:
         - createdAt
         - replyCount
       properties:
+        likes: {type: integer, minimum: 0}
+        reaction: {type: [string, 'null'], enum: [like, dislike, null]}
+        replyTo:
+          type: object
+          additionalProperties: false
+          required: [id, displayName]
+          properties:
+            id: {type: string, format: uuid}
+            displayName: {type: string}
         id:
           type: string
           format: uuid
@@ -14033,6 +14123,7 @@ components:
         - clientMutationId
         - text
       properties:
+        replyToId: {type: string, format: uuid}
         clientMutationId:
           type: string
           format: uuid

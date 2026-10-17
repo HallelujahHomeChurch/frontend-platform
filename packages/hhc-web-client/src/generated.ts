@@ -44,6 +44,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/member/recordings/{id}/comments/{commentId}/reaction": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * setRecordingCommentReaction
+         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; only one reply level. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+         */
+        put: operations["setRecordingCommentReaction"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/member/recordings/{id}/comments": {
         parameters: {
             query?: never;
@@ -4404,6 +4424,8 @@ export interface components {
             watermarkCode: string;
         };
         MemberLiveRecording: {
+            /** Format: date-time */
+            startedAt?: string;
             /** @description Immutable active image identity; changes only after a ready image becomes effective. */
             coverRevision?: string;
             /** Format: uuid */
@@ -7604,6 +7626,7 @@ export interface components {
             error?: null;
         };
         RecordingInteractionSummary: {
+            commentCount?: number;
             liked: boolean;
             likes: number;
             commentsEnabled: boolean;
@@ -7611,7 +7634,29 @@ export interface components {
         RecordingLikeInput: {
             liked: boolean;
         };
+        RecordingCommentReactionInput: {
+            /** @enum {string|null} */
+            reaction: "like" | "dislike" | null;
+        };
+        RecordingCommentReaction: {
+            likes: number;
+            /** @enum {string|null} */
+            reaction: "like" | "dislike" | null;
+        };
+        RecordingCommentReactionEnvelope: {
+            data: components["schemas"]["RecordingCommentReaction"];
+            meta: Record<string, never>;
+            error: null;
+        };
         RecordingComment: {
+            likes?: number;
+            /** @enum {string|null} */
+            reaction?: "like" | "dislike" | null;
+            replyTo?: {
+                /** Format: uuid */
+                id: string;
+                displayName: string;
+            };
             /** Format: uuid */
             id: string;
             /** Format: uuid */
@@ -7629,6 +7674,8 @@ export interface components {
             replyCount: number;
         };
         RecordingCommentInput: {
+            /** Format: uuid */
+            replyToId?: string;
             /** Format: uuid */
             clientMutationId: string;
             /** Format: uuid */
@@ -8312,13 +8359,49 @@ export interface operations {
             503: components["responses"]["Error"];
         };
     };
+    setRecordingCommentReaction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                commentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingCommentReactionInput"];
+            };
+        };
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingCommentReactionEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
     listRecordingComments: {
         parameters: {
             query?: {
                 cursor?: string;
                 limit?: number;
                 parentId?: string;
-                order?: "newest" | "oldest";
+                order?: "newest" | "oldest" | "top";
+                refresh?: boolean;
             };
             header?: never;
             path: {
@@ -15343,6 +15426,7 @@ export interface operations {
     listUpcomingBroadcasts: {
         parameters: {
             query?: {
+                q?: string;
                 limit?: number;
                 cursor?: string;
             };
