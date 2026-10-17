@@ -221,7 +221,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List active members whose deepest affiliation is the current unit */
+        /** List current-unit members and its directly assigned responsible people */
         get: operations["listCurrentOrgUnitMembers"];
         put?: never;
         post?: never;
@@ -1198,7 +1198,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Archive a dependency-free strict descendant without cascading */
+        /**
+         * Retired managed archive endpoint
+         * @deprecated
+         * @description Unit lifecycle is available only through Admin Console routes. This endpoint always returns 404 and never replays old receipts.
+         */
         post: operations["archiveManagedUnit"];
         delete?: never;
         options?: never;
@@ -1215,7 +1219,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Restore an archived strict descendant whose parent is active */
+        /**
+         * Retired managed restore endpoint
+         * @deprecated
+         * @description Unit lifecycle is available only through Admin Console routes. This endpoint always returns 404 and never replays old receipts.
+         */
         post: operations["restoreManagedUnit"];
         delete?: never;
         options?: never;
@@ -1232,7 +1240,7 @@ export interface paths {
         };
         /**
          * List members displayed at one managed unit
-         * @description Excludes the authenticated Account before pagination. Other unit leaders remain visible. Admin member lists are unchanged.
+         * @description Excludes the authenticated Account before pagination. Other directly assigned responsible people remain visible. Responsibility filtering uses the existing read scope, not delegation permission.
          */
         get: operations["listManagedMembers"];
         put?: never;
@@ -1934,8 +1942,16 @@ export interface components {
             manageEntitlementPolicy: boolean;
             editUnit: boolean;
             createChild: boolean;
-            archive: boolean;
-            restore: boolean;
+            /**
+             * @deprecated
+             * @enum {boolean}
+             */
+            archive: false;
+            /**
+             * @deprecated
+             * @enum {boolean}
+             */
+            restore: false;
             manageMembers: boolean;
             manageResponsibilities: boolean;
             manageEntitlements: boolean;
@@ -2194,6 +2210,8 @@ export interface components {
             displayName: string;
         };
         Member: {
+            /** @description Active responsibility assigned directly to the listed unit. */
+            isResponsible?: boolean;
             /** Format: uuid */
             id: string;
             /** Format: uuid */
@@ -2256,6 +2274,8 @@ export interface components {
             items: components["schemas"]["JoinCandidate"][];
         };
         ManagedMemberSummary: {
+            /** @description Active responsibility assigned directly to the listed unit. */
+            isResponsible?: boolean;
             /** Format: uuid */
             memberId: string;
             displayName: string;
@@ -3335,6 +3355,8 @@ export interface operations {
                 sort?: "displayName" | "email" | "created";
                 /** @description Sort direction; sort is required when direction is set. */
                 direction?: "asc" | "desc";
+                /** @description Only active responsibilities assigned directly to this unit; applied before pagination. */
+                responsibilityOnly?: boolean;
             };
             header?: never;
             path: {
@@ -6273,7 +6295,11 @@ export interface operations {
     getManagedUnitFolder: {
         parameters: {
             query?: {
-                includeArchived?: components["parameters"]["IncludeArchived"];
+                /**
+                 * @deprecated
+                 * @description Ignored; managed folders and children are always active-only.
+                 */
+                includeArchived?: boolean;
             };
             header?: never;
             path: {
@@ -6421,24 +6447,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Archived unit */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ManagedUnit"];
-                };
-            };
-            /** @description Strict-descendant scope required */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Version, dependency, or idempotency conflict */
-            409: {
+            /** @description Managed lifecycle endpoint retired */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6460,24 +6470,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Restored unit */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ManagedUnit"];
-                };
-            };
-            /** @description Strict-descendant scope required */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Version, parent-state, or idempotency conflict */
-            409: {
+            /** @description Managed lifecycle endpoint retired */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6493,6 +6487,8 @@ export interface operations {
                 limit?: number;
                 sort?: "displayName" | "email" | "created";
                 direction?: "asc" | "desc";
+                /** @description Only active responsibilities assigned directly to this unit; applied before pagination. */
+                responsibilityOnly?: boolean;
             };
             header?: never;
             path: {

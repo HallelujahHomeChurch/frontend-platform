@@ -203,7 +203,7 @@ paths:
     get:
       tags: [Operations]
       operationId: listCurrentOrgUnitMembers
-      summary: List active members whose deepest affiliation is the current unit
+      summary: List current-unit members and its directly assigned responsible people
       x-hhc-visibility: admin
       x-hhc-authorization: Global member read or scoped responsibility for the target unit
       security: [{ gatewayPrincipal: [] }]
@@ -214,6 +214,7 @@ paths:
         - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 50 } }
         - { name: sort, in: query, description: Sort field; direction is required when sort is set., schema: { type: string, enum: [displayName, email, created] } }
         - { name: direction, in: query, description: Sort direction; sort is required when direction is set., schema: { type: string, enum: [asc, desc] } }
+        - { name: responsibilityOnly, in: query, description: Only active responsibilities assigned directly to this unit; applied before pagination., schema: { type: boolean, default: false } }
       responses: { '200': { description: Current-unit member page, content: { application/json: { schema: { $ref: '#/components/schemas/UnitMemberPage' } } } }, '403': { description: Scope denied }, '422': { description: Account search is too broad }, '503': { description: Account labels unavailable } }
   /api/admin/operations/org-units/{id}/members/batch:
     post:
@@ -1198,7 +1199,7 @@ paths:
       security: [{ gatewayPrincipal: [] }]
       parameters:
         - { name: unitId, in: path, required: true, schema: { type: string, format: uuid } }
-        - { $ref: '#/components/parameters/IncludeArchived' }
+        - { name: includeArchived, in: query, deprecated: true, description: Ignored; managed folders and children are always active-only., schema: { type: boolean, default: false } }
       responses:
         '200': { description: Managed unit folder, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedUnitFolder' } } } }
         '403': { description: Responsibility scope denied }
@@ -1239,7 +1240,9 @@ paths:
     post:
       tags: [Operations]
       operationId: archiveManagedUnit
-      summary: Archive a dependency-free strict descendant without cascading
+      summary: Retired managed archive endpoint
+      deprecated: true
+      description: Unit lifecycle is available only through Admin Console routes. This endpoint always returns 404 and never replays old receipts.
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
       parameters:
@@ -1247,14 +1250,14 @@ paths:
         - { $ref: '#/components/parameters/IfMatch' }
         - { $ref: '#/components/parameters/IdempotencyKey' }
       responses:
-        '200': { description: Archived unit, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedUnit' } } } }
-        '403': { description: Strict-descendant scope required }
-        '409': { description: "Version, dependency, or idempotency conflict" }
+        '404': { description: Managed lifecycle endpoint retired }
   /api/operations/manage/org-units/{unitId}/restore:
     post:
       tags: [Operations]
       operationId: restoreManagedUnit
-      summary: Restore an archived strict descendant whose parent is active
+      summary: Retired managed restore endpoint
+      deprecated: true
+      description: Unit lifecycle is available only through Admin Console routes. This endpoint always returns 404 and never replays old receipts.
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
       parameters:
@@ -1262,15 +1265,13 @@ paths:
         - { $ref: '#/components/parameters/IfMatch' }
         - { $ref: '#/components/parameters/IdempotencyKey' }
       responses:
-        '200': { description: Restored unit, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedUnit' } } } }
-        '403': { description: Strict-descendant scope required }
-        '409': { description: "Version, parent-state, or idempotency conflict" }
+        '404': { description: Managed lifecycle endpoint retired }
   /api/operations/manage/org-units/{unitId}/members:
     get:
       tags: [Operations]
       operationId: listManagedMembers
       summary: List members displayed at one managed unit
-      description: Excludes the authenticated Account before pagination. Other unit leaders remain visible. Admin member lists are unchanged.
+      description: Excludes the authenticated Account before pagination. Other directly assigned responsible people remain visible. Responsibility filtering uses the existing read scope, not delegation permission.
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
       parameters:
@@ -1280,6 +1281,7 @@ paths:
         - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 20 } }
         - { name: sort, in: query, schema: { type: string, enum: [displayName, email, created] } }
         - { name: direction, in: query, schema: { type: string, enum: [asc, desc] } }
+        - { name: responsibilityOnly, in: query, description: Only active responsibilities assigned directly to this unit; applied before pagination., schema: { type: boolean, default: false } }
       responses:
         '200': { description: Scoped member page, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedMemberPage' } } } }
         '403': { description: Responsibility scope denied }
@@ -1952,8 +1954,8 @@ components:
         manageEntitlementPolicy: { type: boolean }
         editUnit: { type: boolean }
         createChild: { type: boolean }
-        archive: { type: boolean }
-        restore: { type: boolean }
+        archive: { type: boolean, deprecated: true, enum: [false] }
+        restore: { type: boolean, deprecated: true, enum: [false] }
         manageMembers: { type: boolean }
         manageResponsibilities: { type: boolean }
         manageEntitlements: { type: boolean }
@@ -2259,6 +2261,7 @@ components:
       additionalProperties: false
       required: [id, accountUserId, version, createdAt, updatedAt]
       properties:
+        isResponsible: { type: boolean, description: Active responsibility assigned directly to the listed unit. }
         id: { type: string, format: uuid }
         accountUserId: { type: string, format: uuid }
         churchOrgUnitId: { type: string, format: uuid }
@@ -2341,6 +2344,7 @@ components:
       additionalProperties: false
       required: [memberId, displayName, email]
       properties:
+        isResponsible: { type: boolean, description: Active responsibility assigned directly to the listed unit. }
         memberId: { type: string, format: uuid }
         displayName: { type: string }
         email: { type: string, format: email }
