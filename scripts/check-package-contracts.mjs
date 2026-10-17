@@ -51,10 +51,23 @@ const websiteOpenAPI = await readFile(new URL('hhc-web-client/openapi/hhc-web-ap
 assert.doesNotMatch(websiteOpenAPI, /cms:(?:read|write|publish)(?!:)/, 'Website contract must not accept broad CMS permissions')
 assert.doesNotMatch(websiteOpenAPI, /\/admin\/operations|\/priv\/meeting-occurrences|^  \/meetings:/m, 'Website contract must not retain Operations routes')
 
-console.log(`Package contracts pass (${packageDirs.length} packages checked).`)
 
 function collectExportTargets(value) {
   if (typeof value === 'string') return [value]
   if (!value || typeof value !== 'object') return []
   return Object.values(value).flatMap(collectExportTargets)
 }
+
+
+const operationsSpec = await readFile(new URL('operations-client/openapi/operations-api.yaml', packageRoot), 'utf8');
+for (const action of ['archive', 'restore']) {
+  const block = operationsSpec.split(`  /api/operations/manage/org-units/{unitId}/${action}:`)[1].split('\n  /')[0];
+  assert.match(block, /deprecated: true/);
+  assert.match(block, /'404':/);
+  assert.doesNotMatch(block, /'200':/);
+  assert.ok(operationsSpec.includes(`${action}: { type: boolean, deprecated: true, enum: [false] }`));
+}
+assert.ok(operationsSpec.includes('description: Ignored; managed folders and children are always active-only.'));
+assert.ok(operationsSpec.includes('IncludeArchived: { name: includeArchived, in: query, schema: { type: boolean, default: false } }'));
+
+console.log(`Package contracts pass (${packageDirs.length} packages checked).`)
