@@ -46,6 +46,11 @@ export interface components {
             documentId: string;
             /** Format: int64 */
             revision: number;
+            /**
+             * Format: int64
+             * @description Latest confirmation replacing this historical vote. Omitted for current evidence.
+             */
+            supersededByRevision?: number;
             componentId: components["schemas"]["OnlineBulletinID"];
             sourcePage: number;
             /** @enum {string} */
@@ -279,6 +284,8 @@ export interface components {
             componentId?: components["schemas"]["OnlineBulletinID"];
             blockId?: components["schemas"]["OnlineBulletinID"];
             sentenceId?: components["schemas"]["OnlineBulletinID"];
+            /** @description Validated fixed template element at the failing layout location. This diagnostic cannot be waived. */
+            fixedElement?: components["schemas"]["OnlineBulletinID"];
             /** @description One-based original PDF page, never the composed online page index. Omitted when no exact source page is available. */
             sourcePage?: number;
         };
@@ -287,6 +294,8 @@ export interface components {
             id: string;
             /** @enum {string} */
             status: "queued" | "parsing" | "converting" | "review_ready" | "validating" | "ready" | "failed";
+            /** @description This extraction job's saved candidate revision. Null means no saved candidate; omitted by older producers means unknown. Never infer this from the current Local or Incoming pointer. */
+            resultRevision?: number | null;
             attempts: number;
             errorCode: string;
             /** @description Extraction, current saved-draft layout, or Simplified conversion diagnostics. Layout findings are non-waivable and reference original PDF pages and content IDs when available. Conversion locations refer to the immutable Traditional source revision recorded by the derivation. */

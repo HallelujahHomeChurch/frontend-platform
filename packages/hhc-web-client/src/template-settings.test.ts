@@ -41,3 +41,10 @@ it.each([0,-1,1.5,Number.NaN,Number.POSITIVE_INFINITY,Number.MAX_SAFE_INTEGER+1]
   await expect(client.saveBulletinTemplateSettings(version,values)).rejects.toThrow('Invalid bulletin template settings version')
   expect(fetcher).not.toHaveBeenCalled()
 })
+
+it('propagates a retired producer without retrying the compatibility write method', async () => {
+ const fetcher=vi.fn<typeof fetch>(async()=>Response.json({data:null,meta:{},error:{code:'bulletin_template_settings_retired',message:'Cover values are managed by conversion rules.'}},{status:410}))
+ const client=createHhcWebClient({baseUrl:'/api',getAccessToken:()=> 'human-token',fetcher})
+ await expect(client.saveBulletinTemplateSettings(7,values)).rejects.toMatchObject({status:410,code:'bulletin_template_settings_retired'})
+ expect(fetcher).toHaveBeenCalledOnce()
+})

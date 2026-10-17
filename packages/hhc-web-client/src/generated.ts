@@ -1356,13 +1356,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Read saved Traditional Chinese church values for future conversions
-         * @description Human-only private settings. New extraction jobs capture this version atomically; existing jobs, drafts and published documents never follow later settings changes. Labels and other fixed template elements are not editable through this endpoint.
+         * Read historical church settings for compatibility
+         * @description Historical read-only settings retained for compatibility. New extraction jobs use backend-owned conversion rules; this record no longer controls conversions. Existing snapshots remain immutable.
          */
         get: operations["getBulletinTemplateSettings"];
         /**
-         * Save church values with version fencing and atomic audit
-         * @description Human-only CAS save creates immutable history, never publishes or rewrites an issue. Three required values are trimmed plain single-line text of 1–64 Unicode characters; controls, format/bidi characters and line separators are rejected. Body limit is 4096 bytes. Restore by submitting a historical value with the current ETag; old history is never modified. Simplified text is derived during conversion, not edited here.
+         * Retired cover settings editor
+         * @deprecated
+         * @description Returns 410 without changing settings. New conversions use versioned backend rules. Deploy the Admin removal before this producer change; historical settings and snapshots remain readable.
          */
         put: operations["saveBulletinTemplateSettings"];
         post?: never;
@@ -4179,6 +4180,11 @@ export interface components {
             documentId: string;
             /** Format: int64 */
             revision: number;
+            /**
+             * Format: int64
+             * @description Latest confirmation replacing this historical vote. Omitted for current evidence.
+             */
+            supersededByRevision?: number;
             componentId: components["schemas"]["OnlineBulletinID"];
             sourcePage: number;
             /** @enum {string} */
@@ -4873,6 +4879,8 @@ export interface components {
         };
         /** @description Closed published rendering projection with no extraction provenance. Layout proof binds the original worker measurement; it is not a hash of this redacted DTO. Verify the response byte digest separately. */
         ReaderContent: {
+            /** @description Source-verified first section for article-header speakers. Omitted when ambiguous; conveys no PDF coordinates. */
+            headerSpeakerStartComponentId?: components["schemas"]["OnlineBulletinID"];
             /** @description Visible printed body issue-summary count, independent of HTML pagination. */
             printedBodyPageCount: number;
             /** @constant */
@@ -5107,6 +5115,8 @@ export interface components {
             componentId?: components["schemas"]["OnlineBulletinID"];
             blockId?: components["schemas"]["OnlineBulletinID"];
             sentenceId?: components["schemas"]["OnlineBulletinID"];
+            /** @description Validated fixed template element at the failing layout location. This diagnostic cannot be waived. */
+            fixedElement?: components["schemas"]["OnlineBulletinID"];
             /** @description One-based original PDF page, never the composed online page index. Omitted when no exact source page is available. */
             sourcePage?: number;
         };
@@ -5115,6 +5125,8 @@ export interface components {
             id: string;
             /** @enum {string} */
             status: "queued" | "parsing" | "converting" | "review_ready" | "validating" | "ready" | "failed";
+            /** @description This extraction job's saved candidate revision. Null means no saved candidate; omitted by older producers means unknown. Never infer this from the current Local or Incoming pointer. */
+            resultRevision?: number | null;
             attempts: number;
             errorCode: string;
             /** @description Extraction, current saved-draft layout, or Simplified conversion diagnostics. Layout findings are non-waivable and reference original PDF pages and content IDs when available. Conversion locations refer to the immutable Traditional source revision recorded by the derivation. */
@@ -10576,24 +10588,18 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Saved settings version */
+            /** @description Legacy producer response retained for SDK compatibility. Retired producers always return 410. */
             200: {
                 headers: {
-                    "Cache-Control"?: "private, no-store";
-                    /** @description Quoted new settings version */
-                    ETag?: string;
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["BulletinTemplateSettingsEnvelope"];
                 };
             };
-            400: components["responses"]["Error"];
             401: components["responses"]["AdminUnauthorized"];
             403: components["responses"]["AdminForbidden"];
-            412: components["responses"]["Error"];
-            428: components["responses"]["Error"];
-            503: components["responses"]["Error"];
+            410: components["responses"]["Error"];
         };
     };
     listBulletinTemplateSettingsRevisions: {
