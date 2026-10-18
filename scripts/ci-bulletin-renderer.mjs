@@ -10,9 +10,10 @@ export const shards = {
   'v9-v10': {host: ['v9', 'v10'], container: ['v9', 'v10']},
 };
 
-export function rendererCommands(shard) {
+export function rendererCommands(shard, mode = 'ci') {
+  assert.ok(['ci', 'release'].includes(mode), 'unknown renderer mode');
   assert.ok(Object.hasOwn(shards, shard), 'unknown renderer shard');
-  return Object.entries(shards[shard]).flatMap(([runtime, versions]) => versions.map(version => {
+  return Object.entries(shards[shard]).filter(([runtime]) => mode === 'ci' || runtime === 'container').flatMap(([runtime, versions]) => versions.map(version => {
     const files = ['scripts/measure-bulletin-layout.test.mjs'];
     if (version === 'v7') files.push('scripts/measure-bulletin-layout-v6.test.mjs');
     const modern = !['default', 'v3', 'v4', 'v5'].includes(version);
@@ -32,35 +33,47 @@ export function rendererCommands(shard) {
   }));
 }
 
-export function verifyResults(needs, results, sha) {
+function verifyIdentity({sha, runId, runAttempt, mode}) {
+  assert.match(sha ?? '', /^[a-f0-9]{40}$/, 'missing renderer commit');
+  assert.match(runId ?? '', /^[1-9][0-9]*$/, 'missing renderer run');
+  assert.match(runAttempt ?? '', /^[1-9][0-9]*$/, 'missing renderer run attempt');
+  assert.ok(['ci', 'release'].includes(mode), 'unknown renderer mode');
+}
+
+export function verifyResults(needs, results, identity) {
+  verifyIdentity(identity);
   assert.deepEqual(Object.keys(needs).sort(), ['prepare', 'renderer'], 'unexpected CI dependencies');
   for (const [job, {result}] of Object.entries(needs)) assert.equal(result, 'success', `${job} did not succeed: ${result}`);
   assert.deepEqual(results.map(result => result.shard).sort(), Object.keys(shards).sort(), 'incomplete or duplicate shard coverage');
-  for (const {sha: commit, shard, host, container} of results) {
-    assert.equal(commit, sha, 'renderer commit mismatch');
-    assert.deepEqual({host, container}, shards[shard], `renderer version coverage mismatch: ${shard}`);
+  for (const result of results) {
+    assert.equal(result.sha, identity.sha, 'renderer commit mismatch');
+    for (const key of ['runId', 'runAttempt', 'mode']) assert.equal(result[key], identity[key], `renderer ${key} mismatch`);
+    const {host, container} = shards[result.shard];
+    assert.deepEqual({host: result.host, container: result.container}, {host: identity.mode === 'release' ? [] : host, container}, `renderer version coverage mismatch: ${result.shard}`);
   }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  const [action, shardOrDirectory, resultsDirectory] = process.argv.slice(2);
+  const [action, shardOrDirectory, resultsDirectory, runMode = 'ci'] = process.argv.slice(2);
+  const mode = action === 'verify-results' ? resultsDirectory ?? 'ci' : runMode;
+  const identity = {sha: process.env.GITHUB_SHA, runId: process.env.GITHUB_RUN_ID, runAttempt: process.env.GITHUB_RUN_ATTEMPT, mode};
   if (action === 'matrix') console.log(JSON.stringify({shard: Object.keys(shards)}));
   else if (action === 'run') {
     assert.ok(resultsDirectory, 'results directory is required');
     assert.ok(process.env.HHC_BULLETIN_TEMPLATE_DIR, 'verified template assets are required');
+    verifyIdentity(identity);
     const env = {...process.env};
     for (let version = 3; version <= 10; version++) delete env[`HHC_TEST_RENDERER_V${version}`];
-    for (const {runtime, version, args, env: versionEnv} of rendererCommands(shardOrDirectory)) {
+    for (const {runtime, version, args, env: versionEnv} of rendererCommands(shardOrDirectory, mode)) {
       console.log(`::group::${runtime} renderer ${version}`);
       execFileSync(runtime === 'host' ? process.execPath : 'docker', args, {stdio: 'inherit', env: {...env, ...versionEnv}});
       console.log('::endgroup::');
     }
-    assert.match(process.env.GITHUB_SHA ?? '', /^[a-f0-9]{40}$/, 'missing renderer commit');
     await mkdir(resultsDirectory, {recursive: true});
-    await writeFile(resolve(resultsDirectory, `${shardOrDirectory}.json`), JSON.stringify({sha: process.env.GITHUB_SHA, shard: shardOrDirectory, ...shards[shardOrDirectory]}));
+    await writeFile(resolve(resultsDirectory, `${shardOrDirectory}.json`), JSON.stringify({...identity, shard: shardOrDirectory, ...shards[shardOrDirectory], ...(mode === 'release' ? {host: []} : {})}));
   } else if (action === 'verify-results') {
-    const files = await readdir(shardOrDirectory);
-    const results = await Promise.all(files.map(async file => JSON.parse(await readFile(resolve(shardOrDirectory, file), 'utf8'))));
-    verifyResults(JSON.parse(process.env.CI_NEEDS), results, process.env.GITHUB_SHA);
-  } else throw new Error('usage: ci-bulletin-renderer.mjs matrix | run SHARD RESULTS_DIRECTORY | verify-results RESULTS_DIRECTORY');
+    const files = await readdir(shardOrDirectory, {recursive: true, withFileTypes: true});
+    const results = await Promise.all(files.filter(file => file.isFile()).map(async file => JSON.parse(await readFile(resolve(file.parentPath, file.name), 'utf8'))));
+    verifyResults(JSON.parse(process.env.CI_NEEDS), results, identity);
+  } else throw new Error('usage: ci-bulletin-renderer.mjs matrix | run SHARD RESULTS_DIRECTORY [ci|release] | verify-results RESULTS_DIRECTORY [ci|release]');
 }
