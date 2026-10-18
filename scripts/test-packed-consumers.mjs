@@ -81,12 +81,17 @@ import {createHhcWebClient, type ContentStatus, type PageGroupManifest, type Bro
 import {createOperationsClient, type ManagedMemberView, type ManagedUnitFolder} from '@hallelujahhomechurch/operations-client';
 import {getInitialTheme, readAnonymousStatementDismissal, writeAnonymousStatementDismissal, statementRefKey} from '@hallelujahhomechurch/preferences';
 import {AccountMenu, Button, ContextMenu, BulletinDocumentRenderer, ExpandableSearchField} from '@hallelujahhomechurch/ui';
+import {createRef} from 'react';
+import {HlsPlayer, type PlayerLabels} from '@hallelujahhomechurch/ui/player';
+import '@hallelujahhomechurch/ui/player.css';
 import {createSandboxDonationClient} from '@hallelujahhomechurch/donation-client';
 import {DonationForm} from '@hallelujahhomechurch/donation-ui';
 import '@hallelujahhomechurch/ui/styles.css';
 import '@hallelujahhomechurch/ui/bulletin-paper.css';
 import {bulletin, bulletinV6} from './bulletin';
 
+const playerLabels: PlayerLabels = {quality:'quality',auto:'auto',play:'play',pause:'pause',mute:'mute',unmute:'unmute',seek:'seek',volume:'volume',fullscreen:'fullscreen',exitFullscreen:'exitFullscreen',fullscreenError:'fullscreenError',playbackSpeed:'playbackSpeed',settings:'settings',togglePlayback:'togglePlayback',privateCopy:'privateCopy',buffering:'buffering'};
+const player = <HlsPlayer playbackUrl="https://media.example.test/live/master.m3u8" availableQualities={['720p']} title="Preview" labels={playerLabels} videoRef={createRef<HTMLVideoElement>()} muted onError={() => {}} playbackMode="live" live={{verifiedEnd:120,canFollow:true,label:'Live',backToLive:'Back to live'}} />;
 const accountUser: AccountSessionUser = {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null};
 const accountSessionClient = createAccountSessionClient();
 const authRuntime = createBrowserAccountAuthRuntime({client: accountSessionClient});
@@ -144,7 +149,7 @@ void createHhcWebClient;
 void contentStatus;
 void groupManifest;
 void getInitialTheme;
-createRoot(document.getElementById('root')!).render(<><BulletinDocumentRenderer document={bulletin} mode="mobile" /><BulletinDocumentRenderer document={bulletinV6} mode="paper" activePage={bulletinV6.pages[0].id} /><Button>Smoke</Button><ExpandableSearchField label="Search" submitLabel="Submit" clearLabel="Clear" closeLabel="Close" allowEmptySubmit onExpandedChange={() => {}} /><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /><AccountMenu user={{name: accountUser.display_name, email: accountUser.email}} links={[{id: 'destination', label: 'Destination', href: 'https://example.com/destination'}]} labels={{menu: 'Account', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => {}} /></>);
+createRoot(document.getElementById('root')!).render(<>{player}<BulletinDocumentRenderer document={bulletin} mode="mobile" /><BulletinDocumentRenderer document={bulletinV6} mode="paper" activePage={bulletinV6.pages[0].id} /><Button>Smoke</Button><ExpandableSearchField label="Search" submitLabel="Submit" clearLabel="Clear" closeLabel="Close" allowEmptySubmit onExpandedChange={() => {}} /><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /><AccountMenu user={{name: accountUser.display_name, email: accountUser.email}} links={[{id: 'destination', label: 'Destination', href: 'https://example.com/destination'}]} labels={{menu: 'Account', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => {}} /></>);
 `);
   run(vite, 'install', '--ignore-workspace');
   run(vite, 'exec', 'node', '--input-type=module', '--eval', `
@@ -192,10 +197,15 @@ import {createHhcWebClient, type ContentStatus, type PageGroupManifest, type Bro
 import {createOperationsClient, type ManagedMemberView, type ManagedUnitFolder} from '@hallelujahhomechurch/operations-client';
 import {getInitialTheme, readAnonymousStatementDismissal, writeAnonymousStatementDismissal, statementRefKey} from '@hallelujahhomechurch/preferences';
 import {AccountMenu, Button, ContextMenu, BulletinDocumentRenderer, ExpandableSearchField} from '@hallelujahhomechurch/ui';
+import {createRef} from 'react';
+import {HlsPlayer, type PlayerLabels} from '@hallelujahhomechurch/ui/player';
+import '@hallelujahhomechurch/ui/player.css';
 import {bulletin, bulletinV6} from './bulletin';
 import {createSandboxDonationClient} from '@hallelujahhomechurch/donation-client';
 import {DonationForm} from '@hallelujahhomechurch/donation-ui';
 
+const playerLabels: PlayerLabels = {quality:'quality',auto:'auto',play:'play',pause:'pause',mute:'mute',unmute:'unmute',seek:'seek',volume:'volume',fullscreen:'fullscreen',exitFullscreen:'exitFullscreen',fullscreenError:'fullscreenError',playbackSpeed:'playbackSpeed',settings:'settings',togglePlayback:'togglePlayback',privateCopy:'privateCopy',buffering:'buffering'};
+const player = <HlsPlayer playbackUrl="https://media.example.test/live/master.m3u8" availableQualities={['720p']} title="Preview" labels={playerLabels} videoRef={createRef<HTMLVideoElement>()} muted onError={() => {}} playbackMode="live" live={{verifiedEnd:120,canFollow:true,label:'Live',backToLive:'Back to live'}} />;
 const accountUser: AccountSessionUser = {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null};
 const accountSessionClient = createAccountSessionClient();
 const authRuntime = createBrowserAccountAuthRuntime({client: accountSessionClient});
@@ -244,7 +254,7 @@ void createHhcWebClient;
 void contentStatus;
 void groupManifest;
 void getInitialTheme;
-export default function Page() { return <><BulletinDocumentRenderer document={bulletin} mode="paper" activePage={bulletin.pages[0].id} /><BulletinDocumentRenderer document={bulletinV6} mode="paper" activePage={bulletinV6.pages[0].id} /><Button>Smoke</Button><ExpandableSearchField label="Search" submitLabel="Submit" clearLabel="Clear" closeLabel="Close" allowEmptySubmit onExpandedChange={() => {}} /><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /><AccountMenu user={{name: accountUser.display_name, email: accountUser.email}} links={[{id: 'destination', label: 'Destination', href: 'https://example.com/destination'}]} labels={{menu: 'Account', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => {}} /></>; }
+export default function Page() { return <>{player}<BulletinDocumentRenderer document={bulletin} mode="paper" activePage={bulletin.pages[0].id} /><BulletinDocumentRenderer document={bulletinV6} mode="paper" activePage={bulletinV6.pages[0].id} /><Button>Smoke</Button><ExpandableSearchField label="Search" submitLabel="Submit" clearLabel="Clear" closeLabel="Close" allowEmptySubmit onExpandedChange={() => {}} /><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /><AccountMenu user={{name: accountUser.display_name, email: accountUser.email}} links={[{id: 'destination', label: 'Destination', href: 'https://example.com/destination'}]} labels={{menu: 'Account', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => {}} /></>; }
 `);
   run(next, 'install', '--ignore-workspace');
   run(next, 'build');

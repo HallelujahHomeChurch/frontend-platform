@@ -1,6 +1,6 @@
 {
   "name": "@hallelujahhomechurch/ui",
-  "version": "1.0.75",
+  "version": "1.0.76",
   "license": "UNLICENSED",
   "type": "module",
   "sideEffects": [
@@ -18,7 +18,12 @@
     "./bulletin-paper.css": "./dist/bulletin-reader/paper.css",
     "./bulletin-paper-v2.css": "./dist/bulletin-reader/v2/paper.css",
     "./bulletin-paper-v7.css": "./dist/bulletin-reader/v7/paper.css",
-    "./bulletin-ebook.css": "./dist/bulletin-reader/ebook.css"
+    "./bulletin-ebook.css": "./dist/bulletin-reader/ebook.css",
+    "./player": {
+      "types": "./dist/player/index.d.ts",
+      "import": "./dist/player/index.js"
+    },
+    "./player.css": "./dist/player/player.css"
   },
   "repository": {
     "type": "git",
@@ -30,7 +35,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json && cp src/styles.css dist/styles.css && cp src/bulletin-reader/paper.css dist/bulletin-reader/paper.css && cp src/bulletin-reader/v2/paper.css dist/bulletin-reader/v2/paper.css && cp src/bulletin-reader/v7/paper.css dist/bulletin-reader/v7/paper.css && cp src/bulletin-reader/ebook.css dist/bulletin-reader/ebook.css",
+    "build": "tsc -p tsconfig.json && cp src/styles.css dist/styles.css && cp src/bulletin-reader/paper.css dist/bulletin-reader/paper.css && cp src/bulletin-reader/v2/paper.css dist/bulletin-reader/v2/paper.css && cp src/bulletin-reader/v7/paper.css dist/bulletin-reader/v7/paper.css && cp src/bulletin-reader/ebook.css dist/bulletin-reader/ebook.css && cp src/player/player.css dist/player/player.css",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "test": "vitest",
@@ -41,7 +46,8 @@
     "@internationalized/date": "^3.12.2",
     "input-otp": "^1.4.2",
     "lucide-react": "^1.28.0",
-    "react-aria-components": "^1.14.1"
+    "react-aria-components": "^1.14.1",
+    "hls.js": "1.7.3"
   },
   "peerDependencies": {
     "react": "^19.0.0",
