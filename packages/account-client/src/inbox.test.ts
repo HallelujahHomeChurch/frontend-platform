@@ -39,6 +39,19 @@ describe('owned inbox client', () => {
     expect(fetcher.mock.calls[0][0]).toBe('/api/notifications/me/summary?locale=ja');
     s.auth.dispose();
   });
+  it.each(['2026-02-30T00:00:00Z', '2026-02-29T12:30:45.123456789+08:00', '2026-04-31T23:30:00-05:00', '1900-02-29T00:00:00Z', '2100-02-29T00:00:00Z'])('rejects nonexistent calendar dates in every timestamp field: %s', async date => {
+    for (const data of [{...page, asOf: date}, {...page, items: [{...item, occurredAt: date}]}, {...page, items: [{...item, readAt: date}]}]) {
+      const s = await setup(vi.fn(async () => Response.json(envelope(data))));
+      await expect(s.client.list()).rejects.toMatchObject({code: 'NTF_INVALID_RESPONSE'});
+      s.auth.dispose();
+    }
+  });
+  it.each(['2024-02-29T00:00:00Z', '2000-02-29T12:30:45.123456789+08:00', '2024-02-29T23:30:00-05:00', '0000-02-29T00:00:00Z'])('preserves valid leap days, RFC3339 offsets and fractions: %s', async date => {
+    const expected = {...page, asOf: date, items: [{...item, occurredAt: date, readAt: date}]};
+    const s = await setup(vi.fn(async () => Response.json(envelope(expected))));
+    expect(await s.client.list()).toEqual(expected);
+    s.auth.dispose();
+  });
   it.each([
     {data: page}, envelope({...page, readSnapshotToken: undefined}),
     envelope({...page, items: [{...item, resource: {...resource, series: 'other'}}]}),

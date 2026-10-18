@@ -27,7 +27,11 @@ const contentId = (v: unknown): v is string => typeof v === 'string' && /^[A-Za-
 const record = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const shape = (v: unknown, required: string[], optional: string[] = []): v is Record<string, unknown> => record(v) && required.every(k => Object.hasOwn(v, k)) && Object.keys(v).every(k => required.includes(k) || optional.includes(k));
 const token = (v: unknown): v is string => typeof v === 'string' && v.length > 0 && v.length <= 4096 && /^[\x21-\x7e]+$/.test(v);
-const timestamp = (v: unknown): v is string => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(v) && Number.isFinite(Date.parse(v));
+function timestamp(v: unknown): v is string {
+  if (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(v) || !Number.isFinite(Date.parse(v))) return false;
+  // Check the written calendar date independently of timezone conversion and Date.parse normalization.
+  return new Date(`${v.slice(0, 10)}T00:00:00Z`).toISOString().slice(0, 10) === v.slice(0, 10);
+}
 const key = (v: unknown): v is string => typeof v === 'string' && /^[a-zA-Z][a-zA-Z0-9_.-]{0,127}$/.test(v);
 function invalid(): never {throw new AccountSessionError(502, 'NTF_INVALID_RESPONSE', 'Invalid inbox response');}
 function validResource(v: unknown): v is InboxResource {
