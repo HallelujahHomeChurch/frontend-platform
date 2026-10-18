@@ -1,5 +1,6 @@
 // Keep segment-update tolerance aligned between live status and forward recovery.
 export const LIVE_EDGE_TOLERANCE_SECONDS = 20;
+export const LIVE_HOLDBACK_SECONDS = 90;
 
 export type PlaybackIntent = 'followLive' | 'dvr';
 export type PlayerBookmark = {mediaOriginSeconds?: number; time: number; paused: boolean; rate: number; quality: 'auto' | '480p' | '720p' | '1080p'; intent: PlaybackIntent};
@@ -17,5 +18,5 @@ export function liveWindow(seekable: TimeRanges, verifiedEnd: number) {
   if (!seekable.length || !Number.isFinite(verifiedEnd) || verifiedEnd <= 0) return null;
   const start = seekable.start(0), end = Math.min(seekable.end(seekable.length - 1), verifiedEnd);
   if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
-  return {start, end, edge: Math.max(start, end - 60)};
+  return {start, end, edge: Math.max(start, end - LIVE_HOLDBACK_SECONDS)};
 }

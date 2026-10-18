@@ -326,15 +326,18 @@ integrates client routing, while ordinary links preserve native navigation.
 Member hosts must continue supplying their session watermark. Staff previews
 may omit it and set `muted` for autoplay.
 
-Live playback targets 60 seconds behind the lesser of native seekable and the
+Live playback targets 90 seconds behind the lesser of native seekable and the
 backend verified end. The timeline ends at that target; its right endpoint and
 the Live button both resume normal-speed following while playing; a paused
 right-end seek preserves pause and speed. The Live button explicitly resumes.
+Fresh automatic entry waits for 90 verified, seekable seconds before positioning
+and playing once. Restored bookmarks and ended recordings bypass this wait;
+explicit Play or a DVR seek preserves the viewer's choice when more media arrives.
 The live indicator tolerates
 20 seconds of segment-update jitter, but excludes DVR, pause, non-1x playback and
 loading. Automatic recovery uses that same tolerance and moves forward only. `live.ended` exposes the complete
 verified tail after ending; an interrupted stream must leave it false. The
-60-second holdback adds client buffering; end-to-end delay still depends on
+90-second holdback adds client buffering; end-to-end delay still depends on
 ingest and publication latency. Media validation, credentialed requests, private
 preview caching, native HLS and quality-switch bookmark/frame protection remain
 in the shared player.

@@ -364,9 +364,9 @@ it('starts live behind the verified edge and preserves DVR until an explicit ret
  Object.defineProperty(video,'seekable',{configurable:true,value:{length:1,start:()=>0,end:()=>5400}});
  Object.defineProperty(video,'duration',{configurable:true,value:Infinity});
  fireEvent.progress(video);
- expect(video.currentTime).toBe(5340);
+ expect(video.currentTime).toBe(5310);
  const seek=screen.getByRole('slider',{name:'Playback position'});
- expect(seek).toHaveAttribute('max','5340');
+ expect(seek).toHaveAttribute('max','5310');
  expect(screen.queryByText(/\d+:\d+ \/ \d+:\d+/)).toBeNull();
  expect(screen.getByRole('button',{name:'Back to live'})).toHaveTextContent('Live');
  Object.defineProperty(video,'paused',{configurable:true,value:false});
@@ -378,7 +378,7 @@ it('starts live behind the verified edge and preserves DVR until an explicit ret
  fireEvent(window,new Event('online'));
  expect(video.currentTime).toBe(60);
  fireEvent.click(screen.getByRole('button',{name:'Back to live'}));
- expect(video.currentTime).toBe(5340);
+ expect(video.currentTime).toBe(5310);
  expect(engine.instances[0].config).toMatchObject({backBufferLength:120,maxBufferLength:60,maxMaxBufferLength:120,liveMaxLatencyDuration:Infinity,maxLiveSyncPlaybackRate:1});
 });
 
@@ -392,17 +392,17 @@ it.each([false,true])('native=%s resumes follow-live after upstream recovery wit
  Object.defineProperty(video,'seekable',{configurable:true,get:()=>({length:1,start:()=>0,end:()=>end})});
  Object.defineProperty(video,'paused',{configurable:true,value:false});
  fireEvent.progress(video);fireEvent.seeking(video);fireEvent.seeked(video);
- expect(video.currentTime).toBe(1140);
+ expect(video.currentTime).toBe(1110);
  view.rerender(<HlsPlayer {...p} playbackMode="live" live={{...live,canFollow:false}} onBookmark={onBookmark}/>);
  video.currentTime=1200;fireEvent.timeUpdate(video);
  // The backend recovers before this rendition's seekable timeline catches up.
  view.rerender(<HlsPlayer {...p} playbackMode="live" live={{...live,verifiedEnd:1500}} onBookmark={onBookmark}/>);
  expect(video.currentTime).toBe(1200);
  end=1500;fireEvent.progress(video);
- expect(video.currentTime).toBe(1440);
+ expect(video.currentTime).toBe(1410);
  // Browsers may dispatch seeking after playback has advanced past the assigned target.
- video.currentTime=1440.5;fireEvent.seeking(video);fireEvent.timeUpdate(video);
- expect(onBookmark).toHaveBeenLastCalledWith(expect.objectContaining({time:1440.5,intent:'followLive'}));
+ video.currentTime=1410.5;fireEvent.seeking(video);fireEvent.timeUpdate(video);
+ expect(onBookmark).toHaveBeenLastCalledWith(expect.objectContaining({time:1410.5,intent:'followLive'}));
  fireEvent.seeked(video);
  video.currentTime=1480;fireEvent.timeUpdate(video);fireEvent.progress(video);
  expect(video.currentTime).toBe(1480);
@@ -800,7 +800,7 @@ it.each([
  {name:'active DVR',paused:false,rate:1,intent:'dvr' as const,time:7497.465},
  {name:'paused DVR',paused:true,rate:1,intent:'dvr' as const,time:6000},
  {name:'non-1x DVR',paused:false,rate:1.5,intent:'dvr' as const,time:7000},
- {name:'follower',paused:false,rate:1,intent:'followLive' as const,time:9399.45},
+ {name:'follower',paused:false,rate:1,intent:'followLive' as const,time:9369.45},
 ])('keeps $name across End metadata callback updates',async({paused,rate,intent,time})=>{
  const p=props(),onBookmark=vi.fn(),live={verifiedEnd:9459.45,canFollow:true,label:'Live',backToLive:'Back to live'};
  const view=render(<HlsPlayer {...p} playbackMode="live" live={live} onBookmark={onBookmark}/>);
@@ -913,7 +913,7 @@ it('does not catch up a non-1x follower even when the rate changed outside the t
  Object.defineProperty(video,'seekable',{configurable:true,get:()=>({length:1,start:()=>0,end:()=>end})});Object.defineProperty(video,'paused',{configurable:true,value:false});
  fireEvent.progress(video);fireEvent.seeked(video);video.playbackRate=1.5;fireEvent.rateChange(video);end=1500;
  view.rerender(<HlsPlayer {...p} playbackMode="live" live={{...live,verifiedEnd:1500}}/>);fireEvent.progress(video);
- expect(video.currentTime).toBe(1140);expect(video.playbackRate).toBe(1.5);
+ expect(video.currentTime).toBe(1110);expect(video.playbackRate).toBe(1.5);
 });
 
 
@@ -924,7 +924,7 @@ it.each([false,true])('native=%s keeps first-entry live positioning when quality
  await waitFor(()=>expect(native?p.videoRef.current?.src:engine.instances.length).toBe(native?url:1));
  chooseQuality('720p');const video=p.videoRef.current!;
  Object.defineProperty(video,'seekable',{configurable:true,value:{length:1,start:()=>0,end:()=>90.112}});ready.mockReturnValue(2);fireEvent.loadedMetadata(video);fireEvent.seeked(video);
- expect(video.currentTime).toBeCloseTo(30.09,5);expect(onBookmark).toHaveBeenLastCalledWith(expect.objectContaining({intent:'followLive',quality:'720p',time:expect.closeTo(30.09,5)}));
+ expect(video.currentTime).toBeCloseTo(0.09,5);expect(onBookmark).toHaveBeenLastCalledWith(expect.objectContaining({intent:'followLive',quality:'720p',time:expect.closeTo(0.09,5)}));
 });
 
 it('drops queued source changes when the playback scope is replaced',async()=>{
@@ -951,22 +951,22 @@ it.each([false,true])('native=%s keeps the live indicator stable across 10.01-se
  Object.defineProperty(video,'seekable',{configurable:true,get:()=>({length:1,start:()=>0,end:()=>end})});
  Object.defineProperty(video,'paused',{configurable:true,value:false});
  fireEvent.progress(video);fireEvent.seeked(video);fireEvent.playing(video);fireEvent.play(video);fireEvent.timeUpdate(video);
- expect(video.currentTime).toBe(1140);
+ expect(video.currentTime).toBe(1110);
  const button=()=>screen.getByRole('button',{name:'Back to live'}),slider=screen.getByRole('slider',{name:'Playback position'});
- expect(slider).toHaveAttribute('max','1140');expect(button()).toHaveAttribute('data-live-edge','true');
+ expect(slider).toHaveAttribute('max','1110');expect(button()).toHaveAttribute('data-live-edge','true');
  for(let index=1;index<=6;index++){
-  video.currentTime=1140+(index-1)*10.01;end=1200+index*10.01;
+  video.currentTime=1110+(index-1)*10.01;end=1200+index*10.01;
   view.rerender(<HlsPlayer {...p} playbackMode="live" live={{...live,verifiedEnd:end}}/>);
   fireEvent.progress(video);fireEvent.timeUpdate(video);
   expect(button()).toHaveAttribute('data-live-edge','true');
-  expect(Number(slider.getAttribute('max'))).toBeCloseTo(end-60);
-  expect(Number((slider as HTMLInputElement).value)).toBeCloseTo(end-60);
+  expect(Number(slider.getAttribute('max'))).toBeCloseTo(end-90);
+  expect(Number((slider as HTMLInputElement).value)).toBeCloseTo(end-90);
  }
  fireEvent.waiting(video);expect(button()).toHaveAttribute('data-live-edge','false');
  fireEvent.playing(video);expect(button()).toHaveAttribute('data-live-edge','true');
- fireEvent.change(slider,{target:{value:String(end-65)}});expect(button()).toHaveAttribute('data-live-edge','false');
- fireEvent.change(slider,{target:{value:String(end-60)}});fireEvent.seeked(video);fireEvent.timeUpdate(video);
- expect(video.currentTime).toBeCloseTo(end-60);expect(button()).toHaveAttribute('data-live-edge','true');
+ fireEvent.change(slider,{target:{value:String(end-95)}});expect(button()).toHaveAttribute('data-live-edge','false');
+ fireEvent.change(slider,{target:{value:String(end-90)}});fireEvent.seeked(video);fireEvent.timeUpdate(video);
+ expect(video.currentTime).toBeCloseTo(end-90);expect(button()).toHaveAttribute('data-live-edge','true');
  chooseSpeed('1.5');fireEvent.rateChange(video);expect(button()).toHaveAttribute('data-live-edge','false');
  fireEvent.click(button());fireEvent.seeked(video);fireEvent.rateChange(video);fireEvent.timeUpdate(video);
  expect(video.playbackRate).toBe(1);expect(button()).toHaveAttribute('data-live-edge','true');
@@ -978,7 +978,7 @@ it('exposes the final verified tail for ended recordings but keeps the target wh
  const view=render(<HlsPlayer {...p} playbackMode="live" live={live}/>);
  await waitFor(()=>expect(engine.instances).toHaveLength(1));
  const video=p.videoRef.current!;Object.defineProperty(video,'seekable',{configurable:true,value:{length:1,start:()=>0,end:()=>1250}});fireEvent.progress(video);
- const slider=screen.getByRole('slider',{name:'Playback position'});expect(slider).toHaveAttribute('max','1140');
+ const slider=screen.getByRole('slider',{name:'Playback position'});expect(slider).toHaveAttribute('max','1110');
  view.rerender(<HlsPlayer {...p} playbackMode="live" live={{...live,ended:true}}/>);
  expect(slider).toHaveAttribute('max','1200');fireEvent.change(slider,{target:{value:'1200'}});expect(video.currentTime).toBe(1200);
 });
@@ -993,9 +993,9 @@ it('keeps a paused DVR seek to the right endpoint paused until explicit Live',as
  const p=props(),onBookmark=vi.fn();render(<HlsPlayer {...p} onBookmark={onBookmark} playbackMode="live" live={{verifiedEnd:1200,canFollow:true,label:'Live',backToLive:'Back to live'}} resume={{time:300,paused:true,rate:1.5,quality:'auto',intent:'dvr'}}/>);
  await waitFor(()=>expect(engine.instances).toHaveLength(1));
  const video=p.videoRef.current!;Object.defineProperty(video,'seekable',{configurable:true,value:{length:1,start:()=>0,end:()=>1200}});fireEvent.progress(video);
- vi.mocked(video.play).mockClear();fireEvent.change(screen.getByRole('slider',{name:'Playback position'}),{target:{value:'1140'}});
- expect(video.currentTime).toBe(1140);expect(video.play).not.toHaveBeenCalled();expect(video.playbackRate).toBe(1.5);
- expect(onBookmark).toHaveBeenLastCalledWith(expect.objectContaining({intent:'dvr',paused:true,time:1140}));
+ vi.mocked(video.play).mockClear();fireEvent.change(screen.getByRole('slider',{name:'Playback position'}),{target:{value:'1110'}});
+ expect(video.currentTime).toBe(1110);expect(video.play).not.toHaveBeenCalled();expect(video.playbackRate).toBe(1.5);
+ expect(onBookmark).toHaveBeenLastCalledWith(expect.objectContaining({intent:'dvr',paused:true,time:1110}));
 });
 
 it('delegates ordinary navigation while retaining native modified links',async()=>{
@@ -1017,15 +1017,15 @@ it.each([false,true])('native=%s catches a resumed follower beyond indicator tol
  Object.defineProperty(video,'seekable',{configurable:true,get:()=>({length:1,start:()=>0,end:()=>end})});
  Object.defineProperty(video,'paused',{configurable:true,value:false});
  fireEvent.progress(video);fireEvent.seeked(video);fireEvent.playing(video);fireEvent.play(video);fireEvent.timeUpdate(video);
- expect(video.currentTime).toBe(1140);
+ expect(video.currentTime).toBe(1110);
  const seek=vi.spyOn(video,'currentTime','set');
  end=1210.01;view.rerender(<HlsPlayer {...p} playbackMode="live" live={{...live,verifiedEnd:end}} onBookmark={onBookmark}/>);
  fireEvent.progress(video);fireEvent.timeUpdate(video);
- expect(seek).not.toHaveBeenCalled();expect(video.currentTime).toBe(1140);
+ expect(seek).not.toHaveBeenCalled();expect(video.currentTime).toBe(1110);
  end=1225;view.rerender(<HlsPlayer {...p} playbackMode="live" live={{...live,verifiedEnd:end}} onBookmark={onBookmark}/>);
  fireEvent.progress(video);fireEvent.timeUpdate(video);fireEvent.seeked(video);fireEvent.progress(video);
- expect(seek).toHaveBeenCalledExactlyOnceWith(1165);
- expect(onBookmark).toHaveBeenLastCalledWith(expect.objectContaining({intent:'followLive',time:1165}));
+ expect(seek).toHaveBeenCalledExactlyOnceWith(1135);
+ expect(onBookmark).toHaveBeenLastCalledWith(expect.objectContaining({intent:'followLive',time:1135}));
  expect(screen.getByRole('button',{name:'Back to live'})).toHaveAttribute('data-live-edge','true');
 });
 
@@ -1037,7 +1037,7 @@ it.each(['keyboard','touch'] as const)('does not rewind a follower ahead of the 
  Object.defineProperty(video,'seekable',{configurable:true,value:{length:1,start:()=>0,end:()=>1200}});
  Object.defineProperty(video,'paused',{configurable:true,value:false});
  fireEvent.progress(video);fireEvent.seeked(video);fireEvent.playing(video);fireEvent.play(video);
- video.currentTime=1145;fireEvent.timeUpdate(video);
+ video.currentTime=1115;fireEvent.timeUpdate(video);
  const seek=vi.spyOn(video,'currentTime','set');
  if(input==='keyboard')fireEvent.keyDown(screen.getByRole('region'),{key:'ArrowRight'});
  else{
@@ -1046,7 +1046,93 @@ it.each(['keyboard','touch'] as const)('does not rewind a follower ahead of the 
   touch(surface,'pointerdown',550);touch(surface,'pointerup',550);
   touch(surface,'pointerdown',550);touch(surface,'pointerup',550);
  }
- expect(seek).not.toHaveBeenCalled();expect(video.currentTime).toBe(1145);
+ expect(seek).not.toHaveBeenCalled();expect(video.currentTime).toBe(1115);
  fireEvent.click(screen.getByRole('button',{name:'Back to live'}));
- expect(seek).toHaveBeenCalledExactlyOnceWith(1140);
+ expect(seek).toHaveBeenCalledExactlyOnceWith(1110);
+});
+
+it.each([false,true])('native=%s waits for ninety verified seconds before fresh live positioning and a single autoplay',async(native)=>{
+ engine.supported=!native;if(native)vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
+ const p=props(),onBookmark=vi.fn(),live={verifiedEnd:60.06,canFollow:true,label:'Live',backToLive:'Back to live'};
+ const view=render(<HlsPlayer {...p} playbackMode="live" live={live} onBookmark={onBookmark}/>);
+ await waitFor(()=>expect(native?p.videoRef.current?.src:engine.instances.length).toBe(native?url:1));
+ const video=p.videoRef.current!;let end=100.1;
+ Object.defineProperty(video,'seekable',{configurable:true,get:()=>({length:1,start:()=>0,end:()=>end})});
+ fireEvent.loadedMetadata(video);fireEvent.canPlay(video);fireEvent.progress(video);fireEvent.timeUpdate(video);
+ expect(video.play).not.toHaveBeenCalled();expect(onBookmark).not.toHaveBeenCalled();expect(video.currentTime).toBe(0);
+ end=80.08;view.rerender(<HlsPlayer {...p} playbackMode="live" live={{...live,verifiedEnd:100.1}} onBookmark={onBookmark}/>);fireEvent.progress(video);
+ expect(video.play).not.toHaveBeenCalled();
+ end=100.1;fireEvent.progress(video);fireEvent.canPlay(video);fireEvent.loadedMetadata(video);fireEvent.progress(video);
+ expect(video.currentTime).toBeCloseTo(10.1);expect(video.play).toHaveBeenCalledOnce();
+ expect(onBookmark).toHaveBeenLastCalledWith(expect.objectContaining({intent:'followLive',time:expect.closeTo(10.1)}));
+});
+
+it.each([false,true])('native=%s plays an ended short live recording without waiting for the reserve',async(native)=>{
+ engine.supported=!native;if(native)vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
+ const p=props();render(<HlsPlayer {...p} playbackMode="live" live={{verifiedEnd:30.03,ended:true,canFollow:false,label:'Ended',backToLive:'Back to live'}}/>);
+ await waitFor(()=>expect(native?p.videoRef.current?.src:engine.instances.length).toBe(native?url:1));
+ const video=p.videoRef.current!;Object.defineProperty(video,'seekable',{configurable:true,value:{length:1,start:()=>0,end:()=>30.03}});
+ fireEvent.loadedMetadata(video);fireEvent.progress(video);
+ expect(video.currentTime).toBe(0);expect(video.play).toHaveBeenCalledOnce();
+});
+
+it('keeps a paused short-window DVR bookmark paused when the reserve later becomes available',async()=>{
+ const p=props(),live={verifiedEnd:30.03,canFollow:true,label:'Live',backToLive:'Back to live'},view=render(<HlsPlayer {...p} playbackMode="live" live={live} resume={{time:15,paused:true,rate:1.5,quality:'auto',intent:'dvr'}}/>);
+ await waitFor(()=>expect(engine.instances).toHaveLength(1));
+ const video=p.videoRef.current!;Object.defineProperty(video,'seekable',{configurable:true,value:{length:1,start:()=>0,end:()=>120}});
+ fireEvent.loadedMetadata(video);expect(video.currentTime).toBe(15);expect(video.playbackRate).toBe(1.5);expect(video.play).not.toHaveBeenCalled();
+ view.rerender(<HlsPlayer {...p} playbackMode="live" live={{...live,verifiedEnd:120}}/>);fireEvent.progress(video);
+ expect(video.currentTime).toBe(15);expect(video.play).not.toHaveBeenCalled();
+});
+
+it('preserves explicit play during initial reserve waiting as DVR without a later autoplay or reposition',async()=>{
+ const p=props(),onBookmark=vi.fn(),live={verifiedEnd:30.03,canFollow:true,label:'Live',backToLive:'Back to live'},view=render(<HlsPlayer {...p} playbackMode="live" live={live} onBookmark={onBookmark}/>);
+ await waitFor(()=>expect(engine.instances).toHaveLength(1));
+ const video=p.videoRef.current!;Object.defineProperty(video,'seekable',{configurable:true,value:{length:1,start:()=>0,end:()=>120}});fireEvent.loadedMetadata(video);
+ expect(video.play).not.toHaveBeenCalled();fireEvent.click(screen.getByRole('button',{name:'Play'}));
+ expect(video.play).toHaveBeenCalledOnce();video.currentTime=12;fireEvent.timeUpdate(video);
+ view.rerender(<HlsPlayer {...p} playbackMode="live" live={{...live,verifiedEnd:120}} onBookmark={onBookmark}/>);fireEvent.progress(video);
+ expect(video.currentTime).toBe(12);expect(video.play).toHaveBeenCalledOnce();
+ expect(onBookmark).toHaveBeenLastCalledWith(expect.objectContaining({intent:'dvr',time:12}));
+});
+
+it('releases the startup reserve when the same short stream ends',async()=>{
+ const p=props(),live={verifiedEnd:30.03,canFollow:true,label:'Live',backToLive:'Back to live'},view=render(<HlsPlayer {...p} playbackMode="live" live={live}/>);
+ await waitFor(()=>expect(engine.instances).toHaveLength(1));
+ const video=p.videoRef.current!;Object.defineProperty(video,'seekable',{configurable:true,value:{length:1,start:()=>0,end:()=>30.03}});fireEvent.loadedMetadata(video);
+ expect(video.play).not.toHaveBeenCalled();
+ view.rerender(<HlsPlayer {...p} playbackMode="live" live={{...live,ended:true,canFollow:false}}/>);fireEvent.progress(video);
+ expect(video.play).toHaveBeenCalledOnce();expect(screen.getByRole('slider',{name:'Playback position'})).toHaveAttribute('max','30.03');
+});
+
+it.each([false,true])('native=%s waits for the reserve through a pre-metadata quality change',async(native)=>{
+ engine.supported=!native;if(native)vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
+ const ready=vi.spyOn(HTMLMediaElement.prototype,'readyState','get').mockReturnValue(0),p=props(),onBookmark=vi.fn(),live={verifiedEnd:60.06,canFollow:true,label:'Live',backToLive:'Back to live'};
+ const view=render(<HlsPlayer {...p} playbackMode="live" live={live} onBookmark={onBookmark}/>);
+ await waitFor(()=>expect(native?p.videoRef.current?.src:engine.instances.length).toBe(native?url:1));chooseQuality('720p');
+ const video=p.videoRef.current!;Object.defineProperty(video,'seekable',{configurable:true,value:{length:1,start:()=>0,end:()=>100.1}});ready.mockReturnValue(2);
+ fireEvent.loadedMetadata(video);fireEvent.canPlay(video);fireEvent.progress(video);
+ expect(video.play).not.toHaveBeenCalled();expect(onBookmark).not.toHaveBeenCalled();
+ view.rerender(<HlsPlayer {...p} playbackMode="live" live={{...live,verifiedEnd:100.1}} onBookmark={onBookmark}/>);fireEvent.progress(video);fireEvent.canPlay(video);fireEvent.seeked(video);
+ expect(video.currentTime).toBeCloseTo(10.1);expect(video.play).toHaveBeenCalledOnce();
+ expect(onBookmark).toHaveBeenLastCalledWith(expect.objectContaining({intent:'followLive',quality:'720p',time:expect.closeTo(10.1)}));
+});
+
+it('requires the current source manifest before releasing its deferred autoplay',async()=>{
+ engine.manifestReady=false;
+ const p=props(),live={verifiedEnd:30.03,canFollow:true,label:'Live',backToLive:'Back to live'},view=render(<HlsPlayer {...p} playbackMode="live" live={live}/>);
+ await waitFor(()=>expect(engine.instances).toHaveLength(1));const stale=engine.instances[0].listeners.manifest;
+ const video=p.videoRef.current!;Object.defineProperty(video,'seekable',{configurable:true,value:{length:1,start:()=>0,end:()=>120}});fireEvent.loadedMetadata(video);
+ view.rerender(<HlsPlayer {...p} playbackUrl={url.replace('/sessions/s/','/sessions/new/')} playbackMode="live" live={{...live,verifiedEnd:120}}/>);
+ await waitFor(()=>expect(engine.instances).toHaveLength(2));fireEvent.progress(video);act(()=>stale());
+ expect(video.play).not.toHaveBeenCalled();expect(engine.instances[0].destroy).toHaveBeenCalledOnce();
+ act(()=>engine.instances[1].listeners.manifest());fireEvent.progress(video);act(()=>stale());
+ expect(video.currentTime).toBe(30);expect(video.play).toHaveBeenCalledOnce();
+});
+
+it('does not turn a failed pre-start quality change into a zero-time resume bookmark',async()=>{
+ const p=props(),onBookmark=vi.fn();render(<HlsPlayer {...p} playbackMode="live" live={{verifiedEnd:30.03,canFollow:true,label:'Live',backToLive:'Back to live'}} onBookmark={onBookmark}/>);
+ await waitFor(()=>expect(engine.instances).toHaveLength(1));chooseQuality('720p');
+ act(()=>engine.instances[0].listeners.error('error',{fatal:true,type:'networkError'}));
+ expect(onBookmark).not.toHaveBeenCalled();expect(p.onError).toHaveBeenCalledExactlyOnceWith(undefined);
 });
