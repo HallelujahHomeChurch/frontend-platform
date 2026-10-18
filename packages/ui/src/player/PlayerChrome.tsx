@@ -156,8 +156,9 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
     onPlaybackChange?.({time:video.currentTime});
   };
   const seekBy = (seconds:number) => {
-    if (!videoRef.current || duration <= seekStart) return;
-    seek(videoRef.current.currentTime + seconds);
+    const video=videoRef.current;
+    if (!video || duration <= seekStart || live&&seconds>0&&video.currentTime>=duration) return;
+    seek(video.currentTime + seconds);
     const kind=seconds<0?'back':'forward';
     setFeedback(previous=>({kind,id:(previous?.id??0)+1,seconds:(previous?.kind===kind?previous.seconds??0:0)+Math.abs(seconds)}));
     window.clearTimeout(feedbackTimer.current);

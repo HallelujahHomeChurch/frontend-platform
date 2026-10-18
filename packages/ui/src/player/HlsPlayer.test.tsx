@@ -1028,3 +1028,25 @@ it.each([false,true])('native=%s catches a resumed follower beyond indicator tol
  expect(onBookmark).toHaveBeenLastCalledWith(expect.objectContaining({intent:'followLive',time:1165}));
  expect(screen.getByRole('button',{name:'Back to live'})).toHaveAttribute('data-live-edge','true');
 });
+
+it.each(['keyboard','touch'] as const)('does not rewind a follower ahead of the viewer target when seeking forward by %s',async(input)=>{
+ if(input==='touch')touchSurface();
+ const p=props();render(<HlsPlayer {...p} playbackMode="live" live={{verifiedEnd:1200,canFollow:true,label:'Live',backToLive:'Back to live'}}/>);
+ await waitFor(()=>expect(engine.instances).toHaveLength(1));
+ const video=p.videoRef.current!;
+ Object.defineProperty(video,'seekable',{configurable:true,value:{length:1,start:()=>0,end:()=>1200}});
+ Object.defineProperty(video,'paused',{configurable:true,value:false});
+ fireEvent.progress(video);fireEvent.seeked(video);fireEvent.playing(video);fireEvent.play(video);
+ video.currentTime=1145;fireEvent.timeUpdate(video);
+ const seek=vi.spyOn(video,'currentTime','set');
+ if(input==='keyboard')fireEvent.keyDown(screen.getByRole('region'),{key:'ArrowRight'});
+ else{
+  const surface=screen.getByRole('button',{name:'Play or pause'});
+  vi.spyOn(surface,'getBoundingClientRect').mockReturnValue({left:0,width:600} as DOMRect);
+  touch(surface,'pointerdown',550);touch(surface,'pointerup',550);
+  touch(surface,'pointerdown',550);touch(surface,'pointerup',550);
+ }
+ expect(seek).not.toHaveBeenCalled();expect(video.currentTime).toBe(1145);
+ fireEvent.click(screen.getByRole('button',{name:'Back to live'}));
+ expect(seek).toHaveBeenCalledExactlyOnceWith(1140);
+});
