@@ -2,7 +2,7 @@
 
 import {useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type RefObject} from 'react';
 import {Check, ChevronDown, ChevronLeft, ChevronRight, SkipBack, SkipForward, LoaderCircle, RectangleHorizontal, Maximize, Minimize, RotateCcw, Pause, Play, Settings, Volume2, VolumeX} from 'lucide-react';
-import {liveWindow,type LivePlayerState,type PlayerBookmark} from './live-player.js';
+import {LIVE_EDGE_TOLERANCE_SECONDS,liveWindow,type LivePlayerState,type PlayerBookmark} from './live-player.js';
 import type {PlayerLabels} from './HlsPlayer.js';
 import {loadPreviewIndex, type PreviewCue} from './preview-index.js';
 import styles from './styles.js';
@@ -264,7 +264,7 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
     root.setAttribute('data-theater',String(theater&&!touchUI));root.setAttribute('data-touch',String(touchUI));root.setAttribute('data-controls-visible',String(controlsVisible));
     return()=>{root.removeAttribute('data-theater');root.removeAttribute('data-touch');root.removeAttribute('data-controls-visible');};
   }, [container,touchUI,controlsVisible,theater]);
-  const atLive = Boolean(live?.canFollow && followLive && liveRange && playing && rate===1 && !loading && !buffering && !waiting && !failed && scrub===null && current >= liveRange.edge - 20);
+  const atLive = Boolean(live?.canFollow && followLive && liveRange && playing && rate===1 && !loading && !buffering && !waiting && !failed && scrub===null && current >= liveRange.edge - LIVE_EDGE_TOLERANCE_SECONDS);
   const displayedTime = atLive ? duration : current;
   const percentage = (value: number) => duration > seekStart ? `${Math.min(100, Math.max(0, (value - seekStart) / (duration - seekStart) * 100))}%` : '0%';
   return <>

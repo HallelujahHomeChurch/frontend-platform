@@ -1,3 +1,6 @@
+// Keep segment-update tolerance aligned between live status and forward recovery.
+export const LIVE_EDGE_TOLERANCE_SECONDS = 20;
+
 export type PlaybackIntent = 'followLive' | 'dvr';
 export type PlayerBookmark = {mediaOriginSeconds?: number; time: number; paused: boolean; rate: number; quality: 'auto' | '480p' | '720p' | '1080p'; intent: PlaybackIntent};
 export type LivePlayerState = {verifiedEnd: number; ended?: boolean; canFollow: boolean; label: string; backToLive: string; liveLabel?: string};

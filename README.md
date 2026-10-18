@@ -332,7 +332,7 @@ the Live button both resume normal-speed following while playing; a paused
 right-end seek preserves pause and speed. The Live button explicitly resumes.
 The live indicator tolerates
 20 seconds of segment-update jitter, but excludes DVR, pause, non-1x playback and
-loading. Automatic recovery moves forward only. `live.ended` exposes the complete
+loading. Automatic recovery uses that same tolerance and moves forward only. `live.ended` exposes the complete
 verified tail after ending; an interrupted stream must leave it false. The
 60-second holdback adds client buffering; end-to-end delay still depends on
 ingest and publication latency. Media validation, credentialed requests, private

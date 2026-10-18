@@ -1007,3 +1007,24 @@ it('delegates ordinary navigation while retaining native modified links',async()
  link.addEventListener('click',event=>{expect(event.defaultPrevented).toBe(false);event.preventDefault();},{once:true});
  fireEvent(link,click);expect(router.push).toHaveBeenCalledOnce();
 });
+
+it.each([false,true])('native=%s catches a resumed follower beyond indicator tolerance once, without seeking on ordinary segment steps',async(native)=>{
+ engine.supported=!native;if(native)vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
+ const p=props(),onBookmark=vi.fn(),live={verifiedEnd:1200,canFollow:true,label:'Live',backToLive:'Back to live'};
+ const view=render(<HlsPlayer {...p} playbackMode="live" live={live} onBookmark={onBookmark}/>);
+ await waitFor(()=>expect(native?p.videoRef.current?.src:engine.instances.length).toBe(native?url:1));
+ const video=p.videoRef.current!;let end=1200;
+ Object.defineProperty(video,'seekable',{configurable:true,get:()=>({length:1,start:()=>0,end:()=>end})});
+ Object.defineProperty(video,'paused',{configurable:true,value:false});
+ fireEvent.progress(video);fireEvent.seeked(video);fireEvent.playing(video);fireEvent.play(video);fireEvent.timeUpdate(video);
+ expect(video.currentTime).toBe(1140);
+ const seek=vi.spyOn(video,'currentTime','set');
+ end=1210.01;view.rerender(<HlsPlayer {...p} playbackMode="live" live={{...live,verifiedEnd:end}} onBookmark={onBookmark}/>);
+ fireEvent.progress(video);fireEvent.timeUpdate(video);
+ expect(seek).not.toHaveBeenCalled();expect(video.currentTime).toBe(1140);
+ end=1225;view.rerender(<HlsPlayer {...p} playbackMode="live" live={{...live,verifiedEnd:end}} onBookmark={onBookmark}/>);
+ fireEvent.progress(video);fireEvent.timeUpdate(video);fireEvent.seeked(video);fireEvent.progress(video);
+ expect(seek).toHaveBeenCalledExactlyOnceWith(1165);
+ expect(onBookmark).toHaveBeenLastCalledWith(expect.objectContaining({intent:'followLive',time:1165}));
+ expect(screen.getByRole('button',{name:'Back to live'})).toHaveAttribute('data-live-edge','true');
+});

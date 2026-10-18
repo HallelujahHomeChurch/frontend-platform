@@ -2,7 +2,7 @@
 
 import {useCallback, useEffect, useRef, useState, type RefObject} from 'react';
 import type Hls from 'hls.js';
-import {liveWindow, type LivePlayerState, type PlayerBookmark, type PlaybackIntent} from './live-player.js';
+import {LIVE_EDGE_TOLERANCE_SECONDS,liveWindow, type LivePlayerState, type PlayerBookmark, type PlaybackIntent} from './live-player.js';
 import {PlayerChrome} from './PlayerChrome.js';
 import styles from './styles.js';
 
@@ -148,7 +148,7 @@ export function HlsPlayer({playbackUrl,availableQualities,watermark,muted=false,
           video.playbackRate=saved.rate;if(saved.paused)video.pause();
         }else if(window){automaticSeek.current=window.edge;video.currentTime=window.edge;}
         positioned.current=true;remember();
-      }else if(window&&state?.canFollow&&intent.current==='followLive'&&!video.paused&&video.playbackRate===1&&window.edge-video.currentTime>60){
+      }else if(window&&state?.canFollow&&intent.current==='followLive'&&!video.paused&&video.playbackRate===1&&window.edge-video.currentTime>LIVE_EDGE_TOLERANCE_SECONDS){
         // Upstream recovery does not fire the viewer's browser online event.
         automaticSeek.current=window.edge;video.currentTime=window.edge;remember();
       }
