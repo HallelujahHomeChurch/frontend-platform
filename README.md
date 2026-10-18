@@ -72,6 +72,14 @@ untrusted assets and content that cannot fit at that floor still fail closed.
 Deploy V10-capable web/admin consumers before enabling the producer. Native
 verification uses `HHC_TEST_RENDERER_V10=1` and the V10 measurement suite.
 
+CI builds the packages and isolated renderer image once, then verifies three
+renderer shards with at most three concurrent runners. The host commands retain
+default/V6–V10 coverage; the container commands retain default/V3–V10 coverage.
+The same-run workspace/image artifacts expire after one day and must pass SHA-256
+verification before use. The required `verify` check accepts only successful jobs
+and complete, same-commit shard receipts. Package release keeps its independent
+validation and publication workflow.
+
 Consumers install exact package versions from GitHub Packages. Local development
 requires a GitHub token with `read:packages`; GitHub Actions uses its repository
 `GITHUB_TOKEN`.
