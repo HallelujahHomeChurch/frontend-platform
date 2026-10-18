@@ -77,8 +77,12 @@ renderer shards with at most three concurrent runners. The host commands retain
 default/V6–V10 coverage; the container commands retain default/V3–V10 coverage.
 The same-run workspace/image artifacts expire after one day and must pass SHA-256
 verification before use. The required `verify` check accepts only successful jobs
-and complete, same-commit shard receipts. Package release keeps its independent
-validation and publication workflow.
+and complete, same-commit, same-run and same-attempt shard receipts. Package release uses the
+same shard runner for its nine container validations, then publishes only after
+its independent dependency/image scans, tag checks and aggregate gate succeed.
+Only the publisher can write packages, and it restores the checksum-verified
+packages and image built by preparation. Rerun all jobs after a failure: artifacts
+are scoped to the run attempt, so rerunning only failed jobs fails closed.
 
 Consumers install exact package versions from GitHub Packages. Local development
 requires a GitHub token with `read:packages`; GitHub Actions uses its repository
