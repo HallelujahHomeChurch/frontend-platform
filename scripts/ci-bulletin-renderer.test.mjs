@@ -138,6 +138,8 @@ test('CI and release use the same non-publishing shard runner and release cannot
     assert.deepEqual(caller.jobs.verify.needs, ['prepare', 'renderer']);
     assert.equal(caller.jobs.verify.if, '${{ always() }}');
     assert.equal(caller.jobs.renderer.secrets, undefined);
+    const receiptsDownload = caller.jobs.verify.steps.find(step => step.uses?.startsWith('actions/download-artifact@'));
+    assert.ok(![true, 'true'].includes(receiptsDownload.with['merge-multiple']), 'receipt artifacts must not overwrite one another');
     for (const [name, job] of Object.entries(caller.jobs)) {
       if (name !== 'publish') assert.notEqual(job.permissions?.packages, 'write');
     }
