@@ -4650,6 +4650,24 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
         };
+        /** @description Account/document private bookmark. Deleted tombstones have empty name/sentenceId/pageId and offset zero. Revisions never guess a replacement target. */
+        ReaderBookmark: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            sentenceId: string;
+            /** @description Unicode scalar offset within the canonical fragment on pageId. */
+            offset: number;
+            pageId: string;
+            documentRevision: number;
+            version: number;
+            deleted: boolean;
+            reanchorRequired: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
         ReaderProgress: {
             pageId: string;
             componentId: string;
@@ -4679,6 +4697,8 @@ export interface components {
             /** @description Private retained source selections that no longer locate current text. Entries are not active highlights and never imply a current anchor. Omitted on legacy states. */
             highlightHistory?: components["schemas"]["ReaderHighlightHistoryEntry"][];
             notes: components["schemas"]["ReaderNote"][];
+            /** @description New producers always return this array, including empty. Optional only for compatibility with older producers and offline snapshots. */
+            bookmarks?: components["schemas"]["ReaderBookmark"][];
             progress: components["schemas"]["ReaderProgress"] | null;
             conflicts: components["schemas"]["ReaderMigrationConflict"][];
         };
@@ -4700,9 +4720,10 @@ export interface components {
             /** Format: uuid */
             mutationId: string;
             /** @enum {string} */
-            status: "applied" | "revision_changed" | "recovery_required" | "note_conflict" | "migration_conflict" | "conflict_not_found";
+            status: "applied" | "revision_changed" | "recovery_required" | "note_conflict" | "migration_conflict" | "conflict_not_found" | "bookmark_conflict" | "bookmark_limit";
             revision: number;
             note?: components["schemas"]["ReaderNote"];
+            bookmark?: components["schemas"]["ReaderBookmark"];
         };
         ReaderMutationEnvelope: {
             data: {
@@ -4722,7 +4743,7 @@ export interface components {
             documentRevision: number;
             baseVersion?: number;
             /** @enum {string} */
-            kind: "setHighlight" | "clearHighlight" | "restoreHighlight" | "discardHighlightHistory" | "createNote" | "editNote" | "deleteNote" | "reanchorNote" | "setProgress" | "resolveHighlightMigrationConflict";
+            kind: "setHighlight" | "clearHighlight" | "restoreHighlight" | "discardHighlightHistory" | "createNote" | "editNote" | "deleteNote" | "reanchorNote" | "setProgress" | "resolveHighlightMigrationConflict" | "createBookmark" | "renameBookmark" | "deleteBookmark" | "reanchorBookmark";
             payload: {
                 [key: string]: unknown;
             };
@@ -4809,6 +4830,46 @@ export interface components {
                 conflictId: string;
                 chosenColor: components["schemas"]["ReaderHighlightColor"];
                 currentRevision: number;
+            };
+        } | {
+            /** @constant */
+            kind: "createBookmark";
+            baseVersion?: never;
+            payload: {
+                /** Format: uuid */
+                bookmarkId: string;
+                name: string;
+                sentenceId: string;
+                offset: number;
+                pageId: string;
+            };
+        } | {
+            /** @constant */
+            kind: "renameBookmark";
+            baseVersion: number;
+            payload: {
+                /** Format: uuid */
+                bookmarkId: string;
+                name: string;
+            };
+        } | {
+            /** @constant */
+            kind: "deleteBookmark";
+            baseVersion: number;
+            payload: {
+                /** Format: uuid */
+                bookmarkId: string;
+            };
+        } | {
+            /** @constant */
+            kind: "reanchorBookmark";
+            baseVersion: number;
+            payload: {
+                /** Format: uuid */
+                bookmarkId: string;
+                sentenceId: string;
+                offset: number;
+                pageId: string;
             };
         });
         /** @description At most 4096 encoded bytes. Each client request UUID is account-bound and immutable for the receipt retention period. */

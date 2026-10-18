@@ -1,5 +1,5 @@
 import {describe, expect, it, vi} from 'vitest'
-import {createHhcWebClient} from './client'
+import {createHhcWebClient, type BulletinReaderBookmark, type BulletinReaderMutation} from './client'
 
 const input = {issueId:'b08a80e8-6388-4166-9a2a-23d336f74b7a',series:'general',locale:'zh-Hant',clientRequestId:'94aff842-b88a-4942-8ecb-2817955fa9de',revision:2,receiptId:'4a5df71f-6bdc-467c-8879-68ec251fdc26'} as const
 async function response(body = JSON.stringify({data:{document:{revision:2},access:{revision:2}},meta:{},error:null})) {
@@ -9,6 +9,26 @@ async function response(body = JSON.stringify({data:{document:{revision:2},acces
 }
 
 describe('member reader client',()=>{
+  it('uses existing private methods for bookmark mutations and preserves optional capability on old states', async () => {
+    const bookmark: BulletinReaderBookmark = {id: input.clientRequestId, name: 'My 😀 bookmark', sentenceId: 'sentence', offset: 2, pageId: 'page', documentRevision: 2, version: 1, deleted: false, reanchorRequired: false, createdAt: '2026-10-19T00:00:00Z', updatedAt: '2026-10-19T00:00:00Z'}
+    const mutations: BulletinReaderMutation[] = [
+      {mutationId: input.clientRequestId, createdAt: bookmark.createdAt, documentRevision: 2, kind: 'createBookmark', payload: {bookmarkId: bookmark.id, name: bookmark.name, sentenceId: bookmark.sentenceId, offset: bookmark.offset, pageId: bookmark.pageId}},
+      {mutationId: input.clientRequestId, createdAt: bookmark.createdAt, documentRevision: 2, kind: 'renameBookmark', baseVersion: 1, payload: {bookmarkId: bookmark.id, name: 'new'}},
+      {mutationId: input.clientRequestId, createdAt: bookmark.createdAt, documentRevision: 2, kind: 'deleteBookmark', baseVersion: 1, payload: {bookmarkId: bookmark.id}},
+      {mutationId: input.clientRequestId, createdAt: bookmark.createdAt, documentRevision: 2, kind: 'reanchorBookmark', baseVersion: 1, payload: {bookmarkId: bookmark.id, sentenceId: 'current', offset: 0, pageId: 'page'}}
+    ]
+    const data = {state: {bookmarks: [bookmark]}, results: [{mutationId: input.clientRequestId, status: 'bookmark_conflict', revision: 2, bookmark}]}
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({data, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}}))
+    const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'member-token', fetcher})
+    expect(await client.applyReaderMutations({...input, mutations})).toEqual(data)
+    const request = fetcher.mock.calls[0]![0] as Request
+    expect(await request.json()).toEqual({mutations})
+    expect(request.cache).toBe('no-store')
+    expect(request.url).toContain('/online/reader/mutations')
+    fetcher.mockImplementation(async () => new Response(JSON.stringify({data: {state: {}}, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}}))
+    expect((await client.getReaderState(input)).state.bookmarks).toBeUndefined()
+  })
+
   it('forwards private state and atomic mutations with the existing bearer callback', async () => {
     const results = [{mutationId: input.clientRequestId, status: 'revision_changed', revision: 3}]
     const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify({data: {state: {documentId: 'document', currentRevision: 3}, results}, meta: {}, error: null}), {headers: {'Content-Type': 'application/json'}}))

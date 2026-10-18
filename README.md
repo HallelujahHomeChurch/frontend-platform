@@ -355,3 +355,14 @@ in the shared player.
 
 Publish the coordinated package version through the existing tag workflow
 before consumers pin its registry version; packed candidates are local evidence.
+
+## Reader bookmark contract candidate
+
+The Website client exports `BulletinReaderBookmark` and four typed bookmark
+mutations through the existing private state/mutation methods. Bookmark CAS is
+required for rename/delete/reanchor and forbidden on create. `state.bookmarks`
+remains optional for older producers and offline snapshots; absence means the
+capability is unavailable. Deploy the compatible Website API producer first,
+then merge/publish this SDK and pin the actual published version in consumers.
+Local packed consumer builds do not establish registry publication or real-device
+cross-account/cross-device acceptance. This change does not publish a package.

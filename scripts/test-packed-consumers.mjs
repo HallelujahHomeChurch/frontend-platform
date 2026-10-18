@@ -77,7 +77,7 @@ try {
 import {createRoot} from 'react-dom/client';
 import {createAccountSessionClient, createBrowserAccountAuthRuntime, createAccountDataRequestsClient, type AccountSessionUser, type EmailReauthView, type EmailCorrectionSubmitInput, type EmailCorrectionRequest, type EmailCorrectionErrorCode} from '@hallelujahhomechurch/account-client';
 import {canAccessAdmin} from '@hallelujahhomechurch/account-client/admin-access';
-import {createHhcWebClient, type ContentStatus, type PageGroupManifest, type BroadcastStreamKey, type BroadcastStreamKeySetInput, type BroadcastStreamKeyBindInput, type BroadcastMutationResult, type BroadcastSource, type BroadcastSourceStreamKeyInput, type BroadcastSourceTargetInput, type BroadcastSourceResolveInput, type BroadcastSourceResolved, type BroadcastSourceBindInput} from '@hallelujahhomechurch/hhc-web-client';
+import {createHhcWebClient, type ContentStatus, type PageGroupManifest, type BroadcastStreamKey, type BroadcastStreamKeySetInput, type BroadcastStreamKeyBindInput, type BroadcastMutationResult, type BroadcastSource, type BroadcastSourceStreamKeyInput, type BroadcastSourceTargetInput, type BroadcastSourceResolveInput, type BroadcastSourceResolved, type BroadcastSourceBindInput, type BulletinReaderBookmark, type BulletinReaderMutation} from '@hallelujahhomechurch/hhc-web-client';
 import {createOperationsClient, type ManagedMemberView, type ManagedUnitFolder} from '@hallelujahhomechurch/operations-client';
 import {getInitialTheme, readAnonymousStatementDismissal, writeAnonymousStatementDismissal, statementRefKey} from '@hallelujahhomechurch/preferences';
 import {AccountMenu, Button, ContextMenu, BulletinDocumentRenderer, ExpandableSearchField} from '@hallelujahhomechurch/ui';
@@ -90,6 +90,8 @@ import '@hallelujahhomechurch/ui/styles.css';
 import '@hallelujahhomechurch/ui/bulletin-paper.css';
 import {bulletin, bulletinV6} from './bulletin';
 
+export const bookmark: BulletinReaderBookmark = {id:'49f10a14-688e-4726-b46f-51b68f950128',name:'Bookmark',sentenceId:'sentence',offset:0,pageId:'page',documentRevision:1,version:1,deleted:false,reanchorRequired:false,createdAt:'2026-10-19T00:00:00Z',updatedAt:'2026-10-19T00:00:00Z'};
+export const bookmarkMutation: BulletinReaderMutation = {mutationId:bookmark.id,createdAt:bookmark.createdAt,documentRevision:1,kind:'createBookmark',payload:{bookmarkId:bookmark.id,name:bookmark.name,sentenceId:bookmark.sentenceId,offset:bookmark.offset,pageId:bookmark.pageId}};
 const playerLabels: PlayerLabels = {quality:'quality',auto:'auto',play:'play',pause:'pause',mute:'mute',unmute:'unmute',seek:'seek',volume:'volume',fullscreen:'fullscreen',exitFullscreen:'exitFullscreen',fullscreenError:'fullscreenError',playbackSpeed:'playbackSpeed',settings:'settings',togglePlayback:'togglePlayback',privateCopy:'privateCopy',buffering:'buffering'};
 const player = <HlsPlayer playbackUrl="https://media.example.test/live/master.m3u8" availableQualities={['720p']} title="Preview" labels={playerLabels} videoRef={createRef<HTMLVideoElement>()} muted onError={() => {}} playbackMode="live" live={{verifiedEnd:120,canFollow:true,label:'Live',backToLive:'Back to live'}} />;
 const accountUser: AccountSessionUser = {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null};

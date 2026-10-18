@@ -10257,6 +10257,23 @@ components:
         reanchorRequired: { type: boolean, description: Oversized automatic split retains private text/quote without truncation; explicit re-anchoring is required. }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
+    ReaderBookmark:
+      description: Account/document private bookmark. Deleted tombstones have empty name/sentenceId/pageId and offset zero. Revisions never guess a replacement target.
+      type: object
+      additionalProperties: false
+      required: [id, name, sentenceId, offset, pageId, documentRevision, version, deleted, reanchorRequired, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, maxLength: 80 }
+        sentenceId: { type: string, maxLength: 128 }
+        offset: { type: integer, minimum: 0, description: Unicode scalar offset within the canonical fragment on pageId. }
+        pageId: { type: string, maxLength: 128 }
+        documentRevision: { type: integer, minimum: 1 }
+        version: { type: integer, minimum: 1 }
+        deleted: { type: boolean }
+        reanchorRequired: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
     ReaderProgress:
       type: object
       additionalProperties: false
@@ -10290,6 +10307,10 @@ components:
           description: Private retained source selections that no longer locate current text. Entries are not active highlights and never imply a current anchor. Omitted on legacy states.
           items: { $ref: '#/components/schemas/ReaderHighlightHistoryEntry' }
         notes: { type: array, items: { $ref: '#/components/schemas/ReaderNote' } }
+        bookmarks:
+          type: array
+          description: New producers always return this array, including empty. Optional only for compatibility with older producers and offline snapshots.
+          items: { $ref: '#/components/schemas/ReaderBookmark' }
         progress: { oneOf: [{ $ref: '#/components/schemas/ReaderProgress' }, { type: 'null' }] }
         conflicts: { type: array, items: { $ref: '#/components/schemas/ReaderMigrationConflict' } }
     ReaderStateEnvelope:
@@ -10321,9 +10342,10 @@ components:
       required: [mutationId, status, revision]
       properties:
         mutationId: { type: string, format: uuid }
-        status: { type: string, enum: [applied, revision_changed, recovery_required, note_conflict, migration_conflict, conflict_not_found] }
+        status: { type: string, enum: [applied, revision_changed, recovery_required, note_conflict, migration_conflict, conflict_not_found, bookmark_conflict, bookmark_limit] }
         revision: { type: integer, minimum: 1 }
         note: { $ref: '#/components/schemas/ReaderNote' }
+        bookmark: { $ref: '#/components/schemas/ReaderBookmark' }
     ReaderMutationEnvelope:
       type: object
       additionalProperties: false
@@ -10348,7 +10370,7 @@ components:
             createdAt: { type: string, format: date-time }
             documentRevision: { type: integer, minimum: 1, maximum: 9007199254740991 }
             baseVersion: { type: integer, minimum: 1 }
-            kind: { type: string, enum: [setHighlight, clearHighlight, restoreHighlight, discardHighlightHistory, createNote, editNote, deleteNote, reanchorNote, setProgress, resolveHighlightMigrationConflict] }
+            kind: { type: string, enum: [setHighlight, clearHighlight, restoreHighlight, discardHighlightHistory, createNote, editNote, deleteNote, reanchorNote, setProgress, resolveHighlightMigrationConflict, createBookmark, renameBookmark, deleteBookmark, reanchorBookmark] }
             payload: { type: object, additionalProperties: true }
         - oneOf:
             - required: [kind, payload]
@@ -10464,6 +10486,55 @@ components:
                     chosenColor: { $ref: '#/components/schemas/ReaderHighlightColor' }
                     currentRevision: { type: integer, minimum: 1, maximum: 9007199254740991 }
               not: { required: [baseVersion] }
+            - required: [kind, payload]
+              properties:
+                kind: { const: createBookmark }
+                baseVersion: false
+                payload:
+                  type: object
+                  additionalProperties: false
+                  required: [bookmarkId, name, sentenceId, offset, pageId]
+                  properties:
+                    bookmarkId: { type: string, format: uuid }
+                    name: { type: string, minLength: 1, maxLength: 80 }
+                    sentenceId: { type: string, minLength: 1, maxLength: 128 }
+                    offset: { type: integer, minimum: 0 }
+                    pageId: { type: string, minLength: 1, maxLength: 128 }
+              not: { required: [baseVersion] }
+            - required: [kind, payload, baseVersion]
+              properties:
+                kind: { const: renameBookmark }
+                baseVersion: { type: integer, minimum: 1 }
+                payload:
+                  type: object
+                  additionalProperties: false
+                  required: [bookmarkId, name]
+                  properties:
+                    bookmarkId: { type: string, format: uuid }
+                    name: { type: string, minLength: 1, maxLength: 80 }
+            - required: [kind, payload, baseVersion]
+              properties:
+                kind: { const: deleteBookmark }
+                baseVersion: { type: integer, minimum: 1 }
+                payload:
+                  type: object
+                  additionalProperties: false
+                  required: [bookmarkId]
+                  properties:
+                    bookmarkId: { type: string, format: uuid }
+            - required: [kind, payload, baseVersion]
+              properties:
+                kind: { const: reanchorBookmark }
+                baseVersion: { type: integer, minimum: 1 }
+                payload:
+                  type: object
+                  additionalProperties: false
+                  required: [bookmarkId, sentenceId, offset, pageId]
+                  properties:
+                    bookmarkId: { type: string, format: uuid }
+                    sentenceId: { type: string, minLength: 1, maxLength: 128 }
+                    offset: { type: integer, minimum: 0 }
+                    pageId: { type: string, minLength: 1, maxLength: 128 }
     ReaderAccessInput:
       description: At most 4096 encoded bytes. Each client request UUID is account-bound and immutable for the receipt retention period.
       type: object
