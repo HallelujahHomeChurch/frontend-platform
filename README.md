@@ -359,3 +359,26 @@ in the shared player.
 
 Publish the coordinated package version through the existing tag workflow
 before consumers pin its registry version; packed candidates are local evidence.
+
+## Owned Inbox client and presentation (1.0.77 candidate)
+
+The Account root exports `createInboxClient({auth, fetcher?})`; pass the existing
+`BrowserAccountAuthRuntime` to preserve token recovery and discard responses after
+identity loss/change. `list`, `summary`, `markRead` and `markAllRead` use fixed
+same-origin Notification paths, no-store and redirect rejection. The copied
+`openapi/notification-api.yaml` is the owning Notification wire contract.
+Malformed responses/resources fail closed; unknown future actions are omitted.
+Exact counts outside JavaScript's safe integer range fail closed. Snapshot expiry
+requires explicit refresh; the client never obtains a broader snapshot to replay.
+
+UI root exports `NotificationBell` and `NotificationList`, with controlled
+loading/error/ready states, exact accessible count (`null` means unavailable),
+99+ visual badge and separate navigation/read controls. Supply localized text,
+known `NotificationAppHref` links and live read/business status. Components never
+fetch or infer authority. The host owns actor fencing, polling, action mapping,
+read errors, route integration, and clearing private content on authority loss.
+The React Aria dialog popover supplies keyboard dismissal and focus restoration.
+
+These are local candidates until the approved coordinated tag workflow publishes
+them. Repack the final shared commit after Operations additions, then revalidate
+WWW against those exact tarballs before registry version/lock updates and release.

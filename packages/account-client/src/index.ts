@@ -61,3 +61,4 @@ export * from './legal.js';
 export * from './navigation-presentation.js';
 
 export * from './data-requests.js';
+export * from './inbox.js';

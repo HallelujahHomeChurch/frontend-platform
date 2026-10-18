@@ -71,3 +71,13 @@ assert.ok(operationsSpec.includes('description: Ignored; managed folders and chi
 assert.ok(operationsSpec.includes('IncludeArchived: { name: includeArchived, in: query, schema: { type: boolean, default: false } }'));
 
 console.log(`Package contracts pass (${packageDirs.length} packages checked).`)
+
+const notificationSpec = await readFile(new URL('account-client/openapi/notification-api.yaml', packageRoot), 'utf8');
+for (const route of ['/api/notifications/me:', '/api/notifications/me/summary:', '/api/notifications/me/{id}/read:', '/api/notifications/me/read-all:']) {
+  assert.ok(notificationSpec.includes(route), `Notification owned contract missing ${route}`);
+}
+const accountIndex = await readFile(new URL('account-client/src/index.ts', packageRoot), 'utf8');
+assert.match(accountIndex, /export \* from '\.\/inbox\.js'/);
+const uiIndex = await readFile(new URL('ui/src/index.ts', packageRoot), 'utf8');
+assert.match(uiIndex, /export \* from '\.\/notifications\.js'/);
+assert.ok(accountManifest.files.includes('openapi'), 'Account package must include owned Notification contract');
