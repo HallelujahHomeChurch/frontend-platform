@@ -324,7 +324,18 @@ The host supplies an already-authorized playback URL, translated labels and
 video ref; it owns session refresh and access failures. `onNavigate` optionally
 integrates client routing, while ordinary links preserve native navigation.
 Member hosts must continue supplying their session watermark. Staff previews
-may omit it and set `muted` for autoplay.
+may omit it and set `muted` for autoplay. Use `controls={false}` and
+`initialQuality="480p"` for passive list previews: these retain the same live
+reserve, authenticated engine and watermark without controls or automatic focus.
+The host owns hover activation, single-preview ownership and disposal.
+
+Live timelines reuse the VOD sprite appearance and authenticated relative
+`previews/index.vtt` route. Index refreshes occur at most once per five seconds
+while hovering or scrubbing; only cues inside the current playable window are
+shown. Index parsing is bounded to twelve hours, 25,920 cues and 2 MiB;
+individual sprites retain the 1 MiB limit. Missing or denied previews fall back
+to time only. Session/capture and
+live-to-VOD changes discard the old index and private in-memory images.
 
 Live playback targets 90 seconds behind the lesser of native seekable and the
 backend verified end. The timeline ends at that target; its right endpoint and

@@ -8,16 +8,16 @@ function timestamp(value: string) {
 
 // Preview metadata may select only bounded sprites within the current playback scope.
 export function parsePreviewIndex(text: string, indexURL: string): PreviewCue[] {
-  if (text.length > 1_048_576 || !text.startsWith('WEBVTT\n')) throw new Error('Invalid preview index');
+  if (text.length > 2_097_152 || !text.startsWith('WEBVTT\n')) throw new Error('Invalid preview index');
   const cues: PreviewCue[] = [];
   for (const block of text.trim().split(/\n\s*\n/).slice(1)) {
     const lines = block.trim().split('\n');
     if (lines.length === 3 && /^\d+$/.test(lines[0])) lines.shift();
     const range = lines[0]?.split(' --> ');
     const sprite = /^seg-\d{6}\.jpg#xywh=(0|160|320|480|640|800),0,160,90$/.exec(lines[1] ?? '');
-    if (lines.length !== 2 || range?.length !== 2 || !sprite || cues.length >= 4320) throw new Error('Invalid preview cue');
+    if (lines.length !== 2 || range?.length !== 2 || !sprite || cues.length >= 25920) throw new Error('Invalid preview cue');
     const start = timestamp(range[0]), end = timestamp(range[1]);
-    if (end <= start || end - start > 5.1 || end > 21601 || start < (cues.at(-1)?.end ?? 0) - 0.002) throw new Error('Invalid preview timeline');
+    if (end <= start || end - start > 5.1 || end > 43201 || start < (cues.at(-1)?.end ?? 0) - 0.002) throw new Error('Invalid preview timeline');
     cues.push({start, end, url: new URL(lines[1].split('#')[0], indexURL).href, x: Number(sprite[1])});
   }
   return cues;
@@ -35,7 +35,7 @@ export async function loadPreviewIndex(playbackURL: string, signal: AbortSignal)
       const {done, value} = await reader.read();
       if (done) break;
       bytes += value.byteLength;
-      if (bytes > 1_048_576) throw new Error('Preview index too large');
+      if (bytes > 2_097_152) throw new Error('Preview index too large');
       chunks.push(value);
     }
   } finally { await reader.cancel(); }

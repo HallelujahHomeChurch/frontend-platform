@@ -4,6 +4,7 @@ import {useCallback, useEffect, useRef, useState, type RefObject} from 'react';
 import type Hls from 'hls.js';
 import {LIVE_EDGE_TOLERANCE_SECONDS,LIVE_HOLDBACK_SECONDS,liveWindow, type LivePlayerState, type PlayerBookmark, type PlaybackIntent} from './live-player.js';
 import {PlayerChrome} from './PlayerChrome.js';
+import {RecordingWatermark} from './RecordingWatermark.js';
 import styles from './styles.js';
 
 type Quality = 'auto' | '480p' | '720p' | '1080p';
@@ -14,6 +15,7 @@ export type PlayerLabels = {
   settingsBack?:string; replay?:string; settings:string; togglePlayback:string; privateCopy:string; buffering:string;
 };
 export type HlsPlayerProps = {
+  controls?:boolean; initialQuality?:Quality;
   playbackMode?: 'vod' | 'live'; live?: LivePlayerState; resume?: PlayerBookmark; onBookmark?: (value: PlayerBookmark) => void;
   poster?:string; previousHref?:string; nextHref?:string; onNavigate?:(href:string)=>void;
   playbackUrl:string; availableQualities:Exclude<Quality,'auto'>[]; watermark?:string; muted?:boolean; title:string;
@@ -27,7 +29,7 @@ function verifyMediaRequest(master:string,target:string) {
     || !/^(master\.m3u8|(480p|720p|1080p)\/(index\.m3u8|init\.mp4|seg-\d{6}\.m4s))$/.test(path)) throw new Error('Invalid media request');
 }
 
-export function HlsPlayer({playbackUrl,availableQualities,watermark,muted=false,title,labels,videoRef,onPlayingChange,onError,poster,previousHref,nextHref,playbackMode='vod',live,resume,onBookmark,onNavigate}:HlsPlayerProps) {
+export function HlsPlayer({controls=true,initialQuality='auto',playbackUrl,availableQualities,watermark,muted=false,title,labels,videoRef,onPlayingChange,onError,poster,previousHref,nextHref,playbackMode='vod',live,resume,onBookmark,onNavigate}:HlsPlayerProps) {
   const container=useRef<HTMLDivElement>(null), engine=useRef<Hls|null>(null);
   const qualitySwitch=useRef<AbortController|null>(null);
   const pendingQuality=useRef<{quality:Quality;run:()=>void}|null>(null);
@@ -48,7 +50,7 @@ export function HlsPlayer({playbackUrl,availableQualities,watermark,muted=false,
   const [autoplayBlocked,setAutoplayBlocked]=useState(false);
   const [mode,setMode]=useState<'loading'|'mse'|'native'|'error'>('loading');
   const [activeHeight,setActiveHeight]=useState<number|null>(null);
-  const [quality,setQuality]=useState<Quality>(resume?.quality ?? 'auto');
+  const [quality,setQuality]=useState<Quality>(resume?.quality ?? initialQuality);
   const [followLive,setFollowLive]=useState(resume?.intent!=='dvr');
   const intent=useRef<PlaybackIntent>(resume?.intent ?? 'followLive'), positioned=useRef(false), closing=useRef(false);
   const failed=useRef(false), pausedIntent=useRef(resume?.paused??true);
@@ -225,10 +227,10 @@ export function HlsPlayer({playbackUrl,availableQualities,watermark,muted=false,
     } else return;
     remember();
   };
-  return <div ref={container} tabIndex={0} role="region" aria-label={`${title} — ${labels.togglePlayback}`} className={styles.player}>
+  return <div ref={container} tabIndex={controls?0:undefined} role="region" aria-label={`${title} — ${labels.togglePlayback}`} className={styles.player}>
     <video muted={muted} ref={videoRef} poster={poster} playsInline preload="metadata" controlsList="nodownload noremoteplayback" disablePictureInPicture disableRemotePlayback crossOrigin="use-credentials" aria-label={title} className={styles.video}
-      onPlay={()=>{pausedIntent.current=false;setAutoplayBlocked(false);}} onError={event=>{const error=event.currentTarget.error;if(error&&!closing.current){if(error.code===3)handleMediaError();else handleError();}}}/>
+      onPlay={()=>{pausedIntent.current=false;setAutoplayBlocked(false);}} onPlaying={event=>{if(!controls&&event.currentTarget.videoWidth>0)onPlayingChange?.(true);}} onPause={()=>{if(!controls)onPlayingChange?.(false);}} onEnded={()=>{if(!controls)onPlayingChange?.(false);}} onError={event=>{const error=event.currentTarget.error;if(error&&!closing.current){if(error.code===3)handleMediaError();else handleError();}}}/>
     <canvas ref={heldFrame} hidden={!holdingFrame} aria-hidden="true" className={styles.heldFrame}/>
-    <PlayerChrome followLive={followLive} onNavigate={onNavigate} container={container} videoRef={videoRef} playbackUrl={playbackUrl} watermark={watermark} labels={labels} quality={quality} activeHeight={activeHeight} qualities={qualities} previousHref={previousHref} nextHref={nextHref} autoplayBlocked={autoplayBlocked} loading={mode==='loading'} buffering={qualityLoading} failed={mode==='error'} onQualityChange={changeQuality} onPlaybackChange={value=>{if(value.paused!==undefined){pendingAutoplay.current=null;if(value.paused===false&&!positioned.current&&playbackMode==='live')dvr();pausedIntent.current=value.paused;}if(qualityPosition.current)Object.assign(qualityPosition.current,value);remember();}} onPlayingChange={onPlayingChange} live={playbackMode==='live'?live:undefined} onDvr={dvr} onReturnToLive={returnToLive}/>
+    {controls ? <PlayerChrome followLive={followLive} onNavigate={onNavigate} container={container} videoRef={videoRef} playbackUrl={playbackUrl} watermark={watermark} labels={labels} quality={quality} activeHeight={activeHeight} qualities={qualities} previousHref={previousHref} nextHref={nextHref} autoplayBlocked={autoplayBlocked} loading={mode==='loading'} buffering={qualityLoading} failed={mode==='error'} onQualityChange={changeQuality} onPlaybackChange={value=>{if(value.paused!==undefined){pendingAutoplay.current=null;if(value.paused===false&&!positioned.current&&playbackMode==='live')dvr();pausedIntent.current=value.paused;}if(qualityPosition.current)Object.assign(qualityPosition.current,value);remember();}} onPlayingChange={onPlayingChange} live={playbackMode==='live'?live:undefined} onDvr={dvr} onReturnToLive={returnToLive}/> : watermark ? <RecordingWatermark container={container} videoRef={videoRef} code={watermark}/> : null}
   </div>;
 }

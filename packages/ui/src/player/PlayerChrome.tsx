@@ -4,7 +4,7 @@ import {useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent as
 import {Check, ChevronDown, ChevronLeft, ChevronRight, SkipBack, SkipForward, LoaderCircle, RectangleHorizontal, Maximize, Minimize, RotateCcw, Pause, Play, Settings, Volume2, VolumeX} from 'lucide-react';
 import {LIVE_EDGE_TOLERANCE_SECONDS,liveWindow,type LivePlayerState,type PlayerBookmark} from './live-player.js';
 import type {PlayerLabels} from './HlsPlayer.js';
-import {loadPreviewIndex, type PreviewCue} from './preview-index.js';
+import {usePreviewIndex} from './use-preview-index.js';
 import styles from './styles.js';
 import {usePlayerFullscreen} from './use-player-fullscreen.js';
 import {RecordingWatermark} from './RecordingWatermark.js';
@@ -47,8 +47,8 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
   const [settingsView,setSettingsView]=useState<'root'|'speed'|'quality'>('root');
   const [settings, setSettings] = useState(false), [visible, setVisible] = useState(true);
   const [feedback, setFeedback] = useState<{kind: 'play' | 'pause' | 'back' | 'forward'; id: number; seconds?:number} | null>(null);
-  const [preview, setPreview] = useState<number | null>(null), [cues, setCues] = useState<PreviewCue[]>([]);
-  const [previewRequested, setPreviewRequested] = useState(false), [scrub, setScrub] = useState<number | null>(null);
+  const [preview, setPreview] = useState<number | null>(null), [scrub, setScrub] = useState<number | null>(null);
+  const cues = usePreviewIndex(playbackUrl, Boolean(live), !failed && (preview !== null || scrub !== null));
   const [holding, setHolding] = useState(false);
   const gesture = useRef<{id:number;x:number;y:number;moved:boolean;rate:number|null}|null>(null);
   const holdTimer = useRef(0), tapTimer = useRef(0), clickTimer=useRef(0);
@@ -86,15 +86,6 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
       if (gesture.current?.rate != null && video) video.playbackRate = gesture.current.rate;
     };
   }, [videoRef]);
-
-  useEffect(() => {
-    if (!previewRequested || live) return;
-    const controller = new AbortController();
-    void loadPreviewIndex(playbackUrl, controller.signal).then(value => { if (!controller.signal.aborted) setCues(value); }).catch(() => {});
-    return () => controller.abort();
-  }, [playbackUrl, previewRequested,live]);
-
-
 
   const showControls = () => {
     setVisible(true);
@@ -257,8 +248,9 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
   const cancelScrub=()=>{dragging.current=false;setScrub(null);setPreview(null);};
   const current = scrub ?? time;
   const previewTime = scrub ?? preview;
-  const cue = previewTime === null ? undefined : cues.find(cue => cue.start <= previewTime && cue.end > previewTime);
-  const neighbor = cue ? cues.find(item => item.start >= cue.end && item.url !== cue.url)?.url : undefined;
+  const visibleCues = live ? cues.filter(cue => cue.start >= seekStart && cue.end <= duration) : cues;
+  const cue = previewTime === null ? undefined : visibleCues.find(cue => cue.start <= previewTime && cue.end > previewTime);
+  const neighbor = cue ? visibleCues.find(item => item.start >= cue.end && item.url !== cue.url)?.url : undefined;
   const controlsVisible = visible || autoplayBlocked || playBlocked || settings || scrub !== null;
   useEffect(() => {
     const root=container.current;if(!root)return;
@@ -299,13 +291,13 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
       <div className={styles.seek} onPointerLeave={() => { if (!dragging.current) setPreview(null); }}>
         <div className={styles.track} aria-hidden="true"><span className={styles.buffered} style={{width:percentage(buffered)}}/><span className={styles.played} style={{width:percentage(displayedTime)}}/></div>
         <input type="range" aria-label={labels.seek} aria-valuetext={`${playerClock(current)} / ${playerClock(duration)}`} min={seekStart} max={duration} step={0.1} value={Math.max(seekStart, Math.min(duration, displayedTime))} disabled={duration <= seekStart}
-          onPointerMove={event => { const bounds = event.currentTarget.getBoundingClientRect(); if (duration > 0 && bounds.width > 0) { setPreview(Math.min(duration - 0.001, Math.max(seekStart, seekStart + (event.clientX - bounds.left) / bounds.width * (duration - seekStart)))); setPreviewRequested(true); } }}
-          onPointerDown={event => { dragging.current = true; setScrub(Number(event.currentTarget.value)); setPreviewRequested(true); event.currentTarget.setPointerCapture?.(event.pointerId); }}
+          onPointerMove={event => { const bounds = event.currentTarget.getBoundingClientRect(); if (duration > 0 && bounds.width > 0) { setPreview(Math.min(duration - 0.001, Math.max(seekStart, seekStart + (event.clientX - bounds.left) / bounds.width * (duration - seekStart)))); } }}
+          onPointerDown={event => { dragging.current = true; setScrub(Number(event.currentTarget.value)); event.currentTarget.setPointerCapture?.(event.pointerId); }}
           onChange={event => { const value = Number(event.target.value); if (dragging.current) setScrub(value); else seek(value); }}
           onPointerUp={event => { if(dragging.current)seek(Number(event.currentTarget.value));cancelScrub(); }}
           onPointerCancel={cancelScrub} onLostPointerCapture={cancelScrub} />
         <div className={styles.preview} hidden={previewTime===null||duration<=0} aria-hidden="true" style={{left:`clamp(80px, ${percentage(previewTime??0)}, calc(100% - 80px))`}}>
-          {!failed && !live ? <PreviewSprite key={playbackUrl} playbackUrl={playbackUrl} cue={cue} neighbor={neighbor}/> : null}
+          {!failed && cues.length > 0 ? <PreviewSprite key={`${playbackUrl}:${live?'live':'vod'}`} playbackUrl={playbackUrl} cue={cue} neighbor={neighbor}/> : null}
           <time>{playerClock(previewTime??0)}</time>
         </div>
       </div>

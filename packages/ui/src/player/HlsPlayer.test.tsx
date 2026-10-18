@@ -1136,3 +1136,22 @@ it('does not turn a failed pre-start quality change into a zero-time resume book
  act(()=>engine.instances[0].listeners.error('error',{fatal:true,type:'networkError'}));
  expect(onBookmark).not.toHaveBeenCalled();expect(p.onError).toHaveBeenCalledExactlyOnceWith(undefined);
 });
+
+it.each([false,true])('native=%s supports a muted 480p preview without controls while retaining the watermark and live reserve',async(native)=>{
+ engine.supported=!native;
+ if(native)vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
+ const p=props();render(<HlsPlayer {...p} controls={false} initialQuality="480p" availableQualities={['480p','720p']} muted playbackMode="live" live={{verifiedEnd:200,canFollow:true,label:'Live',backToLive:'Back to live'}}/>);
+ await waitFor(()=>expect(native?p.videoRef.current?.src:engine.instances[0]?.nextLevel).toBe(native?url.replace('master.m3u8','480p/index.m3u8'):2));
+ const video=p.videoRef.current!;
+ expect(video.muted).toBe(true);expect(screen.getAllByText('TRACE123').length).toBeGreaterThan(0);
+ expect(screen.queryByRole('button')).not.toBeInTheDocument();expect(screen.queryByRole('slider')).not.toBeInTheDocument();
+ expect(screen.getByRole('region')).not.toHaveAttribute('tabindex');
+ expect(document.activeElement).not.toBe(screen.getByRole('region'));
+ Object.defineProperty(video,'seekable',{configurable:true,value:{length:1,start:()=>0,end:()=>89}});
+ fireEvent.loadedMetadata(video);expect(video.currentTime).toBe(0);expect(video.play).not.toHaveBeenCalled();
+ Object.defineProperty(video,'seekable',{configurable:true,value:{length:1,start:()=>0,end:()=>200}});
+ fireEvent.progress(video);expect(video.currentTime).toBe(110);expect(video.play).toHaveBeenCalledTimes(1);
+ fireEvent.play(video);expect(p.onPlayingChange).not.toHaveBeenCalledWith(true);
+ fireEvent.playing(video);expect(p.onPlayingChange).toHaveBeenLastCalledWith(true);
+ fireEvent.pause(video);expect(p.onPlayingChange).toHaveBeenLastCalledWith(false);
+});
