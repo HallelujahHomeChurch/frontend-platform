@@ -1,9 +1,9 @@
 'use client';
 
 import {useEffect,useRef,useState} from 'react';
-import {createPreviewCache} from './preview-cache';
-import type {PreviewCue} from './preview-index';
-import styles from './styles';
+import {createPreviewCache} from './preview-cache.js';
+import type {PreviewCue} from './preview-index.js';
+import styles from './styles.js';
 
 export function PreviewSprite({playbackUrl,cue,neighbor}:{playbackUrl:string;cue?:PreviewCue;neighbor?:string}) {
   const cache=useRef<ReturnType<typeof createPreviewCache>|null>(null);

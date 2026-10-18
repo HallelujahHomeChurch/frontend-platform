@@ -2,8 +2,8 @@ import {createRef} from 'react';
 import type {HlsConfig} from 'hls.js';
 import {act, cleanup, fireEvent, render, screen, waitFor} from '@testing-library/react';
 import {afterEach, beforeEach, expect, it, vi} from 'vitest';
-import {HlsPlayer} from './HlsPlayer';
-import playerStyles from './styles';
+import {HlsPlayer} from './HlsPlayer.js';
+import playerStyles from './styles.js';
 
 const router=vi.hoisted(()=>({push:vi.fn()}));
 

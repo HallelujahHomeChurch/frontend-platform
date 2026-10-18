@@ -2,9 +2,9 @@
 
 import {useCallback, useEffect, useRef, useState, type RefObject} from 'react';
 import type Hls from 'hls.js';
-import {liveWindow, type LivePlayerState, type PlayerBookmark, type PlaybackIntent} from './live-player';
-import {PlayerChrome} from './PlayerChrome';
-import styles from './styles';
+import {liveWindow, type LivePlayerState, type PlayerBookmark, type PlaybackIntent} from './live-player.js';
+import {PlayerChrome} from './PlayerChrome.js';
+import styles from './styles.js';
 
 type Quality = 'auto' | '480p' | '720p' | '1080p';
 export type PlayerLabels = {

@@ -2,13 +2,13 @@
 
 import {useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type RefObject} from 'react';
 import {Check, ChevronDown, ChevronLeft, ChevronRight, SkipBack, SkipForward, LoaderCircle, RectangleHorizontal, Maximize, Minimize, RotateCcw, Pause, Play, Settings, Volume2, VolumeX} from 'lucide-react';
-import {liveWindow,type LivePlayerState,type PlayerBookmark} from './live-player';
-import type {PlayerLabels} from './HlsPlayer';
-import {loadPreviewIndex, type PreviewCue} from './preview-index';
-import styles from './styles';
-import {usePlayerFullscreen} from './use-player-fullscreen';
-import {RecordingWatermark} from './RecordingWatermark';
-import {PreviewSprite} from './PreviewSprite';
+import {liveWindow,type LivePlayerState,type PlayerBookmark} from './live-player.js';
+import type {PlayerLabels} from './HlsPlayer.js';
+import {loadPreviewIndex, type PreviewCue} from './preview-index.js';
+import styles from './styles.js';
+import {usePlayerFullscreen} from './use-player-fullscreen.js';
+import {RecordingWatermark} from './RecordingWatermark.js';
+import {PreviewSprite} from './PreviewSprite.js';
 
 type Quality = 'auto' | '480p' | '720p' | '1080p';
 type Props = {

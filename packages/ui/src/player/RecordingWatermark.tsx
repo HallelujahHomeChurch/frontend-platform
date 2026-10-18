@@ -1,8 +1,8 @@
 'use client';
 
 import {useEffect, useState, type RefObject} from 'react';
-import {containedVideoRect, displayWatermarkCode, watermarkLayout} from './recording-watermark';
-import styles from './styles';
+import {containedVideoRect, displayWatermarkCode, watermarkLayout} from './recording-watermark.js';
+import styles from './styles.js';
 
 export function RecordingWatermark({container, videoRef, code}: {container: RefObject<HTMLDivElement | null>; videoRef: RefObject<HTMLVideoElement | null>; code: string}) {
   const [rect, setRect] = useState<ReturnType<typeof containedVideoRect>>(null);

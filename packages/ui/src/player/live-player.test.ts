@@ -1,5 +1,5 @@
 import {expect,it} from 'vitest';
-import {estimatedLiveDelay,liveWindow} from './live-player';
+import {estimatedLiveDelay,liveWindow} from './live-player.js';
 const ranges=(start:number,end:number):TimeRanges=>({length:1,start:()=>start,end:()=>end});
 it('keeps full DVR after ninety minutes and a closed-fragment safety distance',()=>{
  expect(liveWindow(ranges(0,5400),5370)).toEqual({start:0,end:5370,edge:5310});

@@ -1,5 +1,5 @@
 import {afterEach,expect,it,vi} from 'vitest';
-import {loadPreviewIndex,parsePreviewIndex} from './preview-index';
+import {loadPreviewIndex,parsePreviewIndex} from './preview-index.js';
 
 afterEach(()=>vi.unstubAllGlobals());
 

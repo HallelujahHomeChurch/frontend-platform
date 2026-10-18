@@ -158,6 +158,8 @@ createRoot(document.getElementById('root')!).render(<>{player}<BulletinDocumentR
     await import('@hallelujahhomechurch/preferences');
     await import('@hallelujahhomechurch/donation-client');
     await import('@hallelujahhomechurch/donation-ui');
+    const player = await import('@hallelujahhomechurch/ui/player');
+    if (typeof player.HlsPlayer !== 'function' || player.playerClock(65) !== '1:05' || player.liveWindow({length: 1, start: () => 0, end: () => 120}, 120)?.edge !== 60) throw new Error('invalid player ESM entry');
     const ui = await import('@hallelujahhomechurch/ui');
     if (!/^[0-9a-f]{64}$/.test(ui.BULLETIN_RENDERER_V6_DIGEST)) throw new Error('missing V6 renderer');
     ui.requireBulletinRenderer({templateVersion: 'v1', rendererVersion: 'v6', rendererArtifactSha256: ui.BULLETIN_RENDERER_V6_DIGEST});

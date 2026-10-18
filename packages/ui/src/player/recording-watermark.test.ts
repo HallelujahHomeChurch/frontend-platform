@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {containedVideoRect, displayWatermarkCode, watermarkLayout} from './recording-watermark';
+import {containedVideoRect, displayWatermarkCode, watermarkLayout} from './recording-watermark.js';
 
 describe('recording watermark geometry', () => {
   it('anchors inside landscape, letterbox, and pillarbox video content', () => {

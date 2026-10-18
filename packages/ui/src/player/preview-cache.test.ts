@@ -1,5 +1,5 @@
 import {afterEach, expect, it, vi} from 'vitest';
-import {createPreviewCache} from './preview-cache';
+import {createPreviewCache} from './preview-cache.js';
 
 afterEach(() => {vi.restoreAllMocks(); vi.unstubAllGlobals();});
 const root='https://media.example/videos/r/packages/p/sessions/s/previews/';

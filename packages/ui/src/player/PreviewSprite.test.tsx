@@ -1,6 +1,6 @@
 import {act,render} from '@testing-library/react';
 import {afterEach,expect,it,vi} from 'vitest';
-import {PreviewSprite} from './PreviewSprite';
+import {PreviewSprite} from './PreviewSprite.js';
 
 afterEach(()=>{vi.useRealTimers();vi.restoreAllMocks();vi.unstubAllGlobals();});
 it('coalesces pointer movement, reuses loaded sprites and releases them on session change',async()=>{
