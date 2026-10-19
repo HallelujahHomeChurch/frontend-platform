@@ -360,6 +360,59 @@ in the shared player.
 Publish the coordinated package version through the existing tag workflow
 before consumers pin its registry version; packed candidates are local evidence.
 
+## Owned Inbox client and presentation (1.1.1 candidate)
+
+The Account root exports `createInboxClient({auth, fetcher?})`; pass the existing
+`BrowserAccountAuthRuntime` to preserve token recovery and discard responses after
+identity loss/change. `list`, `summary`, `markRead` and `markAllRead` use fixed
+same-origin Notification paths, no-store and redirect rejection. The copied
+`openapi/notification-api.yaml` is the exact owning Notification wire contract.
+Private caller descriptions select one environment and preserve canonical producer
+labels; Operations member qualification likewise selects an exact Website role.
+These deployment identities do not alter the browser client routes.
+Malformed responses/resources fail closed; unknown future actions are omitted.
+Exact counts outside JavaScript's safe integer range fail closed. Snapshot expiry
+requires explicit refresh; the client never obtains a broader snapshot to replay.
+
+UI root exports `NotificationBell` and `NotificationList`, with controlled
+loading/error/ready states, exact accessible count (`null` means unavailable),
+99+ visual badge and separate navigation/read controls. Supply localized text,
+known `NotificationAppHref` links and live read/business status. Components never
+fetch or infer authority. The host owns actor fencing, polling, action mapping,
+read errors, route integration, and clearing private content on authority loss.
+The React Aria dialog popover supplies keyboard dismissal and focus restoration.
+
+These are local candidates until the approved coordinated tag workflow publishes
+them. Repack the final shared commit after Operations additions, then revalidate
+WWW against those exact tarballs before registry version/lock updates and release.
+
+## Group application client (1.1.1 candidate)
+
+Operations exports fixed `listOrgUnitDirectory`, `listOwnOrgJoinRequests`,
+`getOwnOrgJoinRequest`, `createOrgJoinRequest`, `cancelOrgJoinRequest`,
+`listReviewableOrgJoinRequests`, `getReviewableOrgJoinRequest`,
+`approveOrgJoinRequest` and `rejectOrgJoinRequest` methods. Pass the existing
+Account runtime as `auth` alongside its token/refresh callbacks. New methods
+require live identity and fence late reads and 401 retries after any actor loss
+or change; existing `raw` and `getMyAccess` callers remain compatible.
+
+The owned Operations OpenAPI supplies direct DTOs, `history` list filtering,
+reviewer-only actionable totals and canonical safe ancestor-collapse previews.
+Create takes `{orgUnitId, idempotencyKey, signal?}`; decisions/cancel take request
+ID and `{version, idempotencyKey, signal?}`. Keys must be unchanged printable ASCII
+of 1–200 bytes with no surrounding whitespace; versions are positive safe integers
+and serialize as quoted numeric `If-Match`. Retry an uncertain mutation only with
+the original target, version and key. A 412 requires explicit refresh; the client
+never invents a replacement intent. `OperationsApiError` retains status/code and
+owner-only `existingRequestId` for `already_pending` conflicts. Malformed new
+responses fail closed with `invalid_response`; identity transitions return
+`actor_changed`. Business authority remains server-owned.
+
+These coordinated 1.1.1 archives are unpublished local candidates, including the
+accepted Account Inbox/UI additions. The unrelated released v1.1.0 tag contains reader bookmarks but not
+these Inbox/group application features. Publish only through the approved coordinated workflow,
+then update exact consumer registry pins/locks and re-run release gates.
+
 ## Reader bookmark contract candidate
 
 The Website client exports `BulletinReaderBookmark` and four typed bookmark

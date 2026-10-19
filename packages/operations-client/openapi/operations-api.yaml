@@ -13,11 +13,582 @@ servers:
   - url: /
     description: Direct service probe base.
 paths:
+  /api/operations/me/org-units:
+    get:
+      tags:
+      - Operations
+      security:
+      - daprCallerAppID: []
+        gatewayPrincipal: []
+      x-hhc-visibility: gateway
+      x-hhc-callers:
+      - api-gateway
+      description: Exact configured Gateway caller and authenticated human Account identity. Current responsibility-only
+        non-self authority applies to reviewer routes; staff scopes do not widen it. Unknown or duplicate query keys
+        and GET bodies are rejected. Private no-store. Mutations never accept arbitrary replacement or grant inputs.
+      operationId: listOrgUnitDirectory
+      summary: Discover active same-church groups and fellowships
+      responses:
+        '200':
+          description: Authorized result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgUnitDirectoryPage'
+        '400':
+          description: Invalid query, identity, body, Idempotency-Key or quoted positive If-Match
+        '401':
+          description: Missing caller or user identity
+        '403':
+          description: Wrong caller or current authority denied
+        '404':
+          description: Unknown or foreign owner request
+        '409':
+          description: Conflict; create may return already_pending with owner-only existingRequestId, already_joined,
+            no_reviewer or affiliation_change_required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgJoinConflict'
+        '412':
+          description: version_mismatch; reload current resource
+        '503':
+          description: Operations unavailable
+      parameters:
+      - name: relation
+        in: query
+        schema:
+          type: string
+          enum:
+          - mine
+          - all
+          default: all
+      - name: q
+        in: query
+        description: Trimmed literal case-insensitive substring; maximum 100 Unicode characters.
+        schema:
+          type: string
+          maxLength: 100
+      - name: page
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          default: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 20
+  /api/operations/me/org-join-requests:
+    get:
+      tags:
+      - Operations
+      security:
+      - daprCallerAppID: []
+        gatewayPrincipal: []
+      x-hhc-visibility: gateway
+      x-hhc-callers:
+      - api-gateway
+      description: Exact configured Gateway caller and authenticated human Account identity. Current responsibility-only
+        non-self authority applies to reviewer routes; staff scopes do not widen it. Unknown or duplicate query keys
+        and GET bodies are rejected. Private no-store. Mutations never accept arbitrary replacement or grant inputs.
+      operationId: listOwnOrgJoinRequests
+      summary: List own applications
+      responses:
+        '200':
+          description: Authorized result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgJoinRequestPage'
+        '400':
+          description: Invalid query, identity, body, Idempotency-Key or quoted positive If-Match
+        '401':
+          description: Missing caller or user identity
+        '403':
+          description: Wrong caller or current authority denied
+        '404':
+          description: Unknown or foreign owner request
+        '409':
+          description: Conflict; create may return already_pending with owner-only existingRequestId, already_joined,
+            no_reviewer or affiliation_change_required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgJoinConflict'
+        '412':
+          description: version_mismatch; reload current resource
+        '503':
+          description: Operations unavailable
+      parameters:
+      - name: status
+        in: query
+        description: history is the server-side union of approved, rejected and cancelled; it is never a resource
+          status.
+        schema:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+          - cancelled
+          - history
+      - name: page
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          default: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 20
+    post:
+      tags:
+      - Operations
+      security:
+      - daprCallerAppID: []
+        gatewayPrincipal: []
+      x-hhc-visibility: gateway
+      x-hhc-callers:
+      - api-gateway
+      description: Exact configured Gateway caller and authenticated human Account identity. Current responsibility-only
+        non-self authority applies to reviewer routes; staff scopes do not widen it. Unknown or duplicate query keys
+        and GET bodies are rejected. Private no-store. Mutations never accept arbitrary replacement or grant inputs.
+      operationId: createOrgJoinRequest
+      summary: Submit pending application with current canonical ancestor-collapse disclosure
+      responses:
+        '200':
+          description: Authorized result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgJoinRequest'
+        '400':
+          description: Invalid query, identity, body, Idempotency-Key or quoted positive If-Match
+        '401':
+          description: Missing caller or user identity
+        '403':
+          description: Wrong caller or current authority denied
+        '404':
+          description: Unknown or foreign owner request
+        '409':
+          description: Conflict; create may return already_pending with owner-only existingRequestId, already_joined,
+            no_reviewer or affiliation_change_required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgJoinConflict'
+        '412':
+          description: version_mismatch; reload current resource
+        '503':
+          description: Operations unavailable
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrgJoinCreateInput'
+  /api/operations/me/org-join-requests/{id}:
+    get:
+      tags:
+      - Operations
+      security:
+      - daprCallerAppID: []
+        gatewayPrincipal: []
+      x-hhc-visibility: gateway
+      x-hhc-callers:
+      - api-gateway
+      description: Exact configured Gateway caller and authenticated human Account identity. Current responsibility-only
+        non-self authority applies to reviewer routes; staff scopes do not widen it. Unknown or duplicate query keys
+        and GET bodies are rejected. Private no-store. Mutations never accept arbitrary replacement or grant inputs.
+      operationId: getOwnOrgJoinRequest
+      summary: Read own application; owners retain necessary history after church membership ends
+      responses:
+        '200':
+          description: Authorized result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgJoinRequest'
+        '400':
+          description: Invalid query, identity, body, Idempotency-Key or quoted positive If-Match
+        '401':
+          description: Missing caller or user identity
+        '403':
+          description: Wrong caller or current authority denied
+        '404':
+          description: Unknown or foreign owner request
+        '409':
+          description: Conflict; create may return already_pending with owner-only existingRequestId, already_joined,
+            no_reviewer or affiliation_change_required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgJoinConflict'
+        '412':
+          description: version_mismatch; reload current resource
+        '503':
+          description: Operations unavailable
+      parameters:
+      - $ref: '#/components/parameters/ID'
+  /api/operations/me/org-join-requests/{id}/cancel:
+    post:
+      tags:
+      - Operations
+      security:
+      - daprCallerAppID: []
+        gatewayPrincipal: []
+      x-hhc-visibility: gateway
+      x-hhc-callers:
+      - api-gateway
+      description: Exact configured Gateway caller and authenticated human Account identity. Current responsibility-only
+        non-self authority applies to reviewer routes; staff scopes do not widen it. Unknown or duplicate query keys
+        and GET bodies are rejected. Private no-store. Mutations never accept arbitrary replacement or grant inputs.
+      operationId: cancelOrgJoinRequest
+      summary: Cancel application with current authority and version fencing
+      responses:
+        '200':
+          description: Authorized result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgJoinRequest'
+        '400':
+          description: Invalid query, identity, body, Idempotency-Key or quoted positive If-Match
+        '401':
+          description: Missing caller or user identity
+        '403':
+          description: Wrong caller or current authority denied
+        '404':
+          description: Unknown or foreign owner request
+        '409':
+          description: Conflict; create may return already_pending with owner-only existingRequestId, already_joined,
+            no_reviewer or affiliation_change_required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgJoinConflict'
+        '412':
+          description: version_mismatch; reload current resource
+        '503':
+          description: Operations unavailable
+      parameters:
+      - $ref: '#/components/parameters/ID'
+      - $ref: '#/components/parameters/IfMatch'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmptyOrgJoinInput'
+  /api/operations/manage/org-join-requests:
+    get:
+      tags:
+      - Operations
+      security:
+      - daprCallerAppID: []
+        gatewayPrincipal: []
+      x-hhc-visibility: gateway
+      x-hhc-callers:
+      - api-gateway
+      description: Exact configured Gateway caller and authenticated human Account identity. Current responsibility-only
+        non-self authority applies to reviewer routes; staff scopes do not widen it. Unknown or duplicate query keys
+        and GET bodies are rejected. Private no-store. Mutations never accept arbitrary replacement or grant inputs.
+      operationId: listReviewableOrgJoinRequests
+      summary: List reviewable applications
+      responses:
+        '200':
+          description: Authorized result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewableOrgJoinRequestPage'
+        '400':
+          description: Invalid query, identity, body, Idempotency-Key or quoted positive If-Match
+        '401':
+          description: Missing caller or user identity
+        '403':
+          description: Wrong caller or current authority denied
+        '404':
+          description: Unknown or foreign owner request
+        '409':
+          description: Conflict; create may return already_pending with owner-only existingRequestId, already_joined,
+            no_reviewer or affiliation_change_required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgJoinConflict'
+        '412':
+          description: version_mismatch; reload current resource
+        '503':
+          description: Operations unavailable
+      parameters:
+      - name: orgUnitId
+        in: query
+        description: Exact optional unit filter applies to page and actionable pending total.
+        schema:
+          type: string
+          format: uuid
+      - name: status
+        in: query
+        description: history is the server-side union of approved, rejected and cancelled; it is never a resource
+          status.
+        schema:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+          - cancelled
+          - history
+      - name: page
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          default: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 20
+  /api/operations/manage/org-join-requests/{id}:
+    get:
+      tags:
+      - Operations
+      security:
+      - daprCallerAppID: []
+        gatewayPrincipal: []
+      x-hhc-visibility: gateway
+      x-hhc-callers:
+      - api-gateway
+      description: Exact configured Gateway caller and authenticated human Account identity. Current responsibility-only
+        non-self authority applies to reviewer routes; staff scopes do not widen it. Unknown or duplicate query keys
+        and GET bodies are rejected. Private no-store. Mutations never accept arbitrary replacement or grant inputs.
+      operationId: getReviewableOrgJoinRequest
+      summary: Read reviewable application; owners retain necessary history after church membership ends
+      responses:
+        '200':
+          description: Authorized result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgJoinRequest'
+        '400':
+          description: Invalid query, identity, body, Idempotency-Key or quoted positive If-Match
+        '401':
+          description: Missing caller or user identity
+        '403':
+          description: Wrong caller or current authority denied
+        '404':
+          description: Unknown or foreign owner request
+        '409':
+          description: Conflict; create may return already_pending with owner-only existingRequestId, already_joined,
+            no_reviewer or affiliation_change_required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgJoinConflict'
+        '412':
+          description: version_mismatch; reload current resource
+        '503':
+          description: Operations unavailable
+      parameters:
+      - $ref: '#/components/parameters/ID'
+  /api/operations/manage/org-join-requests/{id}/approve:
+    post:
+      tags:
+      - Operations
+      security:
+      - daprCallerAppID: []
+        gatewayPrincipal: []
+      x-hhc-visibility: gateway
+      x-hhc-callers:
+      - api-gateway
+      description: Exact configured Gateway caller and authenticated human Account identity. Current responsibility-only
+        non-self authority applies to reviewer routes; staff scopes do not widen it. Unknown or duplicate query keys
+        and GET bodies are rejected. Private no-store. Mutations never accept arbitrary replacement or grant inputs.
+      operationId: approveOrgJoinRequest
+      summary: Approve application with current authority and version fencing
+      responses:
+        '200':
+          description: Authorized result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgJoinRequest'
+        '400':
+          description: Invalid query, identity, body, Idempotency-Key or quoted positive If-Match
+        '401':
+          description: Missing caller or user identity
+        '403':
+          description: Wrong caller or current authority denied
+        '404':
+          description: Unknown or foreign owner request
+        '409':
+          description: Conflict; create may return already_pending with owner-only existingRequestId, already_joined,
+            no_reviewer or affiliation_change_required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgJoinConflict'
+        '412':
+          description: version_mismatch; reload current resource
+        '503':
+          description: Operations unavailable
+      parameters:
+      - $ref: '#/components/parameters/ID'
+      - $ref: '#/components/parameters/IfMatch'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmptyOrgJoinInput'
+  /api/operations/manage/org-join-requests/{id}/reject:
+    post:
+      tags:
+      - Operations
+      security:
+      - daprCallerAppID: []
+        gatewayPrincipal: []
+      x-hhc-visibility: gateway
+      x-hhc-callers:
+      - api-gateway
+      description: Exact configured Gateway caller and authenticated human Account identity. Current responsibility-only
+        non-self authority applies to reviewer routes; staff scopes do not widen it. Unknown or duplicate query keys
+        and GET bodies are rejected. Private no-store. Mutations never accept arbitrary replacement or grant inputs.
+      operationId: rejectOrgJoinRequest
+      summary: Reject application with current authority and version fencing
+      responses:
+        '200':
+          description: Authorized result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgJoinRequest'
+        '400':
+          description: Invalid query, identity, body, Idempotency-Key or quoted positive If-Match
+        '401':
+          description: Missing caller or user identity
+        '403':
+          description: Wrong caller or current authority denied
+        '404':
+          description: Unknown or foreign owner request
+        '409':
+          description: Conflict; create may return already_pending with owner-only existingRequestId, already_joined,
+            no_reviewer or affiliation_change_required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgJoinConflict'
+        '412':
+          description: version_mismatch; reload current resource
+        '503':
+          description: Operations unavailable
+      parameters:
+      - $ref: '#/components/parameters/ID'
+      - $ref: '#/components/parameters/IfMatch'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmptyOrgJoinInput'
+  /priv/operations/inbox-visibility:
+    post:
+      tags:
+      - Operations
+      operationId: resolveOrgJoinInboxVisibility
+      summary: Resolve at most 100 group Inbox references under current owner/reviewer authority
+      description: Exact configured Notification caller only; the generic private allowlist grants no access. One
+        bounded SQL query preserves input order; invisible items omit projection. Current safe names are limited to
+        500 UTF-8 bytes without NUL/CR. Owners retain necessary history after church membership ends; former reviewers
+        see no labels. Typed actions never contain URLs, Email or locale. Owner deadline is 2 seconds at the Notification
+        caller.
+      x-hhc-visibility: private
+      x-hhc-callers: [notification-api]
+      security: [{ daprCallerAppID: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrgJoinInboxVisibilityRequest'
+      responses:
+        '200':
+          description: Exactly one current visibility result per input id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgJoinInboxVisibilityResponse'
+        '400':
+          description: Invalid closed body, duplicate IDs, query, locale or bounds; body limit 64 KiB
+        '401':
+          description: Missing caller
+        '403':
+          description: Wrong caller
+        '503':
+          description: Visibility unavailable; do not treat as zero visible items
+  /priv/operations/inbox-publication-audiences/resolve:
+    post:
+      operationId: resolveInboxPublicationAudience
+      tags: [Operations]
+      summary: Create or page an immutable publication audience with current eligibility recheck
+      description: Exact configured Engagement Dapr caller only. One frozen INSERT SELECT snapshot per snapshotId and immutable publication context; Account UUID keyset scans at most limit frozen rows and returns only currently entitled accounts. An empty accountIds page can have nextAfterAccountId. No channel subscription, Account display projection or member-details predicate is used. Limit 64 KiB and 10 seconds.
+      x-hhc-visibility: private
+      x-hhc-callers: [engagement-api]
+      security: [{ daprCallerAppID: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/InboxPublicationAudienceRequest' }
+      responses:
+        '200':
+          description: Frozen snapshot page, private no-store
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [snapshotId, accountIds]
+                properties:
+                  snapshotId: { type: string, format: uuid }
+                  accountIds:
+                    type: array
+                    maxItems: 100
+                    uniqueItems: true
+                    items: { type: string, format: uuid }
+                  nextAfterAccountId: { type: string, format: uuid }
+        '400': { description: "Invalid closed context, JSON, bounds or duplicate caller" }
+        '401': { description: Missing caller }
+        '403': { description: Caller is not the exact configured Engagement identity }
+        '409': { description: Snapshot identity reused with changed kind or edition }
+        '503': { description: Snapshot or current eligibility unavailable }
   /priv/operations/member-qualifications:
     post:
       tags: [Operations]
       operationId: checkMemberQualification
       summary: Check current church membership without exposing member details
+      description: Existing exact account-api role or one exact WEBSITE_APP_ID (default hhc-web-api, test hhc-web-api-test). General allowlists do not widen this Website role.
       x-hhc-visibility: private
       x-hhc-callers: [account-api, hhc-web-api]
       security: [{ daprCallerAppID: [] }]
@@ -306,7 +877,7 @@ paths:
       x-hhc-required-permission: operations:meetings:read
       security: [{ gatewayPrincipal: [] }]
       parameters: [{ $ref: '#/components/parameters/IncludeArchived' }]
-      responses: { '200': { description: Scoped meetings, content: { application/json: { schema: { $ref: '#/components/schemas/MeetingList' } } } }, '503': { description: Authorization unavailable } }
+      responses: { '200': { description: Scoped meetings, content: { application/json: { schema: { $ref: '#/components/schemas/AdminMeetingList' } } } }, '503': { description: Authorization unavailable } }
     post:
       tags: [Operations]
       operationId: createAdminMeeting
@@ -1183,7 +1754,8 @@ paths:
     get:
       tags: [Operations]
       operationId: listManagedRoots
-      summary: List the authenticated person's effective responsibility roots
+      summary: List responsibility roots and directly joined active small groups
+      description: Deduplicated roots preserve management scope. Read-only units omit parentId and redact policy values to empty arrays and false.
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
       responses:
@@ -1194,7 +1766,8 @@ paths:
     get:
       tags: [Operations]
       operationId: getManagedUnitFolder
-      summary: Get a responsibility-scoped unit folder
+      summary: Get a managed unit or directly joined small-group folder
+      description: Active direct small-group members in the same active church may read their group. Read-only responses have no parentId, empty breadcrumb and children, redacted policy values, and false management actions. Member detail and all writes remain responsibility-only.
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
       parameters:
@@ -1270,8 +1843,8 @@ paths:
     get:
       tags: [Operations]
       operationId: listManagedMembers
-      summary: List members displayed at one managed unit
-      description: Excludes the authenticated Account before pagination. Other directly assigned responsible people remain visible. Responsibility filtering uses the existing read scope, not delegation permission.
+      summary: List members displayed at a managed unit or directly joined small group
+      description: Requires scoped responsibility or active direct membership in this small group under the same active church. Includes existing name and Email columns. Excludes the authenticated Account before pagination. Other directly assigned responsible people remain visible. Responsibility filtering uses the existing read scope, not delegation permission.
       x-hhc-visibility: authenticated
       security: [{ gatewayPrincipal: [] }]
       parameters:
@@ -1769,6 +2342,423 @@ components:
     IdempotencyKey: { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 1, maxLength: 200 } }
     IfMatch: { name: If-Match, in: header, required: true, schema: { type: string, pattern: '^"[1-9][0-9]*"$' } }
   schemas:
+    OrgJoinCollapseUnit:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - name
+      - kind
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        kind:
+          type: string
+          enum:
+          - church
+          - family
+    OrgJoinActions:
+      type: object
+      additionalProperties: false
+      required:
+      - cancel
+      - approve
+      - reject
+      properties:
+        cancel:
+          type: boolean
+        approve:
+          type: boolean
+        reject:
+          type: boolean
+    OrgJoinRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - orgUnitId
+      - orgUnitName
+      - orgUnitKind
+      - status
+      - requestedAt
+      - version
+      - actions
+      - ancestorCollapsePreview
+      properties:
+        id:
+          type: string
+          format: uuid
+        orgUnitId:
+          type: string
+          format: uuid
+        orgUnitName:
+          type: string
+        orgUnitKind:
+          type: string
+          enum:
+          - small_group
+          - fellowship
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+          - cancelled
+        requestedAt:
+          type: string
+          format: date-time
+        decidedAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          minimum: 1
+        cancellationReason:
+          type: string
+          enum:
+          - applicant_cancelled
+          - membership_ended
+          - unit_unavailable
+          - church_changed
+          - affiliation_changed
+          - joined_elsewhere
+          - account_unavailable
+        actions:
+          $ref: '#/components/schemas/OrgJoinActions'
+        ancestorCollapsePreview:
+          type: array
+          description: Current safe direct church/family ancestors on the exact target path; canonical [] when empty.
+            Approval may collapse only these same-path ancestors and preserves other groups, fellowships, descendants
+            and branches. Presentation data is never client authority.
+          items:
+            $ref: '#/components/schemas/OrgJoinCollapseUnit'
+        applicantDisplayName:
+          type: string
+          description: Available current name, reviewer-only; no Email.
+    OrgJoinRequestPage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      - page
+      properties:
+        items:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/OrgJoinRequest'
+        page:
+          type: integer
+          minimum: 1
+        nextPage:
+          type: integer
+          minimum: 2
+    ReviewableOrgJoinRequestPage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      - page
+      - actionablePendingTotal
+      properties:
+        items:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/OrgJoinRequest'
+        page:
+          type: integer
+          minimum: 1
+        nextPage:
+          type: integer
+          minimum: 2
+        actionablePendingTotal:
+          type: integer
+          minimum: 0
+          description: Current actionable pending total under the same optional unit filter, excludes self and stale
+            scope, independent of page/status.
+    OrgJoinCreateInput:
+      type: object
+      additionalProperties: false
+      required:
+      - orgUnitId
+      properties:
+        orgUnitId:
+          type: string
+          format: uuid
+    EmptyOrgJoinInput:
+      type: object
+      additionalProperties: false
+      required: []
+      properties: {}
+    DirectoryUnit:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - name
+      - kind
+      - ancestorLabels
+      - relationship
+      - applicationAvailability
+      - ancestorCollapsePreview
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        kind:
+          type: string
+          enum:
+          - church
+          - family
+          - small_group
+          - fellowship
+        ancestorLabels:
+          type: array
+          items:
+            type: string
+        relationship:
+          type: string
+          enum:
+          - managed
+          - joined
+          - none
+        applicationAvailability:
+          type: string
+          enum:
+          - available
+          - already_joined
+          - pending
+          - affiliation_change_required
+          - no_reviewer
+        ownPendingRequestId:
+          type: string
+          format: uuid
+        ancestorCollapsePreview:
+          type: array
+          description: Current safe direct church/family ancestors on the exact target path; canonical [] when empty.
+            Approval may collapse only these same-path ancestors and preserves other groups, fellowships, descendants
+            and branches. Presentation data is never client authority.
+          items:
+            $ref: '#/components/schemas/OrgJoinCollapseUnit'
+    OrgUnitDirectoryPage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      - page
+      properties:
+        items:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/DirectoryUnit'
+        page:
+          type: integer
+          minimum: 1
+        nextPage:
+          type: integer
+          minimum: 2
+    OrgJoinInboxResource:
+      type: object
+      additionalProperties: false
+      required:
+      - type
+      - id
+      - unitId
+      properties:
+        type:
+          type: string
+          enum:
+          - org_join_request
+        id:
+          type: string
+          format: uuid
+        unitId:
+          type: string
+          format: uuid
+    OrgJoinInboxRef:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - resource
+      properties:
+        id:
+          type: string
+          format: uuid
+        resource:
+          $ref: '#/components/schemas/OrgJoinInboxResource'
+    OrgJoinInboxAction:
+      type: object
+      additionalProperties: false
+      required:
+      - type
+      - resource
+      properties:
+        type:
+          type: string
+          enum:
+          - join_request_review
+          - join_request_result
+        resource:
+          $ref: '#/components/schemas/OrgJoinInboxResource'
+    OrgJoinInboxProjection:
+      type: object
+      additionalProperties: false
+      required:
+      - titleKey
+      - messageKey
+      - parameters
+      - action
+      properties:
+        titleKey:
+          type: string
+          enum:
+          - notification.orgJoin
+        messageKey:
+          type: string
+          enum:
+          - notification.orgJoin.pending
+          - notification.orgJoin.approved
+          - notification.orgJoin.rejected
+          - notification.orgJoin.cancelled
+          - notification.orgJoin.review.pending
+          - notification.orgJoin.review.approved
+          - notification.orgJoin.review.rejected
+          - notification.orgJoin.review.cancelled
+        parameters:
+          type: object
+          additionalProperties: false
+          required:
+          - title
+          properties:
+            title:
+              type: string
+              description: Current unit name, safe at most 500 UTF-8 bytes.
+            applicant:
+              type: string
+              description: Current available applicant name for currently authorized reviewers only, safe at most 500
+                UTF-8 bytes.
+        action:
+          $ref: '#/components/schemas/OrgJoinInboxAction'
+    OrgJoinInboxVisibilityRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - actorId
+      - locale
+      - items
+      properties:
+        actorId:
+          type: string
+          format: uuid
+        locale:
+          type: string
+          enum:
+          - zh-Hant
+          - zh-Hans
+          - en
+          - ja
+          - ko
+        items:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/OrgJoinInboxRef'
+    OrgJoinInboxVisibilityResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            oneOf:
+            - type: object
+              additionalProperties: false
+              required:
+              - id
+              - visible
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                visible:
+                  type: boolean
+                  enum:
+                  - false
+            - type: object
+              additionalProperties: false
+              required:
+              - id
+              - visible
+              - projection
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                visible:
+                  type: boolean
+                  enum:
+                  - true
+                projection:
+                  $ref: '#/components/schemas/OrgJoinInboxProjection'
+    OrgJoinConflict:
+      type: object
+      additionalProperties: false
+      required:
+      - error
+      properties:
+        error:
+          type: string
+          enum:
+          - conflict
+          - already_pending
+          - already_joined
+          - no_reviewer
+          - affiliation_change_required
+        existingRequestId:
+          type: string
+          format: uuid
+          description: Present only for already_pending and only for the current owner.
+    InboxPublicationAudienceRequest:
+      type: object
+      additionalProperties: false
+      required: [snapshotId, kind, resourceId, limit]
+      properties:
+        snapshotId: { type: string, format: uuid }
+        kind: { enum: [recording.published, bulletin.published] }
+        resourceId: { type: string, pattern: '^[A-Za-z0-9_-]{1,128}$' }
+        series: { type: string }
+        locale: { type: string }
+        afterAccountId: { type: string, format: uuid }
+        limit: { type: integer, minimum: 1, maximum: 100 }
+      oneOf:
+        - properties:
+            kind: { const: recording.published }
+            series: { const: '' }
+            locale: { const: '' }
+        - required: [series, locale]
+          properties:
+            kind: { const: bulletin.published }
+            series: { const: general }
+            locale: { enum: [zh-Hant, zh-Hans, en] }
+        - required: [series, locale]
+          properties:
+            kind: { const: bulletin.published }
+            series: { const: children }
+            locale: { enum: [zh-Hant, en] }
     EntitlementBatchCode:
       type: string
       enum: [bulletin.general.zh-Hant.access, bulletin.general.zh-Hans.access, bulletin.general.en.access, bulletin.children.zh-Hant.access, bulletin.children.en.access, video.meeting-recordings.access]
@@ -1949,8 +2939,9 @@ components:
     ManagedActions:
       type: object
       additionalProperties: false
-      required: [editUnit, createChild, archive, restore, manageMembers, manageResponsibilities, manageEntitlements, sendNotifications, manageEntitlementPolicy]
+      required: [editUnit, createChild, archive, restore, manageMembers, manageResponsibilities, manageEntitlements, sendNotifications, manageEntitlementPolicy, reviewJoinRequests]
       properties:
+        reviewJoinRequests: { type: boolean, description: Current responsibility-only review entry point; request actions remain non-self and current-state guarded. }
         manageEntitlementPolicy: { type: boolean }
         editUnit: { type: boolean }
         createChild: { type: boolean }
@@ -2177,6 +3168,18 @@ components:
         endsAt: { type: string, format: date-time }
         status: { type: string, enum: [scheduled, cancelled] }
         version: { type: integer, minimum: 1 }
+    AdminMeetingList:
+      type: array
+      items:
+        allOf:
+          - { $ref: '#/components/schemas/Meeting' }
+          - type: object
+            required: [collectionIds]
+            properties:
+              collectionIds:
+                type: array
+                description: Enabled collection bindings for this already authorized meeting. Presentation only; reread detail and version before saving.
+                items: { type: string }
     MeetingList:
       type: array
       items: { $ref: '#/components/schemas/Meeting' }

@@ -71,3 +71,23 @@ assert.ok(operationsSpec.includes('description: Ignored; managed folders and chi
 assert.ok(operationsSpec.includes('IncludeArchived: { name: includeArchived, in: query, schema: { type: boolean, default: false } }'));
 
 console.log(`Package contracts pass (${packageDirs.length} packages checked).`)
+
+const notificationSpec = await readFile(new URL('account-client/openapi/notification-api.yaml', packageRoot), 'utf8');
+for (const route of ['/api/notifications/me:', '/api/notifications/me/summary:', '/api/notifications/me/{id}/read:', '/api/notifications/me/read-all:']) {
+  assert.ok(notificationSpec.includes(route), `Notification owned contract missing ${route}`);
+}
+const accountIndex = await readFile(new URL('account-client/src/index.ts', packageRoot), 'utf8');
+assert.match(accountIndex, /export \* from '\.\/inbox\.js'/);
+const uiIndex = await readFile(new URL('ui/src/index.ts', packageRoot), 'utf8');
+assert.match(uiIndex, /export \* from '\.\/notifications\.js'/);
+assert.ok(accountManifest.files.includes('openapi'), 'Account package must include owned Notification contract');
+
+// Group business routes stay fixed in the Operations owner, alongside existing Inbox exports.
+for (const route of ['/api/operations/me/org-units:', '/api/operations/me/org-join-requests:', '/api/operations/me/org-join-requests/{id}:', '/api/operations/me/org-join-requests/{id}/cancel:', '/api/operations/manage/org-join-requests:', '/api/operations/manage/org-join-requests/{id}:', '/api/operations/manage/org-join-requests/{id}/approve:', '/api/operations/manage/org-join-requests/{id}/reject:']) {
+  assert.ok(operationsSpec.includes(route), `Operations owned contract missing ${route}`);
+}
+const operationsSource = await readFile(new URL('operations-client/src/client.ts', packageRoot), 'utf8');
+for (const method of ['listOrgUnitDirectory', 'listOwnOrgJoinRequests', 'listReviewableOrgJoinRequests', 'createOrgJoinRequest', 'getOwnOrgJoinRequest', 'getReviewableOrgJoinRequest', 'cancelOrgJoinRequest', 'approveOrgJoinRequest', 'rejectOrgJoinRequest']) {
+  assert.ok(operationsSource.includes(`async ${method}(`), `Operations typed method missing ${method}`);
+}
+assert.ok(operationsSpec.includes('reviewJoinRequests:'), 'Managed folder keeps additive review entry action');

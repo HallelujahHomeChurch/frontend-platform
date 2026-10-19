@@ -15,3 +15,4 @@ export {bulletinFixedText} from './bulletin-reader/fixed.js';
 export {readBulletinTemplateSnapshot} from './bulletin-reader/v9/fixed.js';
 export * from './bulletin-reader/ReaderWatermark.js';
 export {REGEXP_ONLY_DIGITS} from 'input-otp';
+export * from './notifications.js';

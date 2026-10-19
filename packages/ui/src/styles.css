@@ -338,3 +338,26 @@
 }
 
 .hhc-load-more {display:flex; justify-content:center; min-height:44px;}
+
+@layer hhc.components {
+  .hhc-notification-bell { position: relative; display: inline-flex; flex: none; }
+  .hhc-notification-bell__badge { position: absolute; inset-block-start: 0; inset-inline-end: -4px; pointer-events: none; padding: 2px 5px; border-radius: var(--hhc-radius-md); background: var(--hhc-primary-solid); color: var(--hhc-on-primary); font-size: 11px; line-height: 1.2; font-variant-numeric: tabular-nums; }
+  .hhc-notification-popover { inline-size: min(380px, calc(100vw - 24px)); max-block-size: min(640px, calc(100dvh - 100px)); overflow-y: auto; overscroll-behavior: contain; }
+  .hhc-notification-dialog { padding: 16px; outline: none; }
+  .hhc-notifications__heading { margin: 0 0 12px; font-size: 1.125rem; }
+  .hhc-notifications__list { list-style: none; margin: 0; padding: 0; }
+  .hhc-notifications__item { padding-block: 16px; border-block-end: 1px solid var(--hhc-border); }
+  .hhc-notifications__item[data-read='false'] strong { font-weight: 700; }
+  .hhc-notifications__item[data-read='true'] strong { font-weight: 500; }
+  .hhc-notifications__copy { min-inline-size: 0; overflow-wrap: anywhere; }
+  .hhc-notifications__copy p { margin-block: 8px; }
+  .hhc-notifications__meta { display: flex; flex-wrap: wrap; gap: 8px 16px; color: var(--hhc-text-muted); font-size: 0.875rem; }
+  .hhc-notifications__pending { color: var(--hhc-warning); }
+  .hhc-notifications__toolbar, .hhc-notifications__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .hhc-notifications__toolbar { justify-content: flex-end; }
+  .hhc-notifications__link { display: inline-flex; align-items: center; min-block-size: 44px; color: var(--hhc-text); text-decoration: underline; text-underline-offset: 3px; }
+  .hhc-notifications__link:hover { color: var(--hhc-primary-solid); }
+  .hhc-notifications__link:focus-visible { outline: 2px solid var(--hhc-primary-solid); outline-offset: 3px; border-radius: var(--hhc-radius-sm); }
+  .hhc-notifications__actions .hhc-button, .hhc-notifications__toolbar .hhc-button { min-block-size: 44px; }
+  .hhc-notifications__footer { padding-block-start: 12px; }
+}

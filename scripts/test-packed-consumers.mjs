@@ -75,12 +75,12 @@ try {
   write(resolve(vite, 'src/bulletin.ts'), bulletinModule);
   write(resolve(vite, 'src/main.tsx'), `import React from 'react';
 import {createRoot} from 'react-dom/client';
-import {createAccountSessionClient, createBrowserAccountAuthRuntime, createAccountDataRequestsClient, type AccountSessionUser, type EmailReauthView, type EmailCorrectionSubmitInput, type EmailCorrectionRequest, type EmailCorrectionErrorCode} from '@hallelujahhomechurch/account-client';
+import {createAccountSessionClient, createBrowserAccountAuthRuntime, createAccountDataRequestsClient, createInboxClient, type InboxAction, type InboxResource, type InboxSummary, type AccountSessionUser, type EmailReauthView, type EmailCorrectionSubmitInput, type EmailCorrectionRequest, type EmailCorrectionErrorCode} from '@hallelujahhomechurch/account-client';
 import {canAccessAdmin} from '@hallelujahhomechurch/account-client/admin-access';
 import {createHhcWebClient, type ContentStatus, type PageGroupManifest, type BroadcastStreamKey, type BroadcastStreamKeySetInput, type BroadcastStreamKeyBindInput, type BroadcastMutationResult, type BroadcastSource, type BroadcastSourceStreamKeyInput, type BroadcastSourceTargetInput, type BroadcastSourceResolveInput, type BroadcastSourceResolved, type BroadcastSourceBindInput, type BulletinReaderBookmark, type BulletinReaderMutation} from '@hallelujahhomechurch/hhc-web-client';
-import {createOperationsClient, type ManagedMemberView, type ManagedUnitFolder} from '@hallelujahhomechurch/operations-client';
+import {createOperationsClient, type ManagedMemberView, type ManagedUnitFolder, type OrgJoinRequest, type OrgUnitDirectoryPage, type ReviewableOrgJoinRequestPage} from '@hallelujahhomechurch/operations-client';
 import {getInitialTheme, readAnonymousStatementDismissal, writeAnonymousStatementDismissal, statementRefKey} from '@hallelujahhomechurch/preferences';
-import {AccountMenu, Button, ContextMenu, BulletinDocumentRenderer, ExpandableSearchField} from '@hallelujahhomechurch/ui';
+import {AccountMenu, Button, ContextMenu, BulletinDocumentRenderer, ExpandableSearchField, NotificationBell, NotificationList, type NotificationAppHref} from '@hallelujahhomechurch/ui';
 import {createRef} from 'react';
 import {HlsPlayer, type PlayerLabels} from '@hallelujahhomechurch/ui/player';
 import '@hallelujahhomechurch/ui/player.css';
@@ -97,6 +97,24 @@ const player = <HlsPlayer playbackUrl="https://media.example.test/live/master.m3
 const accountUser: AccountSessionUser = {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null};
 const accountSessionClient = createAccountSessionClient();
 const authRuntime = createBrowserAccountAuthRuntime({client: accountSessionClient});
+
+const inboxClient = createInboxClient({auth: authRuntime});
+async function checkInbox(action: InboxAction, resource: InboxResource) {
+  const summary: InboxSummary = await inboxClient.summary({locale: 'en'});
+  await inboxClient.list({filter: 'unread', limit: 20, locale: 'en'});
+  await inboxClient.markRead('00000000-0000-4000-8000-000000000001');
+  await inboxClient.markAllRead(summary.readSnapshotToken);
+  if (action.type === 'bulletin') {const locale: 'zh-Hant' | 'zh-Hans' | 'en' | 'ja' | 'ko' = action.locale; void locale;}
+  return resource;
+}
+void checkInbox;
+const notificationLabels = {title:'Notifications', loading:'Loading', empty:'Empty', retry:'Retry', markRead:'Mark read', markAllRead:'Mark all read', unread:'Unread', read:'Read', viewAll:'View all', count:(n:number|null) => n === null ? 'Unknown' : String(n)};
+const notificationHref: NotificationAppHref = '/en/notifications';
+// @ts-expect-error Only known app destinations can be notification links.
+const unsafeNotificationHref: NotificationAppHref = 'https://example.test';
+void unsafeNotificationHref;
+const notificationPresentation = <><NotificationBell labels={notificationLabels} unreadCount={123} isOpen={false} onOpenChange={() => {}} state={{status:'ready',items:[]}} viewAllLink={{href:notificationHref,label:'View all'}} /><NotificationList labels={notificationLabels} state={{status:'error',message:'Unavailable'}} onRetry={() => {}} /></>;
+
 const dataRequests = createAccountDataRequestsClient(async () => {throw new Error('No network in consumer type check');});
 async function checkEmailCorrection(intent: EmailReauthView, result: EmailCorrectionRequest, code: EmailCorrectionErrorCode) {
   if (intent.status === 'ready') {
@@ -121,6 +139,23 @@ async function checkUnitManagement(folder: ManagedUnitFolder, member: ManagedMem
   await operationsClient.raw.POST('/api/operations/manage/org-units/{unitId}/entitlements/batch', {params: {path: {unitId: folder.unit.id}, header: {'Idempotency-Key': 'grant'}}, body: {memberIds: [member.memberId], entitlementCode: 'bulletin.general.zh-Hant.access', operation: 'grant'}});
 }
 void checkUnitManagement;
+const groupClient = createOperationsClient({baseUrl: '', auth: authRuntime, getAccessToken: authRuntime.getAccessToken, refreshAfterUnauthorized: authRuntime.refreshAfterUnauthorized});
+async function checkGroupApplications(id: string) {
+  const directory: OrgUnitDirectoryPage = await groupClient.listOrgUnitDirectory({relation: 'all', q: 'group', limit: 20});
+  const review: ReviewableOrgJoinRequestPage = await groupClient.listReviewableOrgJoinRequests({status: 'history', orgUnitId: id});
+  const own = await groupClient.listOwnOrgJoinRequests({status: 'pending'});
+  const created: OrgJoinRequest = await groupClient.createOrgJoinRequest({orgUnitId: id, idempotencyKey: 'create'});
+  await groupClient.getOwnOrgJoinRequest(created.id);
+  await groupClient.getReviewableOrgJoinRequest(created.id);
+  await groupClient.cancelOrgJoinRequest(created.id, {version: created.version, idempotencyKey: 'cancel'});
+  await groupClient.approveOrgJoinRequest(created.id, {version: created.version, idempotencyKey: 'approve'});
+  await groupClient.rejectOrgJoinRequest(created.id, {version: created.version, idempotencyKey: 'reject'});
+  // @ts-expect-error History is a list filter, never a resource status.
+  const invalidStatus: OrgJoinRequest['status'] = 'history';
+  void invalidStatus;
+  return {directory, review, own};
+}
+void checkGroupApplications;
 const statementRef = {statementId: '00000000-0000-4000-8000-000000000001', publishedVersion: 7};
 void readAnonymousStatementDismissal(statementRef); void writeAnonymousStatementDismissal(statementRef); void statementRefKey(statementRef);
 const statementClient = createHhcWebClient({baseUrl: '/api', getAccessToken: authRuntime.getAccessToken, refreshAfterUnauthorized: authRuntime.refreshAfterUnauthorized});
@@ -151,11 +186,12 @@ void createHhcWebClient;
 void contentStatus;
 void groupManifest;
 void getInitialTheme;
-createRoot(document.getElementById('root')!).render(<>{player}<BulletinDocumentRenderer document={bulletin} mode="mobile" /><BulletinDocumentRenderer document={bulletinV6} mode="paper" activePage={bulletinV6.pages[0].id} /><Button>Smoke</Button><ExpandableSearchField label="Search" submitLabel="Submit" clearLabel="Clear" closeLabel="Close" allowEmptySubmit onExpandedChange={() => {}} /><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /><AccountMenu user={{name: accountUser.display_name, email: accountUser.email}} links={[{id: 'destination', label: 'Destination', href: 'https://example.com/destination'}]} labels={{menu: 'Account', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => {}} /></>);
+createRoot(document.getElementById('root')!).render(<>{notificationPresentation}{player}<BulletinDocumentRenderer document={bulletin} mode="mobile" /><BulletinDocumentRenderer document={bulletinV6} mode="paper" activePage={bulletinV6.pages[0].id} /><Button>Smoke</Button><ExpandableSearchField label="Search" submitLabel="Submit" clearLabel="Clear" closeLabel="Close" allowEmptySubmit onExpandedChange={() => {}} /><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /><AccountMenu user={{name: accountUser.display_name, email: accountUser.email}} links={[{id: 'destination', label: 'Destination', href: 'https://example.com/destination'}]} labels={{menu: 'Account', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => {}} /></>);
 `);
   run(vite, 'install', '--ignore-workspace');
   run(vite, 'exec', 'node', '--input-type=module', '--eval', `
-    await import('@hallelujahhomechurch/account-client');
+    const account = await import('@hallelujahhomechurch/account-client');
+    if (typeof account.createInboxClient !== 'function') throw new Error('missing inbox client');
     await import('@hallelujahhomechurch/hhc-web-client');
     await import('@hallelujahhomechurch/preferences');
     await import('@hallelujahhomechurch/donation-client');
@@ -163,6 +199,7 @@ createRoot(document.getElementById('root')!).render(<>{player}<BulletinDocumentR
     const player = await import('@hallelujahhomechurch/ui/player');
     if (typeof player.HlsPlayer !== 'function' || player.playerClock(65) !== '1:05' || player.liveWindow({length: 1, start: () => 0, end: () => 120}, 120)?.edge !== 30) throw new Error('invalid player ESM entry');
     const ui = await import('@hallelujahhomechurch/ui');
+    if (typeof ui.NotificationBell !== 'function' || typeof ui.NotificationList !== 'function') throw new Error('missing notification presentation');
     if (!/^[0-9a-f]{64}$/.test(ui.BULLETIN_RENDERER_V6_DIGEST)) throw new Error('missing V6 renderer');
     ui.requireBulletinRenderer({templateVersion: 'v1', rendererVersion: 'v6', rendererArtifactSha256: ui.BULLETIN_RENDERER_V6_DIGEST});
   `);
@@ -195,12 +232,12 @@ export default function Layout({children}: {children: React.ReactNode}) {
 `);
   write(resolve(next, 'app/bulletin.ts'), bulletinModule);
   write(resolve(next, 'app/page.tsx'), `'use client';
-import {createAccountSessionClient, createBrowserAccountAuthRuntime, createAccountDataRequestsClient, type AccountSessionUser, type EmailReauthView, type EmailCorrectionSubmitInput, type EmailCorrectionRequest, type EmailCorrectionErrorCode} from '@hallelujahhomechurch/account-client';
+import {createAccountSessionClient, createBrowserAccountAuthRuntime, createAccountDataRequestsClient, createInboxClient, type InboxAction, type InboxResource, type InboxSummary, type AccountSessionUser, type EmailReauthView, type EmailCorrectionSubmitInput, type EmailCorrectionRequest, type EmailCorrectionErrorCode} from '@hallelujahhomechurch/account-client';
 import {canAccessAdmin} from '@hallelujahhomechurch/account-client/admin-access';
 import {createHhcWebClient, type ContentStatus, type PageGroupManifest, type BroadcastStreamKey, type BroadcastStreamKeySetInput, type BroadcastStreamKeyBindInput, type BroadcastMutationResult} from '@hallelujahhomechurch/hhc-web-client';
-import {createOperationsClient, type ManagedMemberView, type ManagedUnitFolder} from '@hallelujahhomechurch/operations-client';
+import {createOperationsClient, type ManagedMemberView, type ManagedUnitFolder, type OrgJoinRequest, type OrgUnitDirectoryPage, type ReviewableOrgJoinRequestPage} from '@hallelujahhomechurch/operations-client';
 import {getInitialTheme, readAnonymousStatementDismissal, writeAnonymousStatementDismissal, statementRefKey} from '@hallelujahhomechurch/preferences';
-import {AccountMenu, Button, ContextMenu, BulletinDocumentRenderer, ExpandableSearchField} from '@hallelujahhomechurch/ui';
+import {AccountMenu, Button, ContextMenu, BulletinDocumentRenderer, ExpandableSearchField, NotificationBell, NotificationList, type NotificationAppHref} from '@hallelujahhomechurch/ui';
 import {createRef} from 'react';
 import {HlsPlayer, type PlayerLabels} from '@hallelujahhomechurch/ui/player';
 import '@hallelujahhomechurch/ui/player.css';
@@ -213,6 +250,24 @@ const player = <HlsPlayer playbackUrl="https://media.example.test/live/master.m3
 const accountUser: AccountSessionUser = {id: 'u1', email: 'ada@example.com', display_name: 'Ada', avatar_url: null};
 const accountSessionClient = createAccountSessionClient();
 const authRuntime = createBrowserAccountAuthRuntime({client: accountSessionClient});
+
+const inboxClient = createInboxClient({auth: authRuntime});
+async function checkInbox(action: InboxAction, resource: InboxResource) {
+  const summary: InboxSummary = await inboxClient.summary({locale: 'en'});
+  await inboxClient.list({filter: 'unread', limit: 20, locale: 'en'});
+  await inboxClient.markRead('00000000-0000-4000-8000-000000000001');
+  await inboxClient.markAllRead(summary.readSnapshotToken);
+  if (action.type === 'bulletin') {const locale: 'zh-Hant' | 'zh-Hans' | 'en' | 'ja' | 'ko' = action.locale; void locale;}
+  return resource;
+}
+void checkInbox;
+const notificationLabels = {title:'Notifications', loading:'Loading', empty:'Empty', retry:'Retry', markRead:'Mark read', markAllRead:'Mark all read', unread:'Unread', read:'Read', viewAll:'View all', count:(n:number|null) => n === null ? 'Unknown' : String(n)};
+const notificationHref: NotificationAppHref = '/en/notifications';
+// @ts-expect-error Only known app destinations can be notification links.
+const unsafeNotificationHref: NotificationAppHref = 'https://example.test';
+void unsafeNotificationHref;
+const notificationPresentation = <><NotificationBell labels={notificationLabels} unreadCount={123} isOpen={false} onOpenChange={() => {}} state={{status:'ready',items:[]}} viewAllLink={{href:notificationHref,label:'View all'}} /><NotificationList labels={notificationLabels} state={{status:'error',message:'Unavailable'}} onRetry={() => {}} /></>;
+
 const dataRequests = createAccountDataRequestsClient(async () => {throw new Error('No network in consumer type check');});
 async function checkEmailCorrection(intent: EmailReauthView, result: EmailCorrectionRequest, code: EmailCorrectionErrorCode) {
   if (intent.status === 'ready') {
@@ -237,6 +292,23 @@ async function checkUnitManagement(folder: ManagedUnitFolder, member: ManagedMem
   await operationsClient.raw.POST('/api/operations/manage/org-units/{unitId}/entitlements/batch', {params: {path: {unitId: folder.unit.id}, header: {'Idempotency-Key': 'grant'}}, body: {memberIds: [member.memberId], entitlementCode: 'bulletin.general.zh-Hant.access', operation: 'grant'}});
 }
 void checkUnitManagement;
+const groupClient = createOperationsClient({baseUrl: '', auth: authRuntime, getAccessToken: authRuntime.getAccessToken, refreshAfterUnauthorized: authRuntime.refreshAfterUnauthorized});
+async function checkGroupApplications(id: string) {
+  const directory: OrgUnitDirectoryPage = await groupClient.listOrgUnitDirectory({relation: 'all', q: 'group', limit: 20});
+  const review: ReviewableOrgJoinRequestPage = await groupClient.listReviewableOrgJoinRequests({status: 'history', orgUnitId: id});
+  const own = await groupClient.listOwnOrgJoinRequests({status: 'pending'});
+  const created: OrgJoinRequest = await groupClient.createOrgJoinRequest({orgUnitId: id, idempotencyKey: 'create'});
+  await groupClient.getOwnOrgJoinRequest(created.id);
+  await groupClient.getReviewableOrgJoinRequest(created.id);
+  await groupClient.cancelOrgJoinRequest(created.id, {version: created.version, idempotencyKey: 'cancel'});
+  await groupClient.approveOrgJoinRequest(created.id, {version: created.version, idempotencyKey: 'approve'});
+  await groupClient.rejectOrgJoinRequest(created.id, {version: created.version, idempotencyKey: 'reject'});
+  // @ts-expect-error History is a list filter, never a resource status.
+  const invalidStatus: OrgJoinRequest['status'] = 'history';
+  void invalidStatus;
+  return {directory, review, own};
+}
+void checkGroupApplications;
 const statementRef = {statementId: '00000000-0000-4000-8000-000000000001', publishedVersion: 7};
 void readAnonymousStatementDismissal(statementRef); void writeAnonymousStatementDismissal(statementRef); void statementRefKey(statementRef);
 const statementClient = createHhcWebClient({baseUrl: '/api', getAccessToken: authRuntime.getAccessToken, refreshAfterUnauthorized: authRuntime.refreshAfterUnauthorized});
@@ -258,7 +330,7 @@ void createHhcWebClient;
 void contentStatus;
 void groupManifest;
 void getInitialTheme;
-export default function Page() { return <>{player}<BulletinDocumentRenderer document={bulletin} mode="paper" activePage={bulletin.pages[0].id} /><BulletinDocumentRenderer document={bulletinV6} mode="paper" activePage={bulletinV6.pages[0].id} /><Button>Smoke</Button><ExpandableSearchField label="Search" submitLabel="Submit" clearLabel="Clear" closeLabel="Close" allowEmptySubmit onExpandedChange={() => {}} /><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /><AccountMenu user={{name: accountUser.display_name, email: accountUser.email}} links={[{id: 'destination', label: 'Destination', href: 'https://example.com/destination'}]} labels={{menu: 'Account', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => {}} /></>; }
+export default function Page() { return <>{notificationPresentation}{player}<BulletinDocumentRenderer document={bulletin} mode="paper" activePage={bulletin.pages[0].id} /><BulletinDocumentRenderer document={bulletinV6} mode="paper" activePage={bulletinV6.pages[0].id} /><Button>Smoke</Button><ExpandableSearchField label="Search" submitLabel="Submit" clearLabel="Clear" closeLabel="Close" allowEmptySubmit onExpandedChange={() => {}} /><ContextMenu label="Actions" x={0} y={0} isOpen={false} items={[]} onAction={() => {}} onOpenChange={() => {}} /><AccountMenu user={{name: accountUser.display_name, email: accountUser.email}} links={[{id: 'destination', label: 'Destination', href: 'https://example.com/destination'}]} labels={{menu: 'Account', greeting: 'Hi Ada', signOut: 'Sign out'}} onSignOut={() => {}} /></>; }
 `);
   run(next, 'install', '--ignore-workspace');
   run(next, 'build');
