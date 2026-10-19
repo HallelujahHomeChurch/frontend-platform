@@ -217,7 +217,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Check current church membership without exposing member details */
+        /**
+         * Check current church membership without exposing member details
+         * @description Existing exact account-api role or one exact WEBSITE_APP_ID (default hhc-web-api, test hhc-web-api-test). General allowlists do not widen this Website role.
+         */
         post: operations["checkMemberQualification"];
         delete?: never;
         options?: never;

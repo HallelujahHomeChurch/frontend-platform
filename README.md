@@ -366,7 +366,10 @@ The Account root exports `createInboxClient({auth, fetcher?})`; pass the existin
 `BrowserAccountAuthRuntime` to preserve token recovery and discard responses after
 identity loss/change. `list`, `summary`, `markRead` and `markAllRead` use fixed
 same-origin Notification paths, no-store and redirect rejection. The copied
-`openapi/notification-api.yaml` is the owning Notification wire contract.
+`openapi/notification-api.yaml` is the exact owning Notification wire contract.
+Private caller descriptions select one environment and preserve canonical producer
+labels; Operations member qualification likewise selects an exact Website role.
+These deployment identities do not alter the browser client routes.
 Malformed responses/resources fail closed; unknown future actions are omitted.
 Exact counts outside JavaScript's safe integer range fail closed. Snapshot expiry
 requires explicit refresh; the client never obtains a broader snapshot to replay.

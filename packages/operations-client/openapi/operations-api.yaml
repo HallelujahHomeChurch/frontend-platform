@@ -588,6 +588,7 @@ paths:
       tags: [Operations]
       operationId: checkMemberQualification
       summary: Check current church membership without exposing member details
+      description: Existing exact account-api role or one exact WEBSITE_APP_ID (default hhc-web-api, test hhc-web-api-test). General allowlists do not widen this Website role.
       x-hhc-visibility: private
       x-hhc-callers: [account-api, hhc-web-api]
       security: [{ daprCallerAppID: [] }]
