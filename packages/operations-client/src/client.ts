@@ -118,7 +118,7 @@ const integer = (v: unknown, min = 1): v is number => Number.isSafeInteger(v) &&
 const oneOf = (v: unknown, values: readonly string[]) => typeof v === 'string' && values.includes(v);
 const statuses = ['pending', 'approved', 'rejected', 'cancelled'] as const;
 function timestamp(v: unknown): boolean {
-  return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(v) && Number.isFinite(Date.parse(v)) && new Date(`${v.slice(0, 10)}T00:00:00Z`).toISOString().slice(0, 10) === v.slice(0, 10);
+  return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(v) && Number.isFinite(Date.parse(v)) && new Date(`${v.slice(0, 10)}T00:00:00Z`).toISOString().slice(0, 10) === v.slice(0, 10);
 }
 function preview(v: unknown): boolean {
   return Array.isArray(v) && v.every(u => shape(u, ['id', 'name', 'kind']) && uuid(u.id) && text(u.name) && oneOf(u.kind, ['church', 'family']));

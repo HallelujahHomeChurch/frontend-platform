@@ -39,7 +39,7 @@ describe('typed group application contracts', () => {
     s.auth.dispose();
   });
   it.each([
-    {version: 0}, {version: Number.MAX_SAFE_INTEGER + 1}, {status: 'history'}, {actions: {cancel: true}}, {ancestorCollapsePreview: null}, {ancestorCollapsePreview: [{id, name: 'x', kind: 'small_group'}]}, {ancestorCollapsePreview: [{id, name: 'x', kind: 'church', version: 1}]}, {requestedAt: '2026-02-30T00:00:00Z'}, {decidedAt: null}, {applicantDisplayName: 3}, {secret: 'private'}
+    {version: 0}, {version: Number.MAX_SAFE_INTEGER + 1}, {status: 'history'}, {actions: {cancel: true}}, {ancestorCollapsePreview: null}, {ancestorCollapsePreview: [{id, name: 'x', kind: 'small_group'}]}, {ancestorCollapsePreview: [{id, name: 'x', kind: 'church', version: 1}]}, {requestedAt: '2026-02-30T00:00:00Z'}, {requestedAt: '2026-10-19T24:00:00Z'}, {decidedAt: '2026-10-19T24:00:00.000+08:00'}, {decidedAt: null}, {applicantDisplayName: 3}, {secret: 'private'}
   ])('fails closed on malformed direct request fields %j', async delta => {
     const s = await setup(vi.fn(async () => Response.json({...row, ...delta})));
     await expect(s.client.getOwnOrgJoinRequest(id)).rejects.toMatchObject({code: 'invalid_response'}); s.auth.dispose();
