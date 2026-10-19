@@ -360,7 +360,7 @@ in the shared player.
 Publish the coordinated package version through the existing tag workflow
 before consumers pin its registry version; packed candidates are local evidence.
 
-## Owned Inbox client and presentation (1.0.78 candidate)
+## Owned Inbox client and presentation (1.1.1 candidate)
 
 The Account root exports `createInboxClient({auth, fetcher?})`; pass the existing
 `BrowserAccountAuthRuntime` to preserve token recovery and discard responses after
@@ -383,7 +383,7 @@ These are local candidates until the approved coordinated tag workflow publishes
 them. Repack the final shared commit after Operations additions, then revalidate
 WWW against those exact tarballs before registry version/lock updates and release.
 
-## Group application client (1.0.78 candidate)
+## Group application client (1.1.1 candidate)
 
 Operations exports fixed `listOrgUnitDirectory`, `listOwnOrgJoinRequests`,
 `getOwnOrgJoinRequest`, `createOrgJoinRequest`, `cancelOrgJoinRequest`,
@@ -405,7 +405,18 @@ owner-only `existingRequestId` for `already_pending` conflicts. Malformed new
 responses fail closed with `invalid_response`; identity transitions return
 `actor_changed`. Business authority remains server-owned.
 
-These coordinated 1.0.78 archives are unpublished local candidates, including the
-accepted Account Inbox/UI additions. The unrelated released v1.0.77 tag does not
-contain these features. Publish only through the approved coordinated workflow,
+These coordinated 1.1.1 archives are unpublished local candidates, including the
+accepted Account Inbox/UI additions. The unrelated released v1.1.0 tag contains reader bookmarks but not
+these Inbox/group application features. Publish only through the approved coordinated workflow,
 then update exact consumer registry pins/locks and re-run release gates.
+
+## Reader bookmark contract candidate
+
+The Website client exports `BulletinReaderBookmark` and four typed bookmark
+mutations through the existing private state/mutation methods. Bookmark CAS is
+required for rename/delete/reanchor and forbidden on create. `state.bookmarks`
+remains optional for older producers and offline snapshots; absence means the
+capability is unavailable. Deploy the compatible Website API producer first,
+then merge/publish this SDK and pin the actual published version in consumers.
+Local packed consumer builds do not establish registry publication or real-device
+cross-account/cross-device acceptance. This change does not publish a package.
