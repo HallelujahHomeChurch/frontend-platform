@@ -81,3 +81,13 @@ assert.match(accountIndex, /export \* from '\.\/inbox\.js'/);
 const uiIndex = await readFile(new URL('ui/src/index.ts', packageRoot), 'utf8');
 assert.match(uiIndex, /export \* from '\.\/notifications\.js'/);
 assert.ok(accountManifest.files.includes('openapi'), 'Account package must include owned Notification contract');
+
+// Group business routes stay fixed in the Operations owner, alongside existing Inbox exports.
+for (const route of ['/api/operations/me/org-units:', '/api/operations/me/org-join-requests:', '/api/operations/me/org-join-requests/{id}:', '/api/operations/me/org-join-requests/{id}/cancel:', '/api/operations/manage/org-join-requests:', '/api/operations/manage/org-join-requests/{id}:', '/api/operations/manage/org-join-requests/{id}/approve:', '/api/operations/manage/org-join-requests/{id}/reject:']) {
+  assert.ok(operationsSpec.includes(route), `Operations owned contract missing ${route}`);
+}
+const operationsSource = await readFile(new URL('operations-client/src/client.ts', packageRoot), 'utf8');
+for (const method of ['listOrgUnitDirectory', 'listOwnOrgJoinRequests', 'listReviewableOrgJoinRequests', 'createOrgJoinRequest', 'getOwnOrgJoinRequest', 'getReviewableOrgJoinRequest', 'cancelOrgJoinRequest', 'approveOrgJoinRequest', 'rejectOrgJoinRequest']) {
+  assert.ok(operationsSource.includes(`async ${method}(`), `Operations typed method missing ${method}`);
+}
+assert.ok(operationsSpec.includes('reviewJoinRequests:'), 'Managed folder keeps additive review entry action');

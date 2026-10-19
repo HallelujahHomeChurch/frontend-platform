@@ -4,6 +4,210 @@
  */
 
 export interface paths {
+    "/api/operations/me/org-units": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Discover active same-church groups and fellowships
+         * @description Exact configured Gateway caller and authenticated human Account identity. Current responsibility-only non-self authority applies to reviewer routes; staff scopes do not widen it. Unknown or duplicate query keys and GET bodies are rejected. Private no-store. Mutations never accept arbitrary replacement or grant inputs.
+         */
+        get: operations["listOrgUnitDirectory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/me/org-join-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List own applications
+         * @description Exact configured Gateway caller and authenticated human Account identity. Current responsibility-only non-self authority applies to reviewer routes; staff scopes do not widen it. Unknown or duplicate query keys and GET bodies are rejected. Private no-store. Mutations never accept arbitrary replacement or grant inputs.
+         */
+        get: operations["listOwnOrgJoinRequests"];
+        put?: never;
+        /**
+         * Submit pending application with current canonical ancestor-collapse disclosure
+         * @description Exact configured Gateway caller and authenticated human Account identity. Current responsibility-only non-self authority applies to reviewer routes; staff scopes do not widen it. Unknown or duplicate query keys and GET bodies are rejected. Private no-store. Mutations never accept arbitrary replacement or grant inputs.
+         */
+        post: operations["createOrgJoinRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/me/org-join-requests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read own application; owners retain necessary history after church membership ends
+         * @description Exact configured Gateway caller and authenticated human Account identity. Current responsibility-only non-self authority applies to reviewer routes; staff scopes do not widen it. Unknown or duplicate query keys and GET bodies are rejected. Private no-store. Mutations never accept arbitrary replacement or grant inputs.
+         */
+        get: operations["getOwnOrgJoinRequest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/me/org-join-requests/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel application with current authority and version fencing
+         * @description Exact configured Gateway caller and authenticated human Account identity. Current responsibility-only non-self authority applies to reviewer routes; staff scopes do not widen it. Unknown or duplicate query keys and GET bodies are rejected. Private no-store. Mutations never accept arbitrary replacement or grant inputs.
+         */
+        post: operations["cancelOrgJoinRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/manage/org-join-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List reviewable applications
+         * @description Exact configured Gateway caller and authenticated human Account identity. Current responsibility-only non-self authority applies to reviewer routes; staff scopes do not widen it. Unknown or duplicate query keys and GET bodies are rejected. Private no-store. Mutations never accept arbitrary replacement or grant inputs.
+         */
+        get: operations["listReviewableOrgJoinRequests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/manage/org-join-requests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read reviewable application; owners retain necessary history after church membership ends
+         * @description Exact configured Gateway caller and authenticated human Account identity. Current responsibility-only non-self authority applies to reviewer routes; staff scopes do not widen it. Unknown or duplicate query keys and GET bodies are rejected. Private no-store. Mutations never accept arbitrary replacement or grant inputs.
+         */
+        get: operations["getReviewableOrgJoinRequest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/manage/org-join-requests/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve application with current authority and version fencing
+         * @description Exact configured Gateway caller and authenticated human Account identity. Current responsibility-only non-self authority applies to reviewer routes; staff scopes do not widen it. Unknown or duplicate query keys and GET bodies are rejected. Private no-store. Mutations never accept arbitrary replacement or grant inputs.
+         */
+        post: operations["approveOrgJoinRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/operations/manage/org-join-requests/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reject application with current authority and version fencing
+         * @description Exact configured Gateway caller and authenticated human Account identity. Current responsibility-only non-self authority applies to reviewer routes; staff scopes do not widen it. Unknown or duplicate query keys and GET bodies are rejected. Private no-store. Mutations never accept arbitrary replacement or grant inputs.
+         */
+        post: operations["rejectOrgJoinRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/priv/operations/inbox-visibility": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve at most 100 group Inbox references under current owner/reviewer authority
+         * @description Exact configured Notification caller only; the generic private allowlist grants no access. One bounded SQL query preserves input order; invisible items omit projection. Current safe names are limited to 500 UTF-8 bytes without NUL/CR. Owners retain necessary history after church membership ends; former reviewers see no labels. Typed actions never contain URLs, Email or locale. Owner deadline is 2 seconds at the Notification caller.
+         */
+        post: operations["resolveOrgJoinInboxVisibility"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/priv/operations/inbox-publication-audiences/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create or page an immutable publication audience with current eligibility recheck
+         * @description Exact configured Engagement Dapr caller only. One frozen INSERT SELECT snapshot per snapshotId and immutable publication context; Account UUID keyset scans at most limit frozen rows and returns only currently entitled accounts. An empty accountIds page can have nextAfterAccountId. No channel subscription, Account display projection or member-details predicate is used. Limit 64 KiB and 10 seconds.
+         */
+        post: operations["resolveInboxPublicationAudience"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/priv/operations/member-qualifications": {
         parameters: {
             query?: never;
@@ -1144,7 +1348,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List the authenticated person's effective responsibility roots */
+        /**
+         * List responsibility roots and directly joined active small groups
+         * @description Deduplicated roots preserve management scope. Read-only units omit parentId and redact policy values to empty arrays and false.
+         */
         get: operations["listManagedRoots"];
         put?: never;
         post?: never;
@@ -1161,7 +1368,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get a responsibility-scoped unit folder */
+        /**
+         * Get a managed unit or directly joined small-group folder
+         * @description Active direct small-group members in the same active church may read their group. Read-only responses have no parentId, empty breadcrumb and children, redacted policy values, and false management actions. Member detail and all writes remain responsibility-only.
+         */
         get: operations["getManagedUnitFolder"];
         /** Update the assigned active unit's name and contact Email */
         put: operations["updateManagedUnit"];
@@ -1239,8 +1449,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List members displayed at one managed unit
-         * @description Excludes the authenticated Account before pagination. Other directly assigned responsible people remain visible. Responsibility filtering uses the existing read scope, not delegation permission.
+         * List members displayed at a managed unit or directly joined small group
+         * @description Requires scoped responsibility or active direct membership in this small group under the same active church. Includes existing name and Email columns. Excludes the authenticated Account before pagination. Other directly assigned responsible people remain visible. Responsibility filtering uses the existing read scope, not delegation permission.
          */
         get: operations["listManagedMembers"];
         put?: never;
@@ -1785,6 +1995,173 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        OrgJoinCollapseUnit: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @enum {string} */
+            kind: "church" | "family";
+        };
+        OrgJoinActions: {
+            cancel: boolean;
+            approve: boolean;
+            reject: boolean;
+        };
+        OrgJoinRequest: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            orgUnitId: string;
+            orgUnitName: string;
+            /** @enum {string} */
+            orgUnitKind: "small_group" | "fellowship";
+            /** @enum {string} */
+            status: "pending" | "approved" | "rejected" | "cancelled";
+            /** Format: date-time */
+            requestedAt: string;
+            /** Format: date-time */
+            decidedAt?: string;
+            version: number;
+            /** @enum {string} */
+            cancellationReason?: "applicant_cancelled" | "membership_ended" | "unit_unavailable" | "church_changed" | "affiliation_changed" | "joined_elsewhere" | "account_unavailable";
+            actions: components["schemas"]["OrgJoinActions"];
+            /** @description Current safe direct church/family ancestors on the exact target path; canonical [] when empty. Approval may collapse only these same-path ancestors and preserves other groups, fellowships, descendants and branches. Presentation data is never client authority. */
+            ancestorCollapsePreview: components["schemas"]["OrgJoinCollapseUnit"][];
+            /** @description Available current name, reviewer-only; no Email. */
+            applicantDisplayName?: string;
+        };
+        OrgJoinRequestPage: {
+            items: components["schemas"]["OrgJoinRequest"][];
+            page: number;
+            nextPage?: number;
+        };
+        ReviewableOrgJoinRequestPage: {
+            items: components["schemas"]["OrgJoinRequest"][];
+            page: number;
+            nextPage?: number;
+            /** @description Current actionable pending total under the same optional unit filter, excludes self and stale scope, independent of page/status. */
+            actionablePendingTotal: number;
+        };
+        OrgJoinCreateInput: {
+            /** Format: uuid */
+            orgUnitId: string;
+        };
+        EmptyOrgJoinInput: Record<string, never>;
+        DirectoryUnit: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @enum {string} */
+            kind: "church" | "family" | "small_group" | "fellowship";
+            ancestorLabels: string[];
+            /** @enum {string} */
+            relationship: "managed" | "joined" | "none";
+            /** @enum {string} */
+            applicationAvailability: "available" | "already_joined" | "pending" | "affiliation_change_required" | "no_reviewer";
+            /** Format: uuid */
+            ownPendingRequestId?: string;
+            /** @description Current safe direct church/family ancestors on the exact target path; canonical [] when empty. Approval may collapse only these same-path ancestors and preserves other groups, fellowships, descendants and branches. Presentation data is never client authority. */
+            ancestorCollapsePreview: components["schemas"]["OrgJoinCollapseUnit"][];
+        };
+        OrgUnitDirectoryPage: {
+            items: components["schemas"]["DirectoryUnit"][];
+            page: number;
+            nextPage?: number;
+        };
+        OrgJoinInboxResource: {
+            /** @enum {string} */
+            type: "org_join_request";
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            unitId: string;
+        };
+        OrgJoinInboxRef: {
+            /** Format: uuid */
+            id: string;
+            resource: components["schemas"]["OrgJoinInboxResource"];
+        };
+        OrgJoinInboxAction: {
+            /** @enum {string} */
+            type: "join_request_review" | "join_request_result";
+            resource: components["schemas"]["OrgJoinInboxResource"];
+        };
+        OrgJoinInboxProjection: {
+            /** @enum {string} */
+            titleKey: "notification.orgJoin";
+            /** @enum {string} */
+            messageKey: "notification.orgJoin.pending" | "notification.orgJoin.approved" | "notification.orgJoin.rejected" | "notification.orgJoin.cancelled" | "notification.orgJoin.review.pending" | "notification.orgJoin.review.approved" | "notification.orgJoin.review.rejected" | "notification.orgJoin.review.cancelled";
+            parameters: {
+                /** @description Current unit name, safe at most 500 UTF-8 bytes. */
+                title: string;
+                /** @description Current available applicant name for currently authorized reviewers only, safe at most 500 UTF-8 bytes. */
+                applicant?: string;
+            };
+            action: components["schemas"]["OrgJoinInboxAction"];
+        };
+        OrgJoinInboxVisibilityRequest: {
+            /** Format: uuid */
+            actorId: string;
+            /** @enum {string} */
+            locale: "zh-Hant" | "zh-Hans" | "en" | "ja" | "ko";
+            items: components["schemas"]["OrgJoinInboxRef"][];
+        };
+        OrgJoinInboxVisibilityResponse: {
+            items: ({
+                /** Format: uuid */
+                id: string;
+                /** @enum {boolean} */
+                visible: false;
+            } | {
+                /** Format: uuid */
+                id: string;
+                /** @enum {boolean} */
+                visible: true;
+                projection: components["schemas"]["OrgJoinInboxProjection"];
+            })[];
+        };
+        OrgJoinConflict: {
+            /** @enum {string} */
+            error: "conflict" | "already_pending" | "already_joined" | "no_reviewer" | "affiliation_change_required";
+            /**
+             * Format: uuid
+             * @description Present only for already_pending and only for the current owner.
+             */
+            existingRequestId?: string;
+        };
+        InboxPublicationAudienceRequest: {
+            /** Format: uuid */
+            snapshotId: string;
+            /** @enum {unknown} */
+            kind: "recording.published" | "bulletin.published";
+            resourceId: string;
+            series?: string;
+            locale?: string;
+            /** Format: uuid */
+            afterAccountId?: string;
+            limit: number;
+        } & ({
+            /** @constant */
+            kind?: "recording.published";
+            /** @constant */
+            series?: "";
+            /** @constant */
+            locale?: "";
+        } | {
+            /** @constant */
+            kind?: "bulletin.published";
+            /** @constant */
+            series: "general";
+            /** @enum {unknown} */
+            locale: "zh-Hant" | "zh-Hans" | "en";
+        } | {
+            /** @constant */
+            kind?: "bulletin.published";
+            /** @constant */
+            series: "children";
+            /** @enum {unknown} */
+            locale: "zh-Hant" | "en";
+        });
         /** @enum {string} */
         EntitlementBatchCode: "bulletin.general.zh-Hant.access" | "bulletin.general.zh-Hans.access" | "bulletin.general.en.access" | "bulletin.children.zh-Hant.access" | "bulletin.children.en.access" | "video.meeting-recordings.access";
         EntitlementBatchAudience: {
@@ -1939,6 +2316,8 @@ export interface components {
         };
         OrgUnitList: components["schemas"]["OrgUnit"][];
         ManagedActions: {
+            /** @description Current responsibility-only review entry point; request actions remain non-self and current-state guarded. */
+            reviewJoinRequests: boolean;
             manageEntitlementPolicy: boolean;
             editUnit: boolean;
             createChild: boolean;
@@ -2148,6 +2527,10 @@ export interface components {
             status: "scheduled" | "cancelled";
             version: number;
         };
+        AdminMeetingList: (components["schemas"]["Meeting"] & {
+            /** @description Enabled collection bindings for this already authorized meeting. Presentation only; reread detail and version before saving. */
+            collectionIds: string[];
+        })[];
         MeetingList: components["schemas"]["Meeting"][];
         MediaSyncWindow: {
             /** Format: date-time */
@@ -2786,6 +3169,817 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    listOrgUnitDirectory: {
+        parameters: {
+            query?: {
+                relation?: "mine" | "all";
+                /** @description Trimmed literal case-insensitive substring; maximum 100 Unicode characters. */
+                q?: string;
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authorized result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgUnitDirectoryPage"];
+                };
+            };
+            /** @description Invalid query, identity, body, Idempotency-Key or quoted positive If-Match */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing caller or user identity */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Wrong caller or current authority denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown or foreign owner request */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict; create may return already_pending with owner-only existingRequestId, already_joined, no_reviewer or affiliation_change_required */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgJoinConflict"];
+                };
+            };
+            /** @description version_mismatch; reload current resource */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Operations unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listOwnOrgJoinRequests: {
+        parameters: {
+            query?: {
+                /** @description history is the server-side union of approved, rejected and cancelled; it is never a resource status. */
+                status?: "pending" | "approved" | "rejected" | "cancelled" | "history";
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authorized result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgJoinRequestPage"];
+                };
+            };
+            /** @description Invalid query, identity, body, Idempotency-Key or quoted positive If-Match */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing caller or user identity */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Wrong caller or current authority denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown or foreign owner request */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict; create may return already_pending with owner-only existingRequestId, already_joined, no_reviewer or affiliation_change_required */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgJoinConflict"];
+                };
+            };
+            /** @description version_mismatch; reload current resource */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Operations unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    createOrgJoinRequest: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrgJoinCreateInput"];
+            };
+        };
+        responses: {
+            /** @description Authorized result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgJoinRequest"];
+                };
+            };
+            /** @description Invalid query, identity, body, Idempotency-Key or quoted positive If-Match */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing caller or user identity */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Wrong caller or current authority denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown or foreign owner request */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict; create may return already_pending with owner-only existingRequestId, already_joined, no_reviewer or affiliation_change_required */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgJoinConflict"];
+                };
+            };
+            /** @description version_mismatch; reload current resource */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Operations unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getOwnOrgJoinRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authorized result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgJoinRequest"];
+                };
+            };
+            /** @description Invalid query, identity, body, Idempotency-Key or quoted positive If-Match */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing caller or user identity */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Wrong caller or current authority denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown or foreign owner request */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict; create may return already_pending with owner-only existingRequestId, already_joined, no_reviewer or affiliation_change_required */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgJoinConflict"];
+                };
+            };
+            /** @description version_mismatch; reload current resource */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Operations unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    cancelOrgJoinRequest: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["EmptyOrgJoinInput"];
+            };
+        };
+        responses: {
+            /** @description Authorized result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgJoinRequest"];
+                };
+            };
+            /** @description Invalid query, identity, body, Idempotency-Key or quoted positive If-Match */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing caller or user identity */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Wrong caller or current authority denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown or foreign owner request */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict; create may return already_pending with owner-only existingRequestId, already_joined, no_reviewer or affiliation_change_required */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgJoinConflict"];
+                };
+            };
+            /** @description version_mismatch; reload current resource */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Operations unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listReviewableOrgJoinRequests: {
+        parameters: {
+            query?: {
+                /** @description Exact optional unit filter applies to page and actionable pending total. */
+                orgUnitId?: string;
+                /** @description history is the server-side union of approved, rejected and cancelled; it is never a resource status. */
+                status?: "pending" | "approved" | "rejected" | "cancelled" | "history";
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authorized result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewableOrgJoinRequestPage"];
+                };
+            };
+            /** @description Invalid query, identity, body, Idempotency-Key or quoted positive If-Match */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing caller or user identity */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Wrong caller or current authority denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown or foreign owner request */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict; create may return already_pending with owner-only existingRequestId, already_joined, no_reviewer or affiliation_change_required */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgJoinConflict"];
+                };
+            };
+            /** @description version_mismatch; reload current resource */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Operations unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getReviewableOrgJoinRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authorized result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgJoinRequest"];
+                };
+            };
+            /** @description Invalid query, identity, body, Idempotency-Key or quoted positive If-Match */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing caller or user identity */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Wrong caller or current authority denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown or foreign owner request */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict; create may return already_pending with owner-only existingRequestId, already_joined, no_reviewer or affiliation_change_required */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgJoinConflict"];
+                };
+            };
+            /** @description version_mismatch; reload current resource */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Operations unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    approveOrgJoinRequest: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["EmptyOrgJoinInput"];
+            };
+        };
+        responses: {
+            /** @description Authorized result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgJoinRequest"];
+                };
+            };
+            /** @description Invalid query, identity, body, Idempotency-Key or quoted positive If-Match */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing caller or user identity */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Wrong caller or current authority denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown or foreign owner request */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict; create may return already_pending with owner-only existingRequestId, already_joined, no_reviewer or affiliation_change_required */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgJoinConflict"];
+                };
+            };
+            /** @description version_mismatch; reload current resource */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Operations unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    rejectOrgJoinRequest: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["EmptyOrgJoinInput"];
+            };
+        };
+        responses: {
+            /** @description Authorized result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgJoinRequest"];
+                };
+            };
+            /** @description Invalid query, identity, body, Idempotency-Key or quoted positive If-Match */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing caller or user identity */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Wrong caller or current authority denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown or foreign owner request */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict; create may return already_pending with owner-only existingRequestId, already_joined, no_reviewer or affiliation_change_required */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgJoinConflict"];
+                };
+            };
+            /** @description version_mismatch; reload current resource */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Operations unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    resolveOrgJoinInboxVisibility: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrgJoinInboxVisibilityRequest"];
+            };
+        };
+        responses: {
+            /** @description Exactly one current visibility result per input id */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgJoinInboxVisibilityResponse"];
+                };
+            };
+            /** @description Invalid closed body, duplicate IDs, query, locale or bounds; body limit 64 KiB */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing caller */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Wrong caller */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Visibility unavailable; do not treat as zero visible items */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    resolveInboxPublicationAudience: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InboxPublicationAudienceRequest"];
+            };
+        };
+        responses: {
+            /** @description Frozen snapshot page, private no-store */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        snapshotId: string;
+                        accountIds: string[];
+                        /** Format: uuid */
+                        nextAfterAccountId?: string;
+                    };
+                };
+            };
+            /** @description Invalid closed context, JSON, bounds or duplicate caller */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing caller */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Caller is not the exact configured Engagement identity */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Snapshot identity reused with changed kind or edition */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Snapshot or current eligibility unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     checkMemberQualification: {
         parameters: {
             query?: never;
@@ -3741,7 +4935,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MeetingList"];
+                    "application/json": components["schemas"]["AdminMeetingList"];
                 };
             };
             /** @description Authorization unavailable */

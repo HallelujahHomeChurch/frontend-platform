@@ -360,7 +360,7 @@ in the shared player.
 Publish the coordinated package version through the existing tag workflow
 before consumers pin its registry version; packed candidates are local evidence.
 
-## Owned Inbox client and presentation (1.0.77 candidate)
+## Owned Inbox client and presentation (1.0.78 candidate)
 
 The Account root exports `createInboxClient({auth, fetcher?})`; pass the existing
 `BrowserAccountAuthRuntime` to preserve token recovery and discard responses after
@@ -382,3 +382,30 @@ The React Aria dialog popover supplies keyboard dismissal and focus restoration.
 These are local candidates until the approved coordinated tag workflow publishes
 them. Repack the final shared commit after Operations additions, then revalidate
 WWW against those exact tarballs before registry version/lock updates and release.
+
+## Group application client (1.0.78 candidate)
+
+Operations exports fixed `listOrgUnitDirectory`, `listOwnOrgJoinRequests`,
+`getOwnOrgJoinRequest`, `createOrgJoinRequest`, `cancelOrgJoinRequest`,
+`listReviewableOrgJoinRequests`, `getReviewableOrgJoinRequest`,
+`approveOrgJoinRequest` and `rejectOrgJoinRequest` methods. Pass the existing
+Account runtime as `auth` alongside its token/refresh callbacks. New methods
+require live identity and fence late reads and 401 retries after any actor loss
+or change; existing `raw` and `getMyAccess` callers remain compatible.
+
+The owned Operations OpenAPI supplies direct DTOs, `history` list filtering,
+reviewer-only actionable totals and canonical safe ancestor-collapse previews.
+Create takes `{orgUnitId, idempotencyKey, signal?}`; decisions/cancel take request
+ID and `{version, idempotencyKey, signal?}`. Keys must be unchanged printable ASCII
+of 1–200 bytes with no surrounding whitespace; versions are positive safe integers
+and serialize as quoted numeric `If-Match`. Retry an uncertain mutation only with
+the original target, version and key. A 412 requires explicit refresh; the client
+never invents a replacement intent. `OperationsApiError` retains status/code and
+owner-only `existingRequestId` for `already_pending` conflicts. Malformed new
+responses fail closed with `invalid_response`; identity transitions return
+`actor_changed`. Business authority remains server-owned.
+
+These coordinated 1.0.78 archives are unpublished local candidates, including the
+accepted Account Inbox/UI additions. The unrelated released v1.0.77 tag does not
+contain these features. Publish only through the approved coordinated workflow,
+then update exact consumer registry pins/locks and re-run release gates.

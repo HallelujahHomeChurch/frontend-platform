@@ -78,7 +78,7 @@ import {createRoot} from 'react-dom/client';
 import {createAccountSessionClient, createBrowserAccountAuthRuntime, createAccountDataRequestsClient, createInboxClient, type InboxAction, type InboxResource, type InboxSummary, type AccountSessionUser, type EmailReauthView, type EmailCorrectionSubmitInput, type EmailCorrectionRequest, type EmailCorrectionErrorCode} from '@hallelujahhomechurch/account-client';
 import {canAccessAdmin} from '@hallelujahhomechurch/account-client/admin-access';
 import {createHhcWebClient, type ContentStatus, type PageGroupManifest, type BroadcastStreamKey, type BroadcastStreamKeySetInput, type BroadcastStreamKeyBindInput, type BroadcastMutationResult, type BroadcastSource, type BroadcastSourceStreamKeyInput, type BroadcastSourceTargetInput, type BroadcastSourceResolveInput, type BroadcastSourceResolved, type BroadcastSourceBindInput} from '@hallelujahhomechurch/hhc-web-client';
-import {createOperationsClient, type ManagedMemberView, type ManagedUnitFolder} from '@hallelujahhomechurch/operations-client';
+import {createOperationsClient, type ManagedMemberView, type ManagedUnitFolder, type OrgJoinRequest, type OrgUnitDirectoryPage, type ReviewableOrgJoinRequestPage} from '@hallelujahhomechurch/operations-client';
 import {getInitialTheme, readAnonymousStatementDismissal, writeAnonymousStatementDismissal, statementRefKey} from '@hallelujahhomechurch/preferences';
 import {AccountMenu, Button, ContextMenu, BulletinDocumentRenderer, ExpandableSearchField, NotificationBell, NotificationList, type NotificationAppHref} from '@hallelujahhomechurch/ui';
 import {createRef} from 'react';
@@ -137,6 +137,23 @@ async function checkUnitManagement(folder: ManagedUnitFolder, member: ManagedMem
   await operationsClient.raw.POST('/api/operations/manage/org-units/{unitId}/entitlements/batch', {params: {path: {unitId: folder.unit.id}, header: {'Idempotency-Key': 'grant'}}, body: {memberIds: [member.memberId], entitlementCode: 'bulletin.general.zh-Hant.access', operation: 'grant'}});
 }
 void checkUnitManagement;
+const groupClient = createOperationsClient({baseUrl: '', auth: authRuntime, getAccessToken: authRuntime.getAccessToken, refreshAfterUnauthorized: authRuntime.refreshAfterUnauthorized});
+async function checkGroupApplications(id: string) {
+  const directory: OrgUnitDirectoryPage = await groupClient.listOrgUnitDirectory({relation: 'all', q: 'group', limit: 20});
+  const review: ReviewableOrgJoinRequestPage = await groupClient.listReviewableOrgJoinRequests({status: 'history', orgUnitId: id});
+  const own = await groupClient.listOwnOrgJoinRequests({status: 'pending'});
+  const created: OrgJoinRequest = await groupClient.createOrgJoinRequest({orgUnitId: id, idempotencyKey: 'create'});
+  await groupClient.getOwnOrgJoinRequest(created.id);
+  await groupClient.getReviewableOrgJoinRequest(created.id);
+  await groupClient.cancelOrgJoinRequest(created.id, {version: created.version, idempotencyKey: 'cancel'});
+  await groupClient.approveOrgJoinRequest(created.id, {version: created.version, idempotencyKey: 'approve'});
+  await groupClient.rejectOrgJoinRequest(created.id, {version: created.version, idempotencyKey: 'reject'});
+  // @ts-expect-error History is a list filter, never a resource status.
+  const invalidStatus: OrgJoinRequest['status'] = 'history';
+  void invalidStatus;
+  return {directory, review, own};
+}
+void checkGroupApplications;
 const statementRef = {statementId: '00000000-0000-4000-8000-000000000001', publishedVersion: 7};
 void readAnonymousStatementDismissal(statementRef); void writeAnonymousStatementDismissal(statementRef); void statementRefKey(statementRef);
 const statementClient = createHhcWebClient({baseUrl: '/api', getAccessToken: authRuntime.getAccessToken, refreshAfterUnauthorized: authRuntime.refreshAfterUnauthorized});
@@ -216,7 +233,7 @@ export default function Layout({children}: {children: React.ReactNode}) {
 import {createAccountSessionClient, createBrowserAccountAuthRuntime, createAccountDataRequestsClient, createInboxClient, type InboxAction, type InboxResource, type InboxSummary, type AccountSessionUser, type EmailReauthView, type EmailCorrectionSubmitInput, type EmailCorrectionRequest, type EmailCorrectionErrorCode} from '@hallelujahhomechurch/account-client';
 import {canAccessAdmin} from '@hallelujahhomechurch/account-client/admin-access';
 import {createHhcWebClient, type ContentStatus, type PageGroupManifest, type BroadcastStreamKey, type BroadcastStreamKeySetInput, type BroadcastStreamKeyBindInput, type BroadcastMutationResult} from '@hallelujahhomechurch/hhc-web-client';
-import {createOperationsClient, type ManagedMemberView, type ManagedUnitFolder} from '@hallelujahhomechurch/operations-client';
+import {createOperationsClient, type ManagedMemberView, type ManagedUnitFolder, type OrgJoinRequest, type OrgUnitDirectoryPage, type ReviewableOrgJoinRequestPage} from '@hallelujahhomechurch/operations-client';
 import {getInitialTheme, readAnonymousStatementDismissal, writeAnonymousStatementDismissal, statementRefKey} from '@hallelujahhomechurch/preferences';
 import {AccountMenu, Button, ContextMenu, BulletinDocumentRenderer, ExpandableSearchField, NotificationBell, NotificationList, type NotificationAppHref} from '@hallelujahhomechurch/ui';
 import {createRef} from 'react';
@@ -273,6 +290,23 @@ async function checkUnitManagement(folder: ManagedUnitFolder, member: ManagedMem
   await operationsClient.raw.POST('/api/operations/manage/org-units/{unitId}/entitlements/batch', {params: {path: {unitId: folder.unit.id}, header: {'Idempotency-Key': 'grant'}}, body: {memberIds: [member.memberId], entitlementCode: 'bulletin.general.zh-Hant.access', operation: 'grant'}});
 }
 void checkUnitManagement;
+const groupClient = createOperationsClient({baseUrl: '', auth: authRuntime, getAccessToken: authRuntime.getAccessToken, refreshAfterUnauthorized: authRuntime.refreshAfterUnauthorized});
+async function checkGroupApplications(id: string) {
+  const directory: OrgUnitDirectoryPage = await groupClient.listOrgUnitDirectory({relation: 'all', q: 'group', limit: 20});
+  const review: ReviewableOrgJoinRequestPage = await groupClient.listReviewableOrgJoinRequests({status: 'history', orgUnitId: id});
+  const own = await groupClient.listOwnOrgJoinRequests({status: 'pending'});
+  const created: OrgJoinRequest = await groupClient.createOrgJoinRequest({orgUnitId: id, idempotencyKey: 'create'});
+  await groupClient.getOwnOrgJoinRequest(created.id);
+  await groupClient.getReviewableOrgJoinRequest(created.id);
+  await groupClient.cancelOrgJoinRequest(created.id, {version: created.version, idempotencyKey: 'cancel'});
+  await groupClient.approveOrgJoinRequest(created.id, {version: created.version, idempotencyKey: 'approve'});
+  await groupClient.rejectOrgJoinRequest(created.id, {version: created.version, idempotencyKey: 'reject'});
+  // @ts-expect-error History is a list filter, never a resource status.
+  const invalidStatus: OrgJoinRequest['status'] = 'history';
+  void invalidStatus;
+  return {directory, review, own};
+}
+void checkGroupApplications;
 const statementRef = {statementId: '00000000-0000-4000-8000-000000000001', publishedVersion: 7};
 void readAnonymousStatementDismissal(statementRef); void writeAnonymousStatementDismissal(statementRef); void statementRefKey(statementRef);
 const statementClient = createHhcWebClient({baseUrl: '/api', getAccessToken: authRuntime.getAccessToken, refreshAfterUnauthorized: authRuntime.refreshAfterUnauthorized});
