@@ -9,7 +9,28 @@ permissions:
   contents: read
 
 jobs:
+  agent_docs:
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.diff.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Test documentation classification
+        run: python3 .github/scripts/test-ci-agent-docs.py
+      - name: Classify inert agent documentation
+        id: diff
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: python3 .github/scripts/ci-agent-docs.py "$EVENT_NAME" "$BASE_SHA" "$HEAD_SHA" >> "$GITHUB_OUTPUT"
+
   prepare:
+    needs: agent_docs
+    if: ${{ always() && (needs.agent_docs.result != 'success' || needs.agent_docs.outputs.docs_only != 'true') }}
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.bundle.outputs.matrix }}
@@ -79,7 +100,8 @@ jobs:
           retention-days: 1
 
   renderer:
-    needs: prepare
+    needs: [agent_docs, prepare]
+    if: ${{ always() && needs.prepare.result == 'success' && (needs.agent_docs.result != 'success' || needs.agent_docs.outputs.docs_only != 'true') }}
     uses: ./.github/workflows/renderer.yml
     with:
       mode: ci
@@ -89,19 +111,32 @@ jobs:
 
   verify:
     if: ${{ always() }}
-    needs: [prepare, renderer]
+    needs: [agent_docs, prepare, renderer]
     runs-on: ubuntu-latest
     steps:
+      - name: Require a proven classification
+        run: |
+          test "${{ needs.agent_docs.result }}" = success
+          if [ "${{ needs.agent_docs.outputs.docs_only }}" = true ]; then
+            test "${{ needs.prepare.result }}" = skipped
+            test "${{ needs.renderer.result }}" = skipped
+          fi
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: needs.agent_docs.outputs.docs_only != 'true'
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        if: needs.agent_docs.outputs.docs_only != 'true'
         with:
           node-version: 22
           package-manager-cache: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: needs.agent_docs.outputs.docs_only != 'true'
         with:
           pattern: renderer-result-*-${{ github.sha }}-${{ github.run_attempt }}
           path: renderer-results
       - name: Require all validation and exact renderer coverage
+        if: needs.agent_docs.outputs.docs_only != 'true'
         env:
-          CI_NEEDS: ${{ toJSON(needs) }}
+          CI_NEEDS: >-
+            {"prepare":${{ toJSON(needs.prepare) }},
+            "renderer":${{ toJSON(needs.renderer) }}}
         run: node scripts/ci-bulletin-renderer.mjs verify-results renderer-results
