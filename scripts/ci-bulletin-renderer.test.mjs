@@ -134,8 +134,8 @@ test('CI and release use the same non-publishing shard runner and release cannot
     assert.deepEqual(caller.permissions, {contents: 'read'});
     assert.equal(caller.jobs.renderer.uses, './.github/workflows/renderer.yml');
     assert.equal(caller.jobs.renderer.with.mode, mode);
-    assert.equal(caller.jobs.renderer.needs, 'prepare');
-    assert.deepEqual(caller.jobs.verify.needs, ['prepare', 'renderer']);
+    assert.deepEqual(caller.jobs.renderer.needs, mode === 'ci' ? ['agent_docs', 'prepare'] : 'prepare');
+    assert.deepEqual(caller.jobs.verify.needs, mode === 'ci' ? ['agent_docs', 'prepare', 'renderer'] : ['prepare', 'renderer']);
     assert.equal(caller.jobs.verify.if, '${{ always() }}');
     assert.equal(caller.jobs.renderer.secrets, undefined);
     const receiptsDownload = caller.jobs.verify.steps.find(step => step.uses?.startsWith('actions/download-artifact@'));
