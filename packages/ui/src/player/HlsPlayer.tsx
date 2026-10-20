@@ -6,6 +6,7 @@ import {LIVE_EDGE_TOLERANCE_SECONDS,LIVE_HOLDBACK_SECONDS,liveWindow, type LiveP
 import {PlayerChrome} from './PlayerChrome.js';
 import {RecordingWatermark} from './RecordingWatermark.js';
 import styles from './styles.js';
+import {createPlayerDiagnostics,type PlayerDiagnostic} from './player-diagnostics.js';
 
 type Quality = 'auto' | '480p' | '720p' | '1080p';
 export type PlayerLabels = {
@@ -15,6 +16,7 @@ export type PlayerLabels = {
   settingsBack?:string; replay?:string; settings:string; togglePlayback:string; privateCopy:string; buffering:string;
 };
 export type HlsPlayerProps = {
+  onDiagnostic?:(value:PlayerDiagnostic)=>void;
   controls?:boolean; initialQuality?:Quality;
   playbackMode?: 'vod' | 'live'; live?: LivePlayerState; resume?: PlayerBookmark; onBookmark?: (value: PlayerBookmark) => void;
   poster?:string; previousHref?:string; nextHref?:string; onNavigate?:(href:string)=>void;
@@ -29,8 +31,18 @@ function verifyMediaRequest(master:string,target:string) {
     || !/^(master\.m3u8|(480p|720p|1080p)\/(index\.m3u8|init\.mp4|seg-\d{6}\.m4s))$/.test(path)) throw new Error('Invalid media request');
 }
 
-export function HlsPlayer({controls=true,initialQuality='auto',playbackUrl,availableQualities,watermark,muted=false,title,labels,videoRef,onPlayingChange,onError,poster,previousHref,nextHref,playbackMode='vod',live,resume,onBookmark,onNavigate}:HlsPlayerProps) {
+export function HlsPlayer({controls=true,initialQuality='auto',playbackUrl,availableQualities,watermark,muted=false,title,labels,videoRef,onPlayingChange,onError,poster,previousHref,nextHref,playbackMode='vod',live,resume,onBookmark,onNavigate,onDiagnostic}:HlsPlayerProps) {
   const container=useRef<HTMLDivElement>(null), engine=useRef<Hls|null>(null);
+  const diagnostics=useRef<ReturnType<typeof createPlayerDiagnostics>|null>(null),diagnosticCallback=useRef(onDiagnostic);
+  const diagnosticBackend=useRef<{url:string;backend:'hls'|'native';sourceName?:string}|null>(null),diagnosticEnabled=Boolean(onDiagnostic);
+  useEffect(()=>{diagnosticCallback.current=onDiagnostic;},[onDiagnostic]);
+  useEffect(()=>{
+    const video=videoRef.current;if(!video||!diagnosticEnabled)return;
+    const observer=createPlayerDiagnostics(video,playbackMode,value=>diagnosticCallback.current?.(value));
+    if(diagnosticBackend.current?.url===playbackUrl)observer.setBackend(diagnosticBackend.current.backend,diagnosticBackend.current.sourceName);
+    diagnostics.current=observer;
+    return()=>{observer.dispose();if(diagnostics.current===observer)diagnostics.current=null;};
+  },[diagnosticEnabled,playbackUrl,playbackMode,videoRef]);
   const qualitySwitch=useRef<AbortController|null>(null);
   const pendingQuality=useRef<{quality:Quality;run:()=>void}|null>(null);
   const heldFrame=useRef<HTMLCanvasElement|null>(null);
@@ -107,6 +119,7 @@ export function HlsPlayer({controls=true,initialQuality='auto',playbackUrl,avail
       if(cancelled)return;
       setActiveHeight(null);
       if(Hls.isSupported()) {
+        diagnosticBackend.current={url:playbackUrl,backend:'hls'};diagnostics.current?.setBackend('hls');
         const LatencyController=Hls.DefaultConfig.latencyController!;
         const hls=new Hls({
           enableWorker:true, debug:false, maxBufferLength:60, maxMaxBufferLength:120,
@@ -121,6 +134,7 @@ export function HlsPlayer({controls=true,initialQuality='auto',playbackUrl,avail
           fetchSetup:(context,init)=>{verifyMediaRequest(playbackUrl,context.url);return new Request(context.url,{...init,credentials:'include',redirect:'error',referrerPolicy:'no-referrer'});},
         });
         engine.current=hls;
+        hls.on(Hls.Events.MEDIA_ATTACHED,(_event,data)=>{if(!cancelled){const sourceName=data.mediaSource?.constructor.name;diagnosticBackend.current={url:playbackUrl,backend:'hls',sourceName};diagnostics.current?.setBackend('hls',sourceName);}});
         // LEVEL_SWITCHED follows the fragment currently playing, not the next ABR choice.
         hls.on(Hls.Events.LEVEL_SWITCHED,(_event,data)=>{if(!cancelled&&!failed.current){const height=hls.levels[data.level]?.height;setActiveHeight(height>0?height:null);}});
         hls.on(Hls.Events.MANIFEST_PARSED,()=>{if(!cancelled){
@@ -128,9 +142,10 @@ export function HlsPlayer({controls=true,initialQuality='auto',playbackUrl,avail
           if(selected!=='auto'){const target=new URL(`${selected}/index.m3u8`,playbackUrl).href;hls.nextLevel=hls.levels.findIndex(level=>level.url.includes(target));}
           setMode('mse');autoplay();
         }});
-        hls.on(Hls.Events.ERROR,(_event,data)=>{if(data.fatal&&!cancelled){if(data.type==='mediaError')handleMediaError();else handleError();}});
+        hls.on(Hls.Events.ERROR,(_event,data)=>{if(!cancelled)diagnostics.current?.hlsError(data);if(data.fatal&&!cancelled){if(data.type==='mediaError')handleMediaError();else handleError();}});
         hls.loadSource(playbackUrl);hls.attachMedia(video);
       } else if(video.canPlayType('application/vnd.apple.mpegurl')) {
+        diagnosticBackend.current={url:playbackUrl,backend:'native'};diagnostics.current?.setBackend('native');
         setMode('native');video.src=qualityRef.current==='auto'?playbackUrl:new URL(`${qualityRef.current}/index.m3u8`,playbackUrl).href;video.addEventListener('loadedmetadata',autoplay,{once:true});video.load();
       } else handleError();
     }).catch(()=>{if(!cancelled)handleError();});
