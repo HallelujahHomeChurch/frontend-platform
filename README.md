@@ -370,3 +370,18 @@ capability is unavailable. Deploy the compatible Website API producer first,
 then merge/publish this SDK and pin the actual published version in consumers.
 Local packed consumer builds do not establish registry publication or real-device
 cross-account/cross-device acceptance. This change does not publish a package.
+
+### Optional player seek diagnostics
+
+`@hallelujahhomechurch/ui/player` accepts an optional `onDiagnostic` callback.
+It observes at most three fixed eight-second seek windows per player, retains
+24 recent events per window, and samples at most four decoded video frames.
+The payload includes safe media timing/state, the selected HLS/native backend,
+actual media-source kind, frame-callback support and allowlisted HLS error codes.
+It contains no media URL, identifier, watermark, raw error, pixel or audio data.
+The observer never changes playback or recovery and cleans up on source change
+or unmount. Reporter failures are isolated.
+
+This source change does not publish a package. Coordinate a reviewed package
+version, normal publication and exact consumer upgrade before claiming deployed
+diagnostics; source tests do not establish physical-device playback acceptance.

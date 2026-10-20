@@ -12,7 +12,7 @@ const url='https://media.alive.org.tw/videos/r/packages/aaaaaaaaaaaaaaaaaaaaaaaa
 vi.mock('hls.js',async()=>{const {default:RealHls}=await vi.importActual<typeof import('hls.js')>('hls.js');return {default:class {
   static DefaultConfig=RealHls.DefaultConfig;
   static isSupported(){return engine.supported;}
-  static Events={MANIFEST_PARSED:'manifest',ERROR:'error',LEVEL_SWITCHED:'levelSwitched'};
+  static Events={MANIFEST_PARSED:'manifest',ERROR:'error',LEVEL_SWITCHED:'levelSwitched',MEDIA_ATTACHED:'attached'};
   nextLevel=-1;loadLevel=-1;
   recoverMediaError=vi.fn();
   listeners:Record<string,(...args:unknown[])=>void>={};
@@ -1154,4 +1154,29 @@ it.each([false,true])('native=%s supports a muted 480p preview without controls 
  fireEvent.play(video);expect(p.onPlayingChange).not.toHaveBeenCalledWith(true);
  fireEvent.playing(video);expect(p.onPlayingChange).toHaveBeenLastCalledWith(true);
  fireEvent.pause(video);expect(p.onPlayingChange).toHaveBeenLastCalledWith(false);
+});
+
+it('reports the selected HLS backend and safe nonfatal seek diagnostics without recovery',async()=>{
+ const p=props(),onDiagnostic=vi.fn();render(<HlsPlayer {...p} {...{onDiagnostic}}/>);
+ await waitFor(()=>expect(engine.instances).toHaveLength(1));vi.useFakeTimers();
+ act(()=>engine.instances[0].listeners.attached('attached',{mediaSource:{constructor:{name:'ManagedMediaSource'}}}));
+ fireEvent.seeking(p.videoRef.current!);
+ act(()=>engine.instances[0].listeners.error('error',{type:'mediaError',details:'bufferStalledError',fatal:false,url:'secret'}));
+ act(()=>vi.advanceTimersByTime(8000));
+ expect(onDiagnostic).toHaveBeenCalledOnce();
+ expect(onDiagnostic.mock.calls[0][0]).toMatchObject({backend:'hls',mediaSource:'managed-media-source',events:expect.arrayContaining([expect.objectContaining({event:'hls-error',details:'bufferStalledError'})])});
+ expect(JSON.stringify(onDiagnostic.mock.calls)).not.toContain('secret');
+ expect(engine.instances[0].recoverMediaError).not.toHaveBeenCalled();expect(p.onError).not.toHaveBeenCalled();
+});
+it('updates the diagnostic callback without rebuilding media and flushes on unmount',async()=>{
+ engine.supported=false;const p=props(),first=vi.fn(),second=vi.fn();
+ vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
+ const view=render(<HlsPlayer {...p} {...{onDiagnostic:first}}/>);
+ await waitFor(()=>expect(p.videoRef.current?.src).toContain('master.m3u8'));vi.useFakeTimers();
+ fireEvent.seeking(p.videoRef.current!);view.rerender(<HlsPlayer {...p} {...{onDiagnostic:second}}/>);
+ const loads=vi.mocked(HTMLMediaElement.prototype.load).mock.calls.length;
+ view.unmount();expect(first).not.toHaveBeenCalled();expect(second).toHaveBeenCalledOnce();
+ expect(second.mock.calls[0][0]).toMatchObject({backend:'native'});
+ expect(vi.mocked(HTMLMediaElement.prototype.load).mock.calls.length).toBe(loads+1);
+ vi.runAllTimers();expect(second).toHaveBeenCalledOnce();
 });
