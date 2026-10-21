@@ -65,7 +65,7 @@ try {
       '@vitejs/plugin-react': '6.0.3',
       react: '19.2.7',
       'react-dom': '19.2.7',
-      vite: '8.1.4'
+      vite: '8.1.6'
     },
     devDependencies: {},
     pnpm: {overrides: packageDependencies}
@@ -175,7 +175,7 @@ createRoot(document.getElementById('root')!).render(<>{player}<BulletinDocumentR
     scripts: {build: 'next build'},
     dependencies: {
       ...packageDependencies,
-      next: '16.2.9',
+      next: '16.4.2',
       react: '19.2.7',
       'react-dom': '19.2.7'
     },
