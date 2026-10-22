@@ -1,5 +1,5 @@
 # Build with the generated, checksum-verified bundle directory as context.
-FROM node:24-trixie-slim@sha256:8ec5d7557396cfe32d21c3f9c13072355ceab22b584578ca4bb28af31120cffe
+FROM node:24.22.1-trixie-slim@sha256:43b9ba1142b8dcf33fa8f922ca1be85714adc444e0586c7cf7726daaeabc1bea
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/browsers
 WORKDIR /opt/bulletin-renderer
 COPY package.json package-lock.json ./
