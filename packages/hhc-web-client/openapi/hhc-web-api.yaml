@@ -14169,6 +14169,9 @@ components:
           type: string
         displayName:
           type: string
+        avatarUrl:
+          type: string
+          description: Current account avatar URL, omitted when absent or the comment is deleted or hidden. Profile lookup may be cached for up to 60 seconds.
         mine:
           type: boolean
         deleted:
