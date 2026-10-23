@@ -7724,6 +7724,8 @@ export interface components {
             parentId?: string;
             text: string;
             displayName: string;
+            /** @description Current account avatar URL, omitted when absent or the comment is deleted or hidden. Profile lookup may be cached for up to 60 seconds. */
+            avatarUrl?: string;
             mine: boolean;
             deleted: boolean;
             hidden: boolean;
