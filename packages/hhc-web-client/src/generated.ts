@@ -3975,6 +3975,11 @@ export interface components {
             reason: string;
         };
         BroadcastPreviewInput: {
+            /**
+             * Format: uuid
+             * @description Optional unexpired staff-preview scope owned by this actor and current capture/epoch. Invalid reuse returns 404; omitted creates a new scope.
+             */
+            playbackScopeId?: string;
             captureId: string;
             epoch: number;
         };

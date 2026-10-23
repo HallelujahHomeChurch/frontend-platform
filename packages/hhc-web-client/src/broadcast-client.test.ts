@@ -35,3 +35,16 @@ it('prepares thumbnail bytes for the event owner without modifying persistent de
  await client.uploadBroadcastCover('event',new Blob(['jpeg'],{type:'image/jpeg'}),'same-key');expect(requests[0].url.endsWith('/admin/broadcasts/event/cover-uploads')).toBe(true);expect(requests[0].headers.get('Idempotency-Key')).toBe('same-key');expect(await requests[0].text()).toBe('jpeg')
  await expect(client.uploadBroadcastCover('event',new Blob(['gif'],{type:'image/gif'}),'same-key')).rejects.toMatchObject({status:422});expect(requests).toHaveLength(1)
 })
+it('supports initial preview acquisition and scoped renewal without retrying expiry denial',async()=>{
+ const requests:Request[]=[]
+ const client=createHhcWebClient({baseUrl:'https://admin.example/api',getAccessToken:()=>null,fetcher:async value=>{requests.push(value as Request);return requests.length<3?Response.json({data:{playbackScopeId:'22222222-2222-4222-8222-222222222222'}}):Response.json({error:{code:'not_found',message:'Not found'}},{status:404})}})
+ const input={captureId:'a'.repeat(32),epoch:1}
+ await client.getBroadcastPreviewAccess('event',input)
+ const renewal={...input,playbackScopeId:'22222222-2222-4222-8222-222222222222'}
+ await client.getBroadcastPreviewAccess('event',renewal)
+ await expect(client.getBroadcastPreviewAccess('event',renewal)).rejects.toMatchObject({status:404})
+ expect(requests).toHaveLength(3)
+ expect(await requests[0].json()).toEqual(input)
+ expect(await requests[1].json()).toEqual(renewal)
+ expect(requests[1].cache).toBe('no-store')
+})
