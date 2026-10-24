@@ -59,3 +59,11 @@ test('distributes modest paragraph gaps toward a shared bottom instead of adding
  balanceBodyBottom(first);balanceBodyBottom(second);
  assert.ok(Math.abs(first.layoutManifest.pages[1].slots.at(-1).box.y-second.layoutManifest.pages[1].slots.at(-1).box.y)<1e-10);
 });
+
+test('single-row columns retain finite geometry without invented vertical gaps',()=>{
+ const document=fixture();
+ document.layoutManifest.pages[1].slots.forEach((slot,i)=>{slot.box={x:.05+i*.24,y:.1,width:.2,height:.7};});
+ const before=structuredClone(document);
+ balanceBodyBottom(document);
+ assert.deepEqual(document,before);
+});

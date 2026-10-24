@@ -36,6 +36,7 @@ export function balanceBodyBottom(document) {
     const target = 1 - 48 / height;
     if (bottom - top < .65 || bottom >= target) continue;
     const rows = [...new Set(page.slots.map(slot => Math.round(slot.box.y * height * 2) / 2))].sort((a, b) => a - b);
+    if (rows.length < 2) continue;
     const spread = Math.min(target - bottom, 12 * (rows.length - 1) / height);
     const shift = y => spread * rows.indexOf(Math.round(y * height * 2) / 2) / (rows.length - 1);
     for (const component of document.components.filter(component => body.has(component.id))) {
