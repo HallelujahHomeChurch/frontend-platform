@@ -81,6 +81,8 @@ export interface components {
             units: {
                 componentId: string;
                 blockId: string;
+                /** @description Images from a replaced source must be selected again from the current PDF. */
+                sourceRepairRequired?: boolean;
                 /** @enum {string} */
                 suggestion: "same" | "local" | "incoming" | "conflict";
                 base: components["schemas"]["OnlineBulletinComparisonValue"];
@@ -350,7 +352,7 @@ export interface components {
              * @description Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. V6 adds historical four-row cover profiles; V7 preserves proportional inline font sizes during cover composition. V8 fits titles at normal tracking and keeps heading-speaker rows and cover date-issue rows together. V9 consumes an immutable issue-owned template snapshot. V10 reuses V9 paper rendering and adds bounded measured dense-cover composition with separate long title/subtitle rows and a 9-point cover text floor. Existing published renderer versions remain immutable.
              * @enum {string}
              */
-            rendererVersion: "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | "v8" | "v9" | "v10";
+            rendererVersion: "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | "v8" | "v9" | "v10" | "v11";
             rendererArtifactSha256: components["schemas"]["OnlineBulletinHash"];
             contentHash?: components["schemas"]["OnlineBulletinHash"];
             layoutValidationHash?: components["schemas"]["OnlineBulletinHash"];
@@ -488,8 +490,71 @@ export interface components {
                 }[];
             }[];
         };
+        /** @description Source-linked private raster illustration; owned Asset references are server-only and sanitized PNG pixels are authorized response-only. */
+        OnlineBulletinIllustration: {
+            id: components["schemas"]["OnlineBulletinHash"];
+            componentId: components["schemas"]["OnlineBulletinID"];
+            afterBlockId?: components["schemas"]["OnlineBulletinID"];
+            pageId: components["schemas"]["OnlineBulletinID"];
+            box: components["schemas"]["OnlineBulletinBox"];
+            alt: string;
+            /**
+             * Format: uuid
+             * @description Server-owned private reference
+             */
+            assetId?: string;
+            sha256: components["schemas"]["OnlineBulletinHash"];
+            sizeBytes: number;
+            /** @description Authorized response-only sanitized PNG base64; never stored in documents. */
+            png?: string;
+        };
+        OnlineBulletinSourcePart: {
+            id: components["schemas"]["OnlineBulletinHash"];
+            /** Format: byte */
+            png?: string;
+            available: boolean;
+            /** @enum {string} */
+            kind: "text" | "image";
+            page: number;
+            box: components["schemas"]["OnlineBulletinBox"];
+            text?: string;
+            /** @enum {string} */
+            fontRole?: "body" | "scripture" | "emphasis";
+        };
+        OnlineBulletinSourceRepairCatalog: {
+            /** Format: uuid */
+            documentId: string;
+            version: number;
+            revision: number;
+            canonicalVersion: number;
+            sourceChecksum: components["schemas"]["OnlineBulletinHash"];
+            parts: components["schemas"]["OnlineBulletinSourcePart"][];
+        };
+        /** @description Select exact server-catalogued source material; no text, coordinates, Asset identifiers or proof may be supplied. */
+        OnlineBulletinSourceRepairInput: {
+            /** @description Remove this previously restored source illustration. */
+            remove?: boolean;
+            canonicalVersion: number;
+            revision: number;
+            sourceChecksum: components["schemas"]["OnlineBulletinHash"];
+            partId: components["schemas"]["OnlineBulletinHash"];
+            componentId: components["schemas"]["OnlineBulletinID"];
+            afterBlockId?: components["schemas"]["OnlineBulletinID"];
+            alt?: string;
+            /** @enum {string} */
+            fontRole?: "body" | "scripture" | "emphasis";
+        };
+        OnlineBulletinSourceRepairResult: {
+            /** @constant */
+            status: "saved";
+            draft: components["schemas"]["OnlineBulletinSavedDraft"];
+        } | {
+            /** @constant */
+            status: "waitingForScan";
+        };
         OnlineBulletinComponent: components["schemas"]["OnlineBulletinCoverComponent"] | components["schemas"]["OnlineBulletinBodyComponent"] | components["schemas"]["OnlineBulletinHymnComponent"] | components["schemas"]["OnlineBulletinBackComponent"];
         OnlineBulletinCoverComponent: {
+            illustrations?: components["schemas"]["OnlineBulletinIllustration"][];
             id: components["schemas"]["OnlineBulletinID"];
             /**
              * @description discriminator enum property added by openapi-typescript
@@ -499,6 +564,7 @@ export interface components {
             cover: components["schemas"]["OnlineBulletinCover"];
         };
         OnlineBulletinBodyComponent: {
+            illustrations?: components["schemas"]["OnlineBulletinIllustration"][];
             id: components["schemas"]["OnlineBulletinID"];
             /**
              * @description discriminator enum property added by openapi-typescript
@@ -508,6 +574,7 @@ export interface components {
             bodySection: components["schemas"]["OnlineBulletinBodySection"];
         };
         OnlineBulletinHymnComponent: {
+            illustrations?: components["schemas"]["OnlineBulletinIllustration"][];
             id: components["schemas"]["OnlineBulletinID"];
             /**
              * @description discriminator enum property added by openapi-typescript
@@ -517,6 +584,7 @@ export interface components {
             hymnLyrics: components["schemas"]["OnlineBulletinHymnLyrics"];
         };
         OnlineBulletinBackComponent: {
+            illustrations?: components["schemas"]["OnlineBulletinIllustration"][];
             id: components["schemas"]["OnlineBulletinID"];
             /**
              * @description discriminator enum property added by openapi-typescript

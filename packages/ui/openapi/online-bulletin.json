@@ -341,6 +341,10 @@
                   "type": "string",
                   "maxLength": 128
                 },
+                "sourceRepairRequired": {
+                  "type": "boolean",
+                  "description": "Images from a replaced source must be selected again from the current PDF."
+                },
                 "suggestion": {
                   "type": "string",
                   "enum": [
@@ -1234,7 +1238,8 @@
                     "rendererVersion": {
                       "enum": [
                         "v9",
-                        "v10"
+                        "v10",
+                        "v11"
                       ]
                     }
                   }
@@ -1417,7 +1422,8 @@
               "v7",
               "v8",
               "v9",
-              "v10"
+              "v10",
+              "v11"
             ],
             "description": "Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. V6 adds historical four-row cover profiles; V7 preserves proportional inline font sizes during cover composition. V8 fits titles at normal tracking and keeps heading-speaker rows and cover date-issue rows together. V9 consumes an immutable issue-owned template snapshot. V10 reuses V9 paper rendering and adds bounded measured dense-cover composition with separate long title/subtitle rows and a 9-point cover text floor. Existing published renderer versions remain immutable."
           },
@@ -2080,6 +2086,238 @@
           }
         }
       },
+      "OnlineBulletinIllustration": {
+        "description": "Source-linked private raster illustration; owned Asset references are server-only and sanitized PNG pixels are authorized response-only.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "componentId",
+          "pageId",
+          "box",
+          "alt",
+          "sha256",
+          "sizeBytes"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/OnlineBulletinHash"
+          },
+          "componentId": {
+            "$ref": "#/components/schemas/OnlineBulletinID"
+          },
+          "afterBlockId": {
+            "$ref": "#/components/schemas/OnlineBulletinID"
+          },
+          "pageId": {
+            "$ref": "#/components/schemas/OnlineBulletinID"
+          },
+          "box": {
+            "$ref": "#/components/schemas/OnlineBulletinBox"
+          },
+          "alt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "assetId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Server-owned private reference",
+            "omitted from member responses.": null
+          },
+          "sha256": {
+            "$ref": "#/components/schemas/OnlineBulletinHash"
+          },
+          "sizeBytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2097152
+          },
+          "png": {
+            "type": "string",
+            "maxLength": 2796204,
+            "pattern": "^[A-Za-z0-9+/]+={0,2}$",
+            "description": "Authorized response-only sanitized PNG base64; never stored in documents."
+          }
+        }
+      },
+      "OnlineBulletinSourcePart": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "kind",
+          "page",
+          "box",
+          "available"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/OnlineBulletinHash"
+          },
+          "png": {
+            "type": "string",
+            "format": "byte",
+            "maxLength": 2796204,
+            "pattern": "^[A-Za-z0-9+/]*={0,2}$"
+          },
+          "available": {
+            "type": "boolean"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "text",
+              "image"
+            ]
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 40
+          },
+          "box": {
+            "$ref": "#/components/schemas/OnlineBulletinBox"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "fontRole": {
+            "type": "string",
+            "enum": [
+              "body",
+              "scripture",
+              "emphasis"
+            ]
+          }
+        }
+      },
+      "OnlineBulletinSourceRepairCatalog": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "documentId",
+          "version",
+          "revision",
+          "canonicalVersion",
+          "sourceChecksum",
+          "parts"
+        ],
+        "properties": {
+          "documentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "canonicalVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "sourceChecksum": {
+            "$ref": "#/components/schemas/OnlineBulletinHash"
+          },
+          "parts": {
+            "type": "array",
+            "maxItems": 10000,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinSourcePart"
+            }
+          }
+        }
+      },
+      "OnlineBulletinSourceRepairInput": {
+        "description": "Select exact server-catalogued source material; no text, coordinates, Asset identifiers or proof may be supplied.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "canonicalVersion",
+          "revision",
+          "sourceChecksum",
+          "partId",
+          "componentId"
+        ],
+        "properties": {
+          "remove": {
+            "type": "boolean",
+            "description": "Remove this previously restored source illustration."
+          },
+          "canonicalVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "sourceChecksum": {
+            "$ref": "#/components/schemas/OnlineBulletinHash"
+          },
+          "partId": {
+            "$ref": "#/components/schemas/OnlineBulletinHash"
+          },
+          "componentId": {
+            "$ref": "#/components/schemas/OnlineBulletinID"
+          },
+          "afterBlockId": {
+            "$ref": "#/components/schemas/OnlineBulletinID"
+          },
+          "alt": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "fontRole": {
+            "type": "string",
+            "enum": [
+              "body",
+              "scripture",
+              "emphasis"
+            ]
+          }
+        }
+      },
+      "OnlineBulletinSourceRepairResult": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "status",
+              "draft"
+            ],
+            "properties": {
+              "status": {
+                "type": "string",
+                "const": "saved"
+              },
+              "draft": {
+                "$ref": "#/components/schemas/OnlineBulletinSavedDraft"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "status"
+            ],
+            "properties": {
+              "status": {
+                "type": "string",
+                "const": "waitingForScan"
+              }
+            }
+          }
+        ]
+      },
       "OnlineBulletinComponent": {
         "oneOf": [
           {
@@ -2116,6 +2354,13 @@
           "cover"
         ],
         "properties": {
+          "illustrations": {
+            "type": "array",
+            "maxItems": 8,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinIllustration"
+            }
+          },
           "id": {
             "$ref": "#/components/schemas/OnlineBulletinID"
           },
@@ -2137,6 +2382,13 @@
           "bodySection"
         ],
         "properties": {
+          "illustrations": {
+            "type": "array",
+            "maxItems": 8,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinIllustration"
+            }
+          },
           "id": {
             "$ref": "#/components/schemas/OnlineBulletinID"
           },
@@ -2158,6 +2410,13 @@
           "hymnLyrics"
         ],
         "properties": {
+          "illustrations": {
+            "type": "array",
+            "maxItems": 8,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinIllustration"
+            }
+          },
           "id": {
             "$ref": "#/components/schemas/OnlineBulletinID"
           },
@@ -2179,6 +2438,13 @@
           "items"
         ],
         "properties": {
+          "illustrations": {
+            "type": "array",
+            "maxItems": 8,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinIllustration"
+            }
+          },
           "id": {
             "$ref": "#/components/schemas/OnlineBulletinID"
           },

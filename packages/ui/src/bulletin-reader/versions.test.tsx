@@ -12,6 +12,8 @@ import * as V8 from './v8/BulletinDocumentRenderer.js';
 import * as V9 from './v9/BulletinDocumentRenderer.js';
 import * as V10 from './v10/BulletinDocumentRenderer.js';
 
+import * as V11 from './v11/BulletinDocumentRenderer.js';
+
 const versions = [
   ['v1', V1, UI.BULLETIN_RENDERER_V1_DIGEST, false, 'legacy', 'legacy', false],
   ['v2', V2, UI.BULLETIN_RENDERER_V2_DIGEST, false, 'legacy', 'legacy', false],
@@ -22,6 +24,7 @@ const versions = [
   ['v7', V7, UI.BULLETIN_RENDERER_V7_DIGEST, false, 'v7', 'historical', false],
   ['v8', V8, UI.BULLETIN_RENDERER_V8_DIGEST, false, 'v7', 'historical', true],
   ['v9', V9, UI.BULLETIN_RENDERER_V9_DIGEST, true, 'v7', 'snapshot', true],
+  ['v11', V11, UI.BULLETIN_RENDERER_V11_DIGEST, true, 'v7', 'snapshot', true],
   ['v10', V10, UI.BULLETIN_RENDERER_V10_DIGEST, true, 'v7', 'snapshot', true],
 ] as const;
 

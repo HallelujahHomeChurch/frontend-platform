@@ -11,8 +11,8 @@ import {rendererCommands, shards, verifyResults} from './ci-bulletin-renderer.mj
 
 const common = 'scripts/measure-bulletin-layout.test.mjs';
 const coverage = {
-  host: {default: [common], v6: [common, 'scripts/measure-bulletin-layout-v6.test.mjs'], v7: [common, 'scripts/measure-bulletin-layout-v6.test.mjs', 'scripts/measure-bulletin-layout-v7.test.mjs'], v8: [common, 'scripts/measure-bulletin-layout-v8.test.mjs'], v9: [common, 'scripts/measure-bulletin-layout-v9.test.mjs'], v10: [common, 'scripts/measure-bulletin-layout-v10.test.mjs']},
-  container: {default: [common], v3: [common], v4: [common], v5: [common], v6: [common, 'scripts/measure-bulletin-layout-v6.test.mjs'], v7: [common, 'scripts/measure-bulletin-layout-v6.test.mjs', 'scripts/measure-bulletin-layout-v7.test.mjs'], v8: [common, 'scripts/measure-bulletin-layout-v8.test.mjs'], v9: [common, 'scripts/measure-bulletin-layout-v9.test.mjs'], v10: [common, 'scripts/measure-bulletin-layout-v10.test.mjs']},
+  host: {default: [common], v6: [common, 'scripts/measure-bulletin-layout-v6.test.mjs'], v7: [common, 'scripts/measure-bulletin-layout-v6.test.mjs', 'scripts/measure-bulletin-layout-v7.test.mjs'], v8: [common, 'scripts/measure-bulletin-layout-v8.test.mjs'], v9: [common, 'scripts/measure-bulletin-layout-v9.test.mjs'], v10: [common, 'scripts/measure-bulletin-layout-v10.test.mjs'], v11: [common, 'scripts/measure-bulletin-layout-v11.test.mjs']},
+  container: {default: [common], v3: [common], v4: [common], v5: [common], v6: [common, 'scripts/measure-bulletin-layout-v6.test.mjs'], v7: [common, 'scripts/measure-bulletin-layout-v6.test.mjs', 'scripts/measure-bulletin-layout-v7.test.mjs'], v8: [common, 'scripts/measure-bulletin-layout-v8.test.mjs'], v9: [common, 'scripts/measure-bulletin-layout-v9.test.mjs'], v10: [common, 'scripts/measure-bulletin-layout-v10.test.mjs'], v11: [common, 'scripts/measure-bulletin-layout-v11.test.mjs']},
 };
 
 test('the shards retain every original host and container command exactly once', () => {
@@ -88,7 +88,7 @@ test('missing verified assets fails before a host suite can skip font checks', (
 });
 
 
-test('release shards retain exactly all nine original container commands and no host commands', () => {
+test('release shards retain exactly all original and V11 container commands and no host commands', () => {
   const actual = {};
   for (const shard of Object.keys(shards)) for (const command of rendererCommands(shard, 'release')) {
     assert.equal(command.runtime, 'container');
@@ -179,7 +179,7 @@ if (process.env.FAIL_RENDERER === '1') process.exit(7);
       assert.equal(completed.status, 0, completed.stderr);
     }
     const commands = (await readFile(env.COMMAND_LOG, 'utf8')).trim().split('\n').map(line => JSON.parse(line));
-    assert.equal(commands.length, 9);
+    assert.equal(commands.length, 10);
     const gate = spawnSync(process.execPath, [script, 'verify-results', 'results', 'release'], {cwd: directory, encoding: 'utf8', env: {...env, CI_NEEDS: JSON.stringify(needs)}});
     assert.equal(gate.status, 0, gate.stderr);
     await mkdir(join(directory, 'results', 'duplicate-artifact'));

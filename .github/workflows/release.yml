@@ -48,7 +48,7 @@ jobs:
         env:
           HHC_BULLETIN_TEMPLATE_DIR: ${{ runner.temp }}/bulletin-template-v1
         run: |
-          node scripts/verify-bulletin-renderer-v10.mjs
+          node scripts/verify-bulletin-renderer-v11.mjs
           node scripts/fetch-bulletin-template-assets.mjs "$HHC_BULLETIN_TEMPLATE_DIR"
           node --test scripts/package-bulletin-renderer.test.mjs
           node scripts/package-bulletin-renderer.mjs artifacts/bulletin-renderer "$HHC_BULLETIN_TEMPLATE_DIR"
