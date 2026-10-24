@@ -13,7 +13,7 @@ export interface paths {
         };
         /**
          * getRecordingInteractions
-         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; only one reply level. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; parentId always identifies the root thread. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
          */
         get: operations["getRecordingInteractions"];
         put?: never;
@@ -34,7 +34,7 @@ export interface paths {
         get?: never;
         /**
          * setRecordingLike
-         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; only one reply level. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; parentId always identifies the root thread. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
          */
         put: operations["setRecordingLike"];
         post?: never;
@@ -54,7 +54,7 @@ export interface paths {
         get?: never;
         /**
          * setRecordingCommentReaction
-         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; only one reply level. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; parentId always identifies the root thread. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
          */
         put: operations["setRecordingCommentReaction"];
         post?: never;
@@ -73,13 +73,13 @@ export interface paths {
         };
         /**
          * listRecordingComments
-         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; only one reply level. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; parentId always identifies the root thread. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
          */
         get: operations["listRecordingComments"];
         put?: never;
         /**
          * createRecordingComment
-         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; only one reply level. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; parentId always identifies the root thread. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
          */
         post: operations["createRecordingComment"];
         delete?: never;
@@ -100,14 +100,14 @@ export interface paths {
         post?: never;
         /**
          * deleteRecordingComment
-         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; only one reply level. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; parentId always identifies the root thread. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
          */
         delete: operations["deleteRecordingComment"];
         options?: never;
         head?: never;
         /**
          * updateRecordingComment
-         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; only one reply level. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; parentId always identifies the root thread. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
          */
         patch: operations["updateRecordingComment"];
         trace?: never;
@@ -122,7 +122,7 @@ export interface paths {
         get?: never;
         /**
          * reportRecordingComment
-         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; only one reply level. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; parentId always identifies the root thread. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
          */
         put: operations["reportRecordingComment"];
         post?: never;
@@ -143,7 +143,7 @@ export interface paths {
         put?: never;
         /**
          * recordPlaybackHeartbeat
-         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; only one reply level. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; parentId always identifies the root thread. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
          */
         post: operations["recordPlaybackHeartbeat"];
         delete?: never;
@@ -161,7 +161,7 @@ export interface paths {
         };
         /**
          * getMemberRecordingMetrics
-         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; only one reply level. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; parentId always identifies the root thread. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
          */
         get: operations["getMemberRecordingMetrics"];
         put?: never;
@@ -181,7 +181,7 @@ export interface paths {
         };
         /**
          * getAdminRecordingMetrics
-         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; only one reply level. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; parentId always identifies the root thread. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
          */
         get: operations["getAdminRecordingMetrics"];
         put?: never;
@@ -201,7 +201,7 @@ export interface paths {
         };
         /**
          * listRecordingModeration
-         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; only one reply level. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; parentId always identifies the root thread. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
          */
         get: operations["listRecordingModeration"];
         put?: never;
@@ -222,7 +222,7 @@ export interface paths {
         get?: never;
         /**
          * moderateRecordingComments
-         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; only one reply level. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
+         * @description Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply. Private no-store. Comments are plain text; parentId always identifies the root thread. CAS conflicts require refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
          */
         put: operations["moderateRecordingComments"];
         post?: never;
@@ -7718,6 +7718,20 @@ export interface components {
             likes?: number;
             /** @enum {string|null} */
             reaction?: "like" | "dislike" | null;
+            /**
+             * Format: uuid
+             * @description Direct structural parent in threaded list responses; omitted on roots. Survives anonymous removed-target placeholders.
+             */
+            threadParentId?: string;
+            /** @description Renderable direct children across all pages, including anonymous structural placeholders. Threaded list responses only. */
+            directChildCount?: number;
+            /** @description Visible non-deleted replies at all depths below this node, excluding the node and anonymous placeholders. Threaded list responses only; root replyCount retains its legacy whole-thread meaning. */
+            descendantReplyCount?: number;
+            /** @description Bounded current profiles of visible direct-child authors in deterministic child order. No account identifiers; omitted on removed nodes. */
+            replyPreviewAuthors?: {
+                displayName: string;
+                avatarUrl?: string;
+            }[];
             replyTo?: {
                 /** Format: uuid */
                 id: string;
@@ -8467,7 +8481,10 @@ export interface operations {
             query?: {
                 cursor?: string;
                 limit?: number;
+                /** @description Root thread in legacy mode; expanded root or reply node when view is threaded. */
                 parentId?: string;
+                /** @description Opt in to direct-child pages, structural parents, authoritative descendant totals and bounded preview authors. Omit for the unchanged flat response. */
+                view?: "threaded";
                 order?: "newest" | "oldest" | "top";
                 refresh?: boolean;
             };

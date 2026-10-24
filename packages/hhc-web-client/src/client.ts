@@ -285,8 +285,8 @@ export function createHhcWebClient(options: {
     async setRecordingLike(id: string, body: RecordingLikeInput, signal?: AbortSignal) {
       return (await unwrap(client.PUT('/member/recordings/{id}/like', {params: {path: {id}}, body, signal, cache: 'no-store', redirect: 'error'}))).data
     },
-    async listRecordingComments(id: string, options: {cursor?: string; limit?: number; parentId?: string; order?: 'newest' | 'oldest' | 'top'; refresh?: boolean; signal?: AbortSignal} = {}) {
-      return (await unwrap(client.GET('/member/recordings/{id}/comments', {params: {path: {id}, query: {cursor: options.cursor, limit: options.limit, parentId: options.parentId, order: options.order, refresh: options.refresh}}, signal: options.signal, cache: 'no-store', redirect: 'error'}))).data
+    async listRecordingComments(id: string, options: {cursor?: string; limit?: number; parentId?: string; view?: 'threaded'; order?: 'newest' | 'oldest' | 'top'; refresh?: boolean; signal?: AbortSignal} = {}) {
+      return (await unwrap(client.GET('/member/recordings/{id}/comments', {params: {path: {id}, query: {cursor: options.cursor, limit: options.limit, parentId: options.parentId, view: options.view, order: options.order, refresh: options.refresh}}, signal: options.signal, cache: 'no-store', redirect: 'error'}))).data
     },
     async createRecordingComment(id: string, body: RecordingCommentInput, signal?: AbortSignal) {
       return (await unwrap(client.POST('/member/recordings/{id}/comments', {params: {path: {id}}, body, signal, cache: 'no-store', redirect: 'error'}))).data
