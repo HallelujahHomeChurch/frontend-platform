@@ -14165,6 +14165,9 @@ components:
           type: string
           format: uuid
           description: Direct structural parent in threaded list responses; omitted on roots. Survives anonymous removed-target placeholders.
+        hasChildren:
+          type: boolean
+          description: Exact traversability fallback when a root's renderable direct-child count is omitted after bounded removal-path traversal. Threaded responses only.
         directChildCount:
           type: integer
           minimum: 0
@@ -14172,7 +14175,7 @@ components:
         descendantReplyCount:
           type: integer
           minimum: 0
-          description: Visible non-deleted replies at all depths below this node, excluding the node and anonymous placeholders. Threaded list responses only; root replyCount retains its legacy whole-thread meaning.
+          description: Visible non-deleted replies at all depths below this node, excluding the node and anonymous placeholders. Threaded list responses only. Omitted for non-root nodes when an exact count exceeds the bounded read budget; absence is not zero. Root totals always use the legacy whole-thread shortcut.
         replyPreviewAuthors:
           type: array
           maxItems: 1

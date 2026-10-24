@@ -7723,9 +7723,11 @@ export interface components {
              * @description Direct structural parent in threaded list responses; omitted on roots. Survives anonymous removed-target placeholders.
              */
             threadParentId?: string;
+            /** @description Exact traversability fallback when a root's renderable direct-child count is omitted after bounded removal-path traversal. Threaded responses only. */
+            hasChildren?: boolean;
             /** @description Renderable direct children across all pages, including anonymous structural placeholders. Threaded list responses only. */
             directChildCount?: number;
-            /** @description Visible non-deleted replies at all depths below this node, excluding the node and anonymous placeholders. Threaded list responses only; root replyCount retains its legacy whole-thread meaning. */
+            /** @description Visible non-deleted replies at all depths below this node, excluding the node and anonymous placeholders. Threaded list responses only. Omitted for non-root nodes when an exact count exceeds the bounded read budget; absence is not zero. Root totals always use the legacy whole-thread shortcut. */
             descendantReplyCount?: number;
             /** @description Bounded current profiles of visible direct-child authors in deterministic child order. No account identifiers; omitted on removed nodes. */
             replyPreviewAuthors?: {
