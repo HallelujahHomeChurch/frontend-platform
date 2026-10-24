@@ -470,6 +470,12 @@ export function createHhcWebClient(options: {
     async getOnlineBulletinState(edition: OnlineBulletinSelector, signal?: AbortSignal) {
       return (await unwrap(client.GET('/admin/bulletins/{issueId}/online/{series}/{contentLocale}', {params: {path: edition}, cache: 'no-store', signal}))).data
     },
+    async getOnlineBulletinSourceParts(edition: operations['getOnlineBulletinSourceParts']['parameters']['path'], signal?: AbortSignal) {
+      return (await unwrap(client.GET('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/source-parts', {params: {path: edition}, cache: 'no-store', signal}))).data
+    },
+    async repairOnlineBulletinSource(edition: operations['repairOnlineBulletinSource']['parameters']['path'], version: number, input: components['schemas']['OnlineBulletinSourceRepairInput'], signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/source-repairs', {params: {path: edition, header: {'If-Match': `"${version}"`}}, body: input, cache: 'no-store', signal}))).data
+    },
     async getOnlineBulletinComparison(edition: OnlineBulletinSelector, signal?: AbortSignal) {
       return (await unwrap(client.GET('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/comparison', {params: {path: edition}, cache: 'no-store', signal}))).data
     },
