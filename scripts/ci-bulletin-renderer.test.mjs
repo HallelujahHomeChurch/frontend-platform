@@ -71,7 +71,7 @@ test('a failed renderer command aborts its shard without recording completed cov
     });
     assert.notEqual(result.status, 0);
     assert.match(result.stdout, /host renderer v10/);
-    assert.doesNotMatch(result.stdout, /host renderer v8/);
+    assert.doesNotMatch(result.stdout, /host renderer default/);
     assert.equal(existsSync(join(directory, 'results')), false);
   } finally {await rm(directory, {recursive: true, force: true});}
 });
@@ -171,7 +171,7 @@ if (process.env.FAIL_RENDERER === '1') process.exit(7);
     const failed = spawnSync(process.execPath, [script, 'run', 'balanced-b', 'results', 'release'], {cwd: directory, encoding: 'utf8', env: {...env, FAIL_RENDERER: '1'}});
     assert.notEqual(failed.status, 0);
     assert.match(failed.stdout, /container renderer v10/);
-    assert.doesNotMatch(failed.stdout, /container renderer v8/);
+    assert.doesNotMatch(failed.stdout, /container renderer v5/);
     assert.equal(existsSync(join(directory, 'results')), false);
     await rm(env.COMMAND_LOG);
     for (const shard of Object.keys(shards)) {

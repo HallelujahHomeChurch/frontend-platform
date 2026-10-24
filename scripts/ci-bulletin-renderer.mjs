@@ -6,9 +6,9 @@ import {pathToFileURL} from 'node:url';
 
 // Balance complete suites by measured CI time; keep the same three runners.
 export const shards = {
-  'balanced-a': {host: ['v10', 'v8', 'v7'], container: ['v3']},
-  'balanced-b': {host: ['v6', 'default'], container: ['v10', 'v8', 'v6', 'v4']},
-  'balanced-c': {host: ['v9'], container: ['v9', 'v7', 'v5', 'default']},
+  'balanced-a': {host: ['v10', 'default'], container: ['v7', 'v6', 'v3']},
+  'balanced-b': {host: ['v8', 'v6'], container: ['v10', 'v5', 'v4']},
+  'balanced-c': {host: ['v7', 'v9'], container: ['v8', 'v9', 'default']},
 };
 
 export function rendererCommands(shard, mode = 'ci') {
