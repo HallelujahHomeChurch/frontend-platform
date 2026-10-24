@@ -66,12 +66,12 @@ test('a failed renderer command aborts its shard without recording completed cov
     await writeFile(join(directory, common), 'process.exit(7);\n');
     const env = {...process.env, GITHUB_SHA: sha, GITHUB_RUN_ID: '123', GITHUB_RUN_ATTEMPT: '2', HHC_BULLETIN_TEMPLATE_DIR: directory};
     delete env.NODE_TEST_CONTEXT;
-    const result = spawnSync(process.execPath, [new URL('./ci-bulletin-renderer.mjs', import.meta.url).pathname, 'run', 'legacy', 'results'], {
+    const result = spawnSync(process.execPath, [new URL('./ci-bulletin-renderer.mjs', import.meta.url).pathname, 'run', 'balanced-a', 'results'], {
       cwd: directory, encoding: 'utf8', env,
     });
     assert.notEqual(result.status, 0);
-    assert.match(result.stdout, /host renderer default/);
-    assert.doesNotMatch(result.stdout, /host renderer v6/);
+    assert.match(result.stdout, /host renderer v10/);
+    assert.doesNotMatch(result.stdout, /host renderer v8/);
     assert.equal(existsSync(join(directory, 'results')), false);
   } finally {await rm(directory, {recursive: true, force: true});}
 });
@@ -81,7 +81,7 @@ test('missing verified assets fails before a host suite can skip font checks', (
   const env = {...process.env, GITHUB_SHA: sha};
   delete env.NODE_TEST_CONTEXT;
   delete env.HHC_BULLETIN_TEMPLATE_DIR;
-  const result = spawnSync(process.execPath, [new URL('./ci-bulletin-renderer.mjs', import.meta.url).pathname, 'run', 'legacy', 'results'], {encoding: 'utf8', env});
+  const result = spawnSync(process.execPath, [new URL('./ci-bulletin-renderer.mjs', import.meta.url).pathname, 'run', 'balanced-a', 'results'], {encoding: 'utf8', env});
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /verified template assets are required/);
   assert.equal(result.stdout, '');
@@ -97,7 +97,7 @@ test('release shards retain exactly all nine original container commands and no 
     assert.deepEqual(command, rendererCommands(shard).find(candidate => candidate.runtime === 'container' && candidate.version === command.version));
   }
   assert.deepEqual(actual, coverage.container);
-  assert.throws(() => rendererCommands('legacy', 'unknown'), /mode/);
+  assert.throws(() => rendererCommands('balanced-a', 'unknown'), /mode/);
 });
 
 test('release gate rejects missing, duplicate, wrong-mode, stale-run and wrong-version receipts', () => {
@@ -168,10 +168,10 @@ if (process.env.FAIL_RENDERER === '1') process.exit(7);
     const env = {...process.env, PATH: `${directory}:${process.env.PATH}`, COMMAND_LOG: join(directory, 'commands'), GITHUB_SHA: sha, GITHUB_RUN_ID: '123', GITHUB_RUN_ATTEMPT: '2', HHC_BULLETIN_TEMPLATE_DIR: directory};
     delete env.NODE_TEST_CONTEXT;
     const script = new URL('./ci-bulletin-renderer.mjs', import.meta.url).pathname;
-    const failed = spawnSync(process.execPath, [script, 'run', 'legacy', 'results', 'release'], {cwd: directory, encoding: 'utf8', env: {...env, FAIL_RENDERER: '1'}});
+    const failed = spawnSync(process.execPath, [script, 'run', 'balanced-b', 'results', 'release'], {cwd: directory, encoding: 'utf8', env: {...env, FAIL_RENDERER: '1'}});
     assert.notEqual(failed.status, 0);
-    assert.match(failed.stdout, /container renderer default/);
-    assert.doesNotMatch(failed.stdout, /container renderer v3/);
+    assert.match(failed.stdout, /container renderer v10/);
+    assert.doesNotMatch(failed.stdout, /container renderer v8/);
     assert.equal(existsSync(join(directory, 'results')), false);
     await rm(env.COMMAND_LOG);
     for (const shard of Object.keys(shards)) {
@@ -183,7 +183,7 @@ if (process.env.FAIL_RENDERER === '1') process.exit(7);
     const gate = spawnSync(process.execPath, [script, 'verify-results', 'results', 'release'], {cwd: directory, encoding: 'utf8', env: {...env, CI_NEEDS: JSON.stringify(needs)}});
     assert.equal(gate.status, 0, gate.stderr);
     await mkdir(join(directory, 'results', 'duplicate-artifact'));
-    await writeFile(join(directory, 'results', 'duplicate-artifact', 'legacy.json'), await readFile(join(directory, 'results', 'legacy', 'legacy.json')));
+    await writeFile(join(directory, 'results', 'duplicate-artifact', 'balanced-a.json'), await readFile(join(directory, 'results', 'balanced-a', 'balanced-a.json')));
     const duplicate = spawnSync(process.execPath, [script, 'verify-results', 'results', 'release'], {cwd: directory, encoding: 'utf8', env: {...env, CI_NEEDS: JSON.stringify(needs)}});
     assert.notEqual(duplicate.status, 0);
     assert.match(duplicate.stderr, /duplicate shard coverage/);
