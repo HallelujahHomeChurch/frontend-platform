@@ -28,7 +28,7 @@ paths:
       operationId: getRecordingInteractions
       summary: getRecordingInteractions
       description: Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply.
-        Private no-store. Comments are plain text; only one reply level. CAS conflicts require
+        Private no-store. Comments are plain text; parentId always identifies the root thread. CAS conflicts require
         refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
       tags: [Authenticated]
       x-hhc-visibility: authenticated
@@ -68,7 +68,7 @@ paths:
       operationId: setRecordingLike
       summary: setRecordingLike
       description: Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply.
-        Private no-store. Comments are plain text; only one reply level. CAS conflicts require
+        Private no-store. Comments are plain text; parentId always identifies the root thread. CAS conflicts require
         refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
       tags: [Authenticated]
       x-hhc-visibility: authenticated
@@ -114,7 +114,7 @@ paths:
       operationId: setRecordingCommentReaction
       summary: setRecordingCommentReaction
       description: Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply.
-        Private no-store. Comments are plain text; only one reply level. CAS conflicts require
+        Private no-store. Comments are plain text; parentId always identifies the root thread. CAS conflicts require
         refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
       tags: [Authenticated]
       x-hhc-visibility: authenticated
@@ -166,7 +166,7 @@ paths:
       operationId: listRecordingComments
       summary: listRecordingComments
       description: Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply.
-        Private no-store. Comments are plain text; only one reply level. CAS conflicts require
+        Private no-store. Comments are plain text; parentId always identifies the root thread. CAS conflicts require
         refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
       tags: [Authenticated]
       x-hhc-visibility: authenticated
@@ -194,9 +194,14 @@ paths:
             default: 20
         - name: parentId
           in: query
+          description: Root thread in legacy mode; expanded root or reply node when view is threaded.
           schema:
             type: string
             format: uuid
+        - name: view
+          in: query
+          description: Opt in to direct-child pages, structural parents, exact root totals, optional nonroot descendant totals and bounded preview authors. Nonroot totals may be omitted when traversal exceeds its work budget; absence is not zero. Root directChildCount may be omitted with hasChildren=true. A 422 recording_comment_thread_too_large stops an unresolved traversal; 503 recording_comment_read_timeout indicates an added SQL query exceeded its deadline. Omit for the unchanged flat response.
+          schema: {type: string, enum: [threaded]}
         - name: order
           in: query
           schema:
@@ -226,6 +231,8 @@ paths:
           $ref: "#/components/responses/Error"
         "412":
           $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/Error"
         "429":
           $ref: "#/components/responses/Error"
         "503":
@@ -234,7 +241,7 @@ paths:
       operationId: createRecordingComment
       summary: createRecordingComment
       description: Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply.
-        Private no-store. Comments are plain text; only one reply level. CAS conflicts require
+        Private no-store. Comments are plain text; parentId always identifies the root thread. CAS conflicts require
         refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
       tags: [Authenticated]
       x-hhc-visibility: authenticated
@@ -280,7 +287,7 @@ paths:
       operationId: updateRecordingComment
       summary: updateRecordingComment
       description: Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply.
-        Private no-store. Comments are plain text; only one reply level. CAS conflicts require
+        Private no-store. Comments are plain text; parentId always identifies the root thread. CAS conflicts require
         refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
       tags: [Authenticated]
       x-hhc-visibility: authenticated
@@ -331,7 +338,7 @@ paths:
       operationId: deleteRecordingComment
       summary: deleteRecordingComment
       description: Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply.
-        Private no-store. Comments are plain text; only one reply level. CAS conflicts require
+        Private no-store. Comments are plain text; parentId always identifies the root thread. CAS conflicts require
         refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
       tags: [Authenticated]
       x-hhc-visibility: authenticated
@@ -383,7 +390,7 @@ paths:
       operationId: reportRecordingComment
       summary: reportRecordingComment
       description: Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply.
-        Private no-store. Comments are plain text; only one reply level. CAS conflicts require
+        Private no-store. Comments are plain text; parentId always identifies the root thread. CAS conflicts require
         refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
       tags: [Authenticated]
       x-hhc-visibility: authenticated
@@ -435,7 +442,7 @@ paths:
       operationId: recordPlaybackHeartbeat
       summary: recordPlaybackHeartbeat
       description: Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply.
-        Private no-store. Comments are plain text; only one reply level. CAS conflicts require
+        Private no-store. Comments are plain text; parentId always identifies the root thread. CAS conflicts require
         refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
       tags: [Authenticated]
       x-hhc-visibility: authenticated
@@ -481,7 +488,7 @@ paths:
       operationId: getMemberRecordingMetrics
       summary: getMemberRecordingMetrics
       description: Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply.
-        Private no-store. Comments are plain text; only one reply level. CAS conflicts require
+        Private no-store. Comments are plain text; parentId always identifies the root thread. CAS conflicts require
         refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
       tags: [Authenticated]
       x-hhc-visibility: authenticated
@@ -521,7 +528,7 @@ paths:
       operationId: getAdminRecordingMetrics
       summary: getAdminRecordingMetrics
       description: Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply.
-        Private no-store. Comments are plain text; only one reply level. CAS conflicts require
+        Private no-store. Comments are plain text; parentId always identifies the root thread. CAS conflicts require
         refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
       tags: [Admin]
       x-hhc-visibility: admin
@@ -563,7 +570,7 @@ paths:
       operationId: listRecordingModeration
       summary: listRecordingModeration
       description: Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply.
-        Private no-store. Comments are plain text; only one reply level. CAS conflicts require
+        Private no-store. Comments are plain text; parentId always identifies the root thread. CAS conflicts require
         refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
       tags: [Admin]
       x-hhc-visibility: admin
@@ -617,7 +624,7 @@ paths:
       operationId: moderateRecordingComments
       summary: moderateRecordingComments
       description: Default-off VIDEO_INTERACTIONS_ENABLED for social routes; VIDEO_ANALYTICS_ENABLED for metrics and heartbeat. Member entitlement and legal checks apply.
-        Private no-store. Comments are plain text; only one reply level. CAS conflicts require
+        Private no-store. Comments are plain text; parentId always identifies the root thread. CAS conflicts require
         refreshing before retry. Metrics use server wall time, not seek distance. No OBS wire changes.
       tags: [Admin]
       x-hhc-visibility: admin
@@ -14156,6 +14163,32 @@ components:
       properties:
         likes: {type: integer, minimum: 0}
         reaction: {type: [string, 'null'], enum: [like, dislike, null]}
+        threadParentId:
+          type: string
+          format: uuid
+          description: Direct structural parent in threaded list responses; omitted on roots. Survives anonymous removed-target placeholders.
+        hasChildren:
+          type: boolean
+          description: Exact traversability fallback when a root's renderable direct-child count is omitted after bounded removal-path traversal. Threaded responses only.
+        directChildCount:
+          type: integer
+          minimum: 0
+          description: Renderable direct children across all pages, including anonymous structural placeholders. Threaded list responses only.
+        descendantReplyCount:
+          type: integer
+          minimum: 0
+          description: Visible non-deleted replies at all depths below this node, excluding the node and anonymous placeholders. Threaded list responses only. Omitted for non-root nodes when an exact count exceeds the bounded read budget; absence is not zero. Root totals always use the legacy whole-thread shortcut.
+        replyPreviewAuthors:
+          type: array
+          maxItems: 1
+          description: Bounded current profiles of visible direct-child authors in deterministic child order. No account identifiers; omitted on removed nodes.
+          items:
+            type: object
+            additionalProperties: false
+            required: [displayName]
+            properties:
+              displayName: {type: string}
+              avatarUrl: {type: string}
         replyTo:
           type: object
           additionalProperties: false

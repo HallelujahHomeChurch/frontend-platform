@@ -31,3 +31,15 @@ it('sends targeted replies, top refresh and nullable reaction desired state',asy
  expect(await requests[2].json()).toMatchObject({parentId:'root',replyToId:'reply'})
  expect(new URL(requests[3].url).searchParams.get('q')).toBe('next meeting')
 })
+it('opts into threaded pages while keeping the legacy query unchanged',async()=>{
+ const requests:Request[]=[]
+ const comment={id:'child',parentId:'root',threadParentId:'parent',text:'Reply',displayName:'Member',createdAt:'2026-10-24T00:00:00Z',revision:1,deleted:false,hidden:false,mine:false,replyCount:0,directChildCount:1,descendantReplyCount:2,replyPreviewAuthors:[{displayName:'Preview',avatarUrl:'https://example.test/avatar'}]}
+ const api=createHhcWebClient({baseUrl:'https://www.example/api',getAccessToken:()=> 'member',fetcher:async value=>{requests.push(value as Request);return Response.json({data:{items:[comment],nextCursor:'next'}})}})
+ const page=await api.listRecordingComments('recording',{view:'threaded',parentId:'parent',cursor:'cursor',order:'oldest',limit:20})
+ const query=new URL(requests[0].url).searchParams
+ expect(Object.fromEntries(query)).toEqual({parentId:'parent',view:'threaded',cursor:'cursor',order:'oldest',limit:'20'})
+ expect(page.items[0]).toEqual(comment);expect(page.nextCursor).toBe('next')
+ expect(requests[0].cache).toBe('no-store');expect(requests[0].headers.get('Authorization')).toBe('Bearer member')
+ await api.listRecordingComments('recording',{parentId:'root'})
+ expect(new URL(requests[1].url).searchParams.has('view')).toBe(false)
+})
