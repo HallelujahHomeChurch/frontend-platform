@@ -4,10 +4,11 @@ import {mkdir, readFile, readdir, writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 
+// Balance complete suites by measured CI time; keep the same three runners.
 export const shards = {
-  legacy: {host: ['default', 'v6'], container: ['default', 'v3', 'v4', 'v5']},
-  'v7-v8': {host: ['v7', 'v8'], container: ['v6', 'v7', 'v8']},
-  'v9-v10': {host: ['v9', 'v10', 'v11'], container: ['v9', 'v10', 'v11']},
+  'balanced-a': {host: ['v10', 'v8', 'v7'], container: ['v11', 'v3']},
+  'balanced-b': {host: ['v6', 'default'], container: ['v10', 'v8', 'v6', 'v4']},
+  'balanced-c': {host: ['v11', 'v9'], container: ['v9', 'v7', 'v5', 'default']},
 };
 
 export function rendererCommands(shard, mode = 'ci') {
