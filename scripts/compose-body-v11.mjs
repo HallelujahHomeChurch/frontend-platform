@@ -33,10 +33,11 @@ export function balanceBodyBottom(document) {
     const height = document.pages.find(value => value.id === page.pageId).height;
     const top = Math.min(...page.slots.map(slot => slot.box.y));
     const bottom = Math.max(...page.slots.map(slot => slot.box.y + slot.box.height));
-    const target = 1 - 32 / height;
+    const target = 1 - 48 / height;
     if (bottom - top < .65 || bottom >= target) continue;
-    const spread = Math.min(target - bottom, 24 / height);
-    const shift = y => spread * (y - top) / (bottom - top);
+    const rows = [...new Set(page.slots.map(slot => Math.round(slot.box.y * height * 2) / 2))].sort((a, b) => a - b);
+    const spread = Math.min(target - bottom, 12 * (rows.length - 1) / height);
+    const shift = y => spread * rows.indexOf(Math.round(y * height * 2) / 2) / (rows.length - 1);
     for (const component of document.components.filter(component => body.has(component.id))) {
       const title = page.slots.find(slot => slot.componentId === component.id && slot.blockId === component.bodySection?.title.id);
       const separator = page.fixedSlots?.find(slot => slot.id === `fixed-${component.id}-speakerSeparator`);

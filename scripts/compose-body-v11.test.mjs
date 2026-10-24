@@ -11,7 +11,7 @@ test('only ordinary dense body pages receive bounded extra whitespace', () => {
   assert.deepEqual(document.layoutManifest.pages[0], before.layoutManifest.pages[0]);
   assert.deepEqual(document.layoutManifest.pages[2], before.layoutManifest.pages[2]);
   const bottom = document.layoutManifest.pages[1].slots.at(-1).box.y;
-  assert.ok(bottom > before.layoutManifest.pages[1].slots.at(-1).box.y && bottom - before.layoutManifest.pages[1].slots.at(-1).box.y <= 24 / 800);
+  assert.ok(bottom > before.layoutManifest.pages[1].slots.at(-1).box.y && bottom - before.layoutManifest.pages[1].slots.at(-1).box.y <= 36 / 800 + 1e-10);
   const sparse = fixture(); sparse.layoutManifest.pages[1].slots.forEach(slot => slot.box.y /= 2);
   const original = structuredClone(sparse); balanceBodyBottom(sparse); assert.deepEqual(sparse, original);
 });
@@ -51,4 +51,11 @@ test('body-bottom spacing keeps a section heading and its speaker separator toge
  balanceBodyBottom(document);
  assert.ok(page.slots[2].box.y>before.slots[2].box.y);
  assert.equal(page.fixedSlots[0].box.y-before.fixedSlots[0].box.y,page.slots[2].box.y-before.slots[2].box.y);
+});
+
+test('distributes modest paragraph gaps toward a shared bottom instead of adding the same fixed distance to every page',()=>{
+ const first=fixture(),second=fixture();
+ for(const [document,last] of [[first,.84],[second,.90]])document.layoutManifest.pages[1].slots=Array.from({length:8},(_,i)=>({id:`slot-${i}`,componentId:'body',box:box(.1+i*(last-.1)/7)}));
+ balanceBodyBottom(first);balanceBodyBottom(second);
+ assert.ok(Math.abs(first.layoutManifest.pages[1].slots.at(-1).box.y-second.layoutManifest.pages[1].slots.at(-1).box.y)<1e-10);
 });
