@@ -60,3 +60,23 @@ it('ignores authorization responses from a disposed playback session',async()=>{
   cache.request(url(0));cache.dispose();jobs[0].resolve(new Response(null,{status:403}));await tick();
   expect(loaded).not.toHaveBeenCalled();
 });
+
+it('keeps a sprite unavailable until decoded and releases an in-flight decode on disposal',async()=>{
+  let decoded!:()=>void;const decode=vi.fn(()=>new Promise<void>(resolve=>{decoded=resolve;}));
+  const images:{src:string;decoding:string}[]=[];
+  vi.stubGlobal('Image',class {src='';decoding='';decode=decode;constructor(){images.push(this);}});
+  const {cache,jobs,loaded}=setup();cache.request(url(0));jobs[0].resolve(jpg());await tick();
+  expect(decode).toHaveBeenCalledOnce();expect(cache.has(url(0))).toBe(false);expect(loaded).not.toHaveBeenCalled();
+  cache.dispose();expect(images[0].src).toBe('');expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:1');
+  decoded();await tick();expect(loaded).not.toHaveBeenCalled();expect(URL.revokeObjectURL).toHaveBeenCalledTimes(1);
+});
+it('reuses a decoded sprite and drops malformed images without caching them',async()=>{
+  const decode=vi.fn().mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('bad image'));
+  vi.stubGlobal('Image',class {src='';decoding='';decode=decode;});
+  const {cache,jobs,loaded}=setup();cache.request(url(0));jobs[0].resolve(jpg());await tick();
+  expect(cache.has(url(0))).toBe(true);expect(loaded).toHaveBeenLastCalledWith(url(0),'blob:1');
+  cache.request(url(0));await tick();expect(decode).toHaveBeenCalledTimes(1);
+  cache.request(url(1));jobs[1].resolve(jpg());await tick();
+  expect(cache.has(url(1))).toBe(false);expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:2');
+  cache.dispose();
+});

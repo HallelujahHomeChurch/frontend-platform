@@ -14,8 +14,10 @@ export function PreviewSprite({playbackUrl,cue,neighbor}:{playbackUrl:string;cue
     return ()=>{loader.dispose();cache.current=null;};
   },[playbackUrl]);
   useEffect(()=>{
-    // Position/time stay immediate. Only network targets are briefly coalesced.
-    const timer=window.setTimeout(()=>cache.current?.request(cue?.url??'',neighbor),60);
+    const loader=cache.current,source=cue?.url??'';
+    if(loader?.has(source)){loader.request(source,neighbor);return;}
+    // Coalesce network misses only; decoded cache hits have no artificial delay.
+    const timer=window.setTimeout(()=>loader?.request(source,neighbor),60);
     return ()=>window.clearTimeout(timer);
   },[cue?.url,neighbor,playbackUrl]);
   if(!cue||image.source!==cue.url||!image.url)return null;

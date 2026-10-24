@@ -7,7 +7,7 @@ import type {LivePlayerState} from './live-player.js';
 const playbackUrl='https://media.example/videos/r/captures/c/sessions/s/master.m3u8';
 const labels={quality:'Quality',auto:'Auto',play:'Play',pause:'Pause',mute:'Mute',unmute:'Unmute',seek:'Position',volume:'Volume',fullscreen:'Fullscreen',exitFullscreen:'Exit fullscreen',fullscreenError:'Error',playbackSpeed:'Speed',settings:'Settings',togglePlayback:'Toggle playback',privateCopy:'Private',buffering:'Loading'};
 const live={verifiedEnd:200,canFollow:true,label:'Live',backToLive:'Back to live'};
-const index=(start=30,sprite='seg-000001.jpg')=>`WEBVTT\n\n00:00:${start}.000 --> 00:00:${start+5}.000\n${sprite}#xywh=0,0,160,90\n`;
+const index=(start=30,sprite='seg-000001.jpg')=>`WEBVTT\n\n00:00:${String(start).padStart(2,'0')}.000 --> 00:00:${String(start+5).padStart(2,'0')}.000\n${sprite}#xywh=0,0,160,90\n`;
 function Harness({url=playbackUrl,state=live}:{url?:string;state?:LivePlayerState|null}){
   const container=useRef<HTMLDivElement>(null),videoRef=useRef<HTMLVideoElement>(null);
   return <div ref={container}><video ref={videoRef}/><PlayerChrome container={container} videoRef={videoRef} playbackUrl={url} labels={labels} quality="auto" qualities={['480p']} loading={false} failed={false} onQualityChange={()=>{}} live={state??undefined}/></div>;
@@ -89,4 +89,29 @@ it.each([401,403])('drops downloaded private previews after the index returns %s
   fetcher.mockResolvedValueOnce(new Response(null,{status}));await tick(5000);
   expect(view.container.querySelector('img')).toBeNull();expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:preview');
   expect(view.container.querySelector('time')).toHaveTextContent('0:32');
+});
+
+it('warms a VOD index and current sprite after canplay without waiting for pointer movement',async()=>{
+  const fetcher=network();fetcher.mockResolvedValueOnce(new Response(index(0)));
+  const view=render(<Harness state={null}/>);await tick(100);expect(fetcher).not.toHaveBeenCalled();
+  fireEvent.canPlay(view.container.querySelector('video')!);await tick(0);await tick(100);
+  expect(fetcher.mock.calls.filter(([url])=>url.endsWith('.vtt'))).toHaveLength(1);
+  expect(view.container.querySelector('img')).toHaveAttribute('src','blob:preview');
+  expect(view.container.querySelector('.hhc-player-preview')).toHaveAttribute('hidden');
+  hover(1);await tick(0);
+  expect(view.container.querySelector('.hhc-player-preview')).not.toHaveAttribute('hidden');
+  expect(view.container.querySelector('time')).toHaveTextContent('0:01');expect(fetcher).toHaveBeenCalledTimes(2);
+});
+it('respects data saving for optional VOD warming while keeping user-requested previews',async()=>{
+  vi.stubGlobal('navigator',{userAgent:navigator.userAgent,connection:{saveData:true}});
+  const fetcher=network(),view=render(<Harness state={null}/>);fireEvent.canPlay(view.container.querySelector('video')!);await tick(100);
+  expect(fetcher).not.toHaveBeenCalled();hover();await tick(0);await tick(100);
+  expect(fetcher).toHaveBeenCalledTimes(2);expect(view.container.querySelector('img')).toHaveAttribute('src','blob:preview');
+});
+it('retries an optional VOD index missing during warming when the user hovers later',async()=>{
+  const fetcher=network();fetcher.mockResolvedValueOnce(new Response(null,{status:404}));
+  const view=render(<Harness state={null}/>);fireEvent.canPlay(view.container.querySelector('video')!);await tick(0);await tick(10000);
+  expect(fetcher).toHaveBeenCalledTimes(1);hover();await tick(0);await tick(100);
+  expect(view.container.querySelector('img')).toHaveAttribute('src','blob:preview');
+  expect(fetcher.mock.calls.filter(([url])=>url.endsWith('.vtt'))).toHaveLength(2);
 });
