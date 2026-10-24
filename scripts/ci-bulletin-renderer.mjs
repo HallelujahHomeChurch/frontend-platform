@@ -7,7 +7,7 @@ import {pathToFileURL} from 'node:url';
 export const shards = {
   legacy: {host: ['default', 'v6'], container: ['default', 'v3', 'v4', 'v5']},
   'v7-v8': {host: ['v7', 'v8'], container: ['v6', 'v7', 'v8']},
-  'v9-v10': {host: ['v9', 'v10'], container: ['v9', 'v10']},
+  'v9-v10': {host: ['v9', 'v10', 'v11'], container: ['v9', 'v10', 'v11']},
 };
 
 export function rendererCommands(shard, mode = 'ci') {
@@ -63,7 +63,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     assert.ok(process.env.HHC_BULLETIN_TEMPLATE_DIR, 'verified template assets are required');
     verifyIdentity(identity);
     const env = {...process.env};
-    for (let version = 3; version <= 10; version++) delete env[`HHC_TEST_RENDERER_V${version}`];
+    for (let version = 3; version <= 11; version++) delete env[`HHC_TEST_RENDERER_V${version}`];
     for (const {runtime, version, args, env: versionEnv} of rendererCommands(shardOrDirectory, mode)) {
       console.log(`::group::${runtime} renderer ${version}`);
       execFileSync(runtime === 'host' ? process.execPath : 'docker', args, {stdio: 'inherit', env: {...env, ...versionEnv}});

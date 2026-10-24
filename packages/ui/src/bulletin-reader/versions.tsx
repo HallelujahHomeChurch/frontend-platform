@@ -12,6 +12,9 @@ import {BulletinDocumentRenderer as V8, requireBulletinRenderer as requireV8} fr
 import {BulletinDocumentRenderer as V9, requireBulletinRenderer as requireV9} from './v9/BulletinDocumentRenderer.js';
 import {BulletinDocumentRenderer as V10, requireBulletinRenderer as requireV10} from './v10/BulletinDocumentRenderer.js';
 
+import {BulletinDocumentRenderer as V11, requireBulletinRenderer as requireV11} from './v11/BulletinDocumentRenderer.js';
+
+export {BULLETIN_RENDERER_V11_DIGEST} from './v11/artifact.js';
 export {BULLETIN_RENDERER_V5_DIGEST} from './v5/artifact.js';
 export {BULLETIN_RENDERER_V6_DIGEST} from './v6/artifact.js';
 export {BULLETIN_RENDERER_V7_DIGEST} from './v7/artifact.js';
@@ -45,6 +48,7 @@ const renderers: Record<string, RendererEntry> = {
   v7: {Renderer: V7, require: requireV7, capabilities: Object.freeze({usesTemplateSnapshot: false, fontFamily: 'v7', fixedTextFamily: 'historical', composerOwnsCoverSpacing: false})},
   v8: {Renderer: V8, require: requireV8, capabilities: Object.freeze({usesTemplateSnapshot: false, fontFamily: 'v7', fixedTextFamily: 'historical', composerOwnsCoverSpacing: true})},
   v9: {Renderer: V9, require: requireV9, capabilities: Object.freeze({usesTemplateSnapshot: true, fontFamily: 'v7', fixedTextFamily: 'snapshot', composerOwnsCoverSpacing: true})},
+  v11: {Renderer: V11, require: requireV11, capabilities: Object.freeze({usesTemplateSnapshot: true, fontFamily: 'v7', fixedTextFamily: 'snapshot', composerOwnsCoverSpacing: true})},
   v10: {Renderer: V10, require: requireV10, capabilities: Object.freeze({usesTemplateSnapshot: true, fontFamily: 'v7', fixedTextFamily: 'snapshot', composerOwnsCoverSpacing: true})},
 };
 

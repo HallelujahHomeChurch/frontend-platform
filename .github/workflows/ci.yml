@@ -61,7 +61,7 @@ jobs:
         run: node --test scripts/ci-bulletin-renderer.test.mjs
       - name: Verify immutable bulletin renderer
         run: |
-          node scripts/verify-bulletin-renderer-v10.mjs --base-ref origin/main
+          node scripts/verify-bulletin-renderer-v11.mjs --base-ref origin/main
           node --test scripts/verify-bulletin-renderer.test.mjs
           python3 -m unittest discover -s scripts -p test_bulletin_corpus.py
       - name: Package the verified renderer once
