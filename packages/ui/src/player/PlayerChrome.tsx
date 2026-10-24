@@ -9,6 +9,7 @@ import styles from './styles.js';
 import {usePlayerFullscreen} from './use-player-fullscreen.js';
 import {RecordingWatermark} from './RecordingWatermark.js';
 import {PreviewSprite} from './PreviewSprite.js';
+import {previewCueAt} from './preview-cue.js';
 
 type Quality = 'auto' | '480p' | '720p' | '1080p';
 type Props = {
@@ -48,7 +49,9 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
   const [settings, setSettings] = useState(false), [visible, setVisible] = useState(true);
   const [feedback, setFeedback] = useState<{kind: 'play' | 'pause' | 'back' | 'forward'; id: number; seconds?:number} | null>(null);
   const [preview, setPreview] = useState<number | null>(null), [scrub, setScrub] = useState<number | null>(null);
-  const cues = usePreviewIndex(playbackUrl, Boolean(live), !failed && (preview !== null || scrub !== null));
+  const saveData=typeof navigator!=='undefined'&&(navigator as Navigator&{connection?:{saveData?:boolean}}).connection?.saveData===true;
+  const warmPreviews=!live&&!failed&&!loading&&!waiting&&duration>0&&!saveData&&typeof document!=='undefined'&&document.visibilityState==='visible';
+  const cues = usePreviewIndex(playbackUrl, Boolean(live), !failed && (preview !== null || scrub !== null), warmPreviews);
   const [holding, setHolding] = useState(false);
   const gesture = useRef<{id:number;x:number;y:number;moved:boolean;rate:number|null}|null>(null);
   const holdTimer = useRef(0), tapTimer = useRef(0), clickTimer=useRef(0);
@@ -249,8 +252,9 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
   const current = scrub ?? time;
   const previewTime = scrub ?? preview;
   const visibleCues = live ? cues.filter(cue => cue.start >= seekStart && cue.end <= duration) : cues;
-  const cue = previewTime === null ? undefined : visibleCues.find(cue => cue.start <= previewTime && cue.end > previewTime);
-  const neighbor = cue ? visibleCues.find(item => item.start >= cue.end && item.url !== cue.url)?.url : undefined;
+  const targetTime=previewTime??(warmPreviews?time:null);
+  const cue = targetTime === null ? undefined : previewCueAt(visibleCues,targetTime);
+  const neighbor = cue&&!saveData ? visibleCues.find(item => item.start >= cue.end && item.url !== cue.url)?.url : undefined;
   const controlsVisible = visible || autoplayBlocked || playBlocked || settings || scrub !== null;
   useEffect(() => {
     const root=container.current;if(!root)return;

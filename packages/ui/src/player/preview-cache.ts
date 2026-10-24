@@ -1,14 +1,14 @@
 // Private, mounted-player-only cache. HTTP responses remain no-store; no disk,
 // service worker, shared account cache or public image optimizer is involved.
 export function createPreviewCache(prefix:string,loaded:(source:string,url:string)=>void) {
-  const cache=new Map<string,{url:string;bytes:number}>(), active=new Map<string,AbortController>();
+  const cache=new Map<string,{url:string;bytes:number;release:()=>void}>(), active=new Map<string,AbortController>();
   let queue:string[]=[], target='', bytes=0, disposed=false;
   const valid=(url:string)=>url.startsWith(prefix)&&/^seg-\d{6}\.jpg$/.test(url.slice(prefix.length));
   const notify=(source:string,url:string)=>queueMicrotask(()=>{if(!disposed&&source===target)loaded(source,url);});
   const dispose=()=>{
     disposed=true;queue=[];
     for(const controller of active.values())controller.abort();
-    for(const entry of cache.values())URL.revokeObjectURL(entry.url);
+    for(const entry of cache.values())entry.release();
     cache.clear();bytes=0;
   };
   const pump=()=>{
@@ -31,19 +31,30 @@ export function createPreviewCache(prefix:string,loaded:(source:string,url:strin
           }
         } finally {await reader.cancel();}
         if(disposed||controller.signal.aborted||!size)return;
-        const entry={url:URL.createObjectURL(new Blob(chunks,{type:'image/jpeg'})),bytes:size};
+        const url=URL.createObjectURL(new Blob(chunks,{type:'image/jpeg'})),image=new Image();
+        let released=false;
+        const release=()=>{if(released)return;released=true;image.src='';URL.revokeObjectURL(url);};
+        controller.signal.addEventListener('abort',release,{once:true});
+        try {
+          image.decoding='async';image.src=url;
+          if(typeof image.decode==='function')await image.decode();
+          if(disposed||controller.signal.aborted){release();return;}
+        } catch(error){release();throw error;}
+        finally {controller.signal.removeEventListener('abort',release);}
+        const entry={url,bytes:size,release};
         cache.set(source,entry);bytes+=size;
         while(cache.size>16||bytes>8*1_048_576){
           const oldest=cache.keys().next().value!;
           // Never evict the image currently shown while loading a neighbor.
           if(oldest===target){const current=cache.get(oldest)!;cache.delete(oldest);cache.set(oldest,current);continue;}
-          const old=cache.get(oldest)!;cache.delete(oldest);bytes-=old.bytes;URL.revokeObjectURL(old.url);
+          const old=cache.get(oldest)!;cache.delete(oldest);bytes-=old.bytes;old.release();
         }
         notify(source,entry.url);
       })().catch(()=>{/* Optional previews never interrupt video. */}).finally(()=>{active.delete(source);pump();});
     }
   };
   return {
+    has(source:string){return !disposed&&valid(source)&&cache.has(source);},
     request(url:string,neighbor?:string){
       if(disposed)return;
       target=valid(url)?url:'';
