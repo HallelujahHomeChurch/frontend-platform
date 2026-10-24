@@ -8485,7 +8485,7 @@ export interface operations {
                 limit?: number;
                 /** @description Root thread in legacy mode; expanded root or reply node when view is threaded. */
                 parentId?: string;
-                /** @description Opt in to direct-child pages, structural parents, authoritative descendant totals and bounded preview authors. Omit for the unchanged flat response. */
+                /** @description Opt in to direct-child pages, structural parents, exact root totals, optional nonroot descendant totals and bounded preview authors. Nonroot totals may be omitted when traversal exceeds its work budget; absence is not zero. Root directChildCount may be omitted with hasChildren=true. A 422 recording_comment_thread_too_large stops an unresolved traversal; 503 recording_comment_read_timeout indicates an added SQL query exceeded its deadline. Omit for the unchanged flat response. */
                 view?: "threaded";
                 order?: "newest" | "oldest" | "top";
                 refresh?: boolean;
@@ -8513,6 +8513,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             412: components["responses"]["Error"];
+            422: components["responses"]["Error"];
             429: components["responses"]["Error"];
             503: components["responses"]["Error"];
         };
