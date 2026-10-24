@@ -500,7 +500,7 @@ export interface components {
             alt: string;
             /**
              * Format: uuid
-             * @description Server-owned private reference
+             * @description Server-owned private reference, omitted from member responses.
              */
             assetId?: string;
             sha256: components["schemas"]["OnlineBulletinHash"];

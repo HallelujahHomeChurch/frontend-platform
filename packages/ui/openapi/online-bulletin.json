@@ -2123,8 +2123,7 @@
           "assetId": {
             "type": "string",
             "format": "uuid",
-            "description": "Server-owned private reference",
-            "omitted from member responses.": null
+            "description": "Server-owned private reference, omitted from member responses."
           },
           "sha256": {
             "$ref": "#/components/schemas/OnlineBulletinHash"
