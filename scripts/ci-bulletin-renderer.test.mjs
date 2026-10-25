@@ -129,6 +129,7 @@ test('CI and release use the same non-publishing shard runner and release cannot
   const ci = workflow('ci');
   const release = workflow('release');
   const runner = workflow('renderer');
+  for (const job of ['prepare', 'renderer']) assert.match(ci.jobs[job].if, /!cancelled\(\)/, 'superseded PRs must stop expensive jobs');
   assert.deepEqual(release.on, {push: {tags: ['v*']}});
   for (const [mode, caller] of [['ci', ci], ['release', release]]) {
     assert.deepEqual(caller.permissions, {contents: 'read', actions: 'read'});

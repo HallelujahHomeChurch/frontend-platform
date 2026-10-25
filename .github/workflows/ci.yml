@@ -35,7 +35,7 @@ jobs:
 
   prepare:
     needs: agent_docs
-    if: ${{ always() && (needs.agent_docs.result != 'success' || needs.agent_docs.outputs.docs_only != 'true') }}
+    if: ${{ !cancelled() && (needs.agent_docs.result != 'success' || needs.agent_docs.outputs.docs_only != 'true') }}
     runs-on: ubuntu-latest
     outputs:
       verify-release: ${{ steps.selection.outputs.verify-release }}
@@ -126,7 +126,7 @@ jobs:
 
   renderer:
     needs: [agent_docs, prepare]
-    if: ${{ always() && needs.prepare.result == 'success' && (needs.agent_docs.result != 'success' || needs.agent_docs.outputs.docs_only != 'true') }}
+    if: ${{ !cancelled() && needs.prepare.result == 'success' && (needs.agent_docs.result != 'success' || needs.agent_docs.outputs.docs_only != 'true') }}
     uses: ./.github/workflows/renderer.yml
     with:
       mode: ci
