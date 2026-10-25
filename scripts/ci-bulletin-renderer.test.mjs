@@ -26,7 +26,7 @@ test('the shards retain every original host and container command exactly once',
     assert.deepEqual(env, versionEnv);
     if (runtime === 'host') assert.deepEqual(args, ['--test', ...concurrency, ...files]);
     else {
-      assert.deepEqual(args.slice(0, 13), ['run', '--rm', '--network', 'none', '--read-only', '--memory', '2g', '--cpus', '1', '--tmpfs', '/tmp:rw,noexec,nosuid,size=128m', '-e', 'HHC_BULLETIN_TEMPLATE_DIR=/opt/bulletin-renderer/assets']);
+      assert.deepEqual(args.slice(0, 13), ['run', '--rm', '--network', 'none', '--read-only', '--memory', '2g', '--cpus', '2', '--tmpfs', '/tmp:rw,noexec,nosuid,size=128m', '-e', 'HHC_BULLETIN_TEMPLATE_DIR=/opt/bulletin-renderer/assets']);
       const tail = args.indexOf('--entrypoint');
       assert.deepEqual(args.slice(tail), ['--entrypoint', 'node', 'hhc-bulletin-renderer:verify', '--test', ...concurrency, ...files.map(file => `/opt/bulletin-renderer/${file}`)]);
       for (const file of [...files, 'scripts/testdata']) assert.ok(args.includes(`type=bind,src=${process.cwd()}/${file},dst=/opt/bulletin-renderer/${file},readonly`));
@@ -151,7 +151,7 @@ test('CI and release use the same non-publishing shard runner and release cannot
   assert.deepEqual(runner.permissions, {contents: 'read'});
   assert.equal(runner.on.workflow_call.secrets, undefined);
   assert.equal(runner.jobs.renderer.strategy['fail-fast'], false);
-  assert.equal(runner.jobs.renderer.strategy['max-parallel'], 3);
+  assert.equal(runner.jobs.renderer.strategy['max-parallel'], 6);
   assert.equal(runner.jobs.renderer.permissions?.packages, undefined);
 });
 

@@ -3,6 +3,10 @@
 CI retains six host and nine container commands. Release retains nine container
 commands. Every command runs either its original full suite or three named smoke
 cases: real CLI composition, stale-content rejection, and missing-asset rejection.
+Six serial shards share the prepared image and workspace. Container verification
+uses two CPUs and the existing 2 GiB memory cap; deployment resource settings are
+unchanged. This trades three additional job setups for shorter full-suite critical
+paths; acceptance compares total queue-inclusive time and summed runner minutes.
 The final `verify` check requires the same-run plan and exact tier receipts.
 
 The first selector deliberately narrows only known independent package changes
@@ -12,6 +16,18 @@ shared tests, lockfiles, workflows, selector changes, deleted/renamed/symlink
 files, unknown paths and unavailable diffs require full verification. Frozen
 renderer verification is unchanged. Narrower runtime source mappings need
 separate dependency evidence before addition.
+
+Player source edits under `packages/ui/src/player/` may narrow a container command
+only when its exact command identity has trusted full evidence with matching
+actual image and verification fingerprints. The renderer bundle copies only
+`src/bulletin-reader` and `dist/bulletin-reader`, not player source or output;
+actual image hashing still detects packaged dependencies, CSS, fonts and assets.
+Host commands retain full coverage because release checkpoints contain no host
+results. No container receipt is substituted for host evidence. Missing or
+malformed evidence, changed runtime/verification inputs, and mixed shared changes
+run full; metadata, root exports and unknown paths remain conservative triggers.
+This optimization benefits player changes only and does not establish the total
+10-minute target or 15-minute ceiling for full renderer changes.
 
 Release additionally requires an unchanged actual read-only image fingerprint
 and per-command verification fingerprint from a trusted successful release.
@@ -38,8 +54,10 @@ analysis, but does not mistake native-package drift for an unchanged renderer.
 
 Changes to verification wiring also run the shared release-mode runner in PR CI
 with a synthetic narrowed plan, after normal CI shards finish. This exercises
-real V10 acceptance and all other release smoke commands without calling the
-publication workflow. Its receipts have a separate artifact namespace.
+the default full suite and all other release smoke commands without calling the
+publication workflow. Normal CI already runs V10 full for wiring changes; the
+release-check lane no longer duplicates its dense-cover suite. Actual releases
+retain version-specific full selection. Its receipts have a separate artifact namespace.
 
 Set the `RENDERER_FORCE_FULL` repository variable to `true` to disable narrowing;
 reverting the selection change restores the previous full matrix. Changing that

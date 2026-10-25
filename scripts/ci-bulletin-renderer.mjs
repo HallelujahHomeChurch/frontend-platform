@@ -5,11 +5,14 @@ import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {loadPlan, smokeCases, verifySmoke} from './renderer-selection.mjs';
 
-// Balance complete suites by measured CI time; keep the same three runners.
+// Keep each suite intact and execute serially inside six bounded runners.
 export const shards = {
-  'balanced-a': {host: ['v10', 'default'], container: ['v11', 'v7', 'v6']},
-  'balanced-b': {host: ['v8', 'v6'], container: ['v10', 'v5', 'v4', 'v3']},
-  'balanced-c': {host: ['v11', 'v7', 'v9'], container: ['v8', 'v9', 'default']},
+  'balanced-a': {host: ['v10'], container: ['v7', 'default']},
+  'balanced-b': {host: ['default'], container: ['v10', 'v5']},
+  'balanced-c': {host: ['v8'], container: ['v3', 'v4']},
+  'balanced-d': {host: ['v6'], container: ['v8']},
+  'balanced-e': {host: ['v7'], container: ['v6']},
+  'balanced-f': {host: ['v9', 'v11'], container: ['v9', 'v11']},
 };
 
 export function rendererCommands(shard, mode = 'ci', plan) {
@@ -25,7 +28,7 @@ export function rendererCommands(shard, mode = 'ci', plan) {
     if (tier === 'smoke') files.splice(1);
     const testArgs = ['--test', ...(tier === 'smoke' ? ['--test-reporter=tap', `--test-name-pattern=^(${smokeCases.join('|')})$`] : []), ...(modern ? ['--test-concurrency=1'] : [])];
     const args = runtime === 'host' ? [...testArgs, ...files] : [
-      'run', '--rm', '--network', 'none', '--read-only', '--memory', '2g', '--cpus', '1',
+      'run', '--rm', '--network', 'none', '--read-only', '--memory', '2g', '--cpus', '2',
       '--tmpfs', '/tmp:rw,noexec,nosuid,size=128m',
       '-e', 'HHC_BULLETIN_TEMPLATE_DIR=/opt/bulletin-renderer/assets',
       ...Object.entries(env).flatMap(([key, value]) => ['-e', `${key}=${value}`]),
