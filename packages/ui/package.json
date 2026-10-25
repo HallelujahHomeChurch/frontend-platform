@@ -64,7 +64,7 @@
     "jsdom": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "storybook": "10.5.0",
+    "storybook": "10.6.2",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }
