@@ -3,11 +3,15 @@
 CI retains seven host and ten container commands. Release retains ten container
 commands. Every command runs either its original full suite or three named smoke
 cases: real CLI composition, stale-content rejection, and missing-asset rejection.
-Eight serial shards share the prepared image and workspace. Container verification
-uses two CPUs and the existing 2 GiB memory cap; deployment resource settings are
-unchanged. This trades five additional job setups for shorter full-suite critical
-paths. Compared with seven shards, the extra setup buys headroom under the
-15-minute ceiling; acceptance compares total queue-inclusive time and summed runner minutes.
+Ten serial shards share the prepared image and workspace, with one container
+version per shard and at most one host suite. Container verification uses two
+CPUs and the existing 2 GiB memory cap; deployment resource settings are unchanged.
+The immutable mutation tests run in a separate required job, while prepare still
+checks the actual built renderer against main before packaging. This overlaps
+independent validation without removing any test. The extra job and shard setup
+costs are included in acceptance against total queue-inclusive time and summed
+runner minutes; the first eight-shard V11 run took 16m55s / 71.75 runner-minutes
+and did not meet the 15-minute ceiling.
 The final `verify` check requires the same-run plan and exact tier receipts.
 
 The first selector deliberately narrows only known independent package changes

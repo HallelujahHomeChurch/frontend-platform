@@ -72,8 +72,8 @@ untrusted assets and content that cannot fit at that floor still fail closed.
 Deploy V10-capable web/admin consumers before enabling the producer. Native
 verification uses `HHC_TEST_RENDERER_V10=1` and the V10 measurement suite.
 
-CI builds the packages and isolated renderer image once, then verifies eight
-renderer shards with at most eight concurrent runners. Each shard executes suites
+CI builds the packages and isolated renderer image once, then verifies ten
+renderer shards with at most ten concurrent runners. Each shard executes suites
 serially; containers may use two CPUs with the existing 2 GiB memory limit. The host commands retain
 default/V6–V11 coverage; the container commands retain default/V3–V11 coverage.
 The same-run workspace/image artifacts expire after one day and must pass SHA-256

@@ -5,17 +5,19 @@ import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {loadPlan, smokeCases, verifySmoke} from './renderer-selection.mjs';
 
-// Balance complete suites plus release checks using runs 40186680024/40185429198.
-// V11 uses the observed CPU=1 weight conservatively; no release shard is empty.
+// Balance full commands plus release checks using V11 run 40189910007.
+// One container per shard keeps every standalone release shard meaningful.
 export const shards = {
-  'balanced-a': {host: ['v10'], container: ['v6']},
-  'balanced-b': {host: [], container: ['v10', 'v9']},
-  'balanced-c': {host: ['v8'], container: ['default']},
-  'balanced-d': {host: ['v7'], container: ['v8']},
-  'balanced-e': {host: ['default'], container: ['v7', 'v3']},
-  'balanced-f': {host: ['v9', 'v6'], container: ['v4']},
-  'balanced-g': {host: ['v11'], container: ['v5']},
+  'balanced-a': {host: ['v10'], container: ['v4']},
+  'balanced-b': {host: ['v7'], container: ['v10']},
+  'balanced-c': {host: [], container: ['default']},
+  'balanced-d': {host: [], container: ['v8']},
+  'balanced-e': {host: ['default'], container: ['v7']},
+  'balanced-f': {host: ['v6'], container: ['v6']},
+  'balanced-g': {host: ['v11'], container: ['v3']},
   'balanced-h': {host: [], container: ['v11']},
+  'balanced-i': {host: ['v8'], container: ['v5']},
+  'balanced-j': {host: ['v9'], container: ['v9']},
 };
 
 export function rendererCommands(shard, mode = 'ci', plan) {

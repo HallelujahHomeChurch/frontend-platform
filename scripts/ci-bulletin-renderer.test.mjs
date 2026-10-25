@@ -17,6 +17,10 @@ const coverage = {
 
 test('the shards retain every original host and container command exactly once', () => {
   const actual = {host: {}, container: {}};
+  for (const shard of Object.values(shards)) {
+    assert.ok(shard.host.length <= 1, 'do not serialize multiple host suites');
+    assert.equal(shard.container.length, 1, 'one container keeps release shards balanced and nonempty');
+  }
   for (const shard of Object.keys(shards)) for (const command of rendererCommands(shard)) {
     const {runtime, version, files, args, env} = command;
     assert.equal(actual[runtime][version], undefined, `duplicate ${runtime}/${version}`);
@@ -71,7 +75,7 @@ test('a failed renderer command aborts its shard without recording completed cov
     });
     assert.notEqual(result.status, 0);
     assert.match(result.stdout, /host renderer v10/);
-    assert.doesNotMatch(result.stdout, /container renderer v6/);
+    assert.doesNotMatch(result.stdout, /container renderer v4/);
     assert.equal(existsSync(join(directory, 'results')), false);
   } finally {await rm(directory, {recursive: true, force: true});}
 });
@@ -123,20 +127,43 @@ test('release gate rejects missing, duplicate, wrong-mode, stale-run and wrong-v
 });
 
 
+test('immutable mutation validation remains required for code and skipped only for proven docs', () => {
+  const {parse} = createRequire(new URL('../packages/hhc-web-client/package.json', import.meta.url))('yaml');
+  const ci = parse(readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8'));
+  assert.equal(ci.jobs.immutable.needs, 'agent_docs');
+  assert.ok(ci.jobs.immutable.steps.some(step => step.run === 'corepack pnpm build'));
+  assert.equal(ci.jobs.immutable.steps.filter(step => step.run === 'node --test scripts/verify-bulletin-renderer.test.mjs').length, 1);
+  assert.ok(ci.jobs.prepare.steps.some(step => step.run?.includes('node scripts/verify-bulletin-renderer-v11.mjs --base-ref origin/main')));
+  const gate = ci.jobs.verify.steps.find(step => step.name === 'Require a proven classification').run;
+  const execute = (docs, immutable, classification = 'success') => {
+    const values = {'needs.agent_docs.result': classification, 'needs.agent_docs.outputs.docs_only': docs,
+      'needs.immutable.result': immutable, 'needs.prepare.result': docs === 'true' ? 'skipped' : 'success',
+      'needs.renderer.result': docs === 'true' ? 'skipped' : 'success'};
+    const run = gate.replace(/\$\{\{ (.*?) \}\}/g, (_, key) => values[key] ?? '');
+    return spawnSync('bash', ['-e', '-c', run]).status;
+  };
+  assert.equal(execute('false', 'success'), 0);
+  for (const result of ['failure', 'cancelled', 'skipped', '']) assert.notEqual(execute('false', result), 0);
+  assert.equal(execute('true', 'skipped'), 0);
+  assert.notEqual(execute('true', 'success'), 0);
+  assert.notEqual(execute('true', 'skipped', 'failure'), 0);
+});
+
+
 test('CI and release use the same non-publishing shard runner and release cannot bypass verification', () => {
   const {parse} = createRequire(new URL('../packages/hhc-web-client/package.json', import.meta.url))('yaml');
   const workflow = name => parse(readFileSync(new URL(`../.github/workflows/${name}.yml`, import.meta.url), 'utf8'));
   const ci = workflow('ci');
   const release = workflow('release');
   const runner = workflow('renderer');
-  for (const job of ['prepare', 'renderer']) assert.match(ci.jobs[job].if, /!cancelled\(\)/, 'superseded PRs must stop expensive jobs');
+  for (const job of ['immutable', 'prepare', 'renderer']) assert.match(ci.jobs[job].if, /!cancelled\(\)/, 'superseded PRs must stop expensive jobs');
   assert.deepEqual(release.on, {push: {tags: ['v*']}});
   for (const [mode, caller] of [['ci', ci], ['release', release]]) {
     assert.deepEqual(caller.permissions, {contents: 'read', actions: 'read'});
     assert.equal(caller.jobs.renderer.uses, './.github/workflows/renderer.yml');
     assert.equal(caller.jobs.renderer.with.mode, mode);
     assert.deepEqual(caller.jobs.renderer.needs, mode === 'ci' ? ['agent_docs', 'prepare'] : 'prepare');
-    assert.deepEqual(caller.jobs.verify.needs, mode === 'ci' ? ['agent_docs', 'prepare', 'renderer'] : ['prepare', 'renderer']);
+    assert.deepEqual(caller.jobs.verify.needs, mode === 'ci' ? ['agent_docs', 'immutable', 'prepare', 'renderer'] : ['prepare', 'renderer']);
     assert.equal(caller.jobs.verify.if, '${{ always() }}');
     assert.equal(caller.jobs.renderer.secrets, undefined);
     const receiptsDownload = caller.jobs.verify.steps.find(step => step.uses?.startsWith('actions/download-artifact@'));
@@ -166,7 +193,7 @@ test('CI and release use the same non-publishing shard runner and release cannot
   assert.deepEqual(runner.permissions, {contents: 'read'});
   assert.equal(runner.on.workflow_call.secrets, undefined);
   assert.equal(runner.jobs.renderer.strategy['fail-fast'], false);
-  assert.equal(runner.jobs.renderer.strategy['max-parallel'], 8);
+  assert.equal(runner.jobs.renderer.strategy['max-parallel'], 10);
   assert.equal(runner.jobs.renderer.permissions?.packages, undefined);
 });
 
