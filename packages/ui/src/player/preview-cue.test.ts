@@ -16,6 +16,12 @@ it('selects the first actual sample in each ten-second bucket when fragment PTS 
   const separated=[{start:10,end:12,url:'before-gap',x:0},{start:15,end:20,url:'after-gap',x:0}];
   expect(previewCueAt(separated,17)).toBe(separated[1]);
 });
+it('holds continuous short cues for ten seconds without crossing a real gap',()=>{
+  const short=Array.from({length:20},(_,i)=>({start:i,end:i+1,url:`sheet-${i}`,x:0}));
+  for(const time of [0.5,1.5,5.5,9.9])expect(previewCueAt(short,time)).toBe(short[0]);
+  for(const time of [10.5,15.5,19.9])expect(previewCueAt(short,time)).toBe(short[10]);
+  expect(previewCueAt(short.filter(cue=>cue.start!==5),8)).toBe(short[8]);
+});
 it('respects clipped range starts, unavailable gaps and finite timeline bounds',()=>{
   expect(previewCueAt(cues.slice(7),36)).toBe(cues[7]);
   expect(previewCueAt(cues.slice(7),34)).toBeUndefined();
