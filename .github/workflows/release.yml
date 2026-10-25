@@ -38,11 +38,11 @@ jobs:
             -v "$PWD:/workspace:ro" \
             -v "$trivy_cache:/root/.cache/trivy" \
             ghcr.io/aquasecurity/trivy@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969 \
-            fs --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 \
+            fs --db-repository ghcr.io/aquasecurity/trivy-db:2 --db-repository public.ecr.aws/aquasecurity/trivy-db:2 --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 \
             --skip-dirs /workspace/.git --skip-dirs /workspace/node_modules /workspace
       - run: corepack pnpm build
       - run: |
-          node --test scripts/ci-bulletin-renderer.test.mjs scripts/renderer-selection.test.mjs
+          node --test scripts/ci-bulletin-renderer.test.mjs scripts/renderer-selection.test.mjs scripts/seal-renderer-checkpoint.test.mjs
           python3 -m unittest discover -s scripts -p test_renderer_checkpoint.py
       - run: corepack pnpm test
       - run: corepack pnpm lint
@@ -63,8 +63,9 @@ jobs:
           node --test scripts/renderer-runtime-fingerprint.test.mjs
           docker save hhc-bulletin-renderer:verify -o "$RUNNER_TEMP/bulletin-renderer.tar"
           docker run --rm -v "$RUNNER_TEMP/bulletin-renderer.tar:/image.tar:ro" \
+            -v "$RUNNER_TEMP/trivy-cache:/root/.cache/trivy" \
             ghcr.io/aquasecurity/trivy@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969 \
-            image --input /image.tar --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1
+            image --db-repository ghcr.io/aquasecurity/trivy-db:2 --db-repository public.ecr.aws/aquasecurity/trivy-db:2 --input /image.tar --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1
       - name: Restore trusted release evidence or require full verification
         env:
           GH_TOKEN: ${{ github.token }}

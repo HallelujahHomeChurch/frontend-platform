@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {mkdir, readFile, readdir, writeFile} from 'node:fs/promises';
-import {loadPlan, universe} from './renderer-selection.mjs';
+import {digest, loadPlan, universe} from './renderer-selection.mjs';
 import {verifyResults} from './ci-bulletin-renderer.mjs';
 
 const directory = 'artifacts/renderer-selection';
@@ -16,6 +16,14 @@ const identity = {sha: head, runId: process.env.GITHUB_RUN_ID, runAttempt: proce
 const plan = loadPlan(`${directory}/release.json`, 'release', head);
 const manifest = JSON.parse(await readFile(`${directory}/manifest.json`, 'utf8'));
 assert.equal(manifest.producerCommit, head);
+assert.deepEqual(Object.keys(manifest.dependencyHashes).sort(), [...manifest.dependencyPaths].sort());
+assert.equal(manifest.sourceFingerprint, digest(manifest.dependencyHashes));
+assert.deepEqual(Object.keys(manifest.versions).sort(), Array.from({length: 10}, (_, i) => `v${i + 1}`).sort());
+for (const version of Object.values(manifest.versions)) {
+  assert.deepEqual(version.dependencyPaths, manifest.dependencyPaths);
+  assert.equal(version.inputFingerprint, manifest.runtimeFingerprint);
+}
+manifest.publishedImage = publishedImage;
 const files = await readdir('renderer-results', {recursive: true, withFileTypes: true});
 const receipts = await Promise.all(files.filter(f => f.isFile()).map(async f => JSON.parse(await readFile(`${f.parentPath}/${f.name}`, 'utf8'))));
 verifyResults({prepare: {result: 'success'}, renderer: {result: 'success'}}, receipts, identity, plan);

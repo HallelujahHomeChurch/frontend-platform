@@ -50,3 +50,20 @@ Tests: `node --test scripts/renderer-selection.test.mjs scripts/ci-bulletin-rend
 and `python3 -m unittest discover -s scripts -p test_renderer_checkpoint.py`.
 Native full/smoke acceptance still requires the verified template assets and
 Chromium/container environment; unit tests do not replace that CI gate.
+
+The published checkpoint carries the producer manifest, bound to the pushed image
+digest. Each V1–V10 entry includes dependency paths and an input fingerprint; the
+shared map contains content hashes for every source dependency. This first contract
+uses a conservative whole-renderer closure for each version. Its version input
+fingerprint is the actual runtime fingerprint, so release-version-only metadata
+does not invalidate otherwise identical native inputs; raw source hashes remain
+available independently for audit. CMS must require an
+exact producer commit/image match and successful trusted publication; older or
+incomplete manifests require full verification. It does not infer unchanged native
+inputs from source hashes: the actual runtime fingerprint remains separate.
+
+Scans use the upstream GHCR database and upstream ECR fallback, with one job-local
+DB cache shared by dependency and image scans. The Google pull-through mirror
+returned missing-layer HTTP 404 twice during release 40165816057; Trivy does not
+fallback on that response. Scanner pin, VEX and High/Critical failure gates stay
+unchanged. See [upstream configuration](https://github.com/aquasecurity/trivy/blob/main/docs/guide/configuration/db.md).
