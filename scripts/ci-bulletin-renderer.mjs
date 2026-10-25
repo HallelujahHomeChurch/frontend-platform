@@ -100,5 +100,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     const files = await readdir(shardOrDirectory, {recursive: true, withFileTypes: true});
     const results = await Promise.all(files.filter(file => file.isFile()).map(async file => JSON.parse(await readFile(resolve(file.parentPath, file.name), 'utf8'))));
     verifyResults(JSON.parse(process.env.CI_NEEDS), results, identity, plan);
+    if (process.env.RENDERER_VERIFIED_RECEIPTS) {
+      assert.equal(mode, 'release', 'only release receipts can authorize publication');
+      await writeFile(process.env.RENDERER_VERIFIED_RECEIPTS, JSON.stringify({head: identity.sha, runId: identity.runId, runAttempt: identity.runAttempt, receipts: results}));
+    }
   } else throw new Error('usage: ci-bulletin-renderer.mjs matrix | run SHARD RESULTS_DIRECTORY [ci|release] | verify-results RESULTS_DIRECTORY [ci|release]');
 }

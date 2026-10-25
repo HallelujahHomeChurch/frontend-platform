@@ -7,12 +7,25 @@ const directory = 'artifacts/renderer-selection';
 const head = process.env.GITHUB_SHA;
 const publishedImage = process.env.PUBLISHED_RENDERER_IMAGE;
 assert.match(publishedImage ?? '', /^ghcr\.io\/hallelujahhomechurch\/hhc-bulletin-renderer@sha256:[a-f0-9]{64}$/);
+const imagePublication = JSON.parse(await readFile('artifacts/release-evidence/image.json', 'utf8'));
+assert.equal(imagePublication.schema, 1);
+assert.equal(imagePublication.head, head);
+assert.equal(imagePublication.image, publishedImage);
+assert.match(imagePublication.config ?? '', /^sha256:[a-f0-9]{64}$/);
+assert.match(imagePublication.tag ?? '', /^[a-f0-9]{64}-[a-f0-9]{40}$/);
+assert.ok(imagePublication.tag.endsWith(`-${head}`));
 const publishedPackages = {};
 for (const name of await readdir('packages')) {
   const pkg = JSON.parse(await readFile(`packages/${name}/package.json`, 'utf8'));
   publishedPackages[pkg.name] = pkg.version;
 }
-const identity = {sha: head, runId: process.env.GITHUB_RUN_ID, runAttempt: process.env.GITHUB_RUN_ATTEMPT, mode: 'release'};
+const preparation = JSON.parse(await readFile('artifacts/release-evidence/prepared.json', 'utf8'));
+assert.equal(preparation.head, head);
+assert.equal(preparation.runId, process.env.GITHUB_RUN_ID);
+assert.equal(preparation.publicationAttempt, process.env.GITHUB_RUN_ATTEMPT);
+assert.equal(preparation.preparedAttempt, preparation.verifiedAttempt);
+assert.ok(Number(preparation.verifiedAttempt) >= 1 && Number(preparation.verifiedAttempt) <= Number(preparation.publicationAttempt));
+const identity = {sha: head, runId: process.env.GITHUB_RUN_ID, runAttempt: preparation.verifiedAttempt, mode: 'release'};
 const plan = loadPlan(`${directory}/release.json`, 'release', head);
 const manifest = JSON.parse(await readFile(`${directory}/manifest.json`, 'utf8'));
 assert.equal(manifest.producerCommit, head);
@@ -42,4 +55,4 @@ for (const command of universe('release')) {
 }
 await mkdir('artifacts/release-evidence', {recursive: true});
 await writeFile('artifacts/release-evidence/checkpoint.json', JSON.stringify({schema: 1, head,
-  runId: identity.runId, runAttempt: identity.runAttempt, publishedImage, publishedPackages, full, manifest, plan, receipts}));
+  runId: identity.runId, runAttempt: process.env.GITHUB_RUN_ATTEMPT, preparation, publishedImage, imagePublication, publishedPackages, full, manifest, plan, receipts}));

@@ -84,7 +84,8 @@ test('release restores checksum-verified prepared tarballs and keeps publisher b
   const restore = publish.findIndex(s => s.name === 'Verify and restore the prepared workspace and image');
   const write = publish.findIndex(s => s.name === 'Publish packages');
   assert.ok(restore >= 0 && restore < write);
-  assert.match(publish[restore].run, /sha256sum --check --strict/);
+  assert.match(publish[restore].run, /python3 scripts\/restore-release-publication.py/);
+  assert.equal(publish[restore].env.WORKSPACE_SHA, '${{ needs.prepare.outputs.workspace-sha }}');
   assert.equal(publish[write].run, 'node scripts/publish-packages.mjs');
   assert.ok(prepare.some(s => s.run?.includes('scripts/publish-packages.test.mjs')));
 });

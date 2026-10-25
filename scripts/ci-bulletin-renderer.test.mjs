@@ -223,13 +223,18 @@ if (process.env.FAIL_RENDERER === '1') process.exit(7);
     }
     const commands = (await readFile(env.COMMAND_LOG, 'utf8')).trim().split('\n').map(line => JSON.parse(line));
     assert.equal(commands.length, 10);
-    const gate = spawnSync(process.execPath, [script, 'verify-results', 'results', 'release'], {cwd: directory, encoding: 'utf8', env: {...env, CI_NEEDS: JSON.stringify(needs)}});
+    const gate = spawnSync(process.execPath, [script, 'verify-results', 'results', 'release'], {cwd: directory, encoding: 'utf8', env: {...env, CI_NEEDS: JSON.stringify(needs), RENDERER_VERIFIED_RECEIPTS: 'verified-receipts.json'}});
     assert.equal(gate.status, 0, gate.stderr);
+    const bundle = JSON.parse(await readFile(join(directory, 'verified-receipts.json'), 'utf8'));
+    assert.equal(bundle.receipts.length, 10);
+    assert.equal(bundle.runAttempt, env.GITHUB_RUN_ATTEMPT);
+    await rm(join(directory, 'verified-receipts.json'));
     await mkdir(join(directory, 'results', 'duplicate-artifact'));
     await writeFile(join(directory, 'results', 'duplicate-artifact', 'balanced-a.json'), await readFile(join(directory, 'results', 'balanced-a', 'balanced-a.json')));
-    const duplicate = spawnSync(process.execPath, [script, 'verify-results', 'results', 'release'], {cwd: directory, encoding: 'utf8', env: {...env, CI_NEEDS: JSON.stringify(needs)}});
+    const duplicate = spawnSync(process.execPath, [script, 'verify-results', 'results', 'release'], {cwd: directory, encoding: 'utf8', env: {...env, CI_NEEDS: JSON.stringify(needs), RENDERER_VERIFIED_RECEIPTS: 'verified-receipts.json'}});
     assert.notEqual(duplicate.status, 0);
     assert.match(duplicate.stderr, /duplicate shard coverage/);
+    assert.equal(existsSync(join(directory, 'verified-receipts.json')), false, 'failed coverage must never authorize publication');
   } finally {await rm(directory, {recursive: true, force: true});}
 });
 
@@ -259,7 +264,11 @@ test('both shard and publisher restore reject either corrupted tar before extrac
       await writeFile(corrupted === 'workspace' ? workspace : image, 'corrupted');
       const job = index === 0 ? workflow.jobs.renderer : workflow.jobs.publish;
       const restore = job.steps.find(step => step.name === 'Verify and restore the prepared workspace and image');
-      const result = spawnSync('bash', ['-e', '-o', 'pipefail', '-c', restore.run], {cwd: directory, encoding: 'utf8', env});
+      // The network/ZIP provenance layer is exercised by test_restore_release_publication.py.
+      // Here its downloaded files are the fixture, and the actual post-download
+      // content gate must still stop both tar extraction and Docker loading.
+      const contentGate = restore.run.replace('python3 scripts/restore-release-publication.py', ':');
+      const result = spawnSync('bash', ['-e', '-o', 'pipefail', '-c', contentGate], {cwd: directory, encoding: 'utf8', env});
       assert.notEqual(result.status, 0);
       assert.match(result.stdout + result.stderr, /FAILED/);
       assert.equal(existsSync(marker), false, 'restore reached extraction or image loading');
