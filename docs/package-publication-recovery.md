@@ -63,3 +63,11 @@ preparation/verification attempts stop before registry access. Full-workflow
 reruns rebuild and may legitimately conflict with an existing immutable image.
 
 Recovery requires `preparedAttempt == verifiedAttempt`. It covers a failed publication job after both input preparation and all renderer verification succeeded. Rerunning only failed verification shards with retained preparation is not this path; use a complete workflow rerun before publication when verification must run again. The seal still requires exact full command coverage for the original verified attempt.
+
+## Prepared 1.1.10 release order
+
+Publication is triggered only by pushing a `v*` tag; merging to `main` runs CI but does not publish packages. The release checks that the tag equals the workspace version and the tagged commit belongs to `main`.
+
+This coordinated 1.1.10 candidate must include PR173 (renderer verification), PR175 (Account error dependency), PR177 (package reconciliation), and PR179 (image/checkpoint recovery and this version increment) before one reviewed `v1.1.10` tag is authorized. Preserve that integration order without intermediate tags. Recheck that 1.1.10 remains unused across all seven packages before tagging; never overwrite an existing version. The seven package manifests share the workspace version, and packed workspace dependencies resolve to it.
+
+Consumer applications retain their currently published exact pins; no consumer upgrade or registry publication is part of this source change. Local packing, PR CI and a merged commit are not publication or production acceptance.
