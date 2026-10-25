@@ -80,6 +80,7 @@ jobs:
           node --test scripts/package-bulletin-renderer.test.mjs
           node scripts/package-bulletin-renderer.mjs artifacts/bulletin-renderer "$HHC_BULLETIN_TEMPLATE_DIR"
           docker build -f tools/bulletin-renderer/Dockerfile -t hhc-bulletin-renderer:verify artifacts/bulletin-renderer
+          node --test scripts/renderer-runtime-fingerprint.test.mjs
       - run: corepack pnpm test
       - run: corepack pnpm lint
       - run: corepack pnpm --filter @hallelujahhomechurch/hhc-web-client check:generated

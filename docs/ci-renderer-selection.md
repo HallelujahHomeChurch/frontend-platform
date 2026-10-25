@@ -26,7 +26,13 @@ The image fingerprint is intentionally conservative: all persistent image files,
 symlinks and ownership/modes are included. Only the UI package release-version
 field is normalized, matching the immutable verifier; dependencies, exports and
 all other package metadata remain inputs. Docker-injected mounts and temporary
-directories and installation logs are excluded. Native caches remain included.
+directories and installation logs are excluded. For Fontconfig v9 LE64 caches, only directory timestamp/checksum header bytes
+48–63 are normalized; all remaining bytes stay fingerprinted. The layout follows
+[Fontconfig 2.15 FcCache](https://github.com/fontconfig/fontconfig/blob/2.15.0/src/fcint.h).
+Unsupported headers fail preparation. Only ldconfig's builder auxiliary
+cache is excluded, while `/etc/ld.so.cache`, libraries, fonts and configuration
+remain fingerprinted. A native regression rebuilds font caches, verifies stable
+fingerprints, and rejects configuration changes and corrupt cache evidence.
 This may select more full runs than per-version image
 analysis, but does not mistake native-package drift for an unchanged renderer.
 

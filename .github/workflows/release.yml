@@ -60,6 +60,7 @@ jobs:
           node --test scripts/package-bulletin-renderer.test.mjs
           node scripts/package-bulletin-renderer.mjs artifacts/bulletin-renderer "$HHC_BULLETIN_TEMPLATE_DIR"
           docker build -f tools/bulletin-renderer/Dockerfile -t hhc-bulletin-renderer:verify artifacts/bulletin-renderer
+          node --test scripts/renderer-runtime-fingerprint.test.mjs
           docker save hhc-bulletin-renderer:verify -o "$RUNNER_TEMP/bulletin-renderer.tar"
           docker run --rm -v "$RUNNER_TEMP/bulletin-renderer.tar:/image.tar:ro" \
             ghcr.io/aquasecurity/trivy@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969 \
