@@ -54,7 +54,10 @@ Chromium/container environment; unit tests do not replace that CI gate.
 The published checkpoint carries the producer manifest, bound to the pushed image
 digest. Each V1–V10 entry includes dependency paths and an input fingerprint; the
 shared map contains content hashes for every source dependency. This first contract
-uses a conservative whole-renderer closure for each version. CMS must require an
+uses a conservative whole-renderer closure for each version. Its version input
+fingerprint is the actual runtime fingerprint, so release-version-only metadata
+does not invalidate otherwise identical native inputs; raw source hashes remain
+available independently for audit. CMS must require an
 exact producer commit/image match and successful trusted publication; older or
 incomplete manifests require full verification. It does not infer unchanged native
 inputs from source hashes: the actual runtime fingerprint remains separate.

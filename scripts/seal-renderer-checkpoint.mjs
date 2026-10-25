@@ -21,7 +21,7 @@ assert.equal(manifest.sourceFingerprint, digest(manifest.dependencyHashes));
 assert.deepEqual(Object.keys(manifest.versions).sort(), Array.from({length: 10}, (_, i) => `v${i + 1}`).sort());
 for (const version of Object.values(manifest.versions)) {
   assert.deepEqual(version.dependencyPaths, manifest.dependencyPaths);
-  assert.equal(version.inputFingerprint, manifest.sourceFingerprint);
+  assert.equal(version.inputFingerprint, manifest.runtimeFingerprint);
 }
 manifest.publishedImage = publishedImage;
 const files = await readdir('renderer-results', {recursive: true, withFileTypes: true});

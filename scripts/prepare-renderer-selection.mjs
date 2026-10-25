@@ -35,7 +35,7 @@ for (const mode of ['ci', 'release']) {
   await writeFile(`${directory}/${mode}.json`, JSON.stringify(plan));
 }
 await writeFile(`${directory}/manifest.json`, JSON.stringify({schema: 1, producerCommit: head, sourceFingerprint, runtimeFingerprint: runtime,
-  dependencyPaths: runtimePaths, dependencyHashes, versions: Object.fromEntries(Array.from({length: 10}, (_, i) => [`v${i + 1}`, {dependencyPaths: runtimePaths, inputFingerprint: sourceFingerprint}])), fingerprints}));
+  dependencyPaths: runtimePaths, dependencyHashes, versions: Object.fromEntries(Array.from({length: 10}, (_, i) => [`v${i + 1}`, {dependencyPaths: runtimePaths, inputFingerprint: runtime}])), fingerprints}));
 if (checkpoint) await writeFile(`${directory}/baseline.json`, JSON.stringify(checkpoint));
 
 // Exercise real release-mode execution in PRs without publication or trusted checkpoint writes.
