@@ -1,12 +1,12 @@
 # Renderer verification selection
 
-CI retains six host and nine container commands. Release retains nine container
+CI retains seven host and ten container commands. Release retains ten container
 commands. Every command runs either its original full suite or three named smoke
 cases: real CLI composition, stale-content rejection, and missing-asset rejection.
-Six serial shards share the prepared image and workspace. Container verification
+Eight serial shards share the prepared image and workspace. Container verification
 uses two CPUs and the existing 2 GiB memory cap; deployment resource settings are
-unchanged. This trades three additional job setups for shorter full-suite critical
-paths. Compared with five shards, the extra setup buys headroom under the
+unchanged. This trades five additional job setups for shorter full-suite critical
+paths. Compared with seven shards, the extra setup buys headroom under the
 15-minute ceiling; acceptance compares total queue-inclusive time and summed runner minutes.
 The final `verify` check requires the same-run plan and exact tier receipts.
 
@@ -64,6 +64,9 @@ retain version-specific full selection. This avoids a second checkout, image res
 inputs. The four immutable-version mutation suites run at concurrency two in
 prepare; each owns an independent temporary Git repository and cleanup, with
 only shared read-only dependencies. All mutation/removal assertions remain.
+The V10 fixture also checks V11 source, compiled renderer and composer mutations.
+V11 full verification includes its existing pure body-composition tests in both
+host and container modes, and their bytes enter the verification fingerprint.
 
 Set the `RENDERER_FORCE_FULL` repository variable to `true` to disable narrowing;
 reverting the selection change restores the previous full matrix. Changing that
@@ -76,7 +79,7 @@ Native full/smoke acceptance still requires the verified template assets and
 Chromium/container environment; unit tests do not replace that CI gate.
 
 The published checkpoint carries the producer manifest, bound to the pushed image
-digest. Each V1–V10 entry includes dependency paths and an input fingerprint; the
+digest. Each V1–V11 entry includes dependency paths and an input fingerprint; the
 shared map contains content hashes for every source dependency. This first contract
 uses a conservative whole-renderer closure for each version. Its version input
 fingerprint is the actual runtime fingerprint, so release-version-only metadata

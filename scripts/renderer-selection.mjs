@@ -29,7 +29,8 @@ export function versionOnlyChange(before, after) {
 export function filesFor(version) {
   assert.ok(coverage.container.includes(version), 'unknown renderer version');
   return [common, ...(version === 'v7' ? ['scripts/measure-bulletin-layout-v6.test.mjs'] : []),
-    ...(!['default', 'v3', 'v4', 'v5'].includes(version) ? [`scripts/measure-bulletin-layout-${version}.test.mjs`] : [])];
+    ...(!['default', 'v3', 'v4', 'v5'].includes(version) ? [`scripts/measure-bulletin-layout-${version}.test.mjs`] : []),
+    ...(version === 'v11' ? ['scripts/compose-body-v11.test.mjs'] : [])];
 }
 
 export function universe(mode) {
@@ -103,7 +104,7 @@ export function createPlan({mode, base, head, changes, forceFull = false, checkp
 }
 
 // Exercise full and smoke execution without repeating V10's dense-cover suite.
-// Wiring changes already require all 15 full commands in the normal CI lane.
+// Wiring changes already require all 17 full commands in the normal CI lane.
 export function releaseCheckPlan(head, fingerprints) {
   const full = structuredClone(fingerprints);
   delete full['container/default'];

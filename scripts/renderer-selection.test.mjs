@@ -86,6 +86,7 @@ test('V11 participates in full selection, native smoke and release evidence', ()
   const prior = structuredClone(fingerprints); delete prior['container/v11'];
   assert.deepEqual(plan([change('packages/account-client/index.ts')], 'release', {fingerprints, checkpoint: {full: prior}}).entries.filter(e => e.tier === 'full').map(e => e.id), ['container/v11']);
   assert.ok(plan([change('scripts/compose-body-v11.mjs')]).entries.every(e => e.tier === 'full'));
+  assert.deepEqual(plan([change('scripts/compose-body-v11.test.mjs')]).entries.filter(e => e.tier === 'full').map(e => e.id), ['host/v11', 'container/v11']);
 });
 
 test('player-only changes require matching trusted packaged runtime and verification evidence', () => {
@@ -109,11 +110,11 @@ test('player-only changes require matching trusted packaged runtime and verifica
 });
 
 
-test('release wiring acceptance keeps all nine commands with default full and V10 smoke', () => {
+test('release wiring acceptance keeps all ten commands with default full and V10 smoke', () => {
   const fingerprints = Object.fromEntries(universe('ci').map(c => [c.id, {runtime: '1'.repeat(64), verification: '2'.repeat(64)}]));
   const selected = releaseCheckPlan(head, fingerprints);
   assert.deepEqual(selected.entries.filter(e => e.tier === 'full').map(e => e.id), ['container/default']);
-  assert.equal(selected.entries.length, 9);
+  assert.equal(selected.entries.length, 10);
   assert.equal(selected.entries.find(e => e.id === 'container/v10').tier, 'smoke');
   assert.doesNotThrow(() => validatePlan(selected, 'release', head));
   const identity = {sha: head, runId: '1', runAttempt: '1', mode: 'release'};
@@ -128,7 +129,7 @@ test('release wiring acceptance keeps all nine commands with default full and V1
   delete missingV10.find(r => r.smoke['container/v10']).smoke['container/v10'];
   assert.throws(() => verifyResults(needs, missingV10, identity, selected), /smoke evidence/);
   for (const path of ['scripts/renderer-selection.mjs', 'scripts/prepare-renderer-selection.mjs', '.github/workflows/ci.yml', 'scripts/measure-bulletin-layout-v10.mjs']) {
-    assert.equal(plan([change(path)]).entries.filter(e => e.tier === 'full').length, 15);
-    assert.equal(plan([change(path)], 'release', {fingerprints, checkpoint: {full: fingerprints}}).entries.filter(e => e.tier === 'full').length, 9);
+    assert.equal(plan([change(path)]).entries.filter(e => e.tier === 'full').length, 17);
+    assert.equal(plan([change(path)], 'release', {fingerprints, checkpoint: {full: fingerprints}}).entries.filter(e => e.tier === 'full').length, 10);
   }
 });

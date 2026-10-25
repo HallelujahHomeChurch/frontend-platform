@@ -5,16 +5,17 @@ import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {loadPlan, smokeCases, verifySmoke} from './renderer-selection.mjs';
 
-// Balance complete suites plus the optional release check using run 40186680024.
-// Every shard has a container command, including in standalone release mode.
+// Balance complete suites plus release checks using runs 40186680024/40185429198.
+// V11 uses the observed CPU=1 weight conservatively; no release shard is empty.
 export const shards = {
   'balanced-a': {host: ['v10'], container: ['v6']},
-  'balanced-b': {host: ['v6'], container: ['v10']},
-  'balanced-c': {host: ['default'], container: ['default', 'v5']},
-  'balanced-d': {host: ['v7'], container: ['v4', 'v9']},
-  'balanced-e': {host: ['v9'], container: ['v7', 'v3']},
-  'balanced-f': {host: ['v8'], container: ['v8']},
-  'balanced-g': {host: ['v11'], container: ['v11']},
+  'balanced-b': {host: [], container: ['v10', 'v9']},
+  'balanced-c': {host: ['v8'], container: ['default']},
+  'balanced-d': {host: ['v7'], container: ['v8']},
+  'balanced-e': {host: ['default'], container: ['v7', 'v3']},
+  'balanced-f': {host: ['v9', 'v6'], container: ['v4']},
+  'balanced-g': {host: ['v11'], container: ['v5']},
+  'balanced-h': {host: [], container: ['v11']},
 };
 
 export function rendererCommands(shard, mode = 'ci', plan) {
@@ -25,6 +26,7 @@ export function rendererCommands(shard, mode = 'ci', plan) {
     if (version === 'v7') files.push('scripts/measure-bulletin-layout-v6.test.mjs');
     const modern = !['default', 'v3', 'v4', 'v5'].includes(version);
     if (modern) files.push(`scripts/measure-bulletin-layout-${version}.test.mjs`);
+    if (version === 'v11') files.push('scripts/compose-body-v11.test.mjs');
     const env = version === 'default' ? {} : {[`HHC_TEST_RENDERER_${version.toUpperCase()}`]: '1'};
     const tier = plan?.entries.find(entry => entry.id === `${runtime}/${version}`)?.tier ?? 'full';
     if (tier === 'smoke') files.splice(1);

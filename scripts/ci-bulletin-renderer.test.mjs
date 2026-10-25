@@ -11,8 +11,8 @@ import {rendererCommands, shards, verifyResults} from './ci-bulletin-renderer.mj
 
 const common = 'scripts/measure-bulletin-layout.test.mjs';
 const coverage = {
-  host: {default: [common], v6: [common, 'scripts/measure-bulletin-layout-v6.test.mjs'], v7: [common, 'scripts/measure-bulletin-layout-v6.test.mjs', 'scripts/measure-bulletin-layout-v7.test.mjs'], v8: [common, 'scripts/measure-bulletin-layout-v8.test.mjs'], v9: [common, 'scripts/measure-bulletin-layout-v9.test.mjs'], v10: [common, 'scripts/measure-bulletin-layout-v10.test.mjs'], v11: [common, 'scripts/measure-bulletin-layout-v11.test.mjs']},
-  container: {default: [common], v3: [common], v4: [common], v5: [common], v6: [common, 'scripts/measure-bulletin-layout-v6.test.mjs'], v7: [common, 'scripts/measure-bulletin-layout-v6.test.mjs', 'scripts/measure-bulletin-layout-v7.test.mjs'], v8: [common, 'scripts/measure-bulletin-layout-v8.test.mjs'], v9: [common, 'scripts/measure-bulletin-layout-v9.test.mjs'], v10: [common, 'scripts/measure-bulletin-layout-v10.test.mjs'], v11: [common, 'scripts/measure-bulletin-layout-v11.test.mjs']},
+  host: {default: [common], v6: [common, 'scripts/measure-bulletin-layout-v6.test.mjs'], v7: [common, 'scripts/measure-bulletin-layout-v6.test.mjs', 'scripts/measure-bulletin-layout-v7.test.mjs'], v8: [common, 'scripts/measure-bulletin-layout-v8.test.mjs'], v9: [common, 'scripts/measure-bulletin-layout-v9.test.mjs'], v10: [common, 'scripts/measure-bulletin-layout-v10.test.mjs'], v11: [common, 'scripts/measure-bulletin-layout-v11.test.mjs', 'scripts/compose-body-v11.test.mjs']},
+  container: {default: [common], v3: [common], v4: [common], v5: [common], v6: [common, 'scripts/measure-bulletin-layout-v6.test.mjs'], v7: [common, 'scripts/measure-bulletin-layout-v6.test.mjs', 'scripts/measure-bulletin-layout-v7.test.mjs'], v8: [common, 'scripts/measure-bulletin-layout-v8.test.mjs'], v9: [common, 'scripts/measure-bulletin-layout-v9.test.mjs'], v10: [common, 'scripts/measure-bulletin-layout-v10.test.mjs'], v11: [common, 'scripts/measure-bulletin-layout-v11.test.mjs', 'scripts/compose-body-v11.test.mjs']},
 };
 
 test('the shards retain every original host and container command exactly once', () => {
@@ -166,7 +166,7 @@ test('CI and release use the same non-publishing shard runner and release cannot
   assert.deepEqual(runner.permissions, {contents: 'read'});
   assert.equal(runner.on.workflow_call.secrets, undefined);
   assert.equal(runner.jobs.renderer.strategy['fail-fast'], false);
-  assert.equal(runner.jobs.renderer.strategy['max-parallel'], 6);
+  assert.equal(runner.jobs.renderer.strategy['max-parallel'], 8);
   assert.equal(runner.jobs.renderer.permissions?.packages, undefined);
 });
 
@@ -184,9 +184,9 @@ if (process.env.FAIL_RENDERER === '1') process.exit(7);
     const env = {...process.env, PATH: `${directory}:${process.env.PATH}`, COMMAND_LOG: join(directory, 'commands'), GITHUB_SHA: sha, GITHUB_RUN_ID: '123', GITHUB_RUN_ATTEMPT: '2', HHC_BULLETIN_TEMPLATE_DIR: directory};
     delete env.NODE_TEST_CONTEXT;
     const script = new URL('./ci-bulletin-renderer.mjs', import.meta.url).pathname;
-    const failed = spawnSync(process.execPath, [script, 'run', 'balanced-d', 'results', 'release'], {cwd: directory, encoding: 'utf8', env: {...env, FAIL_RENDERER: '1'}});
+    const failed = spawnSync(process.execPath, [script, 'run', 'balanced-b', 'results', 'release'], {cwd: directory, encoding: 'utf8', env: {...env, FAIL_RENDERER: '1'}});
     assert.notEqual(failed.status, 0);
-    assert.match(failed.stdout, /container renderer v4/);
+    assert.match(failed.stdout, /container renderer v10/);
     assert.doesNotMatch(failed.stdout, /container renderer v9/);
     assert.equal(existsSync(join(directory, 'results')), false);
     await rm(env.COMMAND_LOG);

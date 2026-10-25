@@ -94,6 +94,17 @@ for (const version of ['v6', 'v8', 'v9', 'v10']) test(`${version} hashes its dep
         await writeFile(path, bytes);
       }
     }
+    // Reuse the V10 fixture: it already contains and commits the V11 sources.
+    if (version === 'v10') {
+      const verifyV11 = () => execFileSync(process.execPath, ['scripts/verify-bulletin-renderer-v11.mjs', '--base-ref', 'HEAD'], {cwd: fixture, stdio: 'pipe'});
+      assert.doesNotThrow(verifyV11);
+      for (const file of ['scripts/compose-body-v11.mjs', 'scripts/measure-bulletin-layout-v11.mjs', 'packages/ui/src/bulletin-reader/v11/BulletinDocumentRenderer.tsx', 'packages/ui/dist/bulletin-reader/v11/BulletinDocumentRenderer.js']) {
+        const path = join(fixture, file), bytes = await readFile(path);
+        await writeFile(path, Buffer.concat([bytes, Buffer.from('\n/* changed */\n')]));
+        assert.throws(verifyV11, /immutable/, file);
+        await writeFile(path, bytes);
+      }
+    }
     await rm(join(fixture, 'packages/ui/dist/bulletin-reader/v6/fixed.js'));
     assert.throws(verify, /ENOENT/);
   } finally {await rm(fixture, {recursive: true, force: true});}
