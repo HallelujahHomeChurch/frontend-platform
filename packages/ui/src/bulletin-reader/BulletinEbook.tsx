@@ -86,7 +86,9 @@ export function BulletinEbook({document, chapter, canonicalMetadata, showDetails
         case 'bodySection': {
           const body = component.bodySection;
           return <section key={id} data-component-id={id}>{pictures(id)}
-            {showDetails && body.header ? <div className="hhc-ebook-production">{block(body.header.lectureDate, id)}{body.header.contributors.map(person => block(person.name, id, 'p', label(({speaker: 'speakerLabel', transcriber: 'transcriberLabel', editor: 'editorLabel'} as const)[person.role])))}</div> : null}
+            {body.header && (showDetails
+              ? <div className="hhc-ebook-production">{block(body.header.lectureDate, id)}{body.header.contributors.map(person => block(person.name, id, 'p', label(({speaker: 'speakerLabel', transcriber: 'transcriberLabel', editor: 'editorLabel'} as const)[person.role])))}</div>
+              : <>{pictures(id, body.header.lectureDate.id)}{body.header.contributors.map(person => pictures(id, person.name.id))}</>)}
             <div className="hhc-ebook-body-heading">{block(body.title, id, 'h2')}{body.contributors?.map(person => block(person.name, id, 'span', `${label('speakerSeparator')} `))}</div>
             {body.subtitle && block(body.subtitle, id)}
             {body.blocks.map(value => block(value, id))}

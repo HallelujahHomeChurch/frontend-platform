@@ -34,3 +34,23 @@ it('keeps authoring available when an owned picture cannot be hydrated', () => {
   rerender(<BulletinEbook document={document} chapter="body"/>);
   expect(screen.getByRole('img', {name: '原稿插圖'})).toHaveAttribute('data-illustration-unavailable');
 });
+
+
+it.each(['date', 'editor'])('keeps restored images after a hidden production %s block readable', placement => {
+  const document = fixture();
+  const component = document.components[0];
+  if (component.type !== 'bodySection') throw new Error('body fixture missing');
+  const metadata = (id: string) => ({...structuredClone(component.bodySection.blocks[0]), id, sentences: [{id: `${id}-sentence`, spans: [{text: id, fontRole: 'body' as const}]}]});
+  component.bodySection.header = {lectureDate: metadata('production-date'), contributors: [{role: 'editor', name: metadata('production-editor')}]};
+  component.illustrations![0].afterBlockId = `production-${placement}`;
+  const original = structuredClone(document);
+  const {container, rerender} = render(<BulletinEbook document={document} chapter="body"/>);
+  expect(screen.getByAltText('原稿插圖')).toHaveAttribute('src', `data:image/png;base64,${png}`);
+  expect(container.querySelectorAll('img')).toHaveLength(1);
+  expect(container.querySelector('[data-block-id="production-date"]')).toBeNull();
+  expect(container.querySelector('[data-block-id="production-editor"]')).toBeNull();
+  rerender(<BulletinEbook document={document} chapter="body" showDetails/>);
+  expect(screen.getByAltText('原稿插圖').closest('figure')?.previousElementSibling).toHaveAttribute('data-block-id', `production-${placement}`);
+  expect(container.querySelectorAll('img')).toHaveLength(1);
+  expect(document).toEqual(original);
+});
