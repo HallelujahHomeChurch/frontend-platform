@@ -16,6 +16,15 @@ export const digest = value => createHash('sha256').update(typeof value === 'str
 const shaPattern = /^[a-f0-9]{40}$/;
 const hashPattern = /^[a-f0-9]{64}$/;
 const common = 'scripts/measure-bulletin-layout.test.mjs';
+const versionMetadata = new Set(['package.json', 'packages/ui/package.json']);
+
+export function versionOnlyChange(before, after) {
+  const previous = JSON.parse(before), next = JSON.parse(after);
+  assert.match(previous.version, /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/);
+  assert.match(next.version, /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/);
+  delete previous.version; delete next.version;
+  try { assert.deepEqual(previous, next); return true; } catch { return false; }
+}
 
 export function filesFor(version) {
   assert.ok(coverage.container.includes(version), 'unknown renderer version');
@@ -38,9 +47,10 @@ export function affectedCommands(changes, mode) {
   const commands = universe(mode);
   if (!Array.isArray(changes) || changes.length === 0) return new Set(commands.map(c => c.id));
   const affected = new Set();
-  for (const {status, path, regular} of changes) {
+  for (const {status, path, regular, versionOnly} of changes) {
     // Deleted/renamed files and symlinks require full verification, including formerly unrelated files.
     if (!['A', 'M'].includes(status) || regular !== true || typeof path !== 'string') return new Set(commands.map(c => c.id));
+    if (status === 'M' && versionOnly === true && versionMetadata.has(path)) continue;
     const readers = commands.filter(c => filesFor(c.version).includes(path));
     if (readers.length) for (const reader of readers) affected.add(reader.id);
     else if (!unrelated(path)) return new Set(commands.map(c => c.id));
@@ -60,7 +70,10 @@ export function changedFiles(base, head) {
   return Array.from({length: fields.length / 2}, (_, i) => {
     const match = fields[2 * i].match(/^:(\d{6}) (\d{6}) [a-f0-9]{40} [a-f0-9]{40} ([A-Z])$/);
     assert.ok(match, 'unsupported diff entry');
-    return {path: fields[2 * i + 1], status: match[3], regular: match[2] === '100644' && ['100644', '000000'].includes(match[1])};
+    const path = fields[2 * i + 1];
+    const versionOnly = match[3] === 'M' && versionMetadata.has(path)
+      && versionOnlyChange(git(['show', `${base}:${path}`]), git(['show', `${head}:${path}`]));
+    return {path, status: match[3], regular: match[2] === '100644' && ['100644', '000000'].includes(match[1]), versionOnly};
   });
 }
 

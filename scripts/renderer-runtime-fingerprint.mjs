@@ -11,7 +11,15 @@ function visit(path) {
   hash.update(JSON.stringify([path, stat.mode & 0o7777, stat.uid, stat.gid]));
   if (stat.isSymbolicLink()) hash.update(readlinkSync(path));
   else if (stat.isDirectory()) for (const name of readdirSync(path).sort()) visit(join(path, name));
-  else if (stat.isFile()) hash.update(createHash('sha256').update(readFileSync(path)).digest());
+  else if (stat.isFile()) {
+    let bytes = readFileSync(path);
+    // The immutable renderer verifier also excludes the UI package's release version.
+    if (path === '/opt/bulletin-renderer/packages/ui/package.json') {
+      const metadata = JSON.parse(bytes); delete metadata.version;
+      bytes = Buffer.from(JSON.stringify(metadata));
+    }
+    hash.update(createHash('sha256').update(bytes).digest());
+  }
   else throw new Error(`unsupported image entry: ${path}`);
 }
 visit('/');

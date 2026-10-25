@@ -6,7 +6,8 @@ cases: real CLI composition, stale-content rejection, and missing-asset rejectio
 The final `verify` check requires the same-run plan and exact tier receipts.
 
 The first selector deliberately narrows only known independent package changes
-and version-specific test changes. V6 tests select V6 and V7. Runtime source,
+and version-specific test changes. Root/UI package release-version-only edits
+are compared as JSON; every other metadata change remains a full trigger. V6 tests select V6 and V7. Runtime source,
 shared tests, lockfiles, workflows, selector changes, deleted/renamed/symlink
 files, unknown paths and unavailable diffs require full verification. Frozen
 renderer verification is unchanged. Narrower runtime source mappings need
@@ -22,7 +23,9 @@ Only successful publication uploads the 90-day evidence artifact. No PR run
 can publish this checkpoint or acquire package-write permission.
 
 The image fingerprint is intentionally conservative: all persistent image files,
-symlinks and ownership/modes are included. Docker-injected mounts and temporary
+symlinks and ownership/modes are included. Only the UI package release-version
+field is normalized, matching the immutable verifier; dependencies, exports and
+all other package metadata remain inputs. Docker-injected mounts and temporary
 directories and installation logs are excluded. Native caches remain included.
 This may select more full runs than per-version image
 analysis, but does not mistake native-package drift for an unchanged renderer.

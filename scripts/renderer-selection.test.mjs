@@ -1,11 +1,19 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {affectedCommands, createPlan, digest, smokeCases, universe, validatePlan, verifySmoke} from './renderer-selection.mjs';
+import {affectedCommands, createPlan, digest, smokeCases, universe, validatePlan, verifySmoke, versionOnlyChange} from './renderer-selection.mjs';
 import {rendererCommands, shards, verifyResults} from './ci-bulletin-renderer.mjs';
 
 const head = 'a'.repeat(40), base = 'b'.repeat(40);
 const change = path => ({status: 'M', regular: true, path});
 const plan = (changes, mode = 'ci', extra = {}) => createPlan({mode, base, head, changes, ...extra});
+
+test('release version metadata alone does not invalidate renderer inputs', () => {
+  const previous = JSON.stringify({version: '1.1.4', dependencies: {react: '19.2.7'}});
+  assert.equal(versionOnlyChange(previous, JSON.stringify({version: '1.1.5', dependencies: {react: '19.2.7'}})), true);
+  assert.equal(versionOnlyChange(previous, JSON.stringify({version: '1.1.5', dependencies: {react: '19.3.0'}})), false);
+  assert.ok(plan(['package.json', 'packages/ui/package.json'].map(path => ({...change(path), versionOnly: true}))).entries.every(e => e.tier === 'smoke'));
+  assert.ok(plan([{...change('pnpm-lock.yaml'), versionOnly: true}]).entries.every(e => e.tier === 'full'));
+});
 
 test('unrelated packages smoke all versions, test dependencies select both V6 and V7', () => {
   assert.ok(plan([change('packages/account-client/src/index.ts')]).entries.every(e => e.tier === 'smoke'));
