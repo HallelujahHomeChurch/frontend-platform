@@ -54,6 +54,7 @@ export function createPreviewCache(prefix:string,loaded:(source:string,url:strin
     }
   };
   return {
+    peek(source:string){return !disposed&&valid(source)?cache.get(source)?.url:undefined;},
     has(source:string){return !disposed&&valid(source)&&cache.has(source);},
     request(url:string,neighbor?:string){
       if(disposed)return;

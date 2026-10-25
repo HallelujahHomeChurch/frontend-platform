@@ -1,10 +1,46 @@
 import {afterEach,expect,it,vi} from 'vitest';
+import {act,renderHook} from '@testing-library/react';
 import {loadPreviewIndex,parsePreviewIndex} from './preview-index.js';
+import {previewCueAt} from './preview-cue.js';
+import {usePreviewIndex} from './use-preview-index.js';
 
-afterEach(()=>vi.unstubAllGlobals());
+afterEach(()=>{vi.useRealTimers();vi.unstubAllGlobals();});
 
 const url='https://media.alive.org.tw/videos/r/packages/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/sessions/s/previews/index.vtt';
 const cue=(range='00:00:30.000 --> 00:00:35.000',sprite='seg-000001.jpg#xywh=0,0,160,90')=>`WEBVTT\n\n${range}\n${sprite}\n`;
+const mixedIndex='WEBVTT\n\n'+Array.from({length:6},(_,i)=>`00:00:${String(i*5).padStart(2,'0')}.000 --> 00:00:${String((i+1)*5).padStart(2,'0')}.000\nseg-000000.jpg#xywh=${i*160},0,160,90\n\n`).join('')+
+  '00:00:30.000 --> 00:00:35.000\nseg-000001.jpg#xywh=0,0,160,90\n\n00:00:35.000 --> 00:00:36.200\nseg-000001.jpg#xywh=0,0,160,90\n';
+it('selects mixed legacy and ten-second sprites through the final partial VOD tail',()=>{
+  const cues=parsePreviewIndex(mixedIndex,url);
+  expect(previewCueAt(cues,17)).toMatchObject({start:10,x:320});
+  expect(previewCueAt(cues,29.99)).toMatchObject({start:20,x:640});
+  for(const time of [30,35,36.199])expect(previewCueAt(cues,time)).toMatchObject({start:30,x:0,url:url.replace('index.vtt','seg-000001.jpg')});
+  expect(previewCueAt(cues,36.2)).toBeUndefined();
+});
+it('replaces the live index with the completed VOD session without exposing late live metadata',async()=>{
+  vi.useFakeTimers();
+  const liveURL=url.replace('/packages/','/captures/').replace('previews/index.vtt','master.m3u8');
+  const vodURL=url.replace('previews/index.vtt','master.m3u8');
+  let finishLive!:(response:Response)=>void;
+  const fetcher=vi.fn().mockResolvedValueOnce(new Response(cue('00:00:00.000 --> 00:00:05.000','seg-000000.jpg#xywh=0,0,160,90')))
+    .mockImplementationOnce(()=>new Promise<Response>(resolve=>{finishLive=resolve;}))
+    .mockResolvedValueOnce(new Response(mixedIndex));
+  vi.stubGlobal('fetch',fetcher);
+  const view=renderHook(({playback,live})=>usePreviewIndex(playback,live,true),{initialProps:{playback:liveURL,live:true}});
+  await act(async()=>{});
+  expect(view.result.current).toHaveLength(1);
+  await act(async()=>{await vi.advanceTimersByTimeAsync(5000);});
+  view.rerender({playback:vodURL,live:false});
+  expect(view.result.current).toEqual([]);
+  await act(async()=>{});
+  expect(view.result.current).toHaveLength(8);
+  expect(previewCueAt(view.result.current,36)).toMatchObject({end:35,url:url.replace('index.vtt','seg-000001.jpg')});
+  await act(async()=>{finishLive(new Response(cue()));});
+  expect(view.result.current).toHaveLength(8);
+  expect(view.result.current.every(cue=>cue.url.includes('/packages/'))).toBe(true);
+  expect(fetcher.mock.calls[1][1].signal.aborted).toBe(true);
+  view.unmount();
+});
 it('resolves a bounded sprite inside the exact authenticated playback session',()=>{
   expect(parsePreviewIndex(cue(),url)).toEqual([{start:30,end:35,url:url.replace('index.vtt','seg-000001.jpg'),x:0}]);
   expect(parsePreviewIndex(cue('00:00:35.000 --> 00:00:36.200','seg-000001.jpg#xywh=160,0,160,90'),url)[0].end).toBe(36.2);
