@@ -42,7 +42,7 @@ jobs:
             --skip-dirs /workspace/.git --skip-dirs /workspace/node_modules /workspace
       - run: corepack pnpm build
       - run: |
-          node --test scripts/ci-bulletin-renderer.test.mjs scripts/renderer-selection.test.mjs scripts/seal-renderer-checkpoint.test.mjs
+          node --test scripts/ci-bulletin-renderer.test.mjs scripts/renderer-selection.test.mjs scripts/seal-renderer-checkpoint.test.mjs scripts/publish-packages.test.mjs
           python3 -m unittest discover -s scripts -p test_renderer_checkpoint.py
       - run: corepack pnpm test
       - run: corepack pnpm lint
@@ -75,10 +75,12 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
           RENDERER_FORCE_FULL: ${{ vars.RENDERER_FORCE_FULL }}
         run: node scripts/prepare-renderer-selection.mjs
+      - name: Pack reproducible release artifacts
+        run: node --test scripts/pack-packages.test.mjs
       - name: Bundle immutable inputs for the same-run shards
         id: bundle
         run: |
-          tar -cf "$RUNNER_TEMP/renderer-workspace.tar" node_modules packages artifacts/bulletin-renderer/assets artifacts/renderer-selection
+          tar -cf "$RUNNER_TEMP/renderer-workspace.tar" node_modules packages artifacts/bulletin-renderer/assets artifacts/renderer-selection artifacts/hallelujahhomechurch-*.tgz
           mv "$RUNNER_TEMP/bulletin-renderer.tar" "$RUNNER_TEMP/renderer-image.tar"
           echo "workspace-sha=$(sha256sum "$RUNNER_TEMP/renderer-workspace.tar" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
           echo "image-sha=$(sha256sum "$RUNNER_TEMP/renderer-image.tar" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
@@ -168,10 +170,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: python3 scripts/renderer-checkpoint.py guard
       - name: Publish packages
-        run: |
-          for package in packages/*; do
-            (cd "$package" && corepack pnpm publish --no-git-checks)
-          done
+        run: node scripts/publish-packages.mjs
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Publish immutable renderer image

@@ -81,7 +81,7 @@ jobs:
       - run: corepack pnpm build
       - name: Verify renderer CI coverage and aggregate gate
         run: |
-          node --test scripts/ci-bulletin-renderer.test.mjs scripts/renderer-selection.test.mjs scripts/seal-renderer-checkpoint.test.mjs
+          node --test scripts/ci-bulletin-renderer.test.mjs scripts/renderer-selection.test.mjs scripts/seal-renderer-checkpoint.test.mjs scripts/publish-packages.test.mjs
           python3 -m unittest discover -s scripts -p test_renderer_checkpoint.py
       - name: Verify immutable bulletin renderer
         run: |
@@ -103,7 +103,8 @@ jobs:
       - run: corepack pnpm --filter @hallelujahhomechurch/donation-client check:generated
       - run: corepack pnpm --filter @hallelujahhomechurch/operations-client check:generated
       - run: corepack pnpm check:packages
-      - run: corepack pnpm pack:packages
+      - name: Pack reproducible release artifacts
+        run: node --test scripts/pack-packages.test.mjs
       - run: corepack pnpm test:consumers
       - name: Restore trusted release evidence or require full verification
         env:
