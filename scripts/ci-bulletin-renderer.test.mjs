@@ -131,11 +131,11 @@ test('CI and release use the same non-publishing shard runner and release cannot
   const runner = workflow('renderer');
   assert.deepEqual(release.on, {push: {tags: ['v*']}});
   for (const [mode, caller] of [['ci', ci], ['release', release]]) {
-    assert.deepEqual(caller.permissions, {contents: 'read'});
+    assert.deepEqual(caller.permissions, {contents: 'read', actions: 'read'});
     assert.equal(caller.jobs.renderer.uses, './.github/workflows/renderer.yml');
     assert.equal(caller.jobs.renderer.with.mode, mode);
     assert.deepEqual(caller.jobs.renderer.needs, mode === 'ci' ? ['agent_docs', 'prepare'] : 'prepare');
-    assert.deepEqual(caller.jobs.verify.needs, mode === 'ci' ? ['agent_docs', 'prepare', 'renderer'] : ['prepare', 'renderer']);
+    assert.deepEqual(caller.jobs.verify.needs, mode === 'ci' ? ['agent_docs', 'prepare', 'renderer', 'release-verification'] : ['prepare', 'renderer']);
     assert.equal(caller.jobs.verify.if, '${{ always() }}');
     assert.equal(caller.jobs.renderer.secrets, undefined);
     const receiptsDownload = caller.jobs.verify.steps.find(step => step.uses?.startsWith('actions/download-artifact@'));
@@ -146,7 +146,7 @@ test('CI and release use the same non-publishing shard runner and release cannot
   }
   assert.deepEqual(release.jobs.publish.needs, ['prepare', 'verify']);
   assert.equal(release.jobs.publish.if, undefined);
-  assert.deepEqual(release.jobs.publish.permissions, {contents: 'read', packages: 'write'});
+  assert.deepEqual(release.jobs.publish.permissions, {contents: 'read', packages: 'write', actions: 'read'});
   assert.deepEqual(runner.permissions, {contents: 'read'});
   assert.equal(runner.on.workflow_call.secrets, undefined);
   assert.equal(runner.jobs.renderer.strategy['fail-fast'], false);
