@@ -61,3 +61,5 @@ export * from './legal.js';
 export * from './navigation-presentation.js';
 
 export * from './data-requests.js';
+
+// CI selection acceptance probe: no runtime behavior change.
