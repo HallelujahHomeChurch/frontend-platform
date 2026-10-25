@@ -27,12 +27,12 @@ test('shared, unknown, renamed, deleted, symlink, and missing changes select ful
     [change('new-package/file.ts')], [change('scripts/measure-bulletin-layout.test.mjs')],
     [{...change('README.md'), status: 'D'}], [{...change('README.md'), status: 'R'}], [{...change('README.md'), regular: false}],
     [change('packages/account-client/index.ts'), change('.github/workflows/ci.yml')]]) {
-    assert.equal(affectedCommands(changes, 'ci').size, 15);
+    assert.equal(affectedCommands(changes, 'ci').size, 17);
   }
 });
 
-test('release is nine containers and needs matching runtime AND verification evidence', () => {
-  assert.equal(universe('release').length, 9);
+test('release is ten containers and needs matching runtime AND verification evidence', () => {
+  assert.equal(universe('release').length, 10);
   const changes = [change('packages/account-client/index.ts')];
   assert.ok(plan(changes, 'release').entries.every(e => e.tier === 'full'));
   const fingerprints = Object.fromEntries(universe('release').map(c => [c.id, {runtime: '1'.repeat(64), verification: '2'.repeat(64)}]));
@@ -75,4 +75,15 @@ test('receipts cannot downgrade full commands or substitute another plan', () =>
   assert.throws(() => verifyResults(needs, bad, identity, selection), /tier coverage/);
   bad[0].planDigest = '0'.repeat(64);
   assert.throws(() => verifyResults(needs, bad, identity, selection), /selection plan/);
+});
+
+// A new renderer cannot inherit an older release's missing verification evidence.
+test('V11 participates in full selection, native smoke and release evidence', () => {
+  assert.deepEqual(universe('ci').filter(c => c.version === 'v11').map(c => c.id), ['host/v11', 'container/v11']);
+  const changes = [change('scripts/measure-bulletin-layout-v11.test.mjs')];
+  assert.deepEqual(plan(changes).entries.filter(e => e.tier === 'full').map(e => e.id), ['host/v11', 'container/v11']);
+  const fingerprints = Object.fromEntries(universe('release').map(c => [c.id, {runtime: '1'.repeat(64), verification: '2'.repeat(64)}]));
+  const prior = structuredClone(fingerprints); delete prior['container/v11'];
+  assert.deepEqual(plan([change('packages/account-client/index.ts')], 'release', {fingerprints, checkpoint: {full: prior}}).entries.filter(e => e.tier === 'full').map(e => e.id), ['container/v11']);
+  assert.ok(plan([change('scripts/compose-body-v11.mjs')]).entries.every(e => e.tier === 'full'));
 });

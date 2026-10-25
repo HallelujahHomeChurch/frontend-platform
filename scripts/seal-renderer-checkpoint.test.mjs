@@ -20,7 +20,7 @@ test('published manifest binds all versions and dependency hashes to the actual 
     const dependencies = {'scripts/runtime.mjs': hash};
     const source = digest(dependencies);
     const manifest = {producerCommit: head, dependencyPaths: Object.keys(dependencies), dependencyHashes: dependencies, sourceFingerprint: source, runtimeFingerprint: hash,
-      versions: Object.fromEntries(Array.from({length: 10}, (_, i) => [`v${i+1}`, {dependencyPaths: Object.keys(dependencies), inputFingerprint: hash}])),
+      versions: Object.fromEntries(Array.from({length: 11}, (_, i) => [`v${i+1}`, {dependencyPaths: Object.keys(dependencies), inputFingerprint: hash}])),
       fingerprints: Object.fromEntries(plan.entries.map(e => [e.id, {runtime: hash, verification: hash}]))};
     write('artifacts/renderer-selection/manifest.json', manifest);
     for (const [shard, value] of Object.entries(shards)) write(`renderer-results/${shard}.json`, {sha: head, runId: '123', runAttempt: '1', mode: 'release', shard,

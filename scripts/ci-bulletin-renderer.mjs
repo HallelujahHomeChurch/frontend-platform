@@ -7,9 +7,9 @@ import {loadPlan, smokeCases, verifySmoke} from './renderer-selection.mjs';
 
 // Balance complete suites by measured CI time; keep the same three runners.
 export const shards = {
-  'balanced-a': {host: ['v10', 'default'], container: ['v7', 'v6', 'v3']},
-  'balanced-b': {host: ['v8', 'v6'], container: ['v10', 'v5', 'v4']},
-  'balanced-c': {host: ['v7', 'v9'], container: ['v8', 'v9', 'default']},
+  'balanced-a': {host: ['v10', 'default'], container: ['v11', 'v7', 'v6']},
+  'balanced-b': {host: ['v8', 'v6'], container: ['v10', 'v5', 'v4', 'v3']},
+  'balanced-c': {host: ['v11', 'v7', 'v9'], container: ['v8', 'v9', 'default']},
 };
 
 export function rendererCommands(shard, mode = 'ci', plan) {
@@ -74,7 +74,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     assert.ok(process.env.HHC_BULLETIN_TEMPLATE_DIR, 'verified template assets are required');
     verifyIdentity(identity);
     const env = {...process.env};
-    for (let version = 3; version <= 10; version++) delete env[`HHC_TEST_RENDERER_V${version}`];
+    for (let version = 3; version <= 11; version++) delete env[`HHC_TEST_RENDERER_V${version}`];
     const smoke = {};
     const entries = [];
     for (const {runtime, version, args, env: versionEnv} of rendererCommands(shardOrDirectory, mode, plan)) {

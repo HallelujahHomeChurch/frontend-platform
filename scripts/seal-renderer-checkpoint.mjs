@@ -18,7 +18,7 @@ const manifest = JSON.parse(await readFile(`${directory}/manifest.json`, 'utf8')
 assert.equal(manifest.producerCommit, head);
 assert.deepEqual(Object.keys(manifest.dependencyHashes).sort(), [...manifest.dependencyPaths].sort());
 assert.equal(manifest.sourceFingerprint, digest(manifest.dependencyHashes));
-assert.deepEqual(Object.keys(manifest.versions).sort(), Array.from({length: 10}, (_, i) => `v${i + 1}`).sort());
+assert.deepEqual(Object.keys(manifest.versions).sort(), Array.from({length: 11}, (_, i) => `v${i + 1}`).sort());
 for (const version of Object.values(manifest.versions)) {
   assert.deepEqual(version.dependencyPaths, manifest.dependencyPaths);
   assert.equal(version.inputFingerprint, manifest.runtimeFingerprint);

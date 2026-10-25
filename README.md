@@ -78,7 +78,7 @@ default/V6–V10 coverage; the container commands retain default/V3–V10 covera
 The same-run workspace/image artifacts expire after one day and must pass SHA-256
 verification before use. The required `verify` check accepts only successful jobs
 and complete, same-commit, same-run and same-attempt shard receipts. Package release uses the
-same shard runner for its nine container validations, then publishes only after
+same shard runner for its ten container validations, then publishes only after
 its independent dependency/image scans, tag checks and aggregate gate succeed.
 Only the publisher can write packages, and it restores the checksum-verified
 packages and image built by preparation. Rerun all jobs after a failure: artifacts
@@ -385,3 +385,19 @@ or unmount. Reporter failures are isolated.
 This source change does not publish a package. Coordinate a reviewed package
 version, normal publication and exact consumer upgrade before claiming deployed
 diagnostics; source tests do not establish physical-device playback acceptance.
+
+## Source-linked bulletin correction (V11)
+
+V11 adds private, source-bound raster illustrations to paper and continuous
+reading, preserves source pages and validates illustration/text overlap. Dense
+ordinary body pages may receive bounded extra spacing; section headings and
+speaker separators move together. Cover, back and sparse pages retain natural
+whitespace. This does not change the frozen V1–V10 artifacts.
+
+The SDK adds Admin source-parts/source-repairs with exact source, canonical,
+online and draft revision checks. Only the owning API chooses sanitized pixels,
+Asset ownership and geometry. Missing image bytes remain visible as an authoring
+placeholder; member access and publication still require complete verified bytes.
+Publish a reviewed coordinated package version through the existing tag workflow,
+then pin real registry versions/lockfiles in Admin and Website before activating
+V11 production output. Local tarball tests are candidate evidence only.

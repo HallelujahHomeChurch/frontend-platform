@@ -56,7 +56,7 @@ def evidence(run):
     if (result.get('schema') != 1 or result.get('head') != run['head_sha']
             or str(result.get('runId')) != str(run_id) or str(result.get('runAttempt')) != str(attempt)):
         raise ValueError('release evidence identity mismatch')
-    expected = {'container/' + v for v in ['default', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10']}
+    expected = {'container/' + v for v in ['default', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10', 'v11']}
     if set(result.get('full', {})) != expected:
         raise ValueError('release evidence coverage mismatch')
     for entry in result['full'].values():
