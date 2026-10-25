@@ -1,4 +1,4 @@
-import {AccountSessionError, accountResponseMetadata, type AccountRequestMetadata} from './session-client.js';
+import {AccountSessionError, accountResponseMetadata, type AccountRequestMetadata} from './account-request-error.js';
 
 export interface OAuthTransaction {
   state: string;

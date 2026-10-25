@@ -1,4 +1,4 @@
-import { AccountSessionError } from './session-client.js';
+import { AccountSessionError } from './account-request-error.js';
 
 export type LegalScope = 'common' | 'verified-member';
 export type LegalLocale = 'zh-Hant' | 'zh-Hans' | 'en' | 'ja' | 'ko';
