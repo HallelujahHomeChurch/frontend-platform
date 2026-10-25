@@ -1,0 +1,59 @@
+name: Temporary runtime fingerprint diagnosis
+on:
+  pull_request:
+    branches: [ci/dependency-selection-20261025]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        include:
+          - label: full
+            run: '40157632476'
+            artifact: '12585192999'
+          - label: selected
+            run: '40158155480'
+            artifact: '12584997919'
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          artifact-ids: ${{ matrix.artifact }}
+          run-id: ${{ matrix.run }}
+          github-token: ${{ github.token }}
+          path: inputs
+      - name: Inventory immutable image files without executing its application
+        run: |
+          docker load -i inputs/renderer-image.tar
+          cat > "$RUNNER_TEMP/inventory.mjs" <<'JS'
+          import {createHash} from 'node:crypto';
+          import {lstatSync,readFileSync,readdirSync,readlinkSync} from 'node:fs';
+          import {join} from 'node:path';
+          const excluded=new Set(['/proc','/sys','/dev','/tmp','/run','/var/log','/etc/hosts','/etc/hostname','/etc/resolv.conf','/.dockerenv']);
+          const result={};
+          function visit(path){
+            if(excluded.has(path))return;
+            const s=lstatSync(path);let value;
+            if(s.isSymbolicLink())value=['link',readlinkSync(path)];
+            else if(s.isDirectory()){value=['directory'];for(const n of readdirSync(path).sort())visit(join(path,n));}
+            else if(s.isFile()){
+              let b=readFileSync(path);
+              if(path==='/opt/bulletin-renderer/packages/ui/package.json'){const p=JSON.parse(b);delete p.version;b=Buffer.from(JSON.stringify(p));}
+              value=['file',createHash('sha256').update(b).digest('hex')];
+            }else throw Error('unsupported entry');
+            result[path]=[s.mode&0o7777,s.uid,s.gid,...value];
+          }
+          visit('/');console.log(JSON.stringify(result));
+          JS
+          docker run --rm --network none --read-only --user 0 \
+            --mount "type=bind,src=$RUNNER_TEMP/inventory.mjs,dst=/tmp/inventory.mjs,readonly" \
+            --entrypoint node hhc-bulletin-renderer:verify /tmp/inventory.mjs > runtime-files.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: runtime-files-${{ matrix.label }}
+          path: runtime-files.json
+          retention-days: 1
+          if-no-files-found: error
