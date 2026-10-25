@@ -32,7 +32,7 @@ jobs:
           import {createHash} from 'node:crypto';
           import {lstatSync,readFileSync,readdirSync,readlinkSync} from 'node:fs';
           import {join} from 'node:path';
-          const excluded=new Set(['/proc','/sys','/dev','/tmp','/run','/var/log','/etc/hosts','/etc/hostname','/etc/resolv.conf','/.dockerenv']);
+          const excluded=new Set(['/proc','/sys','/dev','/tmp','/run','/var/log','/var/cache/ldconfig/aux-cache','/etc/hosts','/etc/hostname','/etc/resolv.conf','/.dockerenv']);
           const result={};
           function visit(path){
             if(excluded.has(path))return;
@@ -41,6 +41,7 @@ jobs:
             else if(s.isDirectory()){value=['directory'];for(const n of readdirSync(path).sort())visit(join(path,n));}
             else if(s.isFile()){
               let b=readFileSync(path);
+              if(/-le64\.cache-9$/.test(path)){if(b.readUInt32LE(0)!==0xfc02fc04||b.readUInt32LE(4)!==9||b.readBigInt64LE(8)!==BigInt(b.length))throw Error('cache format');b.fill(0,48,64);}
               if(path==='/opt/bulletin-renderer/packages/ui/package.json'){const p=JSON.parse(b);delete p.version;b=Buffer.from(JSON.stringify(p));}
               value=['file',createHash('sha256').update(b).digest('hex')];
             }else throw Error('unsupported entry');
