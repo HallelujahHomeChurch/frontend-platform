@@ -5,8 +5,10 @@ import {bulletinBackPanelPresentation} from './backPanelPresentation.js';
 export function bulletinPaperPresentation(document: BulletinRenderableDocument): BulletinLayoutManifest {
   const manifest = bulletinBackPanelPresentation(document);
   return {...manifest, pages: manifest.pages.map(page => {
+    const pictures = document.layoutManifest.rendererVersion === 'v11' ? document.components.flatMap(component => component.illustrations ?? []).filter(picture => picture.pageId === page.pageId) : [];
+    if (pictures.length) page = document.layoutManifest.pages.find(value => value.pageId === page.pageId)!;
     const retainedFixed = (page.fixedSlots ?? []).filter(slot => slot.element !== 'pageNumber' && slot.element !== 'backgroundLogo');
-    const boxes = [...page.slots, ...retainedFixed].map(slot => slot.box);
+    const boxes = [...page.slots, ...retainedFixed, ...pictures].map(slot => slot.box);
     if (!boxes.length) return page;
     const left = Math.min(...boxes.map(box => box.x));
     const right = Math.max(...boxes.map(box => box.x + box.width));

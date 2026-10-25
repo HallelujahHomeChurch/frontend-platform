@@ -20,7 +20,7 @@ class CheckpointTests(unittest.TestCase):
         self.run = dict(id=123, run_attempt=2, updated_at='2026-10-25T00:00:00Z', head_sha='a' * 40, event='push', status='completed',
                         conclusion='success', path='.github/workflows/release.yml', head_repository={'full_name': checkpoint.REPO})
         self.full = {'container/' + v: dict(runtime='b' * 64, verification='c' * 64, head='a' * 40, runId='123', runAttempt='2')
-                     for v in ['default', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10']}
+                     for v in ['default', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10', 'v11']}
 
     def response(self, data, names=None):
         buffer = io.BytesIO()

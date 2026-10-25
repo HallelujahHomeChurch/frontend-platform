@@ -2895,6 +2895,91 @@ paths:
         '409': { $ref: '#/components/responses/Error' }
         '428': { $ref: '#/components/responses/Error' }
         '503': { $ref: '#/components/responses/Error' }
+  /admin/bulletins/{issueId}/online/{series}/{contentLocale}/source-parts:
+    get:
+      operationId: getOnlineBulletinSourceParts
+      summary: Read source-linked correction choices
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes: [cms:bulletins:read]
+      parameters:
+        - { $ref: '#/components/parameters/IssueID' }
+        - { name: series, in: path, required: true, schema: { type: string, const: general } }
+        - { name: contentLocale, in: path, required: true, schema: { type: string, const: zh-Hant } }
+      responses:
+        '200':
+          description: Source-linked result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta, error]
+                properties:
+                  data: { $ref: '#/components/schemas/OnlineBulletinSourceRepairCatalog' }
+                  meta: { type: object, additionalProperties: true }
+                  error: { type: 'null' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/bulletins/{issueId}/online/{series}/{contentLocale}/source-repairs:
+    post:
+      operationId: repairOnlineBulletinSource
+      summary: Restore selected source material into a new draft
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      x-required-scopes: [cms:bulletins:write]
+      parameters:
+        - { $ref: '#/components/parameters/IssueID' }
+        - { name: series, in: path, required: true, schema: { type: string, const: general } }
+        - { name: contentLocale, in: path, required: true, schema: { type: string, const: zh-Hant } }
+        - { name: If-Match, in: header, required: true, schema: { type: string, pattern: '^"[1-9][0-9]*"$' } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OnlineBulletinSourceRepairInput' }
+      responses:
+        '200':
+          description: Source-linked result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta, error]
+                properties:
+                  data: { $ref: '#/components/schemas/OnlineBulletinSourceRepairResult' }
+                  meta: { type: object, additionalProperties: true }
+                  error: { type: 'null' }
+        '202':
+          description: Image scan pending; retry the same exact-version request
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta, error]
+                properties:
+                  data: { $ref: '#/components/schemas/OnlineBulletinSourceRepairResult' }
+                  meta: { type: object, additionalProperties: true }
+                  error: { type: 'null' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
   /admin/bulletins/{issueId}/online/{series}/{contentLocale}/draft:
     put:
       operationId: saveOnlineBulletinDraft
@@ -10123,6 +10208,21 @@ components:
                       minItems: 1
                       maxItems: 4096
                       items: { $ref: '#/components/schemas/ReaderBlock' }
+    ReaderIllustration:
+      description: Source-linked private raster illustration; owned Asset references are server-only and sanitized PNG pixels are authorized response-only.
+      type: object
+      additionalProperties: false
+      required: [id, componentId, pageId, box, alt, sha256, sizeBytes, png]
+      properties:
+        id: { $ref: '#/components/schemas/OnlineBulletinHash' }
+        componentId: { $ref: '#/components/schemas/OnlineBulletinID' }
+        afterBlockId: { $ref: '#/components/schemas/OnlineBulletinID' }
+        pageId: { $ref: '#/components/schemas/OnlineBulletinID' }
+        box: { $ref: '#/components/schemas/OnlineBulletinBox' }
+        alt: { type: string, minLength: 1, maxLength: 256 }
+        sha256: { $ref: '#/components/schemas/OnlineBulletinHash' }
+        sizeBytes: { type: integer, minimum: 1, maximum: 2097152 }
+        png: { type: string, maxLength: 2796204, pattern: '^[A-Za-z0-9+/]+={0,2}$', description: Authorized response-only sanitized PNG base64; never stored in documents. }
     ReaderComponent:
       oneOf:
         - $ref: '#/components/schemas/ReaderCoverComponent'
@@ -10143,6 +10243,10 @@ components:
       additionalProperties: false
       required: [id, type, cover]
       properties:
+        illustrations:
+          type: array
+          maxItems: 8
+          items: { $ref: '#/components/schemas/ReaderIllustration' }
         id: { $ref: '#/components/schemas/OnlineBulletinID' }
         type: { type: string, const: cover }
         cover: { $ref: '#/components/schemas/ReaderCover' }
@@ -10151,6 +10255,10 @@ components:
       additionalProperties: false
       required: [id, type, bodySection]
       properties:
+        illustrations:
+          type: array
+          maxItems: 8
+          items: { $ref: '#/components/schemas/ReaderIllustration' }
         id: { $ref: '#/components/schemas/OnlineBulletinID' }
         type: { type: string, const: bodySection }
         bodySection: { $ref: '#/components/schemas/ReaderBodySection' }
@@ -10159,6 +10267,10 @@ components:
       additionalProperties: false
       required: [id, type, hymnLyrics]
       properties:
+        illustrations:
+          type: array
+          maxItems: 8
+          items: { $ref: '#/components/schemas/ReaderIllustration' }
         id: { $ref: '#/components/schemas/OnlineBulletinID' }
         type: { type: string, const: hymnLyrics }
         hymnLyrics: { $ref: '#/components/schemas/ReaderHymnLyrics' }
@@ -10167,6 +10279,10 @@ components:
       additionalProperties: false
       required: [id, type, items]
       properties:
+        illustrations:
+          type: array
+          maxItems: 8
+          items: { $ref: '#/components/schemas/ReaderIllustration' }
         id: { $ref: '#/components/schemas/OnlineBulletinID' }
         type: { type: string, enum: [backSummary, announcements, victoriesAndPrayers] }
         items:
@@ -10648,7 +10764,7 @@ components:
         - if:
             properties:
               layoutManifest:
-                properties: { rendererVersion: { enum: [v9, v10] } }
+                properties: { rendererVersion: { enum: [v9, v10, v11] } }
           then: { required: [templateSnapshot] }
           else: { not: { required: [templateSnapshot] } }
       properties:
@@ -10695,6 +10811,7 @@ components:
             properties:
               componentId: { type: string, maxLength: 128 }
               blockId: { type: string, maxLength: 128 }
+              sourceRepairRequired: { type: boolean, description: Images from a replaced source must be selected again from the current PDF. }
               suggestion: { type: string, enum: [same, local, incoming, conflict] }
               base: { $ref: '#/components/schemas/OnlineBulletinComparisonValue' }
               local: { $ref: '#/components/schemas/OnlineBulletinComparisonValue' }
@@ -10993,7 +11110,7 @@ components:
         - if:
             properties:
               layoutManifest:
-                properties: { rendererVersion: { enum: [v9, v10] } }
+                properties: { rendererVersion: { enum: [v9, v10, v11] } }
           then: { required: [templateSnapshot] }
           else: { not: { required: [templateSnapshot] } }
       properties:
@@ -11045,7 +11162,7 @@ components:
       required: [templateVersion, rendererVersion, rendererArtifactSha256, assets, pages]
       properties:
         templateVersion: { type: string, enum: [v1, v2] }
-        rendererVersion: { type: string, enum: [v1, v2, v3, v4, v5, v6, v7, v8, v9, v10], description: Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. V6 adds historical four-row cover profiles; V7 preserves proportional inline font sizes during cover composition. V8 fits titles at normal tracking and keeps heading-speaker rows and cover date-issue rows together. V9 consumes an immutable issue-owned template snapshot. V10 reuses V9 paper rendering and adds bounded measured dense-cover composition with separate long title/subtitle rows and a 9-point cover text floor. Existing published renderer versions remain immutable. }
+        rendererVersion: { type: string, enum: [v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11], description: Adaptive renderers retain the v1 Traditional or v2 Simplified template. V4 permits a safe 24-point bottom margin for dense body pages; V5 extends this to complete covers. V6 adds historical four-row cover profiles; V7 preserves proportional inline font sizes during cover composition. V8 fits titles at normal tracking and keeps heading-speaker rows and cover date-issue rows together. V9 consumes an immutable issue-owned template snapshot. V10 reuses V9 paper rendering and adds bounded measured dense-cover composition with separate long title/subtitle rows and a 9-point cover text floor. Existing published renderer versions remain immutable. }
         rendererArtifactSha256: { $ref: '#/components/schemas/OnlineBulletinHash' }
         contentHash: { $ref: '#/components/schemas/OnlineBulletinHash' }
         layoutValidationHash: { $ref: '#/components/schemas/OnlineBulletinHash' }
@@ -11301,6 +11418,77 @@ components:
                       minItems: 1
                       maxItems: 4096
                       items: { $ref: '#/components/schemas/OnlineBulletinBlock' }
+    OnlineBulletinIllustration:
+      description: Source-linked private raster illustration; owned Asset references are server-only and sanitized PNG pixels are authorized response-only.
+      type: object
+      additionalProperties: false
+      required: [id, componentId, pageId, box, alt, sha256, sizeBytes]
+      properties:
+        id: { $ref: '#/components/schemas/OnlineBulletinHash' }
+        componentId: { $ref: '#/components/schemas/OnlineBulletinID' }
+        afterBlockId: { $ref: '#/components/schemas/OnlineBulletinID' }
+        pageId: { $ref: '#/components/schemas/OnlineBulletinID' }
+        box: { $ref: '#/components/schemas/OnlineBulletinBox' }
+        alt: { type: string, minLength: 1, maxLength: 256 }
+        assetId: { type: string, format: uuid, description: 'Server-owned private reference, omitted from member responses.' }
+        sha256: { $ref: '#/components/schemas/OnlineBulletinHash' }
+        sizeBytes: { type: integer, minimum: 1, maximum: 2097152 }
+        png: { type: string, maxLength: 2796204, pattern: '^[A-Za-z0-9+/]+={0,2}$', description: Authorized response-only sanitized PNG base64; never stored in documents. }
+    OnlineBulletinSourcePart:
+      type: object
+      additionalProperties: false
+      required: [id, kind, page, box, available]
+      properties:
+        id: { $ref: '#/components/schemas/OnlineBulletinHash' }
+        png: { type: string, format: byte, maxLength: 2796204, pattern: '^[A-Za-z0-9+/]*={0,2}$' }
+        available: { type: boolean }
+        kind: { type: string, enum: [text, image] }
+        page: { type: integer, minimum: 1, maximum: 40 }
+        box: { $ref: '#/components/schemas/OnlineBulletinBox' }
+        text: { type: string, maxLength: 4096 }
+        fontRole: { type: string, enum: [body, scripture, emphasis] }
+    OnlineBulletinSourceRepairCatalog:
+      type: object
+      additionalProperties: false
+      required: [documentId, version, revision, canonicalVersion, sourceChecksum, parts]
+      properties:
+        documentId: { type: string, format: uuid }
+        version: { type: integer, minimum: 1 }
+        revision: { type: integer, minimum: 1 }
+        canonicalVersion: { type: integer, minimum: 1 }
+        sourceChecksum: { $ref: '#/components/schemas/OnlineBulletinHash' }
+        parts:
+          type: array
+          maxItems: 10000
+          items: { $ref: '#/components/schemas/OnlineBulletinSourcePart' }
+    OnlineBulletinSourceRepairInput:
+      description: Select exact server-catalogued source material; no text, coordinates, Asset identifiers or proof may be supplied.
+      type: object
+      additionalProperties: false
+      required: [canonicalVersion, revision, sourceChecksum, partId, componentId]
+      properties:
+        remove: { type: boolean, description: Remove this previously restored source illustration. }
+        canonicalVersion: { type: integer, minimum: 1 }
+        revision: { type: integer, minimum: 1 }
+        sourceChecksum: { $ref: '#/components/schemas/OnlineBulletinHash' }
+        partId: { $ref: '#/components/schemas/OnlineBulletinHash' }
+        componentId: { $ref: '#/components/schemas/OnlineBulletinID' }
+        afterBlockId: { $ref: '#/components/schemas/OnlineBulletinID' }
+        alt: { type: string, maxLength: 256 }
+        fontRole: { type: string, enum: [body, scripture, emphasis] }
+    OnlineBulletinSourceRepairResult:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [status, draft]
+          properties:
+            status: { type: string, const: saved }
+            draft: { $ref: '#/components/schemas/OnlineBulletinSavedDraft' }
+        - type: object
+          additionalProperties: false
+          required: [status]
+          properties:
+            status: { type: string, const: waitingForScan }
     OnlineBulletinComponent:
       oneOf:
         - $ref: '#/components/schemas/OnlineBulletinCoverComponent'
@@ -11321,6 +11509,10 @@ components:
       additionalProperties: false
       required: [id, type, cover]
       properties:
+        illustrations:
+          type: array
+          maxItems: 8
+          items: { $ref: '#/components/schemas/OnlineBulletinIllustration' }
         id: { $ref: '#/components/schemas/OnlineBulletinID' }
         type: { type: string, const: cover }
         cover: { $ref: '#/components/schemas/OnlineBulletinCover' }
@@ -11329,6 +11521,10 @@ components:
       additionalProperties: false
       required: [id, type, bodySection]
       properties:
+        illustrations:
+          type: array
+          maxItems: 8
+          items: { $ref: '#/components/schemas/OnlineBulletinIllustration' }
         id: { $ref: '#/components/schemas/OnlineBulletinID' }
         type: { type: string, const: bodySection }
         bodySection: { $ref: '#/components/schemas/OnlineBulletinBodySection' }
@@ -11337,6 +11533,10 @@ components:
       additionalProperties: false
       required: [id, type, hymnLyrics]
       properties:
+        illustrations:
+          type: array
+          maxItems: 8
+          items: { $ref: '#/components/schemas/OnlineBulletinIllustration' }
         id: { $ref: '#/components/schemas/OnlineBulletinID' }
         type: { type: string, const: hymnLyrics }
         hymnLyrics: { $ref: '#/components/schemas/OnlineBulletinHymnLyrics' }
@@ -11345,6 +11545,10 @@ components:
       additionalProperties: false
       required: [id, type, items]
       properties:
+        illustrations:
+          type: array
+          maxItems: 8
+          items: { $ref: '#/components/schemas/OnlineBulletinIllustration' }
         id: { $ref: '#/components/schemas/OnlineBulletinID' }
         type: { type: string, enum: [backSummary, announcements, victoriesAndPrayers] }
         items:

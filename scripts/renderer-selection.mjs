@@ -4,8 +4,8 @@ import {execFileSync} from 'node:child_process';
 import {readFileSync} from 'node:fs';
 
 export const coverage = {
-  host: ['default', 'v6', 'v7', 'v8', 'v9', 'v10'],
-  container: ['default', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+  host: ['default', 'v6', 'v7', 'v8', 'v9', 'v10', 'v11'],
+  container: ['default', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10', 'v11'],
 };
 export const smokeCases = [
   'worker CLI composes the same anchored document and emits only a JSON result',

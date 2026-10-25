@@ -55,7 +55,7 @@ jobs:
         env:
           HHC_BULLETIN_TEMPLATE_DIR: ${{ runner.temp }}/bulletin-template-v1
         run: |
-          node scripts/verify-bulletin-renderer-v10.mjs
+          node scripts/verify-bulletin-renderer-v11.mjs
           node scripts/fetch-bulletin-template-assets.mjs "$HHC_BULLETIN_TEMPLATE_DIR"
           node --test scripts/package-bulletin-renderer.test.mjs
           node scripts/package-bulletin-renderer.mjs artifacts/bulletin-renderer "$HHC_BULLETIN_TEMPLATE_DIR"
@@ -178,7 +178,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          renderer_hash=$(node --input-type=module -e "import {BULLETIN_RENDERER_V10_DIGEST as hash} from './packages/ui/dist/bulletin-reader/v10/artifact.js'; console.log(hash)")
+          renderer_hash=$(node --input-type=module -e "import {BULLETIN_RENDERER_V11_DIGEST as hash} from './packages/ui/dist/bulletin-reader/v11/artifact.js'; console.log(hash)")
           image="ghcr.io/hallelujahhomechurch/hhc-bulletin-renderer:${renderer_hash}-${GITHUB_SHA}"
           printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
           docker tag hhc-bulletin-renderer:verify "$image"

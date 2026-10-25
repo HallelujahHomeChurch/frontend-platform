@@ -12,7 +12,7 @@ await mkdir(directory, {recursive: true});
 const tracked = git(['ls-files', '-z']).split('\0').filter(Boolean).sort();
 // Conservative runtime closure: all packaged renderer code, assets and dependencies.
 const runtimePaths = tracked.filter(path => path.startsWith('packages/ui/src/bulletin-reader/')
-  || /^scripts\/(?:measure-bulletin-layout|compose-dense-cover|verify-bulletin-renderer)/.test(path) && !path.endsWith('.test.mjs')
+  || /^scripts\/(?:measure-bulletin-layout|compose-dense-cover|compose-body|verify-bulletin-renderer)/.test(path) && !path.endsWith('.test.mjs')
   || path.startsWith('tools/bulletin-renderer/') || ['pnpm-lock.yaml', 'pnpm-workspace.yaml', 'package.json', 'packages/ui/package.json', 'packages/ui/tsconfig.json', 'scripts/package-bulletin-renderer.mjs'].includes(path));
 const hashPaths = async paths => digest(await Promise.all(paths.sort().map(async path => [path, digest(await readFile(path))])));
 const dependencyHashes = Object.fromEntries(await Promise.all(runtimePaths.map(async path => [path, digest(await readFile(path))])));
@@ -35,7 +35,7 @@ for (const mode of ['ci', 'release']) {
   await writeFile(`${directory}/${mode}.json`, JSON.stringify(plan));
 }
 await writeFile(`${directory}/manifest.json`, JSON.stringify({schema: 1, producerCommit: head, sourceFingerprint, runtimeFingerprint: runtime,
-  dependencyPaths: runtimePaths, dependencyHashes, versions: Object.fromEntries(Array.from({length: 10}, (_, i) => [`v${i + 1}`, {dependencyPaths: runtimePaths, inputFingerprint: runtime}])), fingerprints}));
+  dependencyPaths: runtimePaths, dependencyHashes, versions: Object.fromEntries(Array.from({length: 11}, (_, i) => [`v${i + 1}`, {dependencyPaths: runtimePaths, inputFingerprint: runtime}])), fingerprints}));
 if (checkpoint) await writeFile(`${directory}/baseline.json`, JSON.stringify(checkpoint));
 
 // Exercise real release-mode execution in PRs without publication or trusted checkpoint writes.
