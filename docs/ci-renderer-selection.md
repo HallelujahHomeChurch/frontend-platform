@@ -6,7 +6,8 @@ cases: real CLI composition, stale-content rejection, and missing-asset rejectio
 Six serial shards share the prepared image and workspace. Container verification
 uses two CPUs and the existing 2 GiB memory cap; deployment resource settings are
 unchanged. This trades three additional job setups for shorter full-suite critical
-paths; acceptance compares total queue-inclusive time and summed runner minutes.
+paths. Compared with five shards, the extra setup buys headroom under the
+15-minute ceiling; acceptance compares total queue-inclusive time and summed runner minutes.
 The final `verify` check requires the same-run plan and exact tier receipts.
 
 The first selector deliberately narrows only known independent package changes
@@ -53,11 +54,16 @@ This may select more full runs than per-version image
 analysis, but does not mistake native-package drift for an unchanged renderer.
 
 Changes to verification wiring also run the shared release-mode runner in PR CI
-with a synthetic narrowed plan, after normal CI shards finish. This exercises
+with a synthetic narrowed plan, on each already-prepared runner after its normal
+CI commands finish. Separate plans, receipts and artifact namespaces remain
+mandatory; a failed extra command fails its shard and the aggregate gate. This exercises
 the default full suite and all other release smoke commands without calling the
 publication workflow. Normal CI already runs V10 full for wiring changes; the
 release-check lane no longer duplicates its dense-cover suite. Actual releases
-retain version-specific full selection. Its receipts have a separate artifact namespace.
+retain version-specific full selection. This avoids a second checkout, image restore and runner allocation for the same
+inputs. The four immutable-version mutation suites run at concurrency two in
+prepare; each owns an independent temporary Git repository and cleanup, with
+only shared read-only dependencies. All mutation/removal assertions remain.
 
 Set the `RENDERER_FORCE_FULL` repository variable to `true` to disable narrowing;
 reverting the selection change restores the previous full matrix. Changing that

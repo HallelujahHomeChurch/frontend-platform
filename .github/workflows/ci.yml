@@ -131,24 +131,14 @@ jobs:
     uses: ./.github/workflows/renderer.yml
     with:
       mode: ci
-      matrix: ${{ needs.prepare.outputs.matrix }}
-      workspace-sha: ${{ needs.prepare.outputs.workspace-sha }}
-      image-sha: ${{ needs.prepare.outputs.image-sha }}
-
-  release-verification:
-    needs: [agent_docs, prepare, renderer]
-    if: ${{ github.event_name == 'pull_request' && needs.prepare.outputs.verify-release == 'true' && needs.renderer.result == 'success' }}
-    uses: ./.github/workflows/renderer.yml
-    with:
-      mode: release
-      selection: release-check
+      verify-release: ${{ github.event_name == 'pull_request' && needs.prepare.outputs.verify-release == 'true' }}
       matrix: ${{ needs.prepare.outputs.matrix }}
       workspace-sha: ${{ needs.prepare.outputs.workspace-sha }}
       image-sha: ${{ needs.prepare.outputs.image-sha }}
 
   verify:
     if: ${{ always() }}
-    needs: [agent_docs, prepare, renderer, release-verification]
+    needs: [agent_docs, prepare, renderer]
     runs-on: ubuntu-latest
     steps:
       - name: Require a proven classification
@@ -194,5 +184,5 @@ jobs:
           RENDERER_PLAN: artifacts/renderer-selection/release-check.json
           CI_NEEDS: >-
             {"prepare":${{ toJSON(needs.prepare) }},
-            "renderer":${{ toJSON(needs.release-verification) }}}
+            "renderer":${{ toJSON(needs.renderer) }}}
         run: node scripts/ci-bulletin-renderer.mjs verify-results release-results release

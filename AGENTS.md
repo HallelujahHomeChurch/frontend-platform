@@ -27,7 +27,7 @@
   this workspace's install; do not infer credential availability or print tokens.
 - Run `corepack pnpm test`, `lint`, `build`, `check:packages`, `pack:packages`
   and `test:consumers`. The last five names are pnpm scripts too. These package
-  checks do not replace the renderer image, asset and three-shard CI gates.
+  checks do not replace the renderer image, asset and renderer shard CI gates.
 - Start with [README.md](README.md), [package.json](package.json),
   [pnpm-workspace.yaml](pnpm-workspace.yaml), and
   [.github/workflows/ci.yml](.github/workflows/ci.yml). Follow the README's

@@ -3,7 +3,7 @@ import {execFileSync} from 'node:child_process';
 import {cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {dirname, join, resolve} from 'node:path';
-import {test} from 'node:test';
+import {describe, test} from 'node:test';
 
 test('unrelated package releases retain V1 while mutation and removal fail closed', async () => {
   const root = resolve(import.meta.dirname, '..');
@@ -41,6 +41,8 @@ test('unrelated package releases retain V1 while mutation and removal fail close
   } finally { await rm(fixture, {recursive: true, force: true}); }
 });
 
+// Each version owns its temp Git repository; shared dependencies are read-only.
+describe('frozen renderer versions', {concurrency: 2}, () => {
 for (const version of ['v6', 'v8', 'v9', 'v10']) test(`${version} hashes its dependencies and preserves every frozen version`, async () => {
   const root = resolve(import.meta.dirname, '..');
   const fixture = await mkdtemp(join(tmpdir(), 'hhc-renderer-v6-immutability-'));
@@ -95,4 +97,6 @@ for (const version of ['v6', 'v8', 'v9', 'v10']) test(`${version} hashes its dep
     await rm(join(fixture, 'packages/ui/dist/bulletin-reader/v6/fixed.js'));
     assert.throws(verify, /ENOENT/);
   } finally {await rm(fixture, {recursive: true, force: true});}
+});
+
 });

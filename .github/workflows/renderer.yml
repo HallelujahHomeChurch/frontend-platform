@@ -10,6 +10,10 @@ on:
         required: false
         type: string
         default: ""
+      verify-release:
+        required: false
+        type: boolean
+        default: false
       matrix:
         required: true
         type: string
@@ -35,8 +39,10 @@ jobs:
         env:
           SELECTION: ${{ inputs.selection || inputs.mode }}
           MODE: ${{ inputs.mode }}
+          VERIFY_RELEASE: ${{ inputs.verify-release }}
         run: |
           case "$MODE/$SELECTION" in ci/ci|release/release|release/release-check) ;; *) exit 1 ;; esac
+          if [ "$VERIFY_RELEASE" = true ]; then test "$MODE/$SELECTION" = ci/ci; fi
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -70,5 +76,19 @@ jobs:
         with:
           name: renderer-result-${{ inputs.selection || inputs.mode }}-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_attempt }}
           path: renderer-results/*.json
+          if-no-files-found: error
+          retention-days: 1
+      - name: Verify release mode on the same prepared shard
+        if: inputs.mode == 'ci' && inputs.verify-release
+        env:
+          HHC_BULLETIN_TEMPLATE_DIR: ${{ github.workspace }}/artifacts/bulletin-renderer/assets
+          RENDERER_SHARD: ${{ matrix.shard }}
+          RENDERER_PLAN: artifacts/renderer-selection/release-check.json
+        run: node scripts/ci-bulletin-renderer.mjs run "$RENDERER_SHARD" release-results release
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: inputs.mode == 'ci' && inputs.verify-release
+        with:
+          name: renderer-result-release-check-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_attempt }}
+          path: release-results/*.json
           if-no-files-found: error
           retention-days: 1

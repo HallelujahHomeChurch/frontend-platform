@@ -5,14 +5,16 @@ import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {loadPlan, smokeCases, verifySmoke} from './renderer-selection.mjs';
 
-// Keep each suite intact and execute serially inside six bounded runners.
+// Balance complete suites plus the optional release check using run 40186680024.
+// Every shard has a container command, including in standalone release mode.
 export const shards = {
-  'balanced-a': {host: ['v10'], container: ['v7', 'default']},
-  'balanced-b': {host: ['default'], container: ['v10', 'v5']},
-  'balanced-c': {host: ['v8'], container: ['v3', 'v4']},
-  'balanced-d': {host: ['v6'], container: ['v8']},
-  'balanced-e': {host: ['v7'], container: ['v6']},
-  'balanced-f': {host: ['v9', 'v11'], container: ['v9', 'v11']},
+  'balanced-a': {host: ['v10'], container: ['v6']},
+  'balanced-b': {host: ['v6'], container: ['v10']},
+  'balanced-c': {host: ['default'], container: ['default', 'v5']},
+  'balanced-d': {host: ['v7'], container: ['v4', 'v9']},
+  'balanced-e': {host: ['v9'], container: ['v7', 'v3']},
+  'balanced-f': {host: ['v8'], container: ['v8']},
+  'balanced-g': {host: ['v11'], container: ['v11']},
 };
 
 export function rendererCommands(shard, mode = 'ci', plan) {

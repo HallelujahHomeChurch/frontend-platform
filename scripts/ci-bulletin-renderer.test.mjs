@@ -71,7 +71,7 @@ test('a failed renderer command aborts its shard without recording completed cov
     });
     assert.notEqual(result.status, 0);
     assert.match(result.stdout, /host renderer v10/);
-    assert.doesNotMatch(result.stdout, /host renderer default/);
+    assert.doesNotMatch(result.stdout, /container renderer v6/);
     assert.equal(existsSync(join(directory, 'results')), false);
   } finally {await rm(directory, {recursive: true, force: true});}
 });
@@ -136,7 +136,7 @@ test('CI and release use the same non-publishing shard runner and release cannot
     assert.equal(caller.jobs.renderer.uses, './.github/workflows/renderer.yml');
     assert.equal(caller.jobs.renderer.with.mode, mode);
     assert.deepEqual(caller.jobs.renderer.needs, mode === 'ci' ? ['agent_docs', 'prepare'] : 'prepare');
-    assert.deepEqual(caller.jobs.verify.needs, mode === 'ci' ? ['agent_docs', 'prepare', 'renderer', 'release-verification'] : ['prepare', 'renderer']);
+    assert.deepEqual(caller.jobs.verify.needs, mode === 'ci' ? ['agent_docs', 'prepare', 'renderer'] : ['prepare', 'renderer']);
     assert.equal(caller.jobs.verify.if, '${{ always() }}');
     assert.equal(caller.jobs.renderer.secrets, undefined);
     const receiptsDownload = caller.jobs.verify.steps.find(step => step.uses?.startsWith('actions/download-artifact@'));
@@ -145,6 +145,21 @@ test('CI and release use the same non-publishing shard runner and release cannot
       if (name !== 'publish') assert.notEqual(job.permissions?.packages, 'write');
     }
   }
+  assert.equal(ci.jobs['release-verification'], undefined, 'release checks must reuse prepared runners');
+  assert.equal(ci.jobs.renderer.with['verify-release'], "${{ github.event_name == 'pull_request' && needs.prepare.outputs.verify-release == 'true' }}");
+  assert.equal(release.jobs.renderer.with['verify-release'], undefined);
+  const extra = runner.jobs.renderer.steps.find(step => step.name === 'Verify release mode on the same prepared shard');
+  assert.equal(extra.if, "inputs.mode == 'ci' && inputs.verify-release");
+  assert.equal(extra.env.RENDERER_PLAN, 'artifacts/renderer-selection/release-check.json');
+  assert.match(extra.run, /release-results release$/);
+  const extraUpload = runner.jobs.renderer.steps.find(step => step.with?.name?.startsWith('renderer-result-release-check-'));
+  assert.equal(extraUpload.if, extra.if);
+  assert.equal(extraUpload.with.path, 'release-results/*.json');
+  assert.equal(extraUpload.with['if-no-files-found'], 'error');
+  const extraGate = ci.jobs.verify.steps.find(step => step.name === 'Require actual release-mode verification without publication');
+  assert.equal(extraGate.env.RENDERER_PLAN, extra.env.RENDERER_PLAN);
+  assert.match(extraGate.env.CI_NEEDS, /toJSON\(needs.renderer\)/);
+  assert.match(extraGate.run, /verify-results release-results release$/);
   assert.deepEqual(release.jobs.publish.needs, ['prepare', 'verify']);
   assert.equal(release.jobs.publish.if, undefined);
   assert.deepEqual(release.jobs.publish.permissions, {contents: 'read', packages: 'write', actions: 'read'});
@@ -169,10 +184,10 @@ if (process.env.FAIL_RENDERER === '1') process.exit(7);
     const env = {...process.env, PATH: `${directory}:${process.env.PATH}`, COMMAND_LOG: join(directory, 'commands'), GITHUB_SHA: sha, GITHUB_RUN_ID: '123', GITHUB_RUN_ATTEMPT: '2', HHC_BULLETIN_TEMPLATE_DIR: directory};
     delete env.NODE_TEST_CONTEXT;
     const script = new URL('./ci-bulletin-renderer.mjs', import.meta.url).pathname;
-    const failed = spawnSync(process.execPath, [script, 'run', 'balanced-b', 'results', 'release'], {cwd: directory, encoding: 'utf8', env: {...env, FAIL_RENDERER: '1'}});
+    const failed = spawnSync(process.execPath, [script, 'run', 'balanced-d', 'results', 'release'], {cwd: directory, encoding: 'utf8', env: {...env, FAIL_RENDERER: '1'}});
     assert.notEqual(failed.status, 0);
-    assert.match(failed.stdout, /container renderer v10/);
-    assert.doesNotMatch(failed.stdout, /container renderer v5/);
+    assert.match(failed.stdout, /container renderer v4/);
+    assert.doesNotMatch(failed.stdout, /container renderer v9/);
     assert.equal(existsSync(join(directory, 'results')), false);
     await rm(env.COMMAND_LOG);
     for (const shard of Object.keys(shards)) {
