@@ -15,7 +15,8 @@ const runtimePaths = tracked.filter(path => path.startsWith('packages/ui/src/bul
   || /^scripts\/(?:measure-bulletin-layout|compose-dense-cover|verify-bulletin-renderer)/.test(path) && !path.endsWith('.test.mjs')
   || path.startsWith('tools/bulletin-renderer/') || ['pnpm-lock.yaml', 'pnpm-workspace.yaml', 'package.json', 'packages/ui/package.json', 'packages/ui/tsconfig.json', 'scripts/package-bulletin-renderer.mjs'].includes(path));
 const hashPaths = async paths => digest(await Promise.all(paths.sort().map(async path => [path, digest(await readFile(path))])));
-const sourceFingerprint = await hashPaths(runtimePaths);
+const dependencyHashes = Object.fromEntries(await Promise.all(runtimePaths.map(async path => [path, digest(await readFile(path))])));
+const sourceFingerprint = digest(dependencyHashes);
 const runtime = execFileSync('docker', ['run', '--rm', '--network', 'none', '--read-only', '--user', '0',
   '--mount', `type=bind,src=${resolve('scripts/renderer-runtime-fingerprint.mjs')},dst=/tmp/fingerprint.mjs,readonly`,
   '--entrypoint', 'node', 'hhc-bulletin-renderer:verify', '/tmp/fingerprint.mjs'], {encoding: 'utf8', maxBuffer: 1024}).trim();
@@ -34,7 +35,7 @@ for (const mode of ['ci', 'release']) {
   await writeFile(`${directory}/${mode}.json`, JSON.stringify(plan));
 }
 await writeFile(`${directory}/manifest.json`, JSON.stringify({schema: 1, producerCommit: head, sourceFingerprint, runtimeFingerprint: runtime,
-  dependencyPaths: runtimePaths, versions: Object.fromEntries(Array.from({length: 10}, (_, i) => [`v${i + 1}`, {inputFingerprint: sourceFingerprint}])), fingerprints}));
+  dependencyPaths: runtimePaths, dependencyHashes, versions: Object.fromEntries(Array.from({length: 10}, (_, i) => [`v${i + 1}`, {dependencyPaths: runtimePaths, inputFingerprint: runtime}])), fingerprints}));
 if (checkpoint) await writeFile(`${directory}/baseline.json`, JSON.stringify(checkpoint));
 
 // Exercise real release-mode execution in PRs without publication or trusted checkpoint writes.

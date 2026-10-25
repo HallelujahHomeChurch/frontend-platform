@@ -42,7 +42,7 @@ jobs:
             --skip-dirs /workspace/.git --skip-dirs /workspace/node_modules /workspace
       - run: corepack pnpm build
       - run: |
-          node --test scripts/ci-bulletin-renderer.test.mjs scripts/renderer-selection.test.mjs
+          node --test scripts/ci-bulletin-renderer.test.mjs scripts/renderer-selection.test.mjs scripts/seal-renderer-checkpoint.test.mjs
           python3 -m unittest discover -s scripts -p test_renderer_checkpoint.py
       - run: corepack pnpm test
       - run: corepack pnpm lint
