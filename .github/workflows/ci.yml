@@ -65,7 +65,7 @@ jobs:
       - run: corepack pnpm build
       - name: Verify renderer CI coverage and aggregate gate
         run: |
-          node --test scripts/ci-bulletin-renderer.test.mjs scripts/renderer-selection.test.mjs
+          node --test scripts/ci-bulletin-renderer.test.mjs scripts/renderer-selection.test.mjs scripts/seal-renderer-checkpoint.test.mjs
           python3 -m unittest discover -s scripts -p test_renderer_checkpoint.py
       - name: Verify immutable bulletin renderer
         run: |
