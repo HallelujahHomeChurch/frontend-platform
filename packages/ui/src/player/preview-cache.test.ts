@@ -36,9 +36,11 @@ it('deduplicates active sprites, bounds concurrency and replaces obsolete queued
 it('purges private images on authorization loss and never serves a cached image afterward',async()=>{
   const {cache,jobs,loaded}=setup();
   cache.request(url(0));jobs[0].resolve(jpg());await tick();
+  expect(cache.peek(url(0))).toBe('blob:1');
   cache.request(url(1));jobs[1].resolve(new Response(null,{status:403}));await tick();
   expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:1');
   expect(loaded).toHaveBeenLastCalledWith('','');
+  expect(cache.peek(url(0))).toBeUndefined();
   loaded.mockClear();cache.request(url(0));await tick();
   expect(loaded).not.toHaveBeenCalled();expect(jobs).toHaveLength(2);
 });
@@ -52,6 +54,7 @@ it('evicts old object URLs and ignores responses after disposal',async()=>{
   const {cache,jobs,loaded}=setup();
   for(let n=0;n<18;n++){cache.request(url(n));jobs[n].resolve(jpg());await tick();}
   expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:1');
+  expect(cache.peek(url(0))).toBeUndefined();
   cache.request(url(19));cache.dispose();loaded.mockClear();jobs.at(-1)!.resolve(jpg());await tick();
   expect(loaded).not.toHaveBeenCalled();
 });
@@ -66,7 +69,7 @@ it('keeps a sprite unavailable until decoded and releases an in-flight decode on
   const images:{src:string;decoding:string}[]=[];
   vi.stubGlobal('Image',class {src='';decoding='';decode=decode;constructor(){images.push(this);}});
   const {cache,jobs,loaded}=setup();cache.request(url(0));jobs[0].resolve(jpg());await tick();
-  expect(decode).toHaveBeenCalledOnce();expect(cache.has(url(0))).toBe(false);expect(loaded).not.toHaveBeenCalled();
+  expect(decode).toHaveBeenCalledOnce();expect(cache.has(url(0))).toBe(false);expect(cache.peek(url(0))).toBeUndefined();expect(loaded).not.toHaveBeenCalled();
   cache.dispose();expect(images[0].src).toBe('');expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:1');
   decoded();await tick();expect(loaded).not.toHaveBeenCalled();expect(URL.revokeObjectURL).toHaveBeenCalledTimes(1);
 });
@@ -75,8 +78,11 @@ it('reuses a decoded sprite and drops malformed images without caching them',asy
   vi.stubGlobal('Image',class {src='';decoding='';decode=decode;});
   const {cache,jobs,loaded}=setup();cache.request(url(0));jobs[0].resolve(jpg());await tick();
   expect(cache.has(url(0))).toBe(true);expect(loaded).toHaveBeenLastCalledWith(url(0),'blob:1');
+  expect(cache.peek(url(0))).toBe('blob:1');
+  expect(cache.peek(url(0).replace('/sessions/s/','/sessions/other/'))).toBeUndefined();
   cache.request(url(0));await tick();expect(decode).toHaveBeenCalledTimes(1);
   cache.request(url(1));jobs[1].resolve(jpg());await tick();
   expect(cache.has(url(1))).toBe(false);expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:2');
   cache.dispose();
+  expect(cache.peek(url(0))).toBeUndefined();
 });
