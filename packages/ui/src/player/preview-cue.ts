@@ -6,9 +6,12 @@ export function previewCueAt(cues:PreviewCue[],time:number):PreviewCue|undefined
   const at=(value:number)=>{
     let low=0,high=cues.length;
     while(low<high){const mid=(low+high)>>>1;if(cues[mid].start<=value)low=mid+1;else high=mid;}
-    const cue=cues[low-1];return cue&&value<cue.end?cue:undefined;
+    return low-1;
   };
-  const current=at(time);
-  // Never cross an unavailable interval or a clipped authorization boundary.
-  return current?(at(Math.floor(time/10)*10)??current):undefined;
+  const current=cues[at(time)];
+  if(!current||time>=current.end)return;
+  const bucket=Math.floor(time/10)*10,index=at(bucket);
+  // Actual fragment starts may drift past the nominal bucket; never select across a gap.
+  const sample=cues[cues[index]?.start===bucket?index:index+1];
+  return sample&&sample.start<=time&&sample.end>=current.start-0.002?sample:current;
 }

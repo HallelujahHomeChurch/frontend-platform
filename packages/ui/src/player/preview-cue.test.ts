@@ -7,6 +7,15 @@ it('holds each image for ten seconds while selecting the correct next sheet',()=
   expect(previewCueAt(cues,35)).toBe(cues[6]);
   expect(previewCueAt(cues,59.99)).toBe(cues[10]);
 });
+it('selects the first actual sample in each ten-second bucket when fragment PTS drifts',()=>{
+  const drifted=Array.from({length:6},(_,i)=>({start:Math.floor(i/2)*10.01+i%2*5,end:Math.floor(i/2)*10.01+(i%2+1)*5,url:`sheet-${Math.floor(i/2)}`,x:0}));
+  expect(previewCueAt(drifted,16)).toBe(drifted[2]);
+  expect(previewCueAt(drifted,22)).toBe(drifted[4]);
+  expect(previewCueAt(drifted,29)).toBe(drifted[4]);
+  expect(previewCueAt(drifted,20.015)).toBeUndefined();
+  const separated=[{start:10,end:12,url:'before-gap',x:0},{start:15,end:20,url:'after-gap',x:0}];
+  expect(previewCueAt(separated,17)).toBe(separated[1]);
+});
 it('respects clipped range starts, unavailable gaps and finite timeline bounds',()=>{
   expect(previewCueAt(cues.slice(7),36)).toBe(cues[7]);
   expect(previewCueAt(cues.slice(7),34)).toBeUndefined();
