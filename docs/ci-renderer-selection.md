@@ -61,3 +61,9 @@ available independently for audit. CMS must require an
 exact producer commit/image match and successful trusted publication; older or
 incomplete manifests require full verification. It does not infer unchanged native
 inputs from source hashes: the actual runtime fingerprint remains separate.
+
+Scans use the upstream GHCR database and upstream ECR fallback, with one job-local
+DB cache shared by dependency and image scans. The Google pull-through mirror
+returned missing-layer HTTP 404 twice during release 40165816057; Trivy does not
+fallback on that response. Scanner pin, VEX and High/Critical failure gates stay
+unchanged. See [upstream configuration](https://github.com/aquasecurity/trivy/blob/main/docs/guide/configuration/db.md).
