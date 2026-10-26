@@ -112,3 +112,12 @@ cannot supply complete receipts. PR wiring checks retain ten runners because the
 release-check plan deliberately includes full verification. Tag releases may group
 only a validated all-smoke release plan. No renderer bytes or selected assertions
 change. Cold/full and trusted all-smoke timings must be reported separately.
+
+Host runners use Ubuntu 24.04's existing Chromium system libraries and install
+only Playwright's headless shell. Required native tests still launch the pinned
+browser and verify producer font hashes; missing libraries fail those tests.
+Do not run `install --with-deps` on every shard: run 40262674994 spent 437 seconds
+fetching 25.9 MB of apt packages on runner image 20261012.334.1, although browser
+downloads were fast. The new packages were fallback/X fonts; required libraries
+were already installed. Avoid incidental apt upgrades and unused full Chromium,
+without replacing native-host coverage with container coverage.

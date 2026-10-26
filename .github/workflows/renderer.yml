@@ -29,7 +29,7 @@ permissions:
 
 jobs:
   renderer:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       max-parallel: 10
@@ -64,7 +64,7 @@ jobs:
       - if: inputs.mode == 'ci' && matrix.host
         run: corepack enable
       - if: inputs.mode == 'ci' && matrix.host
-        run: corepack pnpm exec playwright install --with-deps chromium
+        run: corepack pnpm exec playwright install --only-shell chromium
       - name: Measure with pinned Chromium and verified producer fonts
         env:
           HHC_BULLETIN_TEMPLATE_DIR: ${{ github.workspace }}/artifacts/bulletin-renderer/assets

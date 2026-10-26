@@ -312,6 +312,8 @@ test('browser setup follows scheduled host work and both callers pass verified p
   const runner = workflow('renderer');
   const install = runner.jobs.renderer.steps.find(step => step.run?.includes('playwright install'));
   assert.equal(install.if, "inputs.mode == 'ci' && matrix.host");
+  assert.equal(runner.jobs.renderer['runs-on'], 'ubuntu-24.04');
+  assert.equal(install.run, 'corepack pnpm exec playwright install --only-shell chromium');
   for (const mode of ['ci', 'release']) {
     const bundle = workflow(mode).jobs.prepare.steps.find(step => step.id === 'bundle');
     assert.equal(bundle.env.RENDERER_MODE, mode);
