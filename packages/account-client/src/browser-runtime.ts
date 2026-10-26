@@ -1,3 +1,4 @@
+import {AccountSessionError, type AccountRequestEndpoint, type AccountDecodeStage} from './account-request-error.js';
 import type {NavigationPresentationStore} from './navigation-presentation.js';
 import {
   buildAuthorizeUrl,
@@ -8,10 +9,7 @@ import {
   validateOAuthState
 } from './oauth.js';
 import {
-  AccountSessionError,
   type AccountAccessToken,
-  type AccountRequestEndpoint,
-  type AccountDecodeStage,
   type AccountIdentitySession,
   resolveAccountAuth,
   type AccountSessionClient
