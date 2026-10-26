@@ -84,6 +84,9 @@ jobs:
         run: node --test scripts/pack-packages.test.mjs
       - name: Bundle immutable inputs for the same-run shards
         id: bundle
+        env:
+          RENDERER_MODE: release
+          RENDERER_PLAN: artifacts/renderer-selection/release.json
         run: |
           tar -cf "$RUNNER_TEMP/renderer-workspace.tar" node_modules packages artifacts/bulletin-renderer/assets artifacts/renderer-selection artifacts/hallelujahhomechurch-*.tgz
           mv "$RUNNER_TEMP/bulletin-renderer.tar" "$RUNNER_TEMP/renderer-image.tar"

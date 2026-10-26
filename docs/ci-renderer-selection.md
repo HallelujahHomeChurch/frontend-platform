@@ -98,3 +98,17 @@ DB cache shared by dependency and image scans. The Google pull-through mirror
 returned missing-layer HTTP 404 twice during release 40165816057; Trivy does not
 fallback on that response. Scanner pin, VEX and High/Critical failure gates stay
 unchanged. See [upstream configuration](https://github.com/aquasecurity/trivy/blob/main/docs/guide/configuration/db.md).
+
+
+### Physical runner setup
+
+Full or unresolved plans retain ten bounded runners. Container-only runners do
+not install host Chromium; image-contained Chromium still executes every selected
+container command. When a validated plan contains only smoke commands and no
+additional PR release check, two runners each execute five original logical
+shards serially. Every logical shard still emits its own same-head/attempt receipt;
+the aggregate requires all ten exactly once. A failed member stops its group and
+cannot supply complete receipts. PR wiring checks retain ten runners because the
+release-check plan deliberately includes full verification. Tag releases may group
+only a validated all-smoke release plan. No renderer bytes or selected assertions
+change. Cold/full and trusted all-smoke timings must be reported separately.

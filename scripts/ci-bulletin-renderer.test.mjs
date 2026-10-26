@@ -1,3 +1,4 @@
+import {createPlan, universe} from './renderer-selection.mjs';
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {createHash} from 'node:crypto';
@@ -7,7 +8,7 @@ import {createRequire} from 'node:module';
 import {chmod, mkdir, mkdtemp, readFile, rm, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {rendererCommands, shards, verifyResults} from './ci-bulletin-renderer.mjs';
+import {rendererCommands, rendererMatrix, shards, verifyResults} from './ci-bulletin-renderer.mjs';
 
 const common = 'scripts/measure-bulletin-layout.test.mjs';
 const coverage = {
@@ -178,7 +179,7 @@ test('CI and release use the same non-publishing shard runner and release cannot
   const extra = runner.jobs.renderer.steps.find(step => step.name === 'Verify release mode on the same prepared shard');
   assert.equal(extra.if, "inputs.mode == 'ci' && inputs.verify-release");
   assert.equal(extra.env.RENDERER_PLAN, 'artifacts/renderer-selection/release-check.json');
-  assert.match(extra.run, /release-results release$/);
+  assert.match(extra.run, /release-results release/);
   const extraUpload = runner.jobs.renderer.steps.find(step => step.with?.name?.startsWith('renderer-result-release-check-'));
   assert.equal(extraUpload.if, extra.if);
   assert.equal(extraUpload.with.path, 'release-results/*.json');
@@ -274,4 +275,62 @@ test('both shard and publisher restore reject either corrupted tar before extrac
       assert.equal(existsSync(marker), false, 'restore reached extraction or image loading');
     } finally {await rm(directory, {recursive: true, force: true});}
   }
+});
+
+
+test('physical smoke grouping preserves all logical commands and browser requirements', () => {
+  const fingerprint = {runtime: 'a'.repeat(64), verification: 'b'.repeat(64)};
+  for (const mode of ['ci', 'release']) {
+    const fingerprints = Object.fromEntries(universe(mode).map(entry => [entry.id, fingerprint]));
+    const plan = createPlan({mode, head: sha, base: sha,
+      changes: [{status: 'M', regular: true, path: 'README.md'}], checkpoint: {full: fingerprints}, fingerprints});
+    assert.ok(plan.entries.every(entry => entry.tier === 'smoke'));
+    const compact = rendererMatrix(mode, plan);
+    assert.equal(compact.include.length, 2);
+    const members = compact.include.flatMap(group => group.members.split(' '));
+    assert.deepEqual(members, Object.keys(shards));
+    assert.deepEqual(members.flatMap(name => rendererCommands(name, mode, plan)),
+      Object.keys(shards).flatMap(name => rendererCommands(name, mode, plan)));
+    assert.ok(compact.include.every(group => group.host === (mode === 'ci')));
+    // Wiring verification contains a full release command: never consolidate it.
+    assert.equal(rendererMatrix(mode, plan, true).include.length, 10);
+    const full = createPlan({mode, head: sha, base: sha, changes: undefined});
+    assert.equal(rendererMatrix(mode, full).include.length, 10);
+    assert.equal(rendererMatrix(mode).include.length, 10);
+    const malformed = structuredClone(plan); malformed.entries.pop();
+    assert.throws(() => rendererMatrix(mode, malformed));
+    const duplicate = structuredClone(plan); duplicate.entries[1] = duplicate.entries[0];
+    assert.throws(() => rendererMatrix(mode, duplicate));
+  }
+  const matrix = rendererMatrix().include;
+  assert.deepEqual(matrix.filter(group => !group.host).map(group => group.shard), ['balanced-c', 'balanced-d', 'balanced-h']);
+});
+
+test('browser setup follows scheduled host work and both callers pass verified plans', () => {
+  const {parse} = createRequire(new URL('../packages/hhc-web-client/package.json', import.meta.url))('yaml');
+  const workflow = name => parse(readFileSync(new URL(`../.github/workflows/${name}.yml`, import.meta.url), 'utf8'));
+  const runner = workflow('renderer');
+  const install = runner.jobs.renderer.steps.find(step => step.run?.includes('playwright install'));
+  assert.equal(install.if, "inputs.mode == 'ci' && matrix.host");
+  for (const mode of ['ci', 'release']) {
+    const bundle = workflow(mode).jobs.prepare.steps.find(step => step.id === 'bundle');
+    assert.equal(bundle.env.RENDERER_MODE, mode);
+    assert.equal(bundle.env.RENDERER_PLAN, `artifacts/renderer-selection/${mode}.json`);
+  }
+  assert.match(workflow('ci').jobs.prepare.steps.find(step => step.id === 'bundle').env.VERIFY_RELEASE, /steps.selection.outputs.verify-release/);
+});
+
+
+test('a grouped runner stops at its failed member; missing receipts remain rejected', () => {
+  const {parse} = createRequire(new URL('../packages/hhc-web-client/package.json', import.meta.url))('yaml');
+  const runner = parse(readFileSync(new URL('../.github/workflows/renderer.yml', import.meta.url), 'utf8'));
+  for (const name of ['Measure with pinned Chromium and verified producer fonts', 'Verify release mode on the same prepared shard']) {
+    const step = runner.jobs.renderer.steps.find(step => step.name === name);
+    const run = step.run.replace(/node scripts\/ci-bulletin-renderer.mjs run[^\n]+/, 'printf "%s\\n" "$shard"; test "$shard" != balanced-b');
+    const result = spawnSync('bash', ['-e', '-c', run], {encoding: 'utf8', env: {...process.env, RENDERER_SHARDS: 'balanced-a balanced-b balanced-c'}});
+    assert.notEqual(result.status, 0);
+    assert.deepEqual(result.stdout.trim().split('\n'), ['balanced-a', 'balanced-b']);
+  }
+  assert.throws(() => verifyResults(needs, results().slice(0, 1), identity), /shard coverage/);
+  assert.throws(() => verifyResults(needs, [...results(), results()[0]], identity), /shard coverage/);
 });

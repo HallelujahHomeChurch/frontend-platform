@@ -3,7 +3,7 @@ import {execFileSync} from 'node:child_process';
 import {mkdir, readFile, readdir, writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
-import {loadPlan, smokeCases, verifySmoke} from './renderer-selection.mjs';
+import {loadPlan, smokeCases, validatePlan, verifySmoke} from './renderer-selection.mjs';
 
 // Balance full commands plus release checks using V11 run 40189910007.
 // One container per shard keeps every standalone release shard meaningful.
@@ -19,6 +19,20 @@ export const shards = {
   'balanced-i': {host: ['v8'], container: ['v5']},
   'balanced-j': {host: ['v9'], container: ['v9']},
 };
+
+// Physical runners may share cheap smoke work; logical receipts stay unchanged.
+export function rendererMatrix(mode = 'ci', plan, verifyRelease = false) {
+  assert.ok(['ci', 'release'].includes(mode), 'unknown renderer mode');
+  if (plan) validatePlan(plan, mode, plan.head);
+  const names = Object.keys(shards);
+  const compact = plan && !verifyRelease && plan.entries.every(entry => entry.tier === 'smoke');
+  const groups = compact ? [names.slice(0, 5), names.slice(5)] : names.map(name => [name]);
+  return {include: groups.map((members, index) => ({
+    shard: compact ? `smoke-${index + 1}` : members[0],
+    members: members.join(' '),
+    host: mode === 'ci' && members.some(name => shards[name].host.length > 0),
+  }))};
+}
 
 export function rendererCommands(shard, mode = 'ci', plan) {
   assert.ok(['ci', 'release'].includes(mode), 'unknown renderer mode');
@@ -74,10 +88,10 @@ export function verifyResults(needs, results, identity, plan) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const [action, shardOrDirectory, resultsDirectory, runMode = 'ci'] = process.argv.slice(2);
-  const mode = action === 'verify-results' ? resultsDirectory ?? 'ci' : runMode;
+  const mode = action === 'matrix' ? process.env.RENDERER_MODE ?? 'ci' : action === 'verify-results' ? resultsDirectory ?? 'ci' : runMode;
   const identity = {sha: process.env.GITHUB_SHA, runId: process.env.GITHUB_RUN_ID, runAttempt: process.env.GITHUB_RUN_ATTEMPT, mode};
   const plan = process.env.RENDERER_PLAN ? loadPlan(process.env.RENDERER_PLAN, mode, identity.sha) : undefined;
-  if (action === 'matrix') console.log(JSON.stringify({shard: Object.keys(shards)}));
+  if (action === 'matrix') console.log(JSON.stringify(rendererMatrix(mode, plan, process.env.VERIFY_RELEASE === 'true')));
   else if (action === 'run') {
     assert.ok(resultsDirectory, 'results directory is required');
     assert.ok(process.env.HHC_BULLETIN_TEMPLATE_DIR, 'verified template assets are required');
