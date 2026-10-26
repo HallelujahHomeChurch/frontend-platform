@@ -1,4 +1,4 @@
-import {AccountSessionError} from './session-client.js';
+import {AccountSessionError} from './account-request-error.js';
 
 export type EmailCorrectionErrorCode =
   | 'ACC_CORRECTION_DISABLED' | 'ACC_CORRECTION_INVALID' | 'ACC_CORRECTION_INELIGIBLE'

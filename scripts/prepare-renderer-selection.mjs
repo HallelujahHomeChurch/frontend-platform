@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {appendFile, mkdir, readFile, writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
-import {changedFiles, createPlan, digest, filesFor, universe} from './renderer-selection.mjs';
+import {changedFiles, createPlan, digest, filesFor, releaseCheckPlan, universe} from './renderer-selection.mjs';
 
 const git = args => execFileSync('git', args, {encoding: 'utf8', maxBuffer: 32 * 1024 * 1024}).trim();
 const head = git(['rev-parse', 'HEAD']);
@@ -40,10 +40,7 @@ if (checkpoint) await writeFile(`${directory}/baseline.json`, JSON.stringify(che
 
 // Exercise real release-mode execution in PRs without publication or trusted checkpoint writes.
 if (process.env.GITHUB_EVENT_NAME === 'pull_request') {
-  const synthetic = {full: fingerprints};
-  const check = createPlan({mode: 'release', base: head, head,
-    changes: [{status: 'M', regular: true, path: 'scripts/measure-bulletin-layout-v10.test.mjs'}],
-    checkpoint: synthetic, fingerprints});
+  const check = releaseCheckPlan(head, fingerprints);
   await writeFile(`${directory}/release-check.json`, JSON.stringify(check));
 }
 

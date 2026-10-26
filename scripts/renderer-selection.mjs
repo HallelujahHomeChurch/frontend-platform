@@ -29,7 +29,8 @@ export function versionOnlyChange(before, after) {
 export function filesFor(version) {
   assert.ok(coverage.container.includes(version), 'unknown renderer version');
   return [common, ...(version === 'v7' ? ['scripts/measure-bulletin-layout-v6.test.mjs'] : []),
-    ...(!['default', 'v3', 'v4', 'v5'].includes(version) ? [`scripts/measure-bulletin-layout-${version}.test.mjs`] : [])];
+    ...(!['default', 'v3', 'v4', 'v5'].includes(version) ? [`scripts/measure-bulletin-layout-${version}.test.mjs`] : []),
+    ...(version === 'v11' ? ['scripts/compose-body-v11.test.mjs'] : [])];
 }
 
 export function universe(mode) {
@@ -43,7 +44,9 @@ const unrelated = path => /^(?:README\.md|LICENSE)$/.test(path)
   || /^packages\/(?:account-client|donation-client|donation-ui|hhc-web-client|operations-client|preferences)\//.test(path)
   || /^docs\/[a-zA-Z0-9_/-]+\.md$/.test(path) && !/(?:fixtures?|contracts?|snapshots?|testdata|obs-capture)/i.test(path);
 
-export function affectedCommands(changes, mode) {
+const playerSource = path => /^packages\/ui\/src\/player\//.test(path);
+
+export function affectedCommands(changes, mode, allowPlayer = false) {
   const commands = universe(mode);
   if (!Array.isArray(changes) || changes.length === 0) return new Set(commands.map(c => c.id));
   const affected = new Set();
@@ -51,6 +54,7 @@ export function affectedCommands(changes, mode) {
     // Deleted/renamed files and symlinks require full verification, including formerly unrelated files.
     if (!['A', 'M'].includes(status) || regular !== true || typeof path !== 'string') return new Set(commands.map(c => c.id));
     if (status === 'M' && versionOnly === true && versionMetadata.has(path)) continue;
+    if (allowPlayer && playerSource(path)) continue;
     const readers = commands.filter(c => filesFor(c.version).includes(path));
     if (readers.length) for (const reader of readers) affected.add(reader.id);
     else if (!unrelated(path)) return new Set(commands.map(c => c.id));
@@ -80,14 +84,16 @@ export function changedFiles(base, head) {
 export function createPlan({mode, base, head, changes, forceFull = false, checkpoint, fingerprints}) {
   assert.match(head, shaPattern, 'invalid head');
   const commands = universe(mode);
-  const affected = forceFull ? new Set(commands.map(c => c.id)) : affectedCommands(changes, mode);
+  const playerChanged = Array.isArray(changes) && changes.some(change => playerSource(change.path ?? ''));
+  const affected = forceFull ? new Set(commands.map(c => c.id)) : affectedCommands(changes, mode, true);
   const entries = commands.map(command => {
     let reason = affected.has(command.id) ? 'changed-or-unresolved-input' : 'unaffected-dependencies';
     let tier = affected.has(command.id) ? 'full' : 'smoke';
-    if (mode === 'release' && tier === 'smoke') {
+    if ((mode === 'release' || playerChanged) && tier === 'smoke') {
+      // Never substitute container evidence for a host command.
       const prior = checkpoint?.full?.[command.id];
       const input = fingerprints?.[command.id];
-      if (!prior || !input || prior.runtime !== input.runtime || prior.verification !== input.verification) {
+      if (!prior || !input || !hashPattern.test(input.runtime ?? '') || !hashPattern.test(input.verification ?? '') || prior.runtime !== input.runtime || prior.verification !== input.verification) {
         tier = 'full'; reason = 'missing-or-changed-full-evidence';
       }
     }
@@ -95,6 +101,16 @@ export function createPlan({mode, base, head, changes, forceFull = false, checkp
   });
   const plan = {schema: 1, mode, base: shaPattern.test(base ?? '') ? base : null, head, entries};
   return {...plan, digest: digest(plan)};
+}
+
+// Exercise full and smoke execution without repeating V10's dense-cover suite.
+// Wiring changes already require all 17 full commands in the normal CI lane.
+export function releaseCheckPlan(head, fingerprints) {
+  const full = structuredClone(fingerprints);
+  delete full['container/default'];
+  return createPlan({mode: 'release', base: head, head,
+    changes: [{status: 'M', regular: true, path: 'README.md'}],
+    checkpoint: {full}, fingerprints});
 }
 
 export function validatePlan(plan, mode, head) {

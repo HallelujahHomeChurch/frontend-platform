@@ -1,3 +1,4 @@
+import {createPlan, universe} from './renderer-selection.mjs';
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {createHash} from 'node:crypto';
@@ -7,16 +8,20 @@ import {createRequire} from 'node:module';
 import {chmod, mkdir, mkdtemp, readFile, rm, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {rendererCommands, shards, verifyResults} from './ci-bulletin-renderer.mjs';
+import {rendererCommands, rendererMatrix, shards, verifyResults} from './ci-bulletin-renderer.mjs';
 
 const common = 'scripts/measure-bulletin-layout.test.mjs';
 const coverage = {
-  host: {default: [common], v6: [common, 'scripts/measure-bulletin-layout-v6.test.mjs'], v7: [common, 'scripts/measure-bulletin-layout-v6.test.mjs', 'scripts/measure-bulletin-layout-v7.test.mjs'], v8: [common, 'scripts/measure-bulletin-layout-v8.test.mjs'], v9: [common, 'scripts/measure-bulletin-layout-v9.test.mjs'], v10: [common, 'scripts/measure-bulletin-layout-v10.test.mjs'], v11: [common, 'scripts/measure-bulletin-layout-v11.test.mjs']},
-  container: {default: [common], v3: [common], v4: [common], v5: [common], v6: [common, 'scripts/measure-bulletin-layout-v6.test.mjs'], v7: [common, 'scripts/measure-bulletin-layout-v6.test.mjs', 'scripts/measure-bulletin-layout-v7.test.mjs'], v8: [common, 'scripts/measure-bulletin-layout-v8.test.mjs'], v9: [common, 'scripts/measure-bulletin-layout-v9.test.mjs'], v10: [common, 'scripts/measure-bulletin-layout-v10.test.mjs'], v11: [common, 'scripts/measure-bulletin-layout-v11.test.mjs']},
+  host: {default: [common], v6: [common, 'scripts/measure-bulletin-layout-v6.test.mjs'], v7: [common, 'scripts/measure-bulletin-layout-v6.test.mjs', 'scripts/measure-bulletin-layout-v7.test.mjs'], v8: [common, 'scripts/measure-bulletin-layout-v8.test.mjs'], v9: [common, 'scripts/measure-bulletin-layout-v9.test.mjs'], v10: [common, 'scripts/measure-bulletin-layout-v10.test.mjs'], v11: [common, 'scripts/measure-bulletin-layout-v11.test.mjs', 'scripts/compose-body-v11.test.mjs']},
+  container: {default: [common], v3: [common], v4: [common], v5: [common], v6: [common, 'scripts/measure-bulletin-layout-v6.test.mjs'], v7: [common, 'scripts/measure-bulletin-layout-v6.test.mjs', 'scripts/measure-bulletin-layout-v7.test.mjs'], v8: [common, 'scripts/measure-bulletin-layout-v8.test.mjs'], v9: [common, 'scripts/measure-bulletin-layout-v9.test.mjs'], v10: [common, 'scripts/measure-bulletin-layout-v10.test.mjs'], v11: [common, 'scripts/measure-bulletin-layout-v11.test.mjs', 'scripts/compose-body-v11.test.mjs']},
 };
 
 test('the shards retain every original host and container command exactly once', () => {
   const actual = {host: {}, container: {}};
+  for (const shard of Object.values(shards)) {
+    assert.ok(shard.host.length <= 1, 'do not serialize multiple host suites');
+    assert.equal(shard.container.length, 1, 'one container keeps release shards balanced and nonempty');
+  }
   for (const shard of Object.keys(shards)) for (const command of rendererCommands(shard)) {
     const {runtime, version, files, args, env} = command;
     assert.equal(actual[runtime][version], undefined, `duplicate ${runtime}/${version}`);
@@ -26,7 +31,7 @@ test('the shards retain every original host and container command exactly once',
     assert.deepEqual(env, versionEnv);
     if (runtime === 'host') assert.deepEqual(args, ['--test', ...concurrency, ...files]);
     else {
-      assert.deepEqual(args.slice(0, 13), ['run', '--rm', '--network', 'none', '--read-only', '--memory', '2g', '--cpus', '1', '--tmpfs', '/tmp:rw,noexec,nosuid,size=128m', '-e', 'HHC_BULLETIN_TEMPLATE_DIR=/opt/bulletin-renderer/assets']);
+      assert.deepEqual(args.slice(0, 13), ['run', '--rm', '--network', 'none', '--read-only', '--memory', '2g', '--cpus', '2', '--tmpfs', '/tmp:rw,noexec,nosuid,size=128m', '-e', 'HHC_BULLETIN_TEMPLATE_DIR=/opt/bulletin-renderer/assets']);
       const tail = args.indexOf('--entrypoint');
       assert.deepEqual(args.slice(tail), ['--entrypoint', 'node', 'hhc-bulletin-renderer:verify', '--test', ...concurrency, ...files.map(file => `/opt/bulletin-renderer/${file}`)]);
       for (const file of [...files, 'scripts/testdata']) assert.ok(args.includes(`type=bind,src=${process.cwd()}/${file},dst=/opt/bulletin-renderer/${file},readonly`));
@@ -71,7 +76,7 @@ test('a failed renderer command aborts its shard without recording completed cov
     });
     assert.notEqual(result.status, 0);
     assert.match(result.stdout, /host renderer v10/);
-    assert.doesNotMatch(result.stdout, /host renderer default/);
+    assert.doesNotMatch(result.stdout, /container renderer v4/);
     assert.equal(existsSync(join(directory, 'results')), false);
   } finally {await rm(directory, {recursive: true, force: true});}
 });
@@ -123,20 +128,43 @@ test('release gate rejects missing, duplicate, wrong-mode, stale-run and wrong-v
 });
 
 
+test('immutable mutation validation remains required for code and skipped only for proven docs', () => {
+  const {parse} = createRequire(new URL('../packages/hhc-web-client/package.json', import.meta.url))('yaml');
+  const ci = parse(readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8'));
+  assert.equal(ci.jobs.immutable.needs, 'agent_docs');
+  assert.ok(ci.jobs.immutable.steps.some(step => step.run === 'corepack pnpm build'));
+  assert.equal(ci.jobs.immutable.steps.filter(step => step.run === 'node --test scripts/verify-bulletin-renderer.test.mjs').length, 1);
+  assert.ok(ci.jobs.prepare.steps.some(step => step.run?.includes('node scripts/verify-bulletin-renderer-v11.mjs --base-ref origin/main')));
+  const gate = ci.jobs.verify.steps.find(step => step.name === 'Require a proven classification').run;
+  const execute = (docs, immutable, classification = 'success') => {
+    const values = {'needs.agent_docs.result': classification, 'needs.agent_docs.outputs.docs_only': docs,
+      'needs.immutable.result': immutable, 'needs.prepare.result': docs === 'true' ? 'skipped' : 'success',
+      'needs.renderer.result': docs === 'true' ? 'skipped' : 'success'};
+    const run = gate.replace(/\$\{\{ (.*?) \}\}/g, (_, key) => values[key] ?? '');
+    return spawnSync('bash', ['-e', '-c', run]).status;
+  };
+  assert.equal(execute('false', 'success'), 0);
+  for (const result of ['failure', 'cancelled', 'skipped', '']) assert.notEqual(execute('false', result), 0);
+  assert.equal(execute('true', 'skipped'), 0);
+  assert.notEqual(execute('true', 'success'), 0);
+  assert.notEqual(execute('true', 'skipped', 'failure'), 0);
+});
+
+
 test('CI and release use the same non-publishing shard runner and release cannot bypass verification', () => {
   const {parse} = createRequire(new URL('../packages/hhc-web-client/package.json', import.meta.url))('yaml');
   const workflow = name => parse(readFileSync(new URL(`../.github/workflows/${name}.yml`, import.meta.url), 'utf8'));
   const ci = workflow('ci');
   const release = workflow('release');
   const runner = workflow('renderer');
-  for (const job of ['prepare', 'renderer']) assert.match(ci.jobs[job].if, /!cancelled\(\)/, 'superseded PRs must stop expensive jobs');
+  for (const job of ['immutable', 'prepare', 'renderer']) assert.match(ci.jobs[job].if, /!cancelled\(\)/, 'superseded PRs must stop expensive jobs');
   assert.deepEqual(release.on, {push: {tags: ['v*']}});
   for (const [mode, caller] of [['ci', ci], ['release', release]]) {
     assert.deepEqual(caller.permissions, {contents: 'read', actions: 'read'});
     assert.equal(caller.jobs.renderer.uses, './.github/workflows/renderer.yml');
     assert.equal(caller.jobs.renderer.with.mode, mode);
     assert.deepEqual(caller.jobs.renderer.needs, mode === 'ci' ? ['agent_docs', 'prepare'] : 'prepare');
-    assert.deepEqual(caller.jobs.verify.needs, mode === 'ci' ? ['agent_docs', 'prepare', 'renderer', 'release-verification'] : ['prepare', 'renderer']);
+    assert.deepEqual(caller.jobs.verify.needs, mode === 'ci' ? ['agent_docs', 'immutable', 'prepare', 'renderer'] : ['prepare', 'renderer']);
     assert.equal(caller.jobs.verify.if, '${{ always() }}');
     assert.equal(caller.jobs.renderer.secrets, undefined);
     const receiptsDownload = caller.jobs.verify.steps.find(step => step.uses?.startsWith('actions/download-artifact@'));
@@ -145,13 +173,28 @@ test('CI and release use the same non-publishing shard runner and release cannot
       if (name !== 'publish') assert.notEqual(job.permissions?.packages, 'write');
     }
   }
+  assert.equal(ci.jobs['release-verification'], undefined, 'release checks must reuse prepared runners');
+  assert.equal(ci.jobs.renderer.with['verify-release'], "${{ github.event_name == 'pull_request' && needs.prepare.outputs.verify-release == 'true' }}");
+  assert.equal(release.jobs.renderer.with['verify-release'], undefined);
+  const extra = runner.jobs.renderer.steps.find(step => step.name === 'Verify release mode on the same prepared shard');
+  assert.equal(extra.if, "inputs.mode == 'ci' && inputs.verify-release");
+  assert.equal(extra.env.RENDERER_PLAN, 'artifacts/renderer-selection/release-check.json');
+  assert.match(extra.run, /release-results release/);
+  const extraUpload = runner.jobs.renderer.steps.find(step => step.with?.name?.startsWith('renderer-result-release-check-'));
+  assert.equal(extraUpload.if, extra.if);
+  assert.equal(extraUpload.with.path, 'release-results/*.json');
+  assert.equal(extraUpload.with['if-no-files-found'], 'error');
+  const extraGate = ci.jobs.verify.steps.find(step => step.name === 'Require actual release-mode verification without publication');
+  assert.equal(extraGate.env.RENDERER_PLAN, extra.env.RENDERER_PLAN);
+  assert.match(extraGate.env.CI_NEEDS, /toJSON\(needs.renderer\)/);
+  assert.match(extraGate.run, /verify-results release-results release$/);
   assert.deepEqual(release.jobs.publish.needs, ['prepare', 'verify']);
   assert.equal(release.jobs.publish.if, undefined);
   assert.deepEqual(release.jobs.publish.permissions, {contents: 'read', packages: 'write', actions: 'read'});
   assert.deepEqual(runner.permissions, {contents: 'read'});
   assert.equal(runner.on.workflow_call.secrets, undefined);
   assert.equal(runner.jobs.renderer.strategy['fail-fast'], false);
-  assert.equal(runner.jobs.renderer.strategy['max-parallel'], 3);
+  assert.equal(runner.jobs.renderer.strategy['max-parallel'], 10);
   assert.equal(runner.jobs.renderer.permissions?.packages, undefined);
 });
 
@@ -172,7 +215,7 @@ if (process.env.FAIL_RENDERER === '1') process.exit(7);
     const failed = spawnSync(process.execPath, [script, 'run', 'balanced-b', 'results', 'release'], {cwd: directory, encoding: 'utf8', env: {...env, FAIL_RENDERER: '1'}});
     assert.notEqual(failed.status, 0);
     assert.match(failed.stdout, /container renderer v10/);
-    assert.doesNotMatch(failed.stdout, /container renderer v5/);
+    assert.doesNotMatch(failed.stdout, /container renderer v9/);
     assert.equal(existsSync(join(directory, 'results')), false);
     await rm(env.COMMAND_LOG);
     for (const shard of Object.keys(shards)) {
@@ -181,13 +224,18 @@ if (process.env.FAIL_RENDERER === '1') process.exit(7);
     }
     const commands = (await readFile(env.COMMAND_LOG, 'utf8')).trim().split('\n').map(line => JSON.parse(line));
     assert.equal(commands.length, 10);
-    const gate = spawnSync(process.execPath, [script, 'verify-results', 'results', 'release'], {cwd: directory, encoding: 'utf8', env: {...env, CI_NEEDS: JSON.stringify(needs)}});
+    const gate = spawnSync(process.execPath, [script, 'verify-results', 'results', 'release'], {cwd: directory, encoding: 'utf8', env: {...env, CI_NEEDS: JSON.stringify(needs), RENDERER_VERIFIED_RECEIPTS: 'verified-receipts.json'}});
     assert.equal(gate.status, 0, gate.stderr);
+    const bundle = JSON.parse(await readFile(join(directory, 'verified-receipts.json'), 'utf8'));
+    assert.equal(bundle.receipts.length, 10);
+    assert.equal(bundle.runAttempt, env.GITHUB_RUN_ATTEMPT);
+    await rm(join(directory, 'verified-receipts.json'));
     await mkdir(join(directory, 'results', 'duplicate-artifact'));
     await writeFile(join(directory, 'results', 'duplicate-artifact', 'balanced-a.json'), await readFile(join(directory, 'results', 'balanced-a', 'balanced-a.json')));
-    const duplicate = spawnSync(process.execPath, [script, 'verify-results', 'results', 'release'], {cwd: directory, encoding: 'utf8', env: {...env, CI_NEEDS: JSON.stringify(needs)}});
+    const duplicate = spawnSync(process.execPath, [script, 'verify-results', 'results', 'release'], {cwd: directory, encoding: 'utf8', env: {...env, CI_NEEDS: JSON.stringify(needs), RENDERER_VERIFIED_RECEIPTS: 'verified-receipts.json'}});
     assert.notEqual(duplicate.status, 0);
     assert.match(duplicate.stderr, /duplicate shard coverage/);
+    assert.equal(existsSync(join(directory, 'verified-receipts.json')), false, 'failed coverage must never authorize publication');
   } finally {await rm(directory, {recursive: true, force: true});}
 });
 
@@ -217,10 +265,74 @@ test('both shard and publisher restore reject either corrupted tar before extrac
       await writeFile(corrupted === 'workspace' ? workspace : image, 'corrupted');
       const job = index === 0 ? workflow.jobs.renderer : workflow.jobs.publish;
       const restore = job.steps.find(step => step.name === 'Verify and restore the prepared workspace and image');
-      const result = spawnSync('bash', ['-e', '-o', 'pipefail', '-c', restore.run], {cwd: directory, encoding: 'utf8', env});
+      // The network/ZIP provenance layer is exercised by test_restore_release_publication.py.
+      // Here its downloaded files are the fixture, and the actual post-download
+      // content gate must still stop both tar extraction and Docker loading.
+      const contentGate = restore.run.replace('python3 scripts/restore-release-publication.py', ':');
+      const result = spawnSync('bash', ['-e', '-o', 'pipefail', '-c', contentGate], {cwd: directory, encoding: 'utf8', env});
       assert.notEqual(result.status, 0);
       assert.match(result.stdout + result.stderr, /FAILED/);
       assert.equal(existsSync(marker), false, 'restore reached extraction or image loading');
     } finally {await rm(directory, {recursive: true, force: true});}
   }
+});
+
+
+test('physical smoke grouping preserves all logical commands and browser requirements', () => {
+  const fingerprint = {runtime: 'a'.repeat(64), verification: 'b'.repeat(64)};
+  for (const mode of ['ci', 'release']) {
+    const fingerprints = Object.fromEntries(universe(mode).map(entry => [entry.id, fingerprint]));
+    const plan = createPlan({mode, head: sha, base: sha,
+      changes: [{status: 'M', regular: true, path: 'README.md'}], checkpoint: {full: fingerprints}, fingerprints});
+    assert.ok(plan.entries.every(entry => entry.tier === 'smoke'));
+    const compact = rendererMatrix(mode, plan);
+    assert.equal(compact.include.length, 2);
+    const members = compact.include.flatMap(group => group.members.split(' '));
+    assert.deepEqual(members, Object.keys(shards));
+    assert.deepEqual(members.flatMap(name => rendererCommands(name, mode, plan)),
+      Object.keys(shards).flatMap(name => rendererCommands(name, mode, plan)));
+    assert.ok(compact.include.every(group => group.host === (mode === 'ci')));
+    // Wiring verification contains a full release command: never consolidate it.
+    assert.equal(rendererMatrix(mode, plan, true).include.length, 10);
+    const full = createPlan({mode, head: sha, base: sha, changes: undefined});
+    assert.equal(rendererMatrix(mode, full).include.length, 10);
+    assert.equal(rendererMatrix(mode).include.length, 10);
+    const malformed = structuredClone(plan); malformed.entries.pop();
+    assert.throws(() => rendererMatrix(mode, malformed));
+    const duplicate = structuredClone(plan); duplicate.entries[1] = duplicate.entries[0];
+    assert.throws(() => rendererMatrix(mode, duplicate));
+  }
+  const matrix = rendererMatrix().include;
+  assert.deepEqual(matrix.filter(group => !group.host).map(group => group.shard), ['balanced-c', 'balanced-d', 'balanced-h']);
+});
+
+test('browser setup follows scheduled host work and both callers pass verified plans', () => {
+  const {parse} = createRequire(new URL('../packages/hhc-web-client/package.json', import.meta.url))('yaml');
+  const workflow = name => parse(readFileSync(new URL(`../.github/workflows/${name}.yml`, import.meta.url), 'utf8'));
+  const runner = workflow('renderer');
+  const install = runner.jobs.renderer.steps.find(step => step.run?.includes('playwright install'));
+  assert.equal(install.if, "inputs.mode == 'ci' && matrix.host");
+  assert.equal(runner.jobs.renderer['runs-on'], 'ubuntu-24.04');
+  assert.equal(install.run, 'corepack pnpm exec playwright install --only-shell chromium');
+  for (const mode of ['ci', 'release']) {
+    const bundle = workflow(mode).jobs.prepare.steps.find(step => step.id === 'bundle');
+    assert.equal(bundle.env.RENDERER_MODE, mode);
+    assert.equal(bundle.env.RENDERER_PLAN, `artifacts/renderer-selection/${mode}.json`);
+  }
+  assert.match(workflow('ci').jobs.prepare.steps.find(step => step.id === 'bundle').env.VERIFY_RELEASE, /steps.selection.outputs.verify-release/);
+});
+
+
+test('a grouped runner stops at its failed member; missing receipts remain rejected', () => {
+  const {parse} = createRequire(new URL('../packages/hhc-web-client/package.json', import.meta.url))('yaml');
+  const runner = parse(readFileSync(new URL('../.github/workflows/renderer.yml', import.meta.url), 'utf8'));
+  for (const name of ['Measure with pinned Chromium and verified producer fonts', 'Verify release mode on the same prepared shard']) {
+    const step = runner.jobs.renderer.steps.find(step => step.name === name);
+    const run = step.run.replace(/node scripts\/ci-bulletin-renderer.mjs run[^\n]+/, 'printf "%s\\n" "$shard"; test "$shard" != balanced-b');
+    const result = spawnSync('bash', ['-e', '-c', run], {encoding: 'utf8', env: {...process.env, RENDERER_SHARDS: 'balanced-a balanced-b balanced-c'}});
+    assert.notEqual(result.status, 0);
+    assert.deepEqual(result.stdout.trim().split('\n'), ['balanced-a', 'balanced-b']);
+  }
+  assert.throws(() => verifyResults(needs, results().slice(0, 1), identity), /shard coverage/);
+  assert.throws(() => verifyResults(needs, [...results(), results()[0]], identity), /shard coverage/);
 });

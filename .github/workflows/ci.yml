@@ -33,6 +33,22 @@ jobs:
           HEAD_SHA: ${{ github.sha }}
         run: python3 .github/scripts/ci-agent-docs.py "$EVENT_NAME" "$BASE_SHA" "$HEAD_SHA" >> "$GITHUB_OUTPUT"
 
+  immutable:
+    needs: agent_docs
+    if: ${{ !cancelled() && (needs.agent_docs.result != 'success' || needs.agent_docs.outputs.docs_only != 'true') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22.23.4'
+          package-manager-cache: false
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+      - run: corepack pnpm build
+      - name: Verify immutable mutation and removal cases
+        run: node --test scripts/verify-bulletin-renderer.test.mjs
+
   prepare:
     needs: agent_docs
     if: ${{ !cancelled() && (needs.agent_docs.result != 'success' || needs.agent_docs.outputs.docs_only != 'true') }}
@@ -65,12 +81,12 @@ jobs:
       - run: corepack pnpm build
       - name: Verify renderer CI coverage and aggregate gate
         run: |
-          node --test scripts/ci-bulletin-renderer.test.mjs scripts/renderer-selection.test.mjs scripts/seal-renderer-checkpoint.test.mjs
+          node --test scripts/ci-bulletin-renderer.test.mjs scripts/renderer-selection.test.mjs scripts/seal-renderer-checkpoint.test.mjs scripts/publish-packages.test.mjs scripts/publish-renderer-image.test.mjs
           python3 -m unittest discover -s scripts -p test_renderer_checkpoint.py
+          python3 -m unittest discover -s scripts -p test_restore_release_publication.py
       - name: Verify immutable bulletin renderer
         run: |
           node scripts/verify-bulletin-renderer-v11.mjs --base-ref origin/main
-          node --test scripts/verify-bulletin-renderer.test.mjs
           python3 -m unittest discover -s scripts -p test_bulletin_corpus.py
       - name: Package the verified renderer once
         env:
@@ -88,7 +104,8 @@ jobs:
       - run: corepack pnpm --filter @hallelujahhomechurch/donation-client check:generated
       - run: corepack pnpm --filter @hallelujahhomechurch/operations-client check:generated
       - run: corepack pnpm check:packages
-      - run: corepack pnpm pack:packages
+      - name: Pack reproducible release artifacts
+        run: node --test scripts/pack-packages.test.mjs
       - run: corepack pnpm test:consumers
       - name: Restore trusted release evidence or require full verification
         env:
@@ -102,6 +119,10 @@ jobs:
         run: node scripts/prepare-renderer-selection.mjs
       - name: Bundle immutable inputs for the same-run shards
         id: bundle
+        env:
+          RENDERER_MODE: ci
+          RENDERER_PLAN: artifacts/renderer-selection/ci.json
+          VERIFY_RELEASE: ${{ github.event_name == 'pull_request' && steps.selection.outputs.verify-release == 'true' }}
         run: |
           tar -cf "$RUNNER_TEMP/renderer-workspace.tar" node_modules packages artifacts/bulletin-renderer/assets artifacts/renderer-selection
           docker save hhc-bulletin-renderer:verify -o "$RUNNER_TEMP/renderer-image.tar"
@@ -131,32 +152,25 @@ jobs:
     uses: ./.github/workflows/renderer.yml
     with:
       mode: ci
-      matrix: ${{ needs.prepare.outputs.matrix }}
-      workspace-sha: ${{ needs.prepare.outputs.workspace-sha }}
-      image-sha: ${{ needs.prepare.outputs.image-sha }}
-
-  release-verification:
-    needs: [agent_docs, prepare, renderer]
-    if: ${{ github.event_name == 'pull_request' && needs.prepare.outputs.verify-release == 'true' && needs.renderer.result == 'success' }}
-    uses: ./.github/workflows/renderer.yml
-    with:
-      mode: release
-      selection: release-check
+      verify-release: ${{ github.event_name == 'pull_request' && needs.prepare.outputs.verify-release == 'true' }}
       matrix: ${{ needs.prepare.outputs.matrix }}
       workspace-sha: ${{ needs.prepare.outputs.workspace-sha }}
       image-sha: ${{ needs.prepare.outputs.image-sha }}
 
   verify:
     if: ${{ always() }}
-    needs: [agent_docs, prepare, renderer, release-verification]
+    needs: [agent_docs, immutable, prepare, renderer]
     runs-on: ubuntu-latest
     steps:
       - name: Require a proven classification
         run: |
           test "${{ needs.agent_docs.result }}" = success
           if [ "${{ needs.agent_docs.outputs.docs_only }}" = true ]; then
+            test "${{ needs.immutable.result }}" = skipped
             test "${{ needs.prepare.result }}" = skipped
             test "${{ needs.renderer.result }}" = skipped
+          else
+            test "${{ needs.immutable.result }}" = success
           fi
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: needs.agent_docs.outputs.docs_only != 'true'
@@ -194,5 +208,5 @@ jobs:
           RENDERER_PLAN: artifacts/renderer-selection/release-check.json
           CI_NEEDS: >-
             {"prepare":${{ toJSON(needs.prepare) }},
-            "renderer":${{ toJSON(needs.release-verification) }}}
+            "renderer":${{ toJSON(needs.renderer) }}}
         run: node scripts/ci-bulletin-renderer.mjs verify-results release-results release

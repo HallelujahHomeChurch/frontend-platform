@@ -3,14 +3,36 @@ import {execFileSync} from 'node:child_process';
 import {mkdir, readFile, readdir, writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
-import {loadPlan, smokeCases, verifySmoke} from './renderer-selection.mjs';
+import {loadPlan, smokeCases, validatePlan, verifySmoke} from './renderer-selection.mjs';
 
-// Balance complete suites by measured CI time; keep the same three runners.
+// Balance full commands plus release checks using V11 run 40189910007.
+// One container per shard keeps every standalone release shard meaningful.
 export const shards = {
-  'balanced-a': {host: ['v10', 'default'], container: ['v11', 'v7', 'v6']},
-  'balanced-b': {host: ['v8', 'v6'], container: ['v10', 'v5', 'v4', 'v3']},
-  'balanced-c': {host: ['v11', 'v7', 'v9'], container: ['v8', 'v9', 'default']},
+  'balanced-a': {host: ['v10'], container: ['v4']},
+  'balanced-b': {host: ['v7'], container: ['v10']},
+  'balanced-c': {host: [], container: ['default']},
+  'balanced-d': {host: [], container: ['v8']},
+  'balanced-e': {host: ['default'], container: ['v7']},
+  'balanced-f': {host: ['v6'], container: ['v6']},
+  'balanced-g': {host: ['v11'], container: ['v3']},
+  'balanced-h': {host: [], container: ['v11']},
+  'balanced-i': {host: ['v8'], container: ['v5']},
+  'balanced-j': {host: ['v9'], container: ['v9']},
 };
+
+// Physical runners may share cheap smoke work; logical receipts stay unchanged.
+export function rendererMatrix(mode = 'ci', plan, verifyRelease = false) {
+  assert.ok(['ci', 'release'].includes(mode), 'unknown renderer mode');
+  if (plan) validatePlan(plan, mode, plan.head);
+  const names = Object.keys(shards);
+  const compact = plan && !verifyRelease && plan.entries.every(entry => entry.tier === 'smoke');
+  const groups = compact ? [names.slice(0, 5), names.slice(5)] : names.map(name => [name]);
+  return {include: groups.map((members, index) => ({
+    shard: compact ? `smoke-${index + 1}` : members[0],
+    members: members.join(' '),
+    host: mode === 'ci' && members.some(name => shards[name].host.length > 0),
+  }))};
+}
 
 export function rendererCommands(shard, mode = 'ci', plan) {
   assert.ok(['ci', 'release'].includes(mode), 'unknown renderer mode');
@@ -20,12 +42,13 @@ export function rendererCommands(shard, mode = 'ci', plan) {
     if (version === 'v7') files.push('scripts/measure-bulletin-layout-v6.test.mjs');
     const modern = !['default', 'v3', 'v4', 'v5'].includes(version);
     if (modern) files.push(`scripts/measure-bulletin-layout-${version}.test.mjs`);
+    if (version === 'v11') files.push('scripts/compose-body-v11.test.mjs');
     const env = version === 'default' ? {} : {[`HHC_TEST_RENDERER_${version.toUpperCase()}`]: '1'};
     const tier = plan?.entries.find(entry => entry.id === `${runtime}/${version}`)?.tier ?? 'full';
     if (tier === 'smoke') files.splice(1);
     const testArgs = ['--test', ...(tier === 'smoke' ? ['--test-reporter=tap', `--test-name-pattern=^(${smokeCases.join('|')})$`] : []), ...(modern ? ['--test-concurrency=1'] : [])];
     const args = runtime === 'host' ? [...testArgs, ...files] : [
-      'run', '--rm', '--network', 'none', '--read-only', '--memory', '2g', '--cpus', '1',
+      'run', '--rm', '--network', 'none', '--read-only', '--memory', '2g', '--cpus', '2',
       '--tmpfs', '/tmp:rw,noexec,nosuid,size=128m',
       '-e', 'HHC_BULLETIN_TEMPLATE_DIR=/opt/bulletin-renderer/assets',
       ...Object.entries(env).flatMap(([key, value]) => ['-e', `${key}=${value}`]),
@@ -65,10 +88,10 @@ export function verifyResults(needs, results, identity, plan) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const [action, shardOrDirectory, resultsDirectory, runMode = 'ci'] = process.argv.slice(2);
-  const mode = action === 'verify-results' ? resultsDirectory ?? 'ci' : runMode;
+  const mode = action === 'matrix' ? process.env.RENDERER_MODE ?? 'ci' : action === 'verify-results' ? resultsDirectory ?? 'ci' : runMode;
   const identity = {sha: process.env.GITHUB_SHA, runId: process.env.GITHUB_RUN_ID, runAttempt: process.env.GITHUB_RUN_ATTEMPT, mode};
   const plan = process.env.RENDERER_PLAN ? loadPlan(process.env.RENDERER_PLAN, mode, identity.sha) : undefined;
-  if (action === 'matrix') console.log(JSON.stringify({shard: Object.keys(shards)}));
+  if (action === 'matrix') console.log(JSON.stringify(rendererMatrix(mode, plan, process.env.VERIFY_RELEASE === 'true')));
   else if (action === 'run') {
     assert.ok(resultsDirectory, 'results directory is required');
     assert.ok(process.env.HHC_BULLETIN_TEMPLATE_DIR, 'verified template assets are required');
@@ -91,5 +114,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     const files = await readdir(shardOrDirectory, {recursive: true, withFileTypes: true});
     const results = await Promise.all(files.filter(file => file.isFile()).map(async file => JSON.parse(await readFile(resolve(file.parentPath, file.name), 'utf8'))));
     verifyResults(JSON.parse(process.env.CI_NEEDS), results, identity, plan);
+    if (process.env.RENDERER_VERIFIED_RECEIPTS) {
+      assert.equal(mode, 'release', 'only release receipts can authorize publication');
+      await writeFile(process.env.RENDERER_VERIFIED_RECEIPTS, JSON.stringify({head: identity.sha, runId: identity.runId, runAttempt: identity.runAttempt, receipts: results}));
+    }
   } else throw new Error('usage: ci-bulletin-renderer.mjs matrix | run SHARD RESULTS_DIRECTORY [ci|release] | verify-results RESULTS_DIRECTORY [ci|release]');
 }
