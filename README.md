@@ -404,3 +404,5 @@ then pin real registry versions/lockfiles in Admin and Website before activating
 V11 production output. Local tarball tests are candidate evidence only.
 
 CI builds the workspace once in `prepare`, then runs immutable renderer mutation/removal checks before packaging artifacts. The required `immutable` job remains a fail-closed gate on that preparation; failed, cancelled or unexpectedly skipped preparation cannot pass it. Proven documentation-only changes retain their existing classification path. Version-tag package/image publication and renderer coverage are unchanged.
+
+CI and tag-release preparation already build all packages, so they invoke the exact recursive `test:run` command directly instead of repeating the local root `pretest` builds. Policy tests pin that command, the build-only pretest and absence of posttest; changes to those hooks require an explicit workflow review. Local `pnpm test` remains unchanged.

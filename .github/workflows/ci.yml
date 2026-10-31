@@ -93,7 +93,8 @@ jobs:
           node scripts/package-bulletin-renderer.mjs artifacts/bulletin-renderer "$HHC_BULLETIN_TEMPLATE_DIR"
           docker build -f tools/bulletin-renderer/Dockerfile -t hhc-bulletin-renderer:verify artifacts/bulletin-renderer
           node --test scripts/renderer-runtime-fingerprint.test.mjs
-      - run: corepack pnpm test
+      # The workspace is already built; local pretest would rebuild three packages.
+      - run: corepack pnpm -r --if-present test:run
       - run: corepack pnpm lint
       - run: corepack pnpm --filter @hallelujahhomechurch/hhc-web-client check:generated
       - run: corepack pnpm --filter @hallelujahhomechurch/hhc-web-client check:bulletin

@@ -350,3 +350,22 @@ test('a grouped runner stops at its failed member; missing receipts remain rejec
   assert.throws(() => verifyResults(needs, results().slice(0, 1), identity), /shard coverage/);
   assert.throws(() => verifyResults(needs, [...results(), results()[0]], identity), /shard coverage/);
 });
+
+
+test('prepared workflows run the same package tests without repeating local pretest builds', () => {
+  const {parse} = createRequire(new URL('../packages/hhc-web-client/package.json', import.meta.url))('yaml');
+  const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.equal(manifest.scripts.test, 'pnpm -r --if-present test:run');
+  assert.equal(manifest.scripts.pretest, 'pnpm --filter @hallelujahhomechurch/account-client build && pnpm --filter @hallelujahhomechurch/donation-ui^... build');
+  assert.equal(manifest.scripts.posttest, undefined);
+  for (const name of ['ci', 'release']) {
+    const workflow = parse(readFileSync(new URL(`../.github/workflows/${name}.yml`, import.meta.url), 'utf8'));
+    const steps = workflow.jobs.prepare.steps;
+    const build = steps.findIndex(step => step.run === 'corepack pnpm build');
+    const tests = steps.findIndex(step => step.run === 'corepack pnpm -r --if-present test:run');
+    assert.ok(build >= 0 && tests > build);
+    assert.equal(steps.filter(step => step.run === 'corepack pnpm test').length, 0);
+    assert.equal(steps[tests].if, undefined);
+    assert.equal(steps[tests]['continue-on-error'], undefined);
+  }
+});
