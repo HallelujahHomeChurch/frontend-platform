@@ -402,3 +402,5 @@ placeholder; member access and publication still require complete verified bytes
 Publish a reviewed coordinated package version through the existing tag workflow,
 then pin real registry versions/lockfiles in Admin and Website before activating
 V11 production output. Local tarball tests are candidate evidence only.
+
+CI builds the workspace once in `prepare`, then runs immutable renderer mutation/removal checks before packaging artifacts. The required `immutable` job remains a fail-closed gate on that preparation; failed, cancelled or unexpectedly skipped preparation cannot pass it. Proven documentation-only changes retain their existing classification path. Version-tag package/image publication and renderer coverage are unchanged.

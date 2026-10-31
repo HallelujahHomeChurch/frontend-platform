@@ -131,9 +131,23 @@ test('release gate rejects missing, duplicate, wrong-mode, stale-run and wrong-v
 test('immutable mutation validation remains required for code and skipped only for proven docs', () => {
   const {parse} = createRequire(new URL('../packages/hhc-web-client/package.json', import.meta.url))('yaml');
   const ci = parse(readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8'));
-  assert.equal(ci.jobs.immutable.needs, 'agent_docs');
-  assert.ok(ci.jobs.immutable.steps.some(step => step.run === 'corepack pnpm build'));
-  assert.equal(ci.jobs.immutable.steps.filter(step => step.run === 'node --test scripts/verify-bulletin-renderer.test.mjs').length, 1);
+  assert.deepEqual(ci.jobs.immutable.needs, ['agent_docs', 'prepare']);
+  assert.equal(ci.jobs.immutable.steps.filter(step => step.run?.includes('pnpm build')).length, 0);
+  assert.equal(ci.jobs.prepare.steps.filter(step => step.run === 'corepack pnpm build').length, 1);
+  assert.equal(ci.jobs.prepare.steps.filter(step => step.run === 'node --test scripts/verify-bulletin-renderer.test.mjs').length, 1);
+  const steps = ci.jobs.prepare.steps;
+  const build = steps.findIndex(step => step.run === 'corepack pnpm build');
+  const mutation = steps.findIndex(step => step.run === 'node --test scripts/verify-bulletin-renderer.test.mjs');
+  const bundle = steps.findIndex(step => step.id === 'bundle');
+  assert.ok(build < mutation && mutation < bundle);
+  assert.equal(steps[mutation].if, undefined);
+  assert.equal(steps[mutation]['continue-on-error'], undefined);
+  assert.match(ci.jobs.immutable.if, /always\(\)/);
+  const prepareGate = ci.jobs.immutable.steps[0].run;
+  for (const result of ['success', 'failure', 'cancelled', 'skipped', '']) {
+    const check = spawnSync('bash', ['-e', '-c', prepareGate], {env: {...process.env, PREPARE_RESULT: result}});
+    assert.equal(check.status === 0, result === 'success');
+  }
   assert.ok(ci.jobs.prepare.steps.some(step => step.run?.includes('node scripts/verify-bulletin-renderer-v11.mjs --base-ref origin/main')));
   const gate = ci.jobs.verify.steps.find(step => step.name === 'Require a proven classification').run;
   const execute = (docs, immutable, classification = 'success') => {
@@ -157,7 +171,7 @@ test('CI and release use the same non-publishing shard runner and release cannot
   const ci = workflow('ci');
   const release = workflow('release');
   const runner = workflow('renderer');
-  for (const job of ['immutable', 'prepare', 'renderer']) assert.match(ci.jobs[job].if, /!cancelled\(\)/, 'superseded PRs must stop expensive jobs');
+  for (const job of ['prepare', 'renderer']) assert.match(ci.jobs[job].if, /!cancelled\(\)/, 'superseded PRs must stop expensive jobs');
   assert.deepEqual(release.on, {push: {tags: ['v*']}});
   for (const [mode, caller] of [['ci', ci], ['release', release]]) {
     assert.deepEqual(caller.permissions, {contents: 'read', actions: 'read'});
