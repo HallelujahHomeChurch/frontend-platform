@@ -131,9 +131,31 @@ test('release gate rejects missing, duplicate, wrong-mode, stale-run and wrong-v
 test('immutable mutation validation remains required for code and skipped only for proven docs', () => {
   const {parse} = createRequire(new URL('../packages/hhc-web-client/package.json', import.meta.url))('yaml');
   const ci = parse(readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8'));
-  assert.equal(ci.jobs.immutable.needs, 'agent_docs');
-  assert.ok(ci.jobs.immutable.steps.some(step => step.run === 'corepack pnpm build'));
-  assert.equal(ci.jobs.immutable.steps.filter(step => step.run === 'node --test scripts/verify-bulletin-renderer.test.mjs').length, 1);
+  assert.deepEqual(ci.jobs.immutable.needs, ['agent_docs', 'prepare']);
+  assert.equal(ci.jobs.immutable.steps.filter(step => step.run?.includes('pnpm build')).length, 0);
+  assert.equal(ci.jobs.prepare.steps.filter(step => step.run === 'corepack pnpm build').length, 1);
+  assert.equal(ci.jobs.prepare.steps.filter(step => step.run === 'node --test scripts/verify-bulletin-renderer.test.mjs').length, 0);
+  const steps = ci.jobs.immutable.steps;
+  const checkout = steps.findIndex(step => step.uses?.startsWith('actions/checkout@'));
+  const download = steps.findIndex(step => step.uses?.startsWith('actions/download-artifact@'));
+  const restore = steps.findIndex(step => step.name === 'Verify and restore the prepared workspace');
+  const mutation = steps.findIndex(step => step.run === 'node --test scripts/verify-bulletin-renderer.test.mjs');
+  assert.ok(0 < checkout && checkout < download && download < restore && restore < mutation);
+  assert.equal(steps[checkout].with.ref, '${{ github.sha }}');
+  assert.equal(steps[download].with.name, 'renderer-inputs-${{ github.sha }}-${{ github.run_attempt }}');
+  assert.equal(steps[download].with['run-id'], undefined);
+  assert.equal(steps[restore].env.WORKSPACE_SHA, '${{ needs.prepare.outputs.workspace-sha }}');
+  assert.ok(steps[restore].run.indexOf('sha256sum --check --strict') < steps[restore].run.indexOf('tar -xf'));
+  for (const step of steps) {
+    assert.equal(step.if, undefined);
+    assert.equal(step['continue-on-error'], undefined);
+  }
+  assert.match(ci.jobs.immutable.if, /always\(\)/);
+  const prepareGate = ci.jobs.immutable.steps[0].run;
+  for (const result of ['success', 'failure', 'cancelled', 'skipped', '']) {
+    const check = spawnSync('bash', ['-e', '-c', prepareGate], {env: {...process.env, PREPARE_RESULT: result}});
+    assert.equal(check.status === 0, result === 'success');
+  }
   assert.ok(ci.jobs.prepare.steps.some(step => step.run?.includes('node scripts/verify-bulletin-renderer-v11.mjs --base-ref origin/main')));
   const gate = ci.jobs.verify.steps.find(step => step.name === 'Require a proven classification').run;
   const execute = (docs, immutable, classification = 'success') => {
@@ -157,7 +179,7 @@ test('CI and release use the same non-publishing shard runner and release cannot
   const ci = workflow('ci');
   const release = workflow('release');
   const runner = workflow('renderer');
-  for (const job of ['immutable', 'prepare', 'renderer']) assert.match(ci.jobs[job].if, /!cancelled\(\)/, 'superseded PRs must stop expensive jobs');
+  for (const job of ['prepare', 'renderer']) assert.match(ci.jobs[job].if, /!cancelled\(\)/, 'superseded PRs must stop expensive jobs');
   assert.deepEqual(release.on, {push: {tags: ['v*']}});
   for (const [mode, caller] of [['ci', ci], ['release', release]]) {
     assert.deepEqual(caller.permissions, {contents: 'read', actions: 'read'});
@@ -335,4 +357,53 @@ test('a grouped runner stops at its failed member; missing receipts remain rejec
   }
   assert.throws(() => verifyResults(needs, results().slice(0, 1), identity), /shard coverage/);
   assert.throws(() => verifyResults(needs, [...results(), results()[0]], identity), /shard coverage/);
+});
+
+
+test('prepared workflows run the same package tests without repeating local pretest builds', () => {
+  const {parse} = createRequire(new URL('../packages/hhc-web-client/package.json', import.meta.url))('yaml');
+  const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.equal(manifest.scripts.test, 'pnpm -r --if-present test:run');
+  assert.equal(manifest.scripts.pretest, 'pnpm --filter @hallelujahhomechurch/account-client build && pnpm --filter @hallelujahhomechurch/donation-ui^... build');
+  assert.equal(manifest.scripts.posttest, undefined);
+  for (const name of ['ci', 'release']) {
+    const workflow = parse(readFileSync(new URL(`../.github/workflows/${name}.yml`, import.meta.url), 'utf8'));
+    const steps = workflow.jobs.prepare.steps;
+    const build = steps.findIndex(step => step.run === 'corepack pnpm build');
+    const tests = steps.findIndex(step => step.run === 'corepack pnpm -r --if-present test:run');
+    assert.ok(build >= 0 && tests > build);
+    assert.equal(steps.filter(step => step.run === 'corepack pnpm test').length, 0);
+    assert.equal(steps[tests].if, undefined);
+    assert.equal(steps[tests]['continue-on-error'], undefined);
+  }
+});
+
+test('immutable workspace checksum rejects missing and mismatched inputs before restore', async () => {
+  const {parse} = createRequire(new URL('../packages/hhc-web-client/package.json', import.meta.url))('yaml');
+  const ci = parse(readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8'));
+  const script = ci.jobs.immutable.steps.find(step => step.name === 'Verify and restore the prepared workspace').run;
+  const fixture = await mkdtemp(join(tmpdir(), 'immutable-restore-'));
+  try {
+    await mkdir(join(fixture, 'renderer-inputs'));
+    await mkdir(join(fixture, 'output'));
+    await writeFile(join(fixture, 'built-package'), 'verified built bytes');
+    const archive = join(fixture, 'renderer-inputs/renderer-workspace.tar');
+    assert.equal(spawnSync('tar', ['-cf', archive, '-C', fixture, 'built-package']).status, 0);
+    const digest = createHash('sha256').update(await readFile(archive)).digest('hex');
+    if (process.platform === 'darwin') {
+      await writeFile(join(fixture, 'sha256sum'), '#!/bin/sh\nexec shasum -a 256 "$@"\n');
+      await chmod(join(fixture, 'sha256sum'), 0o755);
+    }
+    for (const sha of ['', '0'.repeat(64), digest]) {
+      const result = spawnSync('bash', ['-e', '-o', 'pipefail', '-c', script], {
+        cwd: join(fixture, 'output'), env: {...process.env, PATH: `${fixture}:${process.env.PATH}`, RUNNER_TEMP: fixture, WORKSPACE_SHA: sha},
+      });
+      assert.equal(result.status === 0, sha === digest);
+      assert.equal(existsSync(join(fixture, 'output/built-package')), sha === digest);
+    }
+    await rm(archive);
+    assert.notEqual(spawnSync('bash', ['-e', '-o', 'pipefail', '-c', script], {
+      cwd: join(fixture, 'output'), env: {...process.env, PATH: `${fixture}:${process.env.PATH}`, RUNNER_TEMP: fixture, WORKSPACE_SHA: digest},
+    }).status, 0);
+  } finally { await rm(fixture, {recursive: true, force: true}); }
 });

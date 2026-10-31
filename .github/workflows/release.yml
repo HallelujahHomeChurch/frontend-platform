@@ -49,7 +49,8 @@ jobs:
           node --test scripts/ci-bulletin-renderer.test.mjs scripts/renderer-selection.test.mjs scripts/seal-renderer-checkpoint.test.mjs scripts/publish-packages.test.mjs scripts/publish-renderer-image.test.mjs
           python3 -m unittest discover -s scripts -p test_renderer_checkpoint.py
           python3 -m unittest discover -s scripts -p test_restore_release_publication.py
-      - run: corepack pnpm test
+      # The workspace is already built; local pretest would rebuild three packages.
+      - run: corepack pnpm -r --if-present test:run
       - run: corepack pnpm lint
       - run: corepack pnpm check:packages
       - name: Verify tag
