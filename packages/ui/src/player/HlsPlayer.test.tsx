@@ -1201,3 +1201,91 @@ it('restores a paused VOD bookmark after double click and ignores the aborted fi
  expect(onBookmark).toHaveBeenLastCalledWith(expect.objectContaining({paused:true,time:40,rate:1.5}));
  expect(screen.queryByText('Tap to play')).not.toBeInTheDocument();
 });
+
+it('uses continuous audio behind normal controls and never starts audio on visibility changes',async()=>{
+ const p=props(),media=createRef<HTMLMediaElement>();
+ vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
+ const {container,unmount}=render(<HlsPlayer {...p} playbackMediaRef={media} backgroundAudioUrl={url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8')}/>);
+ const audio=container.querySelector('audio')!;expect(audio).not.toBeNull();expect(media.current).toBe(audio);expect(audio.controls).toBe(false);expect(p.videoRef.current!.muted).toBe(true);
+ Object.defineProperty(audio,'duration',{configurable:true,value:120});fireEvent.loadedMetadata(audio);
+ vi.mocked(audio.play).mockClear();
+ fireEvent.click(screen.getByRole('button',{name:'Play'}));expect(vi.mocked(audio.play).mock.instances).toContain(audio);
+ Object.defineProperty(audio,'paused',{configurable:true,value:false});fireEvent.play(audio);
+ const visibility=vi.spyOn(document,'visibilityState','get').mockReturnValue('hidden');
+ vi.mocked(audio.play).mockClear();vi.mocked(audio.pause).mockClear();
+ fireEvent(document,new Event('visibilitychange'));fireEvent.pause(p.videoRef.current!);
+ expect(vi.mocked(audio.pause).mock.instances).not.toContain(audio);expect(vi.mocked(audio.play).mock.instances).not.toContain(audio);
+ audio.currentTime=64;visibility.mockReturnValue('visible');fireEvent(document,new Event('visibilitychange'));
+ expect(p.videoRef.current!.currentTime).toBe(64);expect(vi.mocked(audio.play).mock.instances).not.toContain(audio);
+ fireEvent.change(screen.getByRole('slider',{name:'Playback position'}),{target:{value:32}});expect(audio.currentTime).toBe(32);
+ chooseSpeed('1.5');expect(audio.playbackRate).toBe(1.5);
+ fireEvent.click(screen.getByRole('button',{name:'Mute'}));expect(audio.muted).toBe(true);expect(p.videoRef.current!.muted).toBe(true);
+ unmount();expect(media.current).toBeNull();expect(vi.mocked(audio.pause).mock.instances).toContain(audio);
+});
+it('keeps the audio clock and source through video quality rebuild',async()=>{
+ engine.supported=false;const p=props(),media=createRef<HTMLMediaElement>();vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
+ const {container}=render(<HlsPlayer {...p} playbackMediaRef={media} backgroundAudioUrl={url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8')}/>);
+ const audio=container.querySelector('audio')!;expect(audio).not.toBeNull();Object.defineProperty(audio,'duration',{configurable:true,value:120});fireEvent.loadedMetadata(audio);audio.currentTime=40;
+ await waitFor(()=>expect(p.videoRef.current!.src).toBe(url));const src=audio.src;
+ chooseQuality('720p');audio.currentTime=48;fireEvent.loadedMetadata(p.videoRef.current!);
+ expect(p.videoRef.current!.currentTime).toBe(48);expect(audio.src).toBe(src);expect(media.current).toBe(audio);
+});
+it('keeps fallback video and ignores a late audio upgrade in the same playback session',()=>{
+ const p=props(),media=createRef<HTMLMediaElement>();const view=render(<HlsPlayer {...p} playbackMediaRef={media}/>);
+ expect(media.current).toBe(p.videoRef.current);
+ view.rerender(<HlsPlayer {...p} playbackMediaRef={media} backgroundAudioUrl={url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8')}/>);
+ expect(view.container.querySelector('audio')).toBeNull();expect(media.current).toBe(p.videoRef.current);
+});
+it('rejects a background playlist from another playback session',async()=>{
+ const p=props();render(<HlsPlayer {...p} backgroundAudioUrl={url.replace('/sessions/s/','/sessions/other/').replace('master.m3u8','audio/aac-hls-v1/index.m3u8')}/>);
+ await waitFor(()=>expect(p.onError).toHaveBeenCalledOnce());
+});
+it('stops both media on audio failure and reports the audible bookmark',async()=>{
+ const p=props();vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
+ const {container}=render(<HlsPlayer {...p} backgroundAudioUrl={url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8')}/>);
+ const audio=container.querySelector('audio')!;Object.defineProperty(audio,'duration',{value:120});fireEvent.loadedMetadata(audio);audio.currentTime=64;audio.playbackRate=1.5;
+ Object.defineProperty(audio,'paused',{configurable:true,value:false});fireEvent.play(audio);vi.mocked(audio.pause).mockClear();
+ fireEvent.error(audio);expect(p.onError).toHaveBeenCalledOnce();expect(p.onError).toHaveBeenCalledWith(expect.objectContaining({time:64,rate:1.5,paused:false}));
+ expect(vi.mocked(audio.pause).mock.instances).toContain(audio);expect(vi.mocked(audio.pause).mock.instances).toContain(p.videoRef.current);
+});
+it('uses viewport fullscreen for companion audio and preserves a paused double click bookmark',async()=>{
+ const p=props();vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
+ const {container}=render(<HlsPlayer {...p} backgroundAudioUrl={url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8')}/>);
+ const audio=container.querySelector('audio')!;Object.defineProperty(audio,'duration',{value:120});fireEvent.loadedMetadata(audio);audio.currentTime=42;
+ const native=vi.fn();Object.assign(p.videoRef.current!,{webkitEnterFullscreen:native});
+ const surface=screen.getByRole('button',{name:'Play or pause'});fireEvent.click(surface,{detail:1});audio.currentTime=42.2;fireEvent.doubleClick(surface);
+ expect(audio.currentTime).toBe(42);expect(native).not.toHaveBeenCalled();expect(container.firstElementChild).toHaveAttribute('data-fullscreen','viewport');
+});
+it('keeps presentation stopped after an audible play rejection',async()=>{
+ const p=props();vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
+ const {container}=render(<HlsPlayer {...p} backgroundAudioUrl={url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8')}/>);
+ const audio=container.querySelector('audio')!;vi.spyOn(audio,'play').mockRejectedValue(new DOMException('Blocked','NotAllowedError'));
+ vi.spyOn(p.videoRef.current!,'pause').mockClear();fireEvent.click(screen.getByRole('button',{name:'Play'}));
+ await waitFor(()=>expect(screen.getByText('Tap to start playback')).toBeInTheDocument());expect(p.videoRef.current!.pause).toHaveBeenCalled();
+});
+it('owns lock-screen controls with the audible clock and releases them on teardown',async()=>{
+ const handlers=new Map<string,MediaSessionActionHandler|null>();const session={metadata:null as MediaMetadata|null,playbackState:'none',setActionHandler:vi.fn((name:string,handler:MediaSessionActionHandler|null)=>handlers.set(name,handler)),setPositionState:vi.fn()};
+ Object.defineProperty(navigator,'mediaSession',{configurable:true,value:session});
+ const p=props();vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
+ const {container,unmount}=render(<HlsPlayer {...p} backgroundAudioUrl={url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8')}/>);
+ const audio=container.querySelector('audio')!;Object.defineProperty(audio,'duration',{value:120});fireEvent.loadedMetadata(audio);audio.currentTime=40;
+ act(()=>handlers.get('seekforward')?.({action:'seekforward',seekOffset:10}));expect(audio.currentTime).toBe(50);
+ vi.mocked(audio.play).mockClear();act(()=>handlers.get('play')?.({action:'play'}));expect(vi.mocked(audio.play).mock.instances).toContain(audio);
+ act(()=>handlers.get('pause')?.({action:'pause'}));expect(vi.mocked(audio.pause).mock.instances).toContain(audio);
+ unmount();expect(handlers.get('play')).toBeNull();expect(session.playbackState).toBe('none');delete (navigator as {mediaSession?:unknown}).mediaSession;
+});
+it('does not overwrite the saved audible bookmark with pre-metadata video events',()=>{
+ const p=props(),bookmark=vi.fn();vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
+ const {container}=render(<HlsPlayer {...p} onBookmark={bookmark} resume={{time:42,rate:1.5,paused:false,quality:'auto',intent:'dvr'}} backgroundAudioUrl={url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8')}/>);
+ const audio=container.querySelector('audio')!;Object.defineProperty(audio,'readyState',{configurable:true,value:0});fireEvent.loadedMetadata(p.videoRef.current!);
+ expect(bookmark.mock.calls.every(([value])=>value.time===42&&value.rate===1.5)).toBe(true);
+});
+it('keeps live playback on its original video owner even when a companion URL is supplied',()=>{
+ const p=props(),media=createRef<HTMLMediaElement>();const {container}=render(<HlsPlayer {...p} playbackMode="live" playbackMediaRef={media} backgroundAudioUrl={url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8')}/>);
+ expect(container.querySelector('audio')).toBeNull();expect(media.current).toBe(p.videoRef.current);expect(p.videoRef.current!.muted).toBe(false);
+});
+it('preserves a speed selected before audio metadata arrives',()=>{
+ const p=props();vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
+ const {container}=render(<HlsPlayer {...p} backgroundAudioUrl={url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8')}/>);
+ const audio=container.querySelector('audio')!;chooseSpeed('1.5');Object.defineProperty(audio,'duration',{value:120});fireEvent.loadedMetadata(audio);expect(audio.playbackRate).toBe(1.5);
+});

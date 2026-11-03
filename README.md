@@ -414,3 +414,34 @@ UUID methods and media grants are unchanged. Deploy the CMS/Gateway contracts an
 complete the reviewed backfill before switching website link producers; older rows
 and responses may omit `publicId` during rollout. Package publication is coordinated
 with the shared-player release, not performed by this contract change alone.
+
+## VOD background audio (UI 1.1.13)
+
+`HlsPlayer` accepts optional `backgroundAudioUrl` and
+`playbackMediaRef: RefObject<HTMLMediaElement | null>`. The background URL must
+be the same authorized video's `audio/aac-hls-v1/index.m3u8`. It is latched at
+mount; key the component by playback session and remount to remove or replace
+it. Late readiness/renewal metadata never introduces another audible source.
+Live playback ignores this option.
+
+The ordinary player controls operate one continuous audio element while the
+video remains muted. `videoRef` still identifies the picture/fullscreen element;
+`playbackMediaRef` synchronously identifies the audio owner, or video without a
+companion. Use that owner for bookmarks, telemetry and stopping playback. Both
+transports stop on error/unmount. Audio errors use the existing `onError`
+bookmark contract; consumers may perform one bounded video-only fallback.
+
+Prepare the authorized session before the normal Play gesture. Companion audio
+starts directly from the controls or a MediaSession action, never from a hidden
+visibility callback. There is no new mode selector or readiness UI. Audio
+play rejection uses the existing tap-to-play feedback. Hidden video may stop;
+returning to the foreground synchronizes its picture to the audio clock.
+Quality changes do not reload audio. Container fullscreen or the existing CSS
+viewport fallback retains both elements; video-only native fullscreen, PiP and
+remote playback are not used for this composition.
+
+Automated media tests do not prove OS background behavior. Before claiming
+mobile continuity, verify normal Play → lock → unlock, lock-screen pause/seek,
+interruption recovery, authorization expiry, and foreground synchronization on
+real supported iOS Safari/Android devices. No new media capability bypasses the
+existing grant, session-cookie or request-path restrictions.
