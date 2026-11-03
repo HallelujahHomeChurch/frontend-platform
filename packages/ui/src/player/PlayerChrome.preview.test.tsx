@@ -5,7 +5,7 @@ import {PlayerChrome} from './PlayerChrome.js';
 
 afterEach(()=>{vi.useRealTimers();vi.restoreAllMocks();vi.unstubAllGlobals();});
 
-it.each([false,true])('keeps cached previews present on the first hover commit after leaving, saveData=%s',async(saveData)=>{
+it.each([[false,'pointerMove'],[true,'pointerMove'],[false,'pointerEnter'],[true,'pointerEnter']] as const)('keeps cached previews present on first hover commit, saveData=%s event=%s',async(saveData,pointerEvent)=>{
   vi.useFakeTimers();
   vi.stubGlobal('PointerEvent',MouseEvent);
   vi.stubGlobal('navigator',{connection:{saveData}});
@@ -42,7 +42,8 @@ it.each([false,true])('keeps cached previews present on the first hover commit a
     await act(async()=>{fireEvent.pointerLeave(input.parentElement!);await vi.advanceTimersByTimeAsync(100);});
     expect(view.container.querySelector('.hhc-player-preview')).toHaveAttribute('hidden');
     expect(view.container.querySelector('.hhc-player-preview img')).toBe(image);
-    await act(async()=>{fireEvent.pointerMove(input,{clientX:350});});
+    await act(async()=>{fireEvent[pointerEvent](input,{clientX:350});});
+    expect(view.container.querySelector('.hhc-player-preview')).not.toHaveAttribute('hidden');
     expect(view.container.querySelector('.hhc-player-preview img')).toHaveAttribute('src','blob:2');
     expect(view.container.querySelector('.hhc-player-preview img')).toBe(image);
   }
