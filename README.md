@@ -445,3 +445,13 @@ mobile continuity, verify normal Play → lock → unlock, lock-screen pause/see
 interruption recovery, authorization expiry, and foreground synchronization on
 real supported iOS Safari/Android devices. No new media capability bypasses the
 existing grant, session-cookie or request-path restrictions.
+
+With companion audio, hidden hls.js video loading is stopped (including delayed
+engine initialization) and resumes at the audible position on return. Preview
+loading uses the existing hidden-page cancellation. Native Safari HLS exposes no
+`stopLoad` equivalent: the video is paused with its source intact; the browser
+may retain or extend its native buffer. We do not claim zero background network
+traffic for that transport. Foreground correction is limited to once per second
+on audio progress and never retargets an outstanding video seek. A stalled
+picture can lag while audio continues; recovery resynchronizes to the audible
+clock rather than promising gap-free video under network stalls.

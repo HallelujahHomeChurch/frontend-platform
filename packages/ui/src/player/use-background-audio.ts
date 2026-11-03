@@ -13,7 +13,7 @@ export function useBackgroundAudio(audioRef:RefObject<HTMLAudioElement|null>,vid
   const sync=(force=false)=>{
    if(disposed||document.visibilityState==='hidden')return;
    const now=performance.now();if(!force&&now-lastSync<1000)return;lastSync=now;
-   if(video.readyState&&Math.abs(video.currentTime-audio.currentTime)>(force ? .05 : .3))video.currentTime=audio.currentTime;
+   if(video.readyState&&!video.seeking&&Math.abs(video.currentTime-audio.currentTime)>(force ? .05 : .3))video.currentTime=audio.currentTime;
    video.playbackRate=audio.playbackRate;
    if(audio.paused)video.pause();else if(video.paused)void video.play().then(()=>{if(disposed||document.visibilityState==='hidden'||audio.paused)video.pause();}).catch(()=>{});
   };

@@ -36,7 +36,7 @@ export function HlsPlayer({backgroundAudioUrl,playbackMediaRef,controls=true,ini
   const audioRef=useRef<HTMLAudioElement|null>(null),mediaRef=useRef<HTMLMediaElement|null>(null);
   const bindVideo=useCallback((node:HTMLVideoElement|null)=>{videoRef.current=node;if(!audioUrl){mediaRef.current=node;if(playbackMediaRef)playbackMediaRef.current=node;}},[videoRef,playbackMediaRef,audioUrl]);
   const bindAudio=useCallback((node:HTMLAudioElement|null)=>{audioRef.current=node;mediaRef.current=node;if(playbackMediaRef)playbackMediaRef.current=node;},[playbackMediaRef]);
-  const presentationPlay=()=>{const video=videoRef.current;if(audioUrl&&video&&document.visibilityState!=='hidden')void video.play().then(()=>{if(document.visibilityState==='hidden'||audioRef.current?.paused)video.pause();}).catch(()=>{});};
+  const presentationPlay=()=>{const video=videoRef.current;if(audioUrl&&video&&document.visibilityState!=='hidden')void video.play().then(()=>{if(!audioRef.current||document.visibilityState==='hidden'||audioRef.current.paused)video.pause();}).catch(()=>{});};
 
   const diagnostics=useRef<ReturnType<typeof createPlayerDiagnostics>|null>(null),diagnosticCallback=useRef(onDiagnostic);
   const diagnosticBackend=useRef<{url:string;backend:'hls'|'native';sourceName?:string}|null>(null),diagnosticEnabled=Boolean(onDiagnostic);
@@ -117,7 +117,11 @@ export function HlsPlayer({backgroundAudioUrl,playbackMediaRef,controls=true,ini
   useEffect(()=>{
     const video=videoRef.current;
     if(!video)return;
-    let cancelled=false,ready=false,attempted=false;closing.current=false;failed.current=false;positioned.current=false;
+    let cancelled=false,ready=false,attempted=false;
+    let updateLoading=()=>{};
+    const visibility=()=>updateLoading();
+    if(audioUrl)document.addEventListener('visibilitychange',visibility);
+    closing.current=false;failed.current=false;positioned.current=false;
     pendingAutoplay.current=()=>{
       if(audioUrl||cancelled||failed.current||!ready||attempted||initialBookmark.current?.paused||playbackMode==='live'&&!positioned.current)return;
       attempted=true;
@@ -134,6 +138,7 @@ export function HlsPlayer({backgroundAudioUrl,playbackMediaRef,controls=true,ini
         const LatencyController=Hls.DefaultConfig.latencyController!;
         const hls=new Hls({
           enableWorker:true, debug:false, maxBufferLength:60, maxMaxBufferLength:120,
+          ...(audioUrl?{autoStartLoad:false}:{}),
           // HLS levels are sorted by resolution; start low without disabling ABR.
           startLevel:qualityRef.current==='auto'?0:undefined,
           ...(playbackMode==='live'?{
@@ -145,7 +150,14 @@ export function HlsPlayer({backgroundAudioUrl,playbackMediaRef,controls=true,ini
           fetchSetup:(context,init)=>{verifyMediaRequest(playbackUrl,context.url);return new Request(context.url,{...init,credentials:'include',redirect:'error',referrerPolicy:'no-referrer'});},
         });
         engine.current=hls;
-        hls.on(Hls.Events.MEDIA_ATTACHED,(_event,data)=>{if(!cancelled){const sourceName=data.mediaSource?.constructor.name;diagnosticBackend.current={url:playbackUrl,backend:'hls',sourceName};diagnostics.current?.setBackend('hls',sourceName);}});
+        let sourceLoaded=false;
+        updateLoading=()=>{
+          if(cancelled||failed.current)return;
+          if(audioUrl&&document.visibilityState==='hidden'){hls.stopLoad();video.pause();return;}
+          if(!sourceLoaded){sourceLoaded=true;hls.loadSource(playbackUrl);}
+          if(audioUrl)hls.startLoad(audioRef.current?.currentTime??initialBookmark.current?.time??0);
+        };
+        hls.on(Hls.Events.MEDIA_ATTACHED,(_event,data)=>{if(!cancelled){if(audioUrl)updateLoading();const sourceName=data.mediaSource?.constructor.name;diagnosticBackend.current={url:playbackUrl,backend:'hls',sourceName};diagnostics.current?.setBackend('hls',sourceName);}});
         // LEVEL_SWITCHED follows the fragment currently playing, not the next ABR choice.
         hls.on(Hls.Events.LEVEL_SWITCHED,(_event,data)=>{if(!cancelled&&!failed.current){const height=hls.levels[data.level]?.height;setActiveHeight(height>0?height:null);}});
         hls.on(Hls.Events.MANIFEST_PARSED,()=>{if(!cancelled&&!failed.current){
@@ -154,14 +166,14 @@ export function HlsPlayer({backgroundAudioUrl,playbackMediaRef,controls=true,ini
           setMode('mse');autoplay();
         }});
         hls.on(Hls.Events.ERROR,(_event,data)=>{if(!cancelled)diagnostics.current?.hlsError(data);if(data.fatal&&!cancelled){if(data.type==='mediaError')handleMediaError();else handleError();}});
-        hls.loadSource(playbackUrl);hls.attachMedia(video);
+        updateLoading();hls.attachMedia(video);
       } else if(video.canPlayType('application/vnd.apple.mpegurl')) {
         diagnosticBackend.current={url:playbackUrl,backend:'native'};diagnostics.current?.setBackend('native');
         setMode('native');video.src=qualityRef.current==='auto'?playbackUrl:new URL(`${qualityRef.current}/index.m3u8`,playbackUrl).href;video.addEventListener('loadedmetadata',autoplay,{once:true});video.load();
       } else handleError();
     }).catch(()=>{if(!cancelled)handleError();});
     return ()=>{
-      cancelled=true;pendingAutoplay.current=null;closing.current=true;pendingQuality.current=null;finishRebuild();qualitySwitch.current?.abort();qualityPosition.current=null;clearHeldFrame();video.removeEventListener('loadedmetadata',autoplay);
+      cancelled=true;document.removeEventListener('visibilitychange',visibility);pendingAutoplay.current=null;closing.current=true;pendingQuality.current=null;finishRebuild();qualitySwitch.current?.abort();qualityPosition.current=null;clearHeldFrame();video.removeEventListener('loadedmetadata',autoplay);
       engine.current?.destroy();engine.current=null;video.pause();video.removeAttribute('src');video.load();
     };
   },[playbackUrl,videoRef,handleError,handleMediaError,playbackMode,clearHeldFrame,finishRebuild,audioUrl]);
@@ -249,6 +261,7 @@ export function HlsPlayer({backgroundAudioUrl,playbackMediaRef,controls=true,ini
       // Recreate MediaSource to discard cached rendition frames and queued EOS callbacks.
       engine.current.loadLevel=index;
       engine.current.recoverMediaError();
+      if(audioUrl&&document.visibilityState==='hidden')engine.current.stopLoad();
     } else if(mode==='native') {
       preservePosition();
       video.src=next==='auto'?playbackUrl:new URL(`${next}/index.m3u8`,playbackUrl).href;video.load();

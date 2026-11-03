@@ -7,14 +7,14 @@ import playerStyles from './styles.js';
 
 const router=vi.hoisted(()=>({push:vi.fn()}));
 
-const engine=vi.hoisted(()=>({supported:true,manifestReady:true,instances:[] as {nextLevel:number;loadLevel:number;recoverMediaError:ReturnType<typeof vi.fn>;listeners:Record<string,(...args:unknown[])=>void>;loadSource:ReturnType<typeof vi.fn>;destroy:ReturnType<typeof vi.fn>;config:{latencyController?:HlsConfig['latencyController'];startLevel?:number;xhrSetup:(xhr:XMLHttpRequest,url:string)=>void}}[]}));
+const engine=vi.hoisted(()=>({supported:true,manifestReady:true,instances:[] as {nextLevel:number;loadLevel:number;recoverMediaError:ReturnType<typeof vi.fn>;stopLoad:ReturnType<typeof vi.fn>;startLoad:ReturnType<typeof vi.fn>;listeners:Record<string,(...args:unknown[])=>void>;loadSource:ReturnType<typeof vi.fn>;destroy:ReturnType<typeof vi.fn>;config:{latencyController?:HlsConfig['latencyController'];startLevel?:number;xhrSetup:(xhr:XMLHttpRequest,url:string)=>void}}[]}));
 const url='https://media.alive.org.tw/videos/r/packages/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/sessions/s/master.m3u8';
 vi.mock('hls.js',async()=>{const {default:RealHls}=await vi.importActual<typeof import('hls.js')>('hls.js');return {default:class {
   static DefaultConfig=RealHls.DefaultConfig;
   static isSupported(){return engine.supported;}
   static Events={MANIFEST_PARSED:'manifest',ERROR:'error',LEVEL_SWITCHED:'levelSwitched',MEDIA_ATTACHED:'attached'};
   nextLevel=-1;loadLevel=-1;
-  recoverMediaError=vi.fn();
+  recoverMediaError=vi.fn();stopLoad=vi.fn();startLoad=vi.fn();
   listeners:Record<string,(...args:unknown[])=>void>={};
   levels=[{height:720,url:[url.replace('master.m3u8','720p/index.m3u8')]},{height:1080,url:[url.replace('master.m3u8','1080p/index.m3u8')]},{height:480,url:[url.replace('master.m3u8','480p/index.m3u8')]}];
   loadSource=vi.fn();destroy=vi.fn();
@@ -1288,4 +1288,34 @@ it('preserves a speed selected before audio metadata arrives',()=>{
  const p=props();vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
  const {container}=render(<HlsPlayer {...p} backgroundAudioUrl={url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8')}/>);
  const audio=container.querySelector('audio')!;chooseSpeed('1.5');Object.defineProperty(audio,'duration',{value:120});fireEvent.loadedMetadata(audio);expect(audio.playbackRate).toBe(1.5);
+});
+it('stops a presentation play promise that resolves after unmount',async()=>{
+ const p=props();vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
+ const view=render(<HlsPlayer {...p} backgroundAudioUrl={url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8')}/>);
+ const video=p.videoRef.current!;let resolve!:()=>void;vi.mocked(HTMLMediaElement.prototype.play).mockImplementation(function(this:HTMLMediaElement){return this===video?new Promise<void>(done=>{resolve=done;}):Promise.resolve();});
+ fireEvent.click(screen.getByRole('button',{name:'Play'}));view.unmount();vi.mocked(video.pause).mockClear();await act(async()=>resolve());expect(video.pause).toHaveBeenCalled();
+});
+it.each([false,true])('suspends companion video loading while hidden, including initialization: %s',async hiddenAtMount=>{
+ const visibility=vi.spyOn(document,'visibilityState','get').mockReturnValue(hiddenAtMount?'hidden':'visible');
+ const p=props();vi.spyOn(HTMLAudioElement.prototype,'canPlayType').mockReturnValue('probably');
+ const view=render(<HlsPlayer {...p} backgroundAudioUrl={url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8')}/>);
+ await waitFor(()=>expect(engine.instances).toHaveLength(1));const hls=engine.instances[0];const audio=view.container.querySelector('audio')!;
+ if(hiddenAtMount)expect(hls.loadSource).not.toHaveBeenCalled();
+ visibility.mockReturnValue('hidden');fireEvent(document,new Event('visibilitychange'));expect(hls.stopLoad).toHaveBeenCalled();
+ audio.currentTime=64;visibility.mockReturnValue('visible');fireEvent(document,new Event('visibilitychange'));expect(hls.startLoad).toHaveBeenLastCalledWith(64);expect(hls.loadSource).toHaveBeenCalledWith(url);
+});
+it('does not repeatedly retarget a stalled foreground video while its seek is pending',()=>{
+ const p=props();vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
+ const {container}=render(<HlsPlayer {...p} backgroundAudioUrl={url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8')}/>);
+ const audio=container.querySelector('audio')!,video=p.videoRef.current!;Object.defineProperty(audio,'duration',{value:120});fireEvent.loadedMetadata(audio);
+ let now=performance.now()+1000;vi.spyOn(performance,'now').mockImplementation(()=>now);audio.currentTime=40;fireEvent.timeUpdate(audio);expect(video.currentTime).toBe(40);
+ Object.defineProperty(video,'seeking',{configurable:true,value:true});now+=2000;audio.currentTime=42;fireEvent.timeUpdate(audio);expect(video.currentTime).toBe(40);
+ Object.defineProperty(video,'seeking',{configurable:true,value:false});fireEvent.canPlay(video);expect(video.currentTime).toBe(42);expect(audio.currentTime).toBe(42);
+});
+it('keeps native video and audio sources intact through background suspension',async()=>{
+ engine.supported=false;const p=props();vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
+ const view=render(<HlsPlayer {...p} backgroundAudioUrl={url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8')}/>);await waitFor(()=>expect(p.videoRef.current!.src).toBe(url));
+ const audio=view.container.querySelector('audio')!,video=p.videoRef.current!,audioSrc=audio.src;vi.mocked(audio.load).mockClear();
+ const visibility=vi.spyOn(document,'visibilityState','get').mockReturnValue('hidden');fireEvent(document,new Event('visibilitychange'));visibility.mockReturnValue('visible');fireEvent(document,new Event('visibilitychange'));
+ expect(audio.src).toBe(audioSrc);expect(video.src).toBe(url);expect(audio.load).not.toHaveBeenCalled();
 });
