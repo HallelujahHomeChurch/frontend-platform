@@ -20,6 +20,7 @@ function hover(seconds=32){
 }
 const tick=async(ms:number)=>act(async()=>{await vi.advanceTimersByTimeAsync(ms);});
 beforeEach(()=>{
+  vi.stubGlobal('Image',class {src='';decoding='';naturalWidth=960;naturalHeight=90;decode=async()=>{}});
   vi.useFakeTimers();
   vi.spyOn(HTMLMediaElement.prototype,'duration','get').mockReturnValue(110);
   vi.spyOn(HTMLMediaElement.prototype,'seekable','get').mockReturnValue({length:1,start:()=>0,end:()=>200});
@@ -27,13 +28,13 @@ beforeEach(()=>{
 });
 afterEach(()=>{cleanup();vi.useRealTimers();vi.restoreAllMocks();vi.unstubAllGlobals();});
 function network(){
-  const fetcher=vi.fn(async(url:string)=>url.endsWith('.vtt')?new Response(index()):new Response(new Uint8Array([255,216,255,217]),{headers:{'Content-Type':'image/jpeg'}}));
+  const fetcher=vi.fn(async(url:string)=>url.endsWith('.vtt')?new Response(index()):new Response(new Uint8Array([255,216,255,192,0,11,8,0,90,3,192,1,1,17,0,255,217]),{headers:{'Content-Type':'image/jpeg'}}));
   vi.stubGlobal('fetch',fetcher);return fetcher;
 }
 it('shows the existing sprite style for live DVR and refreshes only while the timeline preview is active',async()=>{
   const fetcher=network(),view=render(<Harness/>);
   await tick(10000);expect(fetcher).not.toHaveBeenCalled();
-  const input=hover();await tick(0);await tick(100);
+  const input=hover();await tick(16);await tick(100);
   expect(view.container.querySelector('img')).toHaveAttribute('src','blob:preview');
   expect(view.container.querySelector('img')).toHaveAttribute('width','960');
   for(let i=0;i<30;i++)hover(31+i/30);
@@ -54,14 +55,14 @@ it('uses time only for future or out-of-window cues and for an unavailable live 
 it('aborts and fences the old capture index, then loads the VOD index on transition',async()=>{
   let resolve!: (response:Response)=>void;
   const fetcher=network();fetcher.mockImplementationOnce(()=>new Promise<Response>(done=>{resolve=done;}));
-  const view=render(<Harness/>);hover();await tick(0);await tick(100);
+  const view=render(<Harness/>);hover();await tick(16);await tick(100);
   const oldSignal=(fetcher.mock.calls[0] as unknown as [string,RequestInit])[1].signal;
   view.rerender(<Harness url={playbackUrl.replace('/captures/c/','/captures/new/')}/>);
   expect(oldSignal?.aborted).toBe(true);
   await act(async()=>resolve(new Response(index(30,'seg-000099.jpg'))));await tick(100);
   expect(fetcher.mock.calls.some(([url])=>url.endsWith('seg-000099.jpg'))).toBe(false);
   view.rerender(<Harness url={playbackUrl.replace('/captures/c/','/packages/p/')} state={null}/>);
-  hover();await tick(0);await tick(100);
+  hover();await tick(16);await tick(100);
   expect(fetcher.mock.calls.some(([url])=>url.includes('/packages/p/')&&url.endsWith('index.vtt'))).toBe(true);
   expect(view.container.querySelector('img')).toHaveAttribute('src','blob:preview');
   const count=fetcher.mock.calls.filter(([url])=>url.endsWith('.vtt')).length;
@@ -70,7 +71,7 @@ it('aborts and fences the old capture index, then loads the VOD index on transit
 
 it('retries optional missing live previews and replaces a grown index without overlapping slow requests',async()=>{
   const fetcher=network();fetcher.mockResolvedValueOnce(new Response(null,{status:404}));
-  const view=render(<Harness/>);hover();await tick(0);await tick(100);
+  const view=render(<Harness/>);hover();await tick(16);await tick(100);
   expect(view.container.querySelector('img')).toBeNull();
   let resolve!:(response:Response)=>void;
   fetcher.mockImplementationOnce(()=>new Promise<Response>(done=>{resolve=done;}));
@@ -79,12 +80,12 @@ it('retries optional missing live previews and replaces a grown index without ov
   await act(async()=>resolve(new Response(index())));await tick(100);
   expect(view.container.querySelector('img')).toHaveAttribute('src','blob:preview');
   fetcher.mockResolvedValueOnce(new Response(index(35,'seg-000002.jpg')));
-  hover(37);await tick(0);await tick(5000);await tick(100);
+  hover(37);await tick(16);await tick(5000);await tick(100);
   expect(fetcher.mock.calls.some(([url])=>url.endsWith('seg-000002.jpg'))).toBe(true);
   expect(view.container.querySelector('time')).toHaveTextContent('0:37');
 });
 it.each([401,403])('drops downloaded private previews after the index returns %s',async(status)=>{
-  const fetcher=network(),view=render(<Harness/>);hover();await tick(0);await tick(100);
+  const fetcher=network(),view=render(<Harness/>);hover();await tick(16);await tick(100);
   expect(view.container.querySelector('img')).toBeInTheDocument();
   fetcher.mockResolvedValueOnce(new Response(null,{status}));await tick(5000);
   expect(view.container.querySelector('img')).toBeNull();expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:preview');
@@ -98,20 +99,48 @@ it('warms a VOD index and current sprite after canplay without waiting for point
   expect(fetcher.mock.calls.filter(([url])=>url.endsWith('.vtt'))).toHaveLength(1);
   expect(view.container.querySelector('img')).toHaveAttribute('src','blob:preview');
   expect(view.container.querySelector('.hhc-player-preview')).toHaveAttribute('hidden');
-  hover(1);await tick(0);
+  hover(1);await tick(16);
   expect(view.container.querySelector('.hhc-player-preview')).not.toHaveAttribute('hidden');
   expect(view.container.querySelector('time')).toHaveTextContent('0:01');expect(fetcher).toHaveBeenCalledTimes(2);
 });
 it('respects data saving for optional VOD warming while keeping user-requested previews',async()=>{
   vi.stubGlobal('navigator',{userAgent:navigator.userAgent,connection:{saveData:true}});
   const fetcher=network(),view=render(<Harness state={null}/>);fireEvent.canPlay(view.container.querySelector('video')!);await tick(100);
-  expect(fetcher).not.toHaveBeenCalled();hover();await tick(0);await tick(100);
+  expect(fetcher).not.toHaveBeenCalled();hover();await tick(16);await tick(100);
   expect(fetcher).toHaveBeenCalledTimes(2);expect(view.container.querySelector('img')).toHaveAttribute('src','blob:preview');
 });
 it('retries an optional VOD index missing during warming when the user hovers later',async()=>{
   const fetcher=network();fetcher.mockResolvedValueOnce(new Response(null,{status:404}));
   const view=render(<Harness state={null}/>);fireEvent.canPlay(view.container.querySelector('video')!);await tick(0);await tick(10000);
-  expect(fetcher).toHaveBeenCalledTimes(1);hover();await tick(0);await tick(100);
+  expect(fetcher).toHaveBeenCalledTimes(1);hover();await tick(16);await tick(100);
   expect(view.container.querySelector('img')).toHaveAttribute('src','blob:preview');
   expect(fetcher.mock.calls.filter(([url])=>url.endsWith('.vtt'))).toHaveLength(2);
+});
+it('aborts the preview index immediately when the document becomes hidden',async()=>{
+ let visibility:DocumentVisibilityState='visible';
+ vi.spyOn(document,'visibilityState','get').mockImplementation(()=>visibility);
+ const fetcher=vi.fn(()=>new Promise<Response>(()=>{}));vi.stubGlobal('fetch',fetcher);
+ const view=render(<Harness/>);hover();await tick(16);
+ const signal=(fetcher.mock.calls[0] as unknown as [string,RequestInit])[1].signal!;
+ expect(signal.aborted).toBe(false);
+ visibility='hidden';fireEvent(document,new Event('visibilitychange'));await tick(0);
+ expect(signal.aborted).toBe(true);view.unmount();
+});
+it('preloads distant VOD sprites and aborts them immediately when hidden',async()=>{
+ let visibility:DocumentVisibilityState='visible';vi.spyOn(document,'visibilityState','get').mockImplementation(()=>visibility);
+ const signals:AbortSignal[]=[];
+ const fetcher=vi.fn((url:string,options:RequestInit)=>url.endsWith('.vtt')?Promise.resolve(new Response(index(0)+'\n00:01:00.000 --> 00:01:05.000\nseg-000002.jpg#xywh=0,0,160,90\n')):url.endsWith('seg-000002.jpg')?new Promise<Response>(()=>{signals.push(options.signal!);}):Promise.resolve(new Response(new Uint8Array([255,216,255,192,0,11,8,0,90,3,192,1,1,17,0,255,217]),{headers:{'Content-Type':'image/jpeg'}})));
+ vi.stubGlobal('fetch',fetcher);const view=render(<Harness state={null}/>);
+ fireEvent.canPlay(view.container.querySelector('video')!);await tick(100);
+ expect(signals).toHaveLength(1);
+ visibility='hidden';fireEvent(document,new Event('visibilitychange'));await tick(0);
+ expect(signals[0].aborted).toBe(true);view.unmount();
+});
+it('coalesces timeline movement into the next frame and cancels a pending move on leave',async()=>{
+ network();const view=render(<Harness/>);
+ hover(10);hover(20);hover(32);
+ expect(view.container.querySelector('.hhc-player-preview')).toHaveAttribute('hidden');
+ await tick(16);expect(view.container.querySelector('time')).toHaveTextContent('0:32');
+ const input=hover(40);fireEvent.pointerLeave(input.parentElement!);await tick(16);
+ expect(view.container.querySelector('.hhc-player-preview')).toHaveAttribute('hidden');
 });

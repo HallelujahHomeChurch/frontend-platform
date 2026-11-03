@@ -1,6 +1,7 @@
 'use client';
 
-import {useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type RefObject} from 'react';
+import {useEffect, useRef, useState, useMemo, useSyncExternalStore, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type RefObject} from 'react';
+import {flushSync} from 'react-dom';
 import {Check, ChevronDown, ChevronLeft, ChevronRight, SkipBack, SkipForward, LoaderCircle, RectangleHorizontal, Maximize, Minimize, RotateCcw, Pause, Play, Settings, Volume2, VolumeX} from 'lucide-react';
 import {LIVE_EDGE_TOLERANCE_SECONDS,liveWindow,type LivePlayerState,type PlayerBookmark} from './live-player.js';
 import type {PlayerLabels} from './HlsPlayer.js';
@@ -18,9 +19,12 @@ type Props = {
   container: RefObject<HTMLDivElement | null>; videoRef: RefObject<HTMLVideoElement | null>;
   playbackUrl: string; watermark?: string; labels: PlayerLabels;
   quality: Quality; activeHeight?:number|null; qualities: Exclude<Quality, 'auto'>[]; autoplayBlocked?:boolean; loading: boolean; buffering?:boolean; failed: boolean;
-  onPlaybackChange?: (value:Partial<Pick<PlayerBookmark,'time'|'paused'|'rate'>>)=>void;
+  onPlaybackChange?: (value:Partial<Pick<PlayerBookmark,'time'|'paused'|'rate'|'intent'>>)=>void;
   onQualityChange: (quality: Quality) => void; onPlayingChange?: (playing: boolean) => void;
 };
+
+const visibleSnapshot=()=>document.visibilityState==='visible';
+const subscribeVisibility=(notify:()=>void)=>{document.addEventListener('visibilitychange',notify);return()=>document.removeEventListener('visibilitychange',notify);};
 
 const touchQuery = '(pointer: coarse)';
 const touchSnapshot = () => typeof window.matchMedia === 'function' && window.matchMedia(touchQuery).matches;
@@ -36,6 +40,7 @@ export function playerClock(seconds: number) {
 }
 
 export function PlayerChrome({container, videoRef, playbackUrl, watermark, labels, quality, activeHeight, qualities, autoplayBlocked=false, loading, buffering=false, failed, onQualityChange, onPlaybackChange,onPlayingChange,live,followLive=true,onDvr,onReturnToLive,previousHref,nextHref,onNavigate}: Props) {
+  const pageVisible=useSyncExternalStore(subscribeVisibility,visibleSnapshot,()=>true);
   const touchUI = useSyncExternalStore(subscribeTouch, touchSnapshot, () => false);
   const fullscreenState = usePlayerFullscreen(container, videoRef, touchUI);
   const fullscreen = fullscreenState.mode !== 'inline';
@@ -50,13 +55,17 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
   const [feedback, setFeedback] = useState<{kind: 'play' | 'pause' | 'back' | 'forward'; id: number; seconds?:number} | null>(null);
   const [preview, setPreview] = useState<number | null>(null), [scrub, setScrub] = useState<number | null>(null);
   const saveData=typeof navigator!=='undefined'&&(navigator as Navigator&{connection?:{saveData?:boolean}}).connection?.saveData===true;
-  const warmPreviews=!live&&!failed&&!loading&&!waiting&&duration>0&&!saveData&&typeof document!=='undefined'&&document.visibilityState==='visible';
-  const cues = usePreviewIndex(playbackUrl, Boolean(live), !failed && (preview !== null || scrub !== null), warmPreviews);
+  const warmPreviews=!live&&!failed&&!loading&&!waiting&&!buffering&&duration>0&&!saveData&&pageVisible;
+  const cues = usePreviewIndex(playbackUrl, Boolean(live), !failed && pageVisible && (preview !== null || scrub !== null), warmPreviews);
+  const preloadSprites=useMemo(()=>Array.from(new Set(cues.map(cue=>cue.url))),[cues]);
   const [holding, setHolding] = useState(false);
   const gesture = useRef<{id:number;x:number;y:number;moved:boolean;rate:number|null}|null>(null);
-  const holdTimer = useRef(0), tapTimer = useRef(0), clickTimer=useRef(0);
+  const holdTimer = useRef(0), tapTimer = useRef(0), playCommand=useRef(0);
+  const desktopClick=useRef<Pick<PlayerBookmark,'time'|'paused'|'rate'|'intent'>|null>(null);
+  useEffect(()=>()=>{desktopClick.current=null;++playCommand.current;},[playbackUrl]);
   const lastTap = useRef<{time:number;side:'back'|'forward'|'center'}|null>(null);
-  const hideTimer = useRef(0), feedbackTimer = useRef(0), dragging = useRef(false);
+  const hideTimer = useRef(0), feedbackTimer = useRef(0), dragging = useRef(false), previewFrame=useRef(0);
+  useEffect(()=>()=>window.cancelAnimationFrame(previewFrame.current),[playbackUrl]);
   const menu = useRef<HTMLDivElement>(null), settingsButton = useRef<HTMLButtonElement>(null);
   const playingCallback = useRef(onPlayingChange);
   useEffect(() => { playingCallback.current = onPlayingChange; }, [onPlayingChange]);
@@ -85,7 +94,7 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
 
   useEffect(() => {
     const video=videoRef.current;
-    return () => { window.clearTimeout(hideTimer.current); window.clearTimeout(feedbackTimer.current); window.clearTimeout(holdTimer.current); window.clearTimeout(tapTimer.current);window.clearTimeout(clickTimer.current);
+    return () => { window.clearTimeout(hideTimer.current); window.clearTimeout(feedbackTimer.current); window.clearTimeout(holdTimer.current); window.clearTimeout(tapTimer.current);
       if (gesture.current?.rate != null && video) video.playbackRate = gesture.current.rate;
     };
   }, [videoRef]);
@@ -122,13 +131,17 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
       event.preventDefault();event.stopPropagation();if(event.key==='ArrowLeft'&&settingsView!=='root')setSettingsView('root');else closeSettings();
     }
   };
+  const play = (video:HTMLVideoElement) => {
+    const command=++playCommand.current;
+    void video.play().catch(()=>{if(command===playCommand.current)setPlayBlocked(true);});
+  };
   const toggle = () => {
     const video = videoRef.current;
     if (!video) return;
-    if(ended&&video.ended&&!live){video.currentTime=0;setTime(0);setEnded(false);onPlaybackChange?.({time:0,paused:false});void video.play().catch(()=>setPlayBlocked(true));showControls();return;}
+    if(ended&&video.ended&&!live){video.currentTime=0;setTime(0);setEnded(false);onPlaybackChange?.({time:0,paused:false});play(video);showControls();return;}
     const kind = video.paused ? 'play' : 'pause';
     onPlaybackChange?.({paused:!video.paused});
-    if (video.paused) void video.play().catch(() => setPlayBlocked(true)); else {onDvr?.();video.pause();}
+    if (video.paused) play(video); else {++playCommand.current;onDvr?.();video.pause();}
     if (!touchUI) {
       setFeedback({kind, id: Date.now()});
       window.clearTimeout(feedbackTimer.current);
@@ -160,7 +173,8 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
   };
   const changeRate=(rate:number)=>{if(videoRef.current){if(live)onDvr?.();videoRef.current.playbackRate=rate;onPlaybackChange?.({rate});}};
   const cancelGesture = () => {
-    window.clearTimeout(clickTimer.current);window.clearTimeout(holdTimer.current);
+    desktopClick.current=null;
+    window.clearTimeout(holdTimer.current);
     if (gesture.current?.rate != null) changeRate(gesture.current.rate);
     gesture.current = null; setHolding(false);
   };
@@ -248,12 +262,15 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
     return () => { root.removeEventListener('keydown', keyboard); root.removeEventListener('pointermove', mouseMove); root.removeEventListener('focusin', showControls); root.removeEventListener('focusout', showControls); root.removeEventListener('pointerleave', showControls); video?.removeEventListener('play', showControls); video?.removeEventListener('pause', showControls); video?.removeEventListener('canplay', showControls); };
   });
 
-  const cancelScrub=()=>{dragging.current=false;setScrub(null);setPreview(null);};
+  const cancelScrub=()=>{window.cancelAnimationFrame(previewFrame.current);dragging.current=false;setScrub(null);setPreview(null);};
   const current = scrub ?? time;
   const updatePreview = (event:ReactPointerEvent<HTMLInputElement>) => {
     const bounds = event.currentTarget.getBoundingClientRect();
     if (duration > 0 && bounds.width > 0) {
-      setPreview(Math.min(duration - 0.001, Math.max(seekStart, seekStart + (event.clientX - bounds.left) / bounds.width * (duration - seekStart))));
+      const next=Math.min(duration - 0.001, Math.max(seekStart, seekStart + (event.clientX - bounds.left) / bounds.width * (duration - seekStart)));
+      window.cancelAnimationFrame(previewFrame.current);
+      if(event.type==='pointerenter')flushSync(()=>setPreview(next));
+      else previewFrame.current=window.requestAnimationFrame(()=>flushSync(()=>setPreview(next)));
     }
   };
   const previewTime = scrub ?? preview;
@@ -271,7 +288,24 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
   const displayedTime = atLive ? duration : current;
   const percentage = (value: number) => duration > seekStart ? `${Math.min(100, Math.max(0, (value - seekStart) / (duration - seekStart) * 100))}%` : '0%';
   return <>
-    <button type="button" className={styles.surface} aria-label={labels.togglePlayback} tabIndex={-1} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={cancelGesture} onLostPointerCapture={cancelGesture} onContextMenu={event=>{if(touchUI)event.preventDefault();}} onClick={event=>{if(event.detail===0){toggle();return;}if(touchUI)return;container.current?.focus({preventScroll:true});window.clearTimeout(clickTimer.current);if(event.detail===1)clickTimer.current=window.setTimeout(toggle,500);}} onDoubleClick={()=>{if(!touchUI){window.clearTimeout(clickTimer.current);void toggleFullscreen();}}} />
+    <button type="button" className={styles.surface} aria-label={labels.togglePlayback} tabIndex={-1} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={cancelGesture} onLostPointerCapture={cancelGesture} onContextMenu={event=>{if(touchUI)event.preventDefault();}} onClick={event=>{
+      if(event.detail===0){desktopClick.current=null;toggle();return;}
+      if(touchUI)return;container.current?.focus({preventScroll:true});
+      const video=videoRef.current;
+      if(event.detail===1&&video){desktopClick.current={paused:video.paused,time:video.currentTime,rate:video.playbackRate,intent:followLive?'followLive':'dvr'};toggle();}
+    }} onDoubleClick={()=>{
+      if(touchUI)return;
+      const saved=desktopClick.current,video=videoRef.current;desktopClick.current=null;
+      if(saved&&video){
+        ++playCommand.current;
+        const restoreTime=saved.paused&&video.currentTime!==saved.time?saved.time:undefined;
+        video.playbackRate=saved.rate;if(restoreTime!==undefined)video.currentTime=restoreTime;
+        onPlaybackChange?.({paused:saved.paused,rate:saved.rate,intent:saved.intent,...(restoreTime===undefined?{}:{time:restoreTime})});
+        if(saved.paused)video.pause();else play(video);
+        setFeedback(null);setPlayBlocked(false);showControls();
+      }
+      void toggleFullscreen();
+    }} />
     {watermark ? <RecordingWatermark container={container} videoRef={videoRef} code={watermark}/> : null}
     {fullscreenState.error ? <div className={styles.fullscreenError} role="alert">{labels.fullscreenError}</div> : null}
     {holding ? <div className={styles.speedFeedback} aria-hidden="true">2×</div> : null}
@@ -298,7 +332,7 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
       </>}
     </div> : null}
     <div data-controls className={`${styles.controls} ${controlsVisible ? '' : styles.hidden}`}>
-      <div className={styles.seek} onPointerLeave={() => { if (!dragging.current) setPreview(null); }}>
+      <div className={styles.seek} onPointerLeave={() => { if (!dragging.current) {window.cancelAnimationFrame(previewFrame.current);setPreview(null);} }}>
         <div className={styles.track} aria-hidden="true"><span className={styles.buffered} style={{width:percentage(buffered)}}/><span className={styles.played} style={{width:percentage(displayedTime)}}/></div>
         <input type="range" aria-label={labels.seek} aria-valuetext={`${playerClock(current)} / ${playerClock(duration)}`} min={seekStart} max={duration} step={0.1} value={Math.max(seekStart, Math.min(duration, displayedTime))} disabled={duration <= seekStart}
           onPointerEnter={updatePreview} onPointerMove={updatePreview}
@@ -306,8 +340,8 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
           onChange={event => { const value = Number(event.target.value); if (dragging.current) setScrub(value); else seek(value); }}
           onPointerUp={event => { if(dragging.current)seek(Number(event.currentTarget.value));cancelScrub(); }}
           onPointerCancel={cancelScrub} onLostPointerCapture={cancelScrub} />
-        <div className={styles.preview} hidden={previewTime===null||duration<=0} aria-hidden="true" style={{left:`clamp(80px, ${percentage(previewTime??0)}, calc(100% - 80px))`}}>
-          {!failed && cues.length > 0 ? <PreviewSprite key={`${playbackUrl}:${live?'live':'vod'}`} playbackUrl={playbackUrl} cue={cue} neighbor={neighbor}/> : null}
+        <div className={styles.preview} hidden={previewTime===null||duration<=0} aria-hidden="true" style={{left:`clamp(calc(var(--preview-width) / 2), ${percentage(previewTime??0)}, calc(100% - var(--preview-width) / 2))`}}>
+          {!failed && cues.length > 0 ? <PreviewSprite key={`${playbackUrl}:${live?'live':'vod'}`} playbackUrl={playbackUrl} cue={cue} neighbor={neighbor} enabled={pageVisible&&!failed} preload={preloadSprites} preloadEnabled={warmPreviews}/> : null}
           <time>{playerClock(previewTime??0)}</time>
         </div>
       </div>

@@ -1,7 +1,8 @@
-import {afterEach, expect, it, vi} from 'vitest';
+import {afterEach, beforeEach, expect, it, vi} from 'vitest';
 import {createPreviewCache} from './preview-cache.js';
 
 afterEach(() => {vi.restoreAllMocks(); vi.unstubAllGlobals();});
+beforeEach(()=>vi.stubGlobal('Image',class {src='';decoding='';naturalWidth=960;naturalHeight=90;decode=async()=>{}}));
 const root='https://media.example/videos/r/packages/p/sessions/s/previews/';
 const url=(n:number)=>`${root}seg-${String(n).padStart(6,'0')}.jpg`;
 const tick=()=>new Promise(resolve=>setTimeout(resolve,0));
@@ -17,7 +18,7 @@ function setup() {
   const cache=createPreviewCache(root,loaded);
   return {cache,jobs,loaded};
 }
-const jpg=()=>new Response(new Uint8Array([255,216,255,217]),{headers:{'Content-Type':'image/jpeg'}});
+const jpg=()=>new Response(new Uint8Array([255,216,255,192,0,11,8,0,90,3,192,1,1,17,0,255,217]),{headers:{'Content-Type':'image/jpeg'}});
 it('deduplicates active sprites, bounds concurrency and replaces obsolete queued targets',async()=>{
   const {cache,jobs,loaded}=setup();
   cache.request(url(0)); cache.request(url(0)); cache.request(url(1));
@@ -67,7 +68,7 @@ it('ignores authorization responses from a disposed playback session',async()=>{
 it('keeps a sprite unavailable until decoded and releases an in-flight decode on disposal',async()=>{
   let decoded!:()=>void;const decode=vi.fn(()=>new Promise<void>(resolve=>{decoded=resolve;}));
   const images:{src:string;decoding:string}[]=[];
-  vi.stubGlobal('Image',class {src='';decoding='';decode=decode;constructor(){images.push(this);}});
+  vi.stubGlobal('Image',class {src='';decoding='';naturalWidth=960;naturalHeight=90;decode=decode;constructor(){images.push(this);}});
   const {cache,jobs,loaded}=setup();cache.request(url(0));jobs[0].resolve(jpg());await tick();
   expect(decode).toHaveBeenCalledOnce();expect(cache.has(url(0))).toBe(false);expect(cache.peek(url(0))).toBeUndefined();expect(loaded).not.toHaveBeenCalled();
   cache.dispose();expect(images[0].src).toBe('');expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:1');
@@ -75,7 +76,7 @@ it('keeps a sprite unavailable until decoded and releases an in-flight decode on
 });
 it('reuses a decoded sprite and drops malformed images without caching them',async()=>{
   const decode=vi.fn().mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('bad image'));
-  vi.stubGlobal('Image',class {src='';decoding='';decode=decode;});
+  vi.stubGlobal('Image',class {src='';decoding='';naturalWidth=960;naturalHeight=90;decode=decode;});
   const {cache,jobs,loaded}=setup();cache.request(url(0));jobs[0].resolve(jpg());await tick();
   expect(cache.has(url(0))).toBe(true);expect(loaded).toHaveBeenLastCalledWith(url(0),'blob:1');
   expect(cache.peek(url(0))).toBe('blob:1');
@@ -85,4 +86,42 @@ it('reuses a decoded sprite and drops malformed images without caching them',asy
   expect(cache.has(url(1))).toBe(false);expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:2');
   cache.dispose();
   expect(cache.peek(url(0))).toBeUndefined();
+});
+it('aborts requests on pause and resumes only after reenabled',async()=>{
+ const {cache,jobs}=setup();cache.request(url(0));cache.setPaused(true);
+ expect(jobs[0].signal.aborted).toBe(true);
+ cache.request(url(1));expect(jobs).toHaveLength(1);
+ jobs[0].resolve(jpg());await tick();
+ cache.setPaused(false);cache.request(url(1));expect(jobs).toHaveLength(2);
+ cache.dispose();
+});
+it('preloads each sprite once without recycling evicted entries',async()=>{
+ const {cache,jobs}=setup();const sources=Array.from({length:20},(_,i)=>url(i));
+ cache.preload(sources,true);expect(jobs).toHaveLength(1);
+ for(let n=0;n<20;n++){expect(jobs[n].url).toBe(url(n));jobs[n].resolve(jpg());await tick();}
+ expect(jobs).toHaveLength(20);expect(cache.has(url(0))).toBe(false);
+ cache.preload(sources,true);await tick();expect(jobs).toHaveLength(20);
+ cache.request(url(0));expect(jobs).toHaveLength(21);cache.dispose();
+});
+it('reserves foreground capacity and aborts background downloads when disabled',async()=>{
+ const {cache,jobs}=setup();cache.preload([url(0),url(1)],true);
+ cache.request(url(99));expect(jobs.map(j=>j.url)).toEqual([url(0),url(99)]);
+ cache.preload([],false);expect(jobs[0].signal.aborted).toBe(true);expect(jobs[1].signal.aborted).toBe(false);
+ cache.dispose();
+});
+it('ends background traversal at the transfer budget',async()=>{
+ const {cache,jobs}=setup();cache.preload(Array.from({length:20},(_,i)=>url(i)),true);
+ for(let n=0;n<9;n++){
+   const bytes=new Uint8Array(1_000_000);bytes.set([255,216,255,192,0,11,8,0,90,3,192,1,1,17,0]);
+   jobs[n].resolve(new Response(bytes,{headers:{'Content-Type':'image/jpeg'}}));await tick();
+ }
+ expect(jobs).toHaveLength(9);cache.preload([url(19)],true);await tick();expect(jobs).toHaveLength(9);
+ cache.dispose();
+});
+it('keeps an active background sprite when foreground hover promotes it',async()=>{
+ const {cache,jobs,loaded}=setup();cache.preload([url(0),url(1)],true);
+ cache.request(url(0));cache.preload([],false);
+ expect(jobs[0].signal.aborted).toBe(false);
+ jobs[0].resolve(jpg());await tick();
+ expect(loaded).toHaveBeenLastCalledWith(url(0),'blob:1');cache.dispose();
 });

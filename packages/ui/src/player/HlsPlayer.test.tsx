@@ -419,7 +419,7 @@ it.each(['seek','pause','rate'] as const)('preserves explicit %s during upstream
  Object.defineProperty(video,'paused',{configurable:true,value:false});fireEvent.progress(video);fireEvent.seeking(video);
  view.rerender(<HlsPlayer {...p} playbackMode="live" live={{...live,canFollow:false}} onBookmark={onBookmark}/>);
  if(command==='seek')fireEvent.change(screen.getByRole('slider',{name:'Playback position'}),{target:{value:'600'}});
- if(command==='pause')fireEvent.pause(video);
+ if(command==='pause'){Object.defineProperty(video,'paused',{configurable:true,value:true});fireEvent.pause(video);}
  if(command==='rate')chooseSpeed('1.5');
  const time=video.currentTime;
  view.rerender(<HlsPlayer {...p} playbackMode="live" live={{...live,verifiedEnd:1500}} onBookmark={onBookmark}/>);
@@ -694,8 +694,8 @@ it('arbitrates desktop double click without changing live playback intent',async
  const request=vi.fn().mockResolvedValue(undefined);Object.defineProperty(root,'requestFullscreen',{value:request,configurable:true});
  Object.defineProperty(video,'paused',{value:false,configurable:true});fireEvent.play(video);vi.mocked(video.pause).mockClear();onBookmark.mockClear();
  vi.useFakeTimers();fireEvent.click(surface,{detail:1});fireEvent.click(surface,{detail:2});fireEvent.doubleClick(surface);await act(()=>vi.advanceTimersByTimeAsync(350));
- expect(request).toHaveBeenCalledOnce();expect(video.pause).not.toHaveBeenCalled();expect(onBookmark).not.toHaveBeenCalled();
- fireEvent.click(surface,{detail:0});expect(video.pause).toHaveBeenCalledOnce();
+ expect(request).toHaveBeenCalledOnce();expect(video.pause).toHaveBeenCalledOnce();
+ fireEvent.click(surface,{detail:0});expect(video.pause).toHaveBeenCalledTimes(2);
 });
 
 it('reports Auto only from a rendered HLS level without rebuilding the session',async()=>{
@@ -741,8 +741,17 @@ it('allows seeking away from ended VOD without Replay resetting the selected pos
  const p=props();render(<HlsPlayer {...p}/>);await waitFor(()=>expect(engine.instances).toHaveLength(1));const video=p.videoRef.current!;Object.defineProperty(video,'duration',{value:120,configurable:true});Object.defineProperty(video,'ended',{value:true,configurable:true});video.currentTime=120;fireEvent.durationChange(video);fireEvent.ended(video);
  fireEvent.change(screen.getByRole('slider',{name:'Playback position'}),{target:{value:'60'}});Object.defineProperty(video,'ended',{value:false,configurable:true});fireEvent.seeked(video);expect(screen.queryByRole('button',{name:'Replay'})).not.toBeInTheDocument();fireEvent.click(screen.getByRole('button',{name:'Play'}));expect(video.currentTime).toBe(60);
 });
-it('waits for a slower native desktop double click before issuing live pause commands',async()=>{
- const p=props();render(<HlsPlayer {...p} playbackMode="live" live={{verifiedEnd:100,canFollow:true,label:'Live',backToLive:'Back to live'}}/>);await waitFor(()=>expect(engine.instances).toHaveLength(1));const surface=screen.getByRole('button',{name:'Play or pause'}),video=p.videoRef.current!;Object.defineProperty(video,'paused',{value:false,configurable:true});fireEvent.play(video);vi.mocked(video.pause).mockClear();vi.useFakeTimers();fireEvent.click(surface,{detail:1});await act(()=>vi.advanceTimersByTimeAsync(350));fireEvent.click(surface,{detail:2});fireEvent.doubleClick(surface);await act(()=>vi.advanceTimersByTimeAsync(300));expect(video.pause).not.toHaveBeenCalled();
+it.each(['followLive','dvr'] as const)('immediately pauses and restores %s intent on a slower desktop double click',async(intent)=>{
+ const p=props(),onBookmark=vi.fn();render(<HlsPlayer {...p} onBookmark={onBookmark} resume={{time:60,paused:false,rate:1.5,quality:'auto',intent}} playbackMode="live" live={{verifiedEnd:100,canFollow:true,label:'Live',backToLive:'Back to live'}}/>);
+ await waitFor(()=>expect(engine.instances).toHaveLength(1));const surface=screen.getByRole('button',{name:'Play or pause'}),video=p.videoRef.current!;
+ Object.defineProperty(video,'seekable',{configurable:true,value:{length:1,start:()=>0,end:()=>100}});fireEvent.loadedMetadata(video);
+ Object.defineProperty(video,'paused',{value:false,configurable:true});video.currentTime=60;video.playbackRate=1.5;fireEvent.play(video);vi.mocked(video.pause).mockClear();vi.mocked(video.play).mockClear();
+ vi.useFakeTimers();fireEvent.click(surface,{detail:1});expect(video.pause).toHaveBeenCalledOnce();
+ await act(()=>vi.advanceTimersByTimeAsync(350));fireEvent.click(surface,{detail:2});fireEvent.doubleClick(surface);
+ await act(()=>vi.advanceTimersByTimeAsync(300));expect(video.pause).toHaveBeenCalledOnce();expect(video.play).toHaveBeenCalledOnce();expect(video.currentTime).toBe(60);expect(video.playbackRate).toBe(1.5);
+ expect(onBookmark).toHaveBeenLastCalledWith(expect.objectContaining({paused:false,intent,rate:1.5}));
+ fireEvent.pause(video);fireEvent.timeUpdate(video);expect(onBookmark).toHaveBeenLastCalledWith(expect.objectContaining({intent}));
+ video.currentTime=50;fireEvent.seeking(video);expect(onBookmark).toHaveBeenLastCalledWith(expect.objectContaining({intent:'dvr'}));
 });
 
 it('cancels a scrub when pointer capture is lost without committing a seek',async()=>{
@@ -753,8 +762,8 @@ it('disables quality choices if media fails while the submenu is open',async()=>
  const p=props();render(<HlsPlayer {...p}/>);await waitFor(()=>expect(engine.instances).toHaveLength(1));openSubmenu('Quality');act(()=>engine.instances[0].listeners.error('error',{fatal:true}));for(const option of screen.getAllByRole('menuitemradio'))expect(option).toBeDisabled();expect(engine.instances[0].recoverMediaError).not.toHaveBeenCalled();
 });
 
-it('cancels a pending desktop surface click when its pointer is cancelled',async()=>{
- const p=props();render(<HlsPlayer {...p}/>);await waitFor(()=>expect(engine.instances).toHaveLength(1));const video=p.videoRef.current!,surface=screen.getByRole('button',{name:'Play or pause'});vi.mocked(video.play).mockClear();vi.useFakeTimers();fireEvent.click(surface,{detail:1});fireEvent.pointerCancel(surface);await act(()=>vi.advanceTimersByTimeAsync(550));expect(video.play).not.toHaveBeenCalled();
+it('does not defer an already completed desktop click after pointer cancellation',async()=>{
+ const p=props();render(<HlsPlayer {...p}/>);await waitFor(()=>expect(engine.instances).toHaveLength(1));const video=p.videoRef.current!,surface=screen.getByRole('button',{name:'Play or pause'});vi.mocked(video.play).mockClear();vi.useFakeTimers();fireEvent.click(surface,{detail:1});expect(video.play).toHaveBeenCalledOnce();fireEvent.pointerCancel(surface);await act(()=>vi.advanceTimersByTimeAsync(550));expect(video.play).toHaveBeenCalledOnce();
 });
 
 it.each([false,true])('holds the decoded frame through quality reload until the restored frame is ready (native=%s)',async(native)=>{
@@ -970,7 +979,7 @@ it.each([false,true])('native=%s keeps the live indicator stable across 10.01-se
  chooseSpeed('1.5');fireEvent.rateChange(video);expect(button()).toHaveAttribute('data-live-edge','false');
  fireEvent.click(button());fireEvent.seeked(video);fireEvent.rateChange(video);fireEvent.timeUpdate(video);
  expect(video.playbackRate).toBe(1);expect(button()).toHaveAttribute('data-live-edge','true');
- fireEvent.pause(video);expect(button()).toHaveAttribute('data-live-edge','false');
+ Object.defineProperty(video,'paused',{configurable:true,value:true});fireEvent.pause(video);expect(button()).toHaveAttribute('data-live-edge','false');
 });
 
 it('exposes the final verified tail for ended recordings but keeps the target while interrupted',async()=>{
@@ -1179,4 +1188,16 @@ it('updates the diagnostic callback without rebuilding media and flushes on unmo
  expect(second.mock.calls[0][0]).toMatchObject({backend:'native'});
  expect(vi.mocked(HTMLMediaElement.prototype.load).mock.calls.length).toBe(loads+1);
  vi.runAllTimers();expect(second).toHaveBeenCalledOnce();
+});
+it('restores a paused VOD bookmark after double click and ignores the aborted first play promise',async()=>{
+ const p=props(),onBookmark=vi.fn();render(<HlsPlayer {...p} onBookmark={onBookmark}/>);await waitFor(()=>expect(engine.instances).toHaveLength(1));
+ const video=p.videoRef.current!,surface=screen.getByRole('button',{name:'Play or pause'});video.currentTime=40;video.playbackRate=1.5;
+ Object.defineProperty(video,'paused',{configurable:true,value:true});
+ let rejectPlay!:(error:Error)=>void;vi.mocked(video.play).mockImplementationOnce(()=>new Promise<void>((_resolve,reject)=>{rejectPlay=reject;}));
+ fireEvent.click(surface,{detail:1});video.currentTime=40.2;
+ fireEvent.click(surface,{detail:2});fireEvent.doubleClick(surface);
+ await act(async()=>rejectPlay(new DOMException('Interrupted','AbortError')));
+ expect(video.currentTime).toBe(40);expect(video.playbackRate).toBe(1.5);expect(video.pause).toHaveBeenCalled();
+ expect(onBookmark).toHaveBeenLastCalledWith(expect.objectContaining({paused:true,time:40,rate:1.5}));
+ expect(screen.queryByText('Tap to play')).not.toBeInTheDocument();
 });

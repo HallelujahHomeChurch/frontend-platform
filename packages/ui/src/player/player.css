@@ -38,9 +38,9 @@
 .hhc-player-seek input::-webkit-slider-thumb { appearance:none; width:12px; height:12px; margin-top:-4px; border-radius:50%; background:var(--hhc-player-accent, #e85a48); }
 .hhc-player-seek input::-moz-range-thumb { width:12px; height:12px; border:0; border-radius:50%; background:var(--hhc-player-accent, #e85a48); }
 .hhc-player-seek input:disabled { cursor:default; }
-.hhc-player-preview { position:absolute; bottom:32px; width:160px; transform:translateX(-50%); pointer-events:none; text-align:center; font-size:12px; font-variant-numeric:tabular-nums; }
-.hhc-player-previewImage { position:relative; width:160px; height:90px; overflow:hidden; border-radius:6px; background:#171717; }
-.hhc-player-previewImage img { position:absolute; top:0; max-width:none; width:960px; height:90px; }
+.hhc-player-preview { position:absolute; bottom:32px; --preview-width:min(224px, 40cqw); width:var(--preview-width); transform:translateX(-50%); pointer-events:none; text-align:center; font-size:12px; font-variant-numeric:tabular-nums; }
+.hhc-player-previewImage { position:relative; width:100%; aspect-ratio:16/9; overflow:hidden; border-radius:6px; background:#171717; }
+.hhc-player-previewImage img { position:absolute; top:0; max-width:none; width:600%; height:100%; }
 .hhc-player-preview time { display:inline-block; margin-top:4px; border-radius:3px; background:rgb(0 0 0 / 85%); padding:2px 6px; }
 .hhc-player-settings { position:absolute; z-index:5; bottom:88px; right:16px; width:252px; max-width:calc(100% - 32px); max-height:calc(100% - 100px); overflow:auto; border-radius:8px; padding:8px 12px; background:rgb(24 24 24 / 97%); box-shadow:0 8px 24px rgb(0 0 0 / 30%); }
 .hhc-player-settings button {background:transparent;border:0;display:flex;align-items:center;gap:12px;width:100%;min-height:44px;padding:8px 4px;text-align:left;font-size:14px;color:inherit;cursor:pointer;}
@@ -178,3 +178,11 @@
 .hhc-player-player .hhc-player-button.hhc-player-liveButton:hover {background:rgb(40 40 40 / 85%);}
 
 .hhc-player-player button, .hhc-player-player input {font-family:inherit;}
+
+@container (max-width: 639px) {
+  .hhc-player-preview { --preview-width:min(160px, 44cqw); }
+}
+.hhc-player-player[data-touch="true"] .hhc-player-preview { --preview-width:min(160px, 44cqw); }
+@container (min-width: 640px) {
+  .hhc-player-player[data-touch="true"] .hhc-player-preview { --preview-width:min(192px, 44cqw); }
+}
