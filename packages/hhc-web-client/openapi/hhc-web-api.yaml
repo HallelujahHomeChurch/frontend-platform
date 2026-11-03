@@ -12173,6 +12173,7 @@ components:
       additionalProperties: false
       required: [mediaUrl, exchangeCredential, expiresAt, assetVersionId, watermarkCode]
       properties:
+        audioState: {type: string, enum: [pending, processing, ready, failed], description: Known aac-hls-v1 derivative state. Omitted for absent or unsupported metadata; playback still requires the validated audio playlist.}
         audio: {$ref: '#/components/schemas/MemberRecordingAudio'}
         mediaUrl: { type: string, format: uri }
         exchangeCredential: { type: string, description: One-minute body-only exchange bearer; never log or persist. }

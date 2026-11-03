@@ -6171,6 +6171,11 @@ export interface components {
             playlistPath: "audio/aac-hls-v1/index.m3u8";
         };
         MemberRecordingPlayback: {
+            /**
+             * @description Known aac-hls-v1 derivative state. Omitted for absent or unsupported metadata; playback still requires the validated audio playlist.
+             * @enum {string}
+             */
+            audioState?: "pending" | "processing" | "ready" | "failed";
             audio?: components["schemas"]["MemberRecordingAudio"];
             /** Format: uri */
             mediaUrl: string;
