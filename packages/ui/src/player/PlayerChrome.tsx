@@ -250,6 +250,12 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
 
   const cancelScrub=()=>{dragging.current=false;setScrub(null);setPreview(null);};
   const current = scrub ?? time;
+  const updatePreview = (event:ReactPointerEvent<HTMLInputElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    if (duration > 0 && bounds.width > 0) {
+      setPreview(Math.min(duration - 0.001, Math.max(seekStart, seekStart + (event.clientX - bounds.left) / bounds.width * (duration - seekStart))));
+    }
+  };
   const previewTime = scrub ?? preview;
   const visibleCues = live ? cues.filter(cue => cue.start >= seekStart && cue.end <= duration) : cues;
   const targetTime=previewTime??(warmPreviews?time:null);
@@ -295,7 +301,7 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
       <div className={styles.seek} onPointerLeave={() => { if (!dragging.current) setPreview(null); }}>
         <div className={styles.track} aria-hidden="true"><span className={styles.buffered} style={{width:percentage(buffered)}}/><span className={styles.played} style={{width:percentage(displayedTime)}}/></div>
         <input type="range" aria-label={labels.seek} aria-valuetext={`${playerClock(current)} / ${playerClock(duration)}`} min={seekStart} max={duration} step={0.1} value={Math.max(seekStart, Math.min(duration, displayedTime))} disabled={duration <= seekStart}
-          onPointerMove={event => { const bounds = event.currentTarget.getBoundingClientRect(); if (duration > 0 && bounds.width > 0) { setPreview(Math.min(duration - 0.001, Math.max(seekStart, seekStart + (event.clientX - bounds.left) / bounds.width * (duration - seekStart)))); } }}
+          onPointerEnter={updatePreview} onPointerMove={updatePreview}
           onPointerDown={event => { dragging.current = true; setScrub(Number(event.currentTarget.value)); event.currentTarget.setPointerCapture?.(event.pointerId); }}
           onChange={event => { const value = Number(event.target.value); if (dragging.current) setScrub(value); else seek(value); }}
           onPointerUp={event => { if(dragging.current)seek(Number(event.currentTarget.value));cancelScrub(); }}
