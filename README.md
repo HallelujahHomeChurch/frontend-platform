@@ -406,3 +406,11 @@ V11 production output. Local tarball tests are candidate evidence only.
 CI builds the workspace once in `prepare`. The required `immutable` job first requires successful preparation, then verifies the same-run workspace archive checksum and runs mutation/removal checks on those built packages in parallel with renderer shards. This archive is a one-day CI verification input, not a published package or image. The final aggregate requires both immutable and renderer validation; failed, cancelled or unexpectedly skipped preparation or immutable validation cannot pass. Proven documentation-only changes retain their existing classification path. Version-tag publication retains its own immutable source guard and renderer coverage.
 
 CI and tag-release preparation already build all packages, so they invoke the exact recursive `test:run` command directly instead of repeating the local root `pretest` builds. Policy tests pin that command, the build-only pretest and absence of posttest; changes to those hooks require an explicit workflow review. Local `pnpm test` remains unchanged.
+
+The optional recording/watch/live `publicId` and `resolveVideoWatch` contract follows
+CMS `cbde4fd` (hhc-web-api PR #421). Public IDs are case-sensitive locators; the method
+uses the protected member watch route and preserves auth, cancellation and no-store.
+UUID methods and media grants are unchanged. Deploy the CMS/Gateway contracts and
+complete the reviewed backfill before switching website link producers; older rows
+and responses may omit `publicId` during rollout. Package publication is coordinated
+with the shared-player release, not performed by this contract change alone.

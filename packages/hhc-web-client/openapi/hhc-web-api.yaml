@@ -23,6 +23,40 @@ servers:
   - url: https://www.alive.org.tw/api
     description: Public and admin gateway surface; api-gateway validates browser JWTs and injects trusted identity headers.
 paths:
+  /member/videos/{publicId}/watch:
+    get:
+      operationId: getVideoWatch
+      summary: getVideoWatch
+      description: Durable B1 control with immutable operation receipts and verified media boundaries. Creation and
+        binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      responses:
+        '200':
+          description: BroadcastWatch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BroadcastWatchEnvelope'
+        '400': { $ref: '#/components/responses/BroadcastFailure' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/BroadcastFailure' }
+        '409': { $ref: '#/components/responses/BroadcastFailure' }
+        '412': { $ref: '#/components/responses/BroadcastFailure' }
+        '422': { $ref: '#/components/responses/BroadcastFailure' }
+        '429': { $ref: '#/components/responses/BroadcastFailure' }
+        '503': { $ref: '#/components/responses/BroadcastFailure' }
+      parameters:
+      - name: publicId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: '^[A-Za-z0-9_-]{11}$'
   /member/recordings/{id}/interactions:
     get:
       operationId: getRecordingInteractions
@@ -9033,6 +9067,7 @@ components:
       - cover
       - stateRevision
       properties:
+        publicId: { type: string, pattern: '^[A-Za-z0-9_-]{11}$', description: Stable public locator; optional until backfill completes. }
         recordingId:
           type: string
           format: uuid
@@ -9934,6 +9969,7 @@ components:
       - stopAcceptedAt
       - progress
       properties:
+        publicId: { type: string, pattern: '^[A-Za-z0-9_-]{11}$', description: Stable public locator; optional until backfill completes. }
         startedAt: {type: string, format: date-time}
         coverRevision: { type: string, maxLength: 128, description: Immutable active image identity; changes only after a ready image becomes effective. }
         id:
@@ -11954,6 +11990,7 @@ components:
       additionalProperties: false
       required: [id, title, uploadedAt, expiresAt, featured, hidden, status, version]
       properties:
+        publicId: { type: string, pattern: '^[A-Za-z0-9_-]{11}$', description: Stable public locator; optional until backfill completes. }
         id: { type: string, format: uuid }
         selectedCoverId: { type: string, pattern: '^[A-Za-z0-9-]{1,128}$', description: Optional explicit CMS selection. An absent value may use default auto cover; member clients may lazily request the current cover endpoint. }
         title: { type: string, minLength: 1, maxLength: 180 }
@@ -12002,6 +12039,7 @@ components:
       additionalProperties: false
       required: [id, title, uploadedAt, expiresAt, featured, hidden, status, version]
       properties:
+        publicId: { type: string, pattern: '^[A-Za-z0-9_-]{11}$', description: Stable public locator; optional until backfill completes. }
         id: {$ref: '#/components/schemas/MemberRecording/properties/id'}
         title: {$ref: '#/components/schemas/MemberRecording/properties/title'}
         description: {$ref: '#/components/schemas/RecordingDescription'}

@@ -4,6 +4,26 @@
  */
 
 export interface paths {
+    "/member/videos/{publicId}/watch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * getVideoWatch
+         * @description Durable B1 control with immutable operation receipts and verified media boundaries. Creation and binding require BROADCAST_WRITERS_ENABLED; reads and existing controls remain available when disabled.
+         */
+        get: operations["getVideoWatch"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/member/recordings/{id}/interactions": {
         parameters: {
             query?: never;
@@ -4048,6 +4068,8 @@ export interface components {
             markerMode: "next-common-segment";
         };
         BroadcastWatch: {
+            /** @description Stable public locator; optional until backfill completes. */
+            publicId?: string;
             /** Format: uuid */
             recordingId: string;
             title: string;
@@ -4463,6 +4485,8 @@ export interface components {
             watermarkCode: string;
         };
         MemberLiveRecording: {
+            /** @description Stable public locator; optional until backfill completes. */
+            publicId?: string;
             /** Format: date-time */
             startedAt?: string;
             /** @description Immutable active image identity; changes only after a ready image becomes effective. */
@@ -5947,6 +5971,8 @@ export interface components {
         /** @description Optional plain-text video description; Unicode code points, no HTML rendering. Omission preserves the saved value on update; an empty string clears it. */
         RecordingDescription: string;
         MemberRecording: {
+            /** @description Stable public locator; optional until backfill completes. */
+            publicId?: string;
             /** Format: uuid */
             id: string;
             /** @description Optional explicit CMS selection. An absent value may use default auto cover; member clients may lazily request the current cover endpoint. */
@@ -6007,6 +6033,8 @@ export interface components {
             autoPublish: "pending" | "published" | "cancelled" | "blocked";
         };
         AdminRecording: {
+            /** @description Stable public locator; optional until backfill completes. */
+            publicId?: string;
             id: components["schemas"]["MemberRecording"]["id"];
             title: components["schemas"]["MemberRecording"]["title"];
             description?: components["schemas"]["RecordingDescription"];
@@ -8498,6 +8526,37 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getVideoWatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description BroadcastWatch */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastWatchEnvelope"];
+                };
+            };
+            400: components["responses"]["BroadcastFailure"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["BroadcastFailure"];
+            409: components["responses"]["BroadcastFailure"];
+            412: components["responses"]["BroadcastFailure"];
+            422: components["responses"]["BroadcastFailure"];
+            429: components["responses"]["BroadcastFailure"];
+            503: components["responses"]["BroadcastFailure"];
+        };
+    };
     getRecordingInteractions: {
         parameters: {
             query?: never;
