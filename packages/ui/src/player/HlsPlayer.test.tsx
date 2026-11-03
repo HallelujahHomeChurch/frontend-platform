@@ -1310,7 +1310,8 @@ it('does not repeatedly retarget a stalled foreground video while its seek is pe
  const audio=container.querySelector('audio')!,video=p.videoRef.current!;Object.defineProperty(audio,'duration',{value:120});fireEvent.loadedMetadata(audio);
  let now=performance.now()+1000;vi.spyOn(performance,'now').mockImplementation(()=>now);audio.currentTime=40;fireEvent.timeUpdate(audio);expect(video.currentTime).toBe(40);
  Object.defineProperty(video,'seeking',{configurable:true,value:true});now+=2000;audio.currentTime=42;fireEvent.timeUpdate(audio);expect(video.currentTime).toBe(40);
- Object.defineProperty(video,'seeking',{configurable:true,value:false});fireEvent.canPlay(video);expect(video.currentTime).toBe(42);expect(audio.currentTime).toBe(42);
+ Object.defineProperty(video,'seeking',{configurable:true,value:false});fireEvent.canPlay(video);expect(video.currentTime).toBe(40);expect(audio.currentTime).toBe(42);
+ now+=5000;audio.currentTime=43;fireEvent.timeUpdate(audio);expect(video.currentTime).toBe(43);
 });
 it('keeps native video and audio sources intact through background suspension',async()=>{
  engine.supported=false;const p=props();vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
@@ -1318,4 +1319,36 @@ it('keeps native video and audio sources intact through background suspension',a
  const audio=view.container.querySelector('audio')!,video=p.videoRef.current!,audioSrc=audio.src;vi.mocked(audio.load).mockClear();
  const visibility=vi.spyOn(document,'visibilityState','get').mockReturnValue('hidden');fireEvent(document,new Event('visibilitychange'));visibility.mockReturnValue('visible');fireEvent(document,new Event('visibilitychange'));
  expect(audio.src).toBe(audioSrc);expect(video.src).toBe(url);expect(audio.load).not.toHaveBeenCalled();
+});
+
+it('does not seek again on canplay after foreground seek latency',()=>{
+ const p=props();vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
+ const {container}=render(<HlsPlayer {...p} backgroundAudioUrl={url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8')}/>);
+ const audio=container.querySelector('audio')!,video=p.videoRef.current!;
+ Object.defineProperty(audio,'duration',{value:120});fireEvent.loadedMetadata(audio);
+ Object.defineProperty(audio,'paused',{configurable:true,value:false});
+ const visibility=vi.spyOn(document,'visibilityState','get').mockReturnValue('hidden');fireEvent(document,new Event('visibilitychange'));
+ audio.currentTime=40;visibility.mockReturnValue('visible');fireEvent(document,new Event('visibilitychange'));expect(video.currentTime).toBe(40);
+ audio.currentTime=40.12;fireEvent.canPlay(video);
+ expect(video.currentTime).toBe(40);expect(audio.currentTime).toBe(40.12);
+});
+it.each([.4,-.4])('converges ordinary video drift %s without repeated decoding seeks',drift=>{
+ const p=props();vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
+ const {container}=render(<HlsPlayer {...p} backgroundAudioUrl={url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8')}/>);
+ const audio=container.querySelector('audio')!,video=p.videoRef.current!;
+ Object.defineProperty(audio,'duration',{value:120});fireEvent.loadedMetadata(audio);
+ Object.defineProperty(audio,'paused',{configurable:true,value:false});audio.playbackRate=1.5;video.currentTime=40;audio.currentTime=40+drift;
+ let now=performance.now()+2000;vi.spyOn(performance,'now').mockImplementation(()=>now);fireEvent.timeUpdate(audio);
+ expect(video.currentTime).toBe(40);expect(audio.playbackRate).toBe(1.5);
+ expect(video.playbackRate).toBeGreaterThan(drift>0?1.5:1.4);expect(video.playbackRate).toBeLessThan(drift>0?1.6:1.5);
+ video.currentTime=audio.currentTime;now+=1000;fireEvent.timeUpdate(audio);expect(video.playbackRate).toBe(1.5);
+});
+it('bounds large-drift recovery seeks but honors an explicit audio seek immediately',()=>{
+ const p=props();vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
+ const {container}=render(<HlsPlayer {...p} backgroundAudioUrl={url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8')}/>);
+ const audio=container.querySelector('audio')!,video=p.videoRef.current!;
+ Object.defineProperty(audio,'duration',{value:120});fireEvent.loadedMetadata(audio);Object.defineProperty(audio,'paused',{configurable:true,value:false});
+ let now=performance.now()+1000;vi.spyOn(performance,'now').mockImplementation(()=>now);audio.currentTime=40;fireEvent.timeUpdate(audio);expect(video.currentTime).toBe(40);
+ now+=2000;audio.currentTime=43;fireEvent.canPlay(video);expect(video.currentTime).toBe(40);
+ audio.currentTime=80;fireEvent.seeking(audio);expect(video.currentTime).toBe(80);
 });
