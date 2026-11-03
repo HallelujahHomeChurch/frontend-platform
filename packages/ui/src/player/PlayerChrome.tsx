@@ -1,6 +1,7 @@
 'use client';
 
 import {useEffect, useRef, useState, useMemo, useSyncExternalStore, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type RefObject} from 'react';
+import {flushSync} from 'react-dom';
 import {Check, ChevronDown, ChevronLeft, ChevronRight, SkipBack, SkipForward, LoaderCircle, RectangleHorizontal, Maximize, Minimize, RotateCcw, Pause, Play, Settings, Volume2, VolumeX} from 'lucide-react';
 import {LIVE_EDGE_TOLERANCE_SECONDS,liveWindow,type LivePlayerState,type PlayerBookmark} from './live-player.js';
 import type {PlayerLabels} from './HlsPlayer.js';
@@ -63,7 +64,8 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
   const desktopClick=useRef<Pick<PlayerBookmark,'time'|'paused'|'rate'|'intent'>|null>(null);
   useEffect(()=>()=>{desktopClick.current=null;++playCommand.current;},[playbackUrl]);
   const lastTap = useRef<{time:number;side:'back'|'forward'|'center'}|null>(null);
-  const hideTimer = useRef(0), feedbackTimer = useRef(0), dragging = useRef(false);
+  const hideTimer = useRef(0), feedbackTimer = useRef(0), dragging = useRef(false), previewFrame=useRef(0);
+  useEffect(()=>()=>window.cancelAnimationFrame(previewFrame.current),[playbackUrl]);
   const menu = useRef<HTMLDivElement>(null), settingsButton = useRef<HTMLButtonElement>(null);
   const playingCallback = useRef(onPlayingChange);
   useEffect(() => { playingCallback.current = onPlayingChange; }, [onPlayingChange]);
@@ -260,12 +262,15 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
     return () => { root.removeEventListener('keydown', keyboard); root.removeEventListener('pointermove', mouseMove); root.removeEventListener('focusin', showControls); root.removeEventListener('focusout', showControls); root.removeEventListener('pointerleave', showControls); video?.removeEventListener('play', showControls); video?.removeEventListener('pause', showControls); video?.removeEventListener('canplay', showControls); };
   });
 
-  const cancelScrub=()=>{dragging.current=false;setScrub(null);setPreview(null);};
+  const cancelScrub=()=>{window.cancelAnimationFrame(previewFrame.current);dragging.current=false;setScrub(null);setPreview(null);};
   const current = scrub ?? time;
   const updatePreview = (event:ReactPointerEvent<HTMLInputElement>) => {
     const bounds = event.currentTarget.getBoundingClientRect();
     if (duration > 0 && bounds.width > 0) {
-      setPreview(Math.min(duration - 0.001, Math.max(seekStart, seekStart + (event.clientX - bounds.left) / bounds.width * (duration - seekStart))));
+      const next=Math.min(duration - 0.001, Math.max(seekStart, seekStart + (event.clientX - bounds.left) / bounds.width * (duration - seekStart)));
+      window.cancelAnimationFrame(previewFrame.current);
+      if(event.type==='pointerenter')flushSync(()=>setPreview(next));
+      else previewFrame.current=window.requestAnimationFrame(()=>flushSync(()=>setPreview(next)));
     }
   };
   const previewTime = scrub ?? preview;
@@ -327,7 +332,7 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
       </>}
     </div> : null}
     <div data-controls className={`${styles.controls} ${controlsVisible ? '' : styles.hidden}`}>
-      <div className={styles.seek} onPointerLeave={() => { if (!dragging.current) setPreview(null); }}>
+      <div className={styles.seek} onPointerLeave={() => { if (!dragging.current) {window.cancelAnimationFrame(previewFrame.current);setPreview(null);} }}>
         <div className={styles.track} aria-hidden="true"><span className={styles.buffered} style={{width:percentage(buffered)}}/><span className={styles.played} style={{width:percentage(displayedTime)}}/></div>
         <input type="range" aria-label={labels.seek} aria-valuetext={`${playerClock(current)} / ${playerClock(duration)}`} min={seekStart} max={duration} step={0.1} value={Math.max(seekStart, Math.min(duration, displayedTime))} disabled={duration <= seekStart}
           onPointerEnter={updatePreview} onPointerMove={updatePreview}

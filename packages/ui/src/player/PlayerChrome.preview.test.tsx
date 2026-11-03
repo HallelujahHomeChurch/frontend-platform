@@ -31,7 +31,7 @@ it.each([[false,'pointerMove'],[true,'pointerMove'],[false,'pointerEnter'],[true
   vi.spyOn(input,'getBoundingClientRect').mockReturnValue({left:0,width:1000} as DOMRect);
   // Warm both sheets through the real pointer/index/cache path, even with saveData.
   for(const clientX of [0,350]){
-    await act(async()=>{fireEvent.pointerMove(input,{clientX});});
+    await act(async()=>{fireEvent.pointerMove(input,{clientX});await vi.advanceTimersByTimeAsync(16);});
     await act(async()=>{await vi.advanceTimersByTimeAsync(60);});
   }
   expect(view.container.querySelector('.hhc-player-preview img')).toHaveAttribute('src','blob:2');
@@ -42,7 +42,7 @@ it.each([[false,'pointerMove'],[true,'pointerMove'],[false,'pointerEnter'],[true
     await act(async()=>{fireEvent.pointerLeave(input.parentElement!);await vi.advanceTimersByTimeAsync(100);});
     expect(view.container.querySelector('.hhc-player-preview')).toHaveAttribute('hidden');
     expect(view.container.querySelector('.hhc-player-preview img')).toBe(image);
-    await act(async()=>{fireEvent[pointerEvent](input,{clientX:350});});
+    await act(async()=>{fireEvent[pointerEvent](input,{clientX:350});if(pointerEvent==='pointerMove')await vi.advanceTimersByTimeAsync(16);});
     expect(view.container.querySelector('.hhc-player-preview')).not.toHaveAttribute('hidden');
     expect(view.container.querySelector('.hhc-player-preview img')).toHaveAttribute('src','blob:2');
     expect(view.container.querySelector('.hhc-player-preview img')).toBe(image);
