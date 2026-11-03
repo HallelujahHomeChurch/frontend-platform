@@ -432,6 +432,10 @@ export function createHhcWebClient(options: {
       if(uploadId)return unwrap(client.GET('/admin/broadcasts/{recordingId}/cover-uploads/{uploadId}/content',{...options,params:{path:{recordingId,uploadId}}}))
       return unwrap(client.GET('/admin/broadcasts/{recordingId}/cover/content',{...options,params:{path:{recordingId}}}))
     },
+    async resolveVideoWatch(publicId:string,signal?:AbortSignal) {
+      if (!/^[A-Za-z0-9_-]{11}$/.test(publicId)) throw new HhcWebApiError(400,'invalid_request','Invalid public video ID.')
+      return (await unwrap(client.GET('/member/videos/{publicId}/watch', {params:{path:{publicId}},signal,cache:'no-store',redirect:'error'}))).data
+    },
     async resolveRecordingWatch(recordingId:string,signal?:AbortSignal) {
       return (await unwrap(client.GET('/member/recordings/{recordingId}/watch', {params:{path:{recordingId}},signal,cache:'no-store'}))).data
     },
