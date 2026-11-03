@@ -8,3 +8,4 @@ export * from './recording-watermark.js';
 export * from './preview-index.js';
 export * from './preview-cache.js';
 export type {PlayerDiagnostic,PlayerDiagnosticEvent} from './player-diagnostics.js';
+export {AudioPlayer,type AudioPlayerProps} from './AudioPlayer.js';
