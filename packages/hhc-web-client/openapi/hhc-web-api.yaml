@@ -9067,6 +9067,7 @@ components:
       - cover
       - stateRevision
       properties:
+        coverMode: { type: string, enum: [auto, custom], description: Selected live cover mode; omitted when unknown. }
         publicId: { type: string, pattern: '^[A-Za-z0-9_-]{11}$', description: Stable public locator; optional until backfill completes. }
         recordingId:
           type: string
@@ -9969,6 +9970,7 @@ components:
       - stopAcceptedAt
       - progress
       properties:
+        coverMode: { type: string, enum: [auto, custom], description: Selected live cover mode; omitted when unknown. }
         publicId: { type: string, pattern: '^[A-Za-z0-9_-]{11}$', description: Stable public locator; optional until backfill completes. }
         startedAt: {type: string, format: date-time}
         coverRevision: { type: string, maxLength: 128, description: Immutable active image identity; changes only after a ready image becomes effective. }

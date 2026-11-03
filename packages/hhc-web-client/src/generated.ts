@@ -4068,6 +4068,11 @@ export interface components {
             markerMode: "next-common-segment";
         };
         BroadcastWatch: {
+            /**
+             * @description Selected live cover mode; omitted when unknown.
+             * @enum {string}
+             */
+            coverMode?: "auto" | "custom";
             /** @description Stable public locator; optional until backfill completes. */
             publicId?: string;
             /** Format: uuid */
@@ -4485,6 +4490,11 @@ export interface components {
             watermarkCode: string;
         };
         MemberLiveRecording: {
+            /**
+             * @description Selected live cover mode; omitted when unknown.
+             * @enum {string}
+             */
+            coverMode?: "auto" | "custom";
             /** @description Stable public locator; optional until backfill completes. */
             publicId?: string;
             /** Format: date-time */
