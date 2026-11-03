@@ -18,7 +18,7 @@ type Props = {
   container: RefObject<HTMLDivElement | null>; videoRef: RefObject<HTMLVideoElement | null>;
   playbackUrl: string; watermark?: string; labels: PlayerLabels;
   quality: Quality; activeHeight?:number|null; qualities: Exclude<Quality, 'auto'>[]; autoplayBlocked?:boolean; loading: boolean; buffering?:boolean; failed: boolean;
-  onPlaybackChange?: (value:Partial<Pick<PlayerBookmark,'time'|'paused'|'rate'>>)=>void;
+  onPlaybackChange?: (value:Partial<Pick<PlayerBookmark,'time'|'paused'|'rate'|'intent'>>)=>void;
   onQualityChange: (quality: Quality) => void; onPlayingChange?: (playing: boolean) => void;
 };
 
@@ -59,7 +59,9 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
   const preloadSprites=useMemo(()=>Array.from(new Set(cues.map(cue=>cue.url))),[cues]);
   const [holding, setHolding] = useState(false);
   const gesture = useRef<{id:number;x:number;y:number;moved:boolean;rate:number|null}|null>(null);
-  const holdTimer = useRef(0), tapTimer = useRef(0), clickTimer=useRef(0);
+  const holdTimer = useRef(0), tapTimer = useRef(0), playCommand=useRef(0);
+  const desktopClick=useRef<Pick<PlayerBookmark,'time'|'paused'|'rate'|'intent'>|null>(null);
+  useEffect(()=>()=>{desktopClick.current=null;++playCommand.current;},[playbackUrl]);
   const lastTap = useRef<{time:number;side:'back'|'forward'|'center'}|null>(null);
   const hideTimer = useRef(0), feedbackTimer = useRef(0), dragging = useRef(false);
   const menu = useRef<HTMLDivElement>(null), settingsButton = useRef<HTMLButtonElement>(null);
@@ -90,7 +92,7 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
 
   useEffect(() => {
     const video=videoRef.current;
-    return () => { window.clearTimeout(hideTimer.current); window.clearTimeout(feedbackTimer.current); window.clearTimeout(holdTimer.current); window.clearTimeout(tapTimer.current);window.clearTimeout(clickTimer.current);
+    return () => { window.clearTimeout(hideTimer.current); window.clearTimeout(feedbackTimer.current); window.clearTimeout(holdTimer.current); window.clearTimeout(tapTimer.current);
       if (gesture.current?.rate != null && video) video.playbackRate = gesture.current.rate;
     };
   }, [videoRef]);
@@ -127,13 +129,17 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
       event.preventDefault();event.stopPropagation();if(event.key==='ArrowLeft'&&settingsView!=='root')setSettingsView('root');else closeSettings();
     }
   };
+  const play = (video:HTMLVideoElement) => {
+    const command=++playCommand.current;
+    void video.play().catch(()=>{if(command===playCommand.current)setPlayBlocked(true);});
+  };
   const toggle = () => {
     const video = videoRef.current;
     if (!video) return;
-    if(ended&&video.ended&&!live){video.currentTime=0;setTime(0);setEnded(false);onPlaybackChange?.({time:0,paused:false});void video.play().catch(()=>setPlayBlocked(true));showControls();return;}
+    if(ended&&video.ended&&!live){video.currentTime=0;setTime(0);setEnded(false);onPlaybackChange?.({time:0,paused:false});play(video);showControls();return;}
     const kind = video.paused ? 'play' : 'pause';
     onPlaybackChange?.({paused:!video.paused});
-    if (video.paused) void video.play().catch(() => setPlayBlocked(true)); else {onDvr?.();video.pause();}
+    if (video.paused) play(video); else {++playCommand.current;onDvr?.();video.pause();}
     if (!touchUI) {
       setFeedback({kind, id: Date.now()});
       window.clearTimeout(feedbackTimer.current);
@@ -165,7 +171,8 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
   };
   const changeRate=(rate:number)=>{if(videoRef.current){if(live)onDvr?.();videoRef.current.playbackRate=rate;onPlaybackChange?.({rate});}};
   const cancelGesture = () => {
-    window.clearTimeout(clickTimer.current);window.clearTimeout(holdTimer.current);
+    desktopClick.current=null;
+    window.clearTimeout(holdTimer.current);
     if (gesture.current?.rate != null) changeRate(gesture.current.rate);
     gesture.current = null; setHolding(false);
   };
@@ -276,7 +283,24 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
   const displayedTime = atLive ? duration : current;
   const percentage = (value: number) => duration > seekStart ? `${Math.min(100, Math.max(0, (value - seekStart) / (duration - seekStart) * 100))}%` : '0%';
   return <>
-    <button type="button" className={styles.surface} aria-label={labels.togglePlayback} tabIndex={-1} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={cancelGesture} onLostPointerCapture={cancelGesture} onContextMenu={event=>{if(touchUI)event.preventDefault();}} onClick={event=>{if(event.detail===0){toggle();return;}if(touchUI)return;container.current?.focus({preventScroll:true});window.clearTimeout(clickTimer.current);if(event.detail===1)clickTimer.current=window.setTimeout(toggle,500);}} onDoubleClick={()=>{if(!touchUI){window.clearTimeout(clickTimer.current);void toggleFullscreen();}}} />
+    <button type="button" className={styles.surface} aria-label={labels.togglePlayback} tabIndex={-1} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={cancelGesture} onLostPointerCapture={cancelGesture} onContextMenu={event=>{if(touchUI)event.preventDefault();}} onClick={event=>{
+      if(event.detail===0){desktopClick.current=null;toggle();return;}
+      if(touchUI)return;container.current?.focus({preventScroll:true});
+      const video=videoRef.current;
+      if(event.detail===1&&video){desktopClick.current={paused:video.paused,time:video.currentTime,rate:video.playbackRate,intent:followLive?'followLive':'dvr'};toggle();}
+    }} onDoubleClick={()=>{
+      if(touchUI)return;
+      const saved=desktopClick.current,video=videoRef.current;desktopClick.current=null;
+      if(saved&&video){
+        ++playCommand.current;
+        const restoreTime=saved.paused&&video.currentTime!==saved.time?saved.time:undefined;
+        video.playbackRate=saved.rate;if(restoreTime!==undefined)video.currentTime=restoreTime;
+        onPlaybackChange?.({paused:saved.paused,rate:saved.rate,intent:saved.intent,...(restoreTime===undefined?{}:{time:restoreTime})});
+        if(saved.paused)video.pause();else play(video);
+        setFeedback(null);setPlayBlocked(false);showControls();
+      }
+      void toggleFullscreen();
+    }} />
     {watermark ? <RecordingWatermark container={container} videoRef={videoRef} code={watermark}/> : null}
     {fullscreenState.error ? <div className={styles.fullscreenError} role="alert">{labels.fullscreenError}</div> : null}
     {holding ? <div className={styles.speedFeedback} aria-hidden="true">2×</div> : null}
