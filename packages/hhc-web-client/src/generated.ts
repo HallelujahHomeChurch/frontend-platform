@@ -5784,6 +5784,7 @@ export interface components {
             mediaExpiresAt?: string;
         };
         RecordingPackageStatus: {
+            audio?: components["schemas"]["RecordingAudioDerivative"];
             processingProgress?: components["schemas"]["RecordingProcessingProgress"];
             /**
              * Format: date-time
@@ -6149,7 +6150,28 @@ export interface components {
             };
             error?: null;
         };
+        RecordingAudioDerivative: {
+            /** @enum {string} */
+            version: "aac-hls-v1";
+            /** @enum {string} */
+            state: "pending" | "processing" | "ready" | "failed";
+            /**
+             * @description Present only when the derivative is ready.
+             * @enum {string}
+             */
+            playlistPath?: "audio/aac-hls-v1/index.m3u8";
+        };
+        MemberRecordingAudio: {
+            /** @enum {string} */
+            version: "aac-hls-v1";
+            /**
+             * @description Relative to the existing authenticated package/session directory; the same grant and expiry apply.
+             * @enum {string}
+             */
+            playlistPath: "audio/aac-hls-v1/index.m3u8";
+        };
         MemberRecordingPlayback: {
+            audio?: components["schemas"]["MemberRecordingAudio"];
             /** Format: uri */
             mediaUrl: string;
             /** @description One-minute body-only exchange bearer; never log or persist. */

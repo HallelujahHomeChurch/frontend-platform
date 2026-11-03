@@ -1,5 +1,7 @@
 'use client';
 
+import {verifyMediaRequest} from './media-request.js';
+
 import {useCallback, useEffect, useRef, useState, type RefObject} from 'react';
 import type Hls from 'hls.js';
 import {LIVE_EDGE_TOLERANCE_SECONDS,LIVE_HOLDBACK_SECONDS,liveWindow, type LivePlayerState, type PlayerBookmark, type PlaybackIntent} from './live-player.js';
@@ -23,13 +25,6 @@ export type HlsPlayerProps = {
   playbackUrl:string; availableQualities:Exclude<Quality,'auto'>[]; watermark?:string; muted?:boolean; title:string;
   labels:PlayerLabels; videoRef:RefObject<HTMLVideoElement|null>; onPlayingChange?:(playing:boolean)=>void; onError:(bookmark?:PlayerBookmark)=>void;
 };
-function verifyMediaRequest(master:string,target:string) {
-  const base=new URL(master), url=new URL(target,base);
-  const prefix=base.pathname.replace(/master\.m3u8$/,'');
-  const path=url.pathname.slice(prefix.length);
-  if(url.origin!==base.origin || url.username || url.password || url.search || url.hash || !url.pathname.startsWith(prefix)
-    || !/^(master\.m3u8|(480p|720p|1080p)\/(index\.m3u8|init\.mp4|seg-\d{6}\.m4s))$/.test(path)) throw new Error('Invalid media request');
-}
 
 export function HlsPlayer({controls=true,initialQuality='auto',playbackUrl,availableQualities,watermark,muted=false,title,labels,videoRef,onPlayingChange,onError,poster,previousHref,nextHref,playbackMode='vod',live,resume,onBookmark,onNavigate,onDiagnostic}:HlsPlayerProps) {
   const container=useRef<HTMLDivElement>(null), engine=useRef<Hls|null>(null);
