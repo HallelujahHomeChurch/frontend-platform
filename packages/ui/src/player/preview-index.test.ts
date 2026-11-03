@@ -83,3 +83,16 @@ it('accepts the bounded capture cue count while rejecting excess metadata',async
   expect(()=>parsePreviewIndex(text+'\n07:12:00.000 --> 07:12:01.000\nseg-004320.jpg#xywh=0,0,160,90',url)).toThrow();
   expect(()=>parsePreviewIndex('WEBVTT\n'+' '.repeat(2_097_152),url)).toThrow();
 });
+it('restarts an interrupted background index when the page becomes visible',async()=>{
+  const fetcher=vi.fn().mockImplementationOnce(()=>new Promise<Response>(()=>{})).mockResolvedValueOnce(new Response(cue()));
+  vi.stubGlobal('fetch',fetcher);
+  const view=renderHook(({warm})=>usePreviewIndex(url.replace('previews/index.vtt','master.m3u8'),false,false,warm),{initialProps:{warm:true}});
+  await act(async()=>{});
+  view.rerender({warm:false});
+  expect(fetcher.mock.calls[0][1].signal.aborted).toBe(true);
+  view.rerender({warm:true});
+  await act(async()=>{});
+  expect(fetcher).toHaveBeenCalledTimes(2);
+  expect(view.result.current).toHaveLength(1);
+  view.unmount();
+});

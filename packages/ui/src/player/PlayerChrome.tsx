@@ -1,6 +1,6 @@
 'use client';
 
-import {useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type RefObject} from 'react';
+import {useEffect, useRef, useState, useMemo, useSyncExternalStore, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type RefObject} from 'react';
 import {Check, ChevronDown, ChevronLeft, ChevronRight, SkipBack, SkipForward, LoaderCircle, RectangleHorizontal, Maximize, Minimize, RotateCcw, Pause, Play, Settings, Volume2, VolumeX} from 'lucide-react';
 import {LIVE_EDGE_TOLERANCE_SECONDS,liveWindow,type LivePlayerState,type PlayerBookmark} from './live-player.js';
 import type {PlayerLabels} from './HlsPlayer.js';
@@ -22,6 +22,9 @@ type Props = {
   onQualityChange: (quality: Quality) => void; onPlayingChange?: (playing: boolean) => void;
 };
 
+const visibleSnapshot=()=>document.visibilityState==='visible';
+const subscribeVisibility=(notify:()=>void)=>{document.addEventListener('visibilitychange',notify);return()=>document.removeEventListener('visibilitychange',notify);};
+
 const touchQuery = '(pointer: coarse)';
 const touchSnapshot = () => typeof window.matchMedia === 'function' && window.matchMedia(touchQuery).matches;
 const subscribeTouch = (notify:()=>void) => {
@@ -36,6 +39,7 @@ export function playerClock(seconds: number) {
 }
 
 export function PlayerChrome({container, videoRef, playbackUrl, watermark, labels, quality, activeHeight, qualities, autoplayBlocked=false, loading, buffering=false, failed, onQualityChange, onPlaybackChange,onPlayingChange,live,followLive=true,onDvr,onReturnToLive,previousHref,nextHref,onNavigate}: Props) {
+  const pageVisible=useSyncExternalStore(subscribeVisibility,visibleSnapshot,()=>true);
   const touchUI = useSyncExternalStore(subscribeTouch, touchSnapshot, () => false);
   const fullscreenState = usePlayerFullscreen(container, videoRef, touchUI);
   const fullscreen = fullscreenState.mode !== 'inline';
@@ -50,8 +54,9 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
   const [feedback, setFeedback] = useState<{kind: 'play' | 'pause' | 'back' | 'forward'; id: number; seconds?:number} | null>(null);
   const [preview, setPreview] = useState<number | null>(null), [scrub, setScrub] = useState<number | null>(null);
   const saveData=typeof navigator!=='undefined'&&(navigator as Navigator&{connection?:{saveData?:boolean}}).connection?.saveData===true;
-  const warmPreviews=!live&&!failed&&!loading&&!waiting&&duration>0&&!saveData&&typeof document!=='undefined'&&document.visibilityState==='visible';
-  const cues = usePreviewIndex(playbackUrl, Boolean(live), !failed && (preview !== null || scrub !== null), warmPreviews);
+  const warmPreviews=!live&&!failed&&!loading&&!waiting&&!buffering&&duration>0&&!saveData&&pageVisible;
+  const cues = usePreviewIndex(playbackUrl, Boolean(live), !failed && pageVisible && (preview !== null || scrub !== null), warmPreviews);
+  const preloadSprites=useMemo(()=>Array.from(new Set(cues.map(cue=>cue.url))),[cues]);
   const [holding, setHolding] = useState(false);
   const gesture = useRef<{id:number;x:number;y:number;moved:boolean;rate:number|null}|null>(null);
   const holdTimer = useRef(0), tapTimer = useRef(0), clickTimer=useRef(0);
@@ -306,8 +311,8 @@ export function PlayerChrome({container, videoRef, playbackUrl, watermark, label
           onChange={event => { const value = Number(event.target.value); if (dragging.current) setScrub(value); else seek(value); }}
           onPointerUp={event => { if(dragging.current)seek(Number(event.currentTarget.value));cancelScrub(); }}
           onPointerCancel={cancelScrub} onLostPointerCapture={cancelScrub} />
-        <div className={styles.preview} hidden={previewTime===null||duration<=0} aria-hidden="true" style={{left:`clamp(80px, ${percentage(previewTime??0)}, calc(100% - 80px))`}}>
-          {!failed && cues.length > 0 ? <PreviewSprite key={`${playbackUrl}:${live?'live':'vod'}`} playbackUrl={playbackUrl} cue={cue} neighbor={neighbor}/> : null}
+        <div className={styles.preview} hidden={previewTime===null||duration<=0} aria-hidden="true" style={{left:`clamp(calc(var(--preview-width) / 2), ${percentage(previewTime??0)}, calc(100% - var(--preview-width) / 2))`}}>
+          {!failed && cues.length > 0 ? <PreviewSprite key={`${playbackUrl}:${live?'live':'vod'}`} playbackUrl={playbackUrl} cue={cue} neighbor={neighbor} enabled={pageVisible&&!failed} preload={preloadSprites} preloadEnabled={warmPreviews}/> : null}
           <time>{playerClock(previewTime??0)}</time>
         </div>
       </div>

@@ -20,6 +20,7 @@ function hover(seconds=32){
 }
 const tick=async(ms:number)=>act(async()=>{await vi.advanceTimersByTimeAsync(ms);});
 beforeEach(()=>{
+  vi.stubGlobal('Image',class {src='';decoding='';naturalWidth=960;naturalHeight=90;decode=async()=>{}});
   vi.useFakeTimers();
   vi.spyOn(HTMLMediaElement.prototype,'duration','get').mockReturnValue(110);
   vi.spyOn(HTMLMediaElement.prototype,'seekable','get').mockReturnValue({length:1,start:()=>0,end:()=>200});
@@ -27,7 +28,7 @@ beforeEach(()=>{
 });
 afterEach(()=>{cleanup();vi.useRealTimers();vi.restoreAllMocks();vi.unstubAllGlobals();});
 function network(){
-  const fetcher=vi.fn(async(url:string)=>url.endsWith('.vtt')?new Response(index()):new Response(new Uint8Array([255,216,255,217]),{headers:{'Content-Type':'image/jpeg'}}));
+  const fetcher=vi.fn(async(url:string)=>url.endsWith('.vtt')?new Response(index()):new Response(new Uint8Array([255,216,255,192,0,11,8,0,90,3,192,1,1,17,0,255,217]),{headers:{'Content-Type':'image/jpeg'}}));
   vi.stubGlobal('fetch',fetcher);return fetcher;
 }
 it('shows the existing sprite style for live DVR and refreshes only while the timeline preview is active',async()=>{
@@ -114,4 +115,24 @@ it('retries an optional VOD index missing during warming when the user hovers la
   expect(fetcher).toHaveBeenCalledTimes(1);hover();await tick(0);await tick(100);
   expect(view.container.querySelector('img')).toHaveAttribute('src','blob:preview');
   expect(fetcher.mock.calls.filter(([url])=>url.endsWith('.vtt'))).toHaveLength(2);
+});
+it('aborts the preview index immediately when the document becomes hidden',async()=>{
+ let visibility:DocumentVisibilityState='visible';
+ vi.spyOn(document,'visibilityState','get').mockImplementation(()=>visibility);
+ const fetcher=vi.fn(()=>new Promise<Response>(()=>{}));vi.stubGlobal('fetch',fetcher);
+ const view=render(<Harness/>);hover();await tick(0);
+ const signal=(fetcher.mock.calls[0] as unknown as [string,RequestInit])[1].signal!;
+ expect(signal.aborted).toBe(false);
+ visibility='hidden';fireEvent(document,new Event('visibilitychange'));await tick(0);
+ expect(signal.aborted).toBe(true);view.unmount();
+});
+it('preloads distant VOD sprites and aborts them immediately when hidden',async()=>{
+ let visibility:DocumentVisibilityState='visible';vi.spyOn(document,'visibilityState','get').mockImplementation(()=>visibility);
+ const signals:AbortSignal[]=[];
+ const fetcher=vi.fn((url:string,options:RequestInit)=>url.endsWith('.vtt')?Promise.resolve(new Response(index(0)+'\n00:01:00.000 --> 00:01:05.000\nseg-000002.jpg#xywh=0,0,160,90\n')):url.endsWith('seg-000002.jpg')?new Promise<Response>(()=>{signals.push(options.signal!);}):Promise.resolve(new Response(new Uint8Array([255,216,255,192,0,11,8,0,90,3,192,1,1,17,0,255,217]),{headers:{'Content-Type':'image/jpeg'}})));
+ vi.stubGlobal('fetch',fetcher);const view=render(<Harness state={null}/>);
+ fireEvent.canPlay(view.container.querySelector('video')!);await tick(100);
+ expect(signals).toHaveLength(1);
+ visibility='hidden';fireEvent(document,new Event('visibilitychange'));await tick(0);
+ expect(signals[0].aborted).toBe(true);view.unmount();
 });
