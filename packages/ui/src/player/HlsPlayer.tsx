@@ -133,7 +133,9 @@ export function HlsPlayer({backgroundAudioUrl,playbackMediaRef,controls=true,ini
     void import('hls.js').then(({default:Hls})=>{
       if(cancelled||failed.current)return;
       setActiveHeight(null);
-      if(Hls.isSupported()) {
+      // Keep companion video on the same native HLS path as audio on ManagedMediaSource browsers.
+      const nativeCompanion=audioUrl&&'ManagedMediaSource' in window&&video.canPlayType('application/vnd.apple.mpegurl');
+      if(Hls.isSupported()&&!nativeCompanion) {
         diagnosticBackend.current={url:playbackUrl,backend:'hls'};diagnostics.current?.setBackend('hls');
         const LatencyController=Hls.DefaultConfig.latencyController!;
         const hls=new Hls({
