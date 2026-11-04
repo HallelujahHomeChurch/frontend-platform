@@ -1352,3 +1352,16 @@ it('bounds large-drift recovery seeks but honors an explicit audio seek immediat
  now+=2000;audio.currentTime=43;fireEvent.canPlay(video);expect(video.currentTime).toBe(40);
  audio.currentTime=80;fireEvent.seeking(audio);expect(video.currentTime).toBe(80);
 });
+
+it.each(['auto','720p'] as const)('uses native HLS for companion video on a ManagedMediaSource browser with %s quality',async quality=>{
+ vi.stubGlobal('ManagedMediaSource',class {});vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
+ const p=props();render(<HlsPlayer {...p} initialQuality={quality} backgroundAudioUrl={url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8')}/>);
+ await waitFor(()=>expect(p.videoRef.current!.src).toBe(quality==='auto'?url:url.replace('master.m3u8','720p/index.m3u8')));
+ expect(engine.instances).toHaveLength(0);
+});
+it.each(['ordinary','live','no-native','no-managed'] as const)('retains hls.js selection for %s playback',async mode=>{
+ if(mode!=='no-managed')vi.stubGlobal('ManagedMediaSource',class {});
+ vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue(mode==='no-native'?'':'probably');
+ const p=props();render(<HlsPlayer {...p} playbackMode={mode==='live'?'live':'vod'} backgroundAudioUrl={mode==='ordinary'?undefined:url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8')}/>);
+ await waitFor(()=>expect(engine.instances.length).toBeGreaterThan(0));expect(p.videoRef.current!.src).not.toBe(url);
+});
