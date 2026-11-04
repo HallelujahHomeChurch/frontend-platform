@@ -415,43 +415,46 @@ complete the reviewed backfill before switching website link producers; older ro
 and responses may omit `publicId` during rollout. Package publication is coordinated
 with the shared-player release, not performed by this contract change alone.
 
-## VOD background audio (UI 1.1.13)
+## VOD foreground/background handoff
 
 `HlsPlayer` accepts optional `backgroundAudioUrl` and
-`playbackMediaRef: RefObject<HTMLMediaElement | null>`. The background URL must
-be the same authorized video's `audio/aac-hls-v1/index.m3u8`. It is latched at
-mount; key the component by playback session and remount to remove or replace
-it. Late readiness/renewal metadata never introduces another audible source.
-Live playback ignores this option.
+`playbackMediaRef: RefObject<HTMLMediaElement | null>`. The audio URL must
+be the same authorized video's `audio/aac-hls-v1/index.m3u8`. Capability is
+latched at mount; key by playback session and remount to remove or replace it.
+Live and ordinary video playback keep their existing behavior.
 
-The ordinary player controls operate one continuous audio element while the
-video remains muted. `videoRef` still identifies the picture/fullscreen element;
-`playbackMediaRef` synchronously identifies the audio owner, or video without a
-companion. Use that owner for bookmarks, telemetry and stopping playback. Both
-transports stop on error/unmount. Audio errors use the existing `onError`
-bookmark contract; consumers may perform one bounded video-only fallback.
+Foreground picture and sound come from the video element. The normal Play
+control also warms a muted audio element using the same user gesture. There is
+no second player, mode selector or readiness UI. Foreground progress never
+rate-corrects or seeks the video toward the standby audio clock. A completed
+foreground seek positions only standby audio.
 
-Prepare the authorized session before the normal Play gesture. Companion audio
-starts directly from the controls or a MediaSession action, never from a hidden
-visibility callback. There is no new mode selector or readiness UI. Audio
-play rejection uses the existing tap-to-play feedback. Hidden video may stop;
-returning to the foreground synchronizes its picture to the audio clock.
-Quality changes do not reload audio. Container fullscreen or the existing CSS
-viewport fallback retains both elements; video-only native fullscreen, PiP and
-remote playback are not used for this composition.
+When hidden, audio takes the current position, speed, volume and user mute
+setting; video is muted and paused. On return, both pause at a fixed audio
+position until video has completed its seek and has a presentable frame. Video
+then owns sound and picture again, while audio becomes muted standby. A brief
+pause at the transition is expected. Explicit user pause/seek/settings win over
+pending transitions and late play promises; an observed OS interruption stays
+paused until a new Play command.
 
-Automated media tests do not prove OS background behavior. Before claiming
-mobile continuity, verify normal Play → lock → unlock, lock-screen pause/seek,
-interruption recovery, authorization expiry, and foreground synchronization on
-real supported iOS Safari/Android devices. No new media capability bypasses the
-existing grant, session-cookie or request-path restrictions.
+`playbackMediaRef` synchronously identifies video in foreground/returning and
+audio while hidden. Consumers read the ref for sharing, bookmarks and stopping
+playback. Controls and MediaSession listeners rebind when ownership changes.
+Programmatic transition pauses do not overwrite user intent. Quality changes
+retain the foreground video position and do not chase a moving standby clock.
+Audio errors use the existing single `onError` bookmark contract; consumers may
+perform one bounded ordinary-video fallback. Both media stop on failure/unmount.
 
-With companion audio, hidden hls.js video loading is stopped (including delayed
-engine initialization) and resumes at the audible position on return. Preview
-loading uses the existing hidden-page cancellation. Native Safari HLS exposes no
-`stopLoad` equivalent: the video is paused with its source intact; the browser
-may retain or extend its native buffer. We do not claim zero background network
-traffic for that transport. Foreground correction is limited to once per second
-on audio progress and never retargets an outstanding video seek. A stalled
-picture can lag while audio continues; recovery resynchronizes to the audible
-clock rather than promising gap-free video under network stalls.
+Native HLS remains selected for companion playback on ManagedMediaSource
+browsers. Hidden hls.js video loading is stopped, including delayed initialization,
+and resumes at the handoff position. Native Safari has no stopLoad equivalent;
+its paused video source stays intact and the browser may retain or extend its
+buffer. Container fullscreen or the existing viewport fallback preserves both
+media; native video-only fullscreen, PiP and remote playback remain disabled.
+
+Automated tests and the separately approved iPhone feasibility spike do not
+certify this integrated package on every device. Verify the integrated normal
+Play → lock → unlock flow, user pause/seek, interruptions, expiry and foreground
+quality switching on supported phones before claiming device acceptance.
+Existing grant/session cookies and per-request media-path restrictions remain
+required; no credentials or private URLs enter diagnostics.
