@@ -3,17 +3,17 @@ import {beforeEach,expect,it,vi} from 'vitest';
 import {useBackgroundAudio} from './use-background-audio.js';
 vi.mock('./audio-source.js',()=>({attachAudioSource:()=>()=>{}}));
 const url='https://media.example/videos/r/packages/p/sessions/s/master.m3u8';
-function media<K extends 'video'|'audio'>(tag:K){
+function media<K extends 'video'|'audio'>(tag:K,pauseEvents?:Array<()=>void>){
  const element=document.createElement(tag);let paused=true,seeking=false,ready=4;
  Object.defineProperties(element,{paused:{get:()=>paused},seeking:{get:()=>seeking},readyState:{get:()=>ready},duration:{get:()=>120}});
  const play=vi.spyOn(element,'play').mockImplementation(()=>{paused=false;element.dispatchEvent(new Event('play'));return Promise.resolve();});
- vi.spyOn(element,'pause').mockImplementation(()=>{if(!paused){paused=true;element.dispatchEvent(new Event('pause'));}});
+ vi.spyOn(element,'pause').mockImplementation(()=>{if(!paused){paused=true;const dispatch=()=>element.dispatchEvent(new Event('pause'));if(pauseEvents)pauseEvents.push(dispatch);else dispatch();}});
  return {element,play,setPaused:(value:boolean)=>{paused=value;},slow:()=>{seeking=true;ready=1;},ready:()=>{seeking=false;ready=4;element.dispatchEvent(new Event('seeked'));}};
 }
 let hidden=false;
 beforeEach(()=>{hidden=false;vi.spyOn(document,'visibilityState','get').mockImplementation(()=>hidden?'hidden':'visible');});
-function setup(){
- const v=media('video'),a=media('audio'),mediaRef={current:v.element as HTMLMediaElement|null},pausedIntent={current:true};
+function setup(pauseEvents?:Array<()=>void>){
+ const v=media('video',pauseEvents),a=media('audio',pauseEvents),mediaRef={current:v.element as HTMLMediaElement|null},pausedIntent={current:true};
  const options={videoRef:{current:v.element},audioRef:{current:a.element},mediaRef,url:url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8'),videoUrl:url,pausedIntent,onError:vi.fn(),onChange:vi.fn(),onBlocked:vi.fn()};
  const hook=renderHook(()=>useBackgroundAudio(options));
  const visibility=(value:boolean)=>act(()=>{hidden=value;document.dispatchEvent(new Event('visibilitychange'));});
@@ -56,4 +56,14 @@ it('carries user rate volume and mute with ownership and stops standby on extern
 it('does not revive a failed owner after stale promise settlement',async()=>{
  const t=setup();let finish!:()=>void;t.v.play.mockImplementation(()=>new Promise<void>(resolve=>{finish=()=>{t.v.setPaused(false);resolve();};}));t.play();act(()=>t.hook.result.current.controls.current!.stop());await act(async()=>finish());
  expect(t.v.element.paused).toBe(true);expect(t.a.element.paused).toBe(true);expect(t.v.element.muted).toBe(true);expect(t.a.element.muted).toBe(true);
+});
+
+it('consumes each queued internal pause without replacing the latest play intent',()=>{
+ const queued:Array<()=>void>=[],t=setup(queued);t.play();
+ t.visibility(true);t.visibility(false);t.visibility(true);t.visibility(false);
+ expect(queued).toHaveLength(4);expect(t.pausedIntent.current).toBe(false);
+ act(()=>{while(queued.length)queued.shift()!();});
+ expect(t.pausedIntent.current).toBe(false);expect(t.v.element.paused).toBe(false);expect(t.a.element.paused).toBe(false);expect(t.v.element.muted).toBe(false);expect(t.a.element.muted).toBe(true);
+ act(()=>{t.v.element.pause();while(queued.length)queued.shift()!();});
+ expect(t.pausedIntent.current).toBe(true);expect(t.a.element.paused).toBe(true);
 });

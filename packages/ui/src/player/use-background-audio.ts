@@ -13,9 +13,9 @@ export function useBackgroundAudio(options:Options){
   let phase:'foreground'|'background'|'returning'='foreground',disposed=false,stopped=false,armed=false,generation=0;
   let pending:{token:number;target:number}|null=null;
   let userMuted=video.muted,volume=video.volume,rate=video.playbackRate;
-  const expectedPause=new WeakSet<HTMLMediaElement>();
+  const expectedPause=new WeakMap<HTMLMediaElement,number>();
   const owner=()=>phase==='background'?audio:video;
-  const pause=(element:HTMLMediaElement)=>{if(!element.paused){expectedPause.add(element);element.pause();}};
+  const pause=(element:HTMLMediaElement)=>{if(!element.paused){expectedPause.set(element,(expectedPause.get(element)??0)+1);element.pause();}};
   const publish=()=>{
    mediaRef.current=owner();if(externalRef)externalRef.current=owner();
    setState(previous=>{const next={owner:phase==='background'?1:0,paused:pausedIntent.current||!armed,muted:userMuted,volume};return previous.owner===next.owner&&previous.paused===next.paused&&previous.muted===next.muted&&previous.volume===next.volume?previous:next;});
@@ -66,7 +66,7 @@ export function useBackgroundAudio(options:Options){
   const listeners:Array<[HTMLMediaElement,string,()=>void]>=[];
   const listen=(element:HTMLMediaElement,event:string,handler:()=>void)=>{element.addEventListener(event,handler);listeners.push([element,event,handler]);};
   for(const element of [video,audio]){
-   listen(element,'pause',()=>{if(expectedPause.delete(element)||disposed||stopped||element!==owner()||phase==='returning')return;api.pause();});
+   listen(element,'pause',()=>{const expected=expectedPause.get(element)??0;if(expected){expectedPause.set(element,expected-1);return;}if(disposed||stopped||element!==owner()||phase==='returning')return;api.pause();});
    listen(element,'ended',()=>{if(element===owner())api.pause();});
    listen(element,'volumechange',()=>{if(element!==owner()||phase==='returning'||disposed)return;userMuted=element.muted;volume=element.volume;reconcile();publish();});
    listen(element,'ratechange',()=>{if(element!==owner()||disposed)return;rate=element.playbackRate;reconcile();publish();});
