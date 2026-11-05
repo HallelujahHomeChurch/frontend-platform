@@ -1,12 +1,20 @@
+import {liveWindow,type LivePlayerState} from './live-player.js';
 import {useEffect,useRef,type RefObject} from 'react';
-export function useAudioSession(audioRef:RefObject<HTMLMediaElement|null>,title:string,artwork:string|undefined,playbackUrl:string|undefined,play:()=>void,pause:()=>void,owner?:number,onSeek?:(time:number)=>void){
- const actions=useRef({play,pause,onSeek});actions.current={play,pause,onSeek};
+export function useAudioSession(audioRef:RefObject<HTMLMediaElement|null>,title:string,artwork:string|undefined,playbackUrl:string|undefined,play:()=>void,pause:()=>void,owner?:number,onSeek?:(time:number)=>void,live?:LivePlayerState){
+ const actions=useRef({play,pause,onSeek,live});actions.current={play,pause,onSeek,live};
  useEffect(()=>{
   const audio=audioRef.current,session=navigator.mediaSession;
   if(!audio||!session||!playbackUrl)return;
   const metadata=typeof MediaMetadata==='function'?new MediaMetadata({title,...(artwork?{artwork:[{src:artwork}]}:{})}):null;
   session.metadata=metadata;
-  const seek=(time:number)=>{const current=audioRef.current;if(current&&Number.isFinite(time)&&Number.isFinite(current.duration)){const target=Math.max(0,Math.min(current.duration,time));if(actions.current.onSeek)actions.current.onSeek(target);else current.currentTime=target;}};
+  const seek=(time:number)=>{
+   const current=audioRef.current;if(!current||!Number.isFinite(time))return;
+   const live=actions.current.live,range=live?liveWindow(current.seekable,live.verifiedEnd):null;
+   const bounds=live?(range?{start:range.start,end:live.ended?range.end:range.edge}:null):Number.isFinite(current.duration)?{start:0,end:current.duration}:null;
+   if(!bounds)return;
+   const target=Math.max(bounds.start,Math.min(bounds.end,time));
+   if(actions.current.onSeek)actions.current.onSeek(target);else current.currentTime=target;
+  };
   const handlers:Partial<Record<MediaSessionAction,MediaSessionActionHandler>>={play:()=>actions.current.play(),pause:()=>actions.current.pause(),seekbackward:event=>seek((audioRef.current?.currentTime??0)-(event.seekOffset??10)),seekforward:event=>seek((audioRef.current?.currentTime??0)+(event.seekOffset??10)),seekto:event=>{if(event.seekTime!==undefined)seek(event.seekTime);}};
   for(const [action,handler] of Object.entries(handlers))try{session.setActionHandler(action as MediaSessionAction,handler!);}catch{/* Some native surfaces omit seek actions. */}
   const update=()=>{

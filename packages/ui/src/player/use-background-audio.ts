@@ -2,12 +2,12 @@ import {useEffect,useRef,useState,type RefObject} from 'react';
 import {attachAudioSource} from './audio-source.js';
 
 export type BackgroundControls={play:()=>void;pause:()=>void;seek:(time:number)=>void;hold:(time:number)=>void;stop:()=>void;snapshot:()=>{time:number;paused:boolean;rate:number};settings:(value:{muted?:boolean;volume?:number;rate?:number})=>void};
-type Options={audioRef:RefObject<HTMLAudioElement|null>;videoRef:RefObject<HTMLVideoElement|null>;mediaRef:RefObject<HTMLMediaElement|null>;externalRef?:RefObject<HTMLMediaElement|null>;pauseRef?:RefObject<(()=>void)|null>;url:string|undefined;videoUrl:string;pausedIntent:RefObject<boolean>;onError:()=>void;onChange:()=>void;onBlocked:()=>void};
+type Options={audioRef:RefObject<HTMLAudioElement|null>;videoRef:RefObject<HTMLVideoElement|null>;mediaRef:RefObject<HTMLMediaElement|null>;externalRef?:RefObject<HTMLMediaElement|null>;pauseRef?:RefObject<(()=>void)|null>;url:string|undefined;videoUrl:string;mode?:'vod'|'live';onPosition?:(time:number)=>void;pausedIntent:RefObject<boolean>;onError:()=>void;onChange:()=>void;onBlocked:()=>void};
 export function useBackgroundAudio(options:Options){
  const callbacks=useRef(options);callbacks.current=options;
  const controls=useRef<BackgroundControls|null>(null);
  const [state,setState]=useState({owner:0,paused:true,muted:false,volume:1});
- const {audioRef,videoRef,mediaRef,externalRef,pauseRef,url,videoUrl,pausedIntent}=options;
+ const {audioRef,videoRef,mediaRef,externalRef,pauseRef,url,videoUrl,mode,pausedIntent}=options;
  useEffect(()=>{
   const audio=audioRef.current,video=videoRef.current;if(!audio||!video||!url)return;
   let phase:'foreground'|'background'|'returning'='foreground',disposed=false,stopped=false,armed=false,interrupted=false,generation=0;
@@ -32,7 +32,7 @@ export function useBackgroundAudio(options:Options){
    void element.play().then(reconcile).catch(()=>{if(!disposed&&!stopped&&token===generation&&wanted(element)&&element===owner()){pausedIntent.current=true;reconcile();publish();callbacks.current.onBlocked();}});
   };
   const run=()=>{reconcile();if(wanted(audio))play(audio);if(wanted(video))play(video);};
-  const position=(element:HTMLMediaElement,time:number)=>{if(element.readyState&&Number.isFinite(time))element.currentTime=Math.max(0,Number.isFinite(element.duration)?Math.min(element.duration,time):time);};
+  const position=(element:HTMLMediaElement,time:number)=>{if(element.readyState&&Number.isFinite(time)){if(element===owner())callbacks.current.onPosition?.(time);element.currentTime=Math.max(0,Number.isFinite(element.duration)?Math.min(element.duration,time):time);}};
   const ready=()=>{
    const target=pending;
    if(disposed||stopped||phase!=='returning'||!target||target.token!==generation||document.visibilityState==='hidden'||video.seeking||video.readyState<2||Math.abs(video.currentTime-target.target)>.1)return;
@@ -81,8 +81,8 @@ export function useBackgroundAudio(options:Options){
   document.addEventListener('visibilitychange',visibility);
   reconcile();publish();if(document.visibilityState==='hidden')visibility();
   let detach=()=>{};
-  if(url!==new URL('audio/aac-hls-v1/index.m3u8',videoUrl).href)fail();else detach=attachAudioSource(audio,url,fail);
+  if(url!==new URL(mode==='live'?'480p/index.m3u8':'audio/aac-hls-v1/index.m3u8',videoUrl).href)fail();else detach=attachAudioSource(audio,url,fail,mode==='live'?videoUrl:undefined);
   return()=>{disposed=true;++generation;for(const [element,event,handler]of listeners)element.removeEventListener(event,handler);document.removeEventListener('visibilitychange',visibility);if(controls.current===api)controls.current=null;if(pauseRef?.current===api.pause)pauseRef.current=null;reconcile();detach();};
- },[audioRef,videoRef,mediaRef,externalRef,pauseRef,url,videoUrl,pausedIntent]);
+ },[audioRef,videoRef,mediaRef,externalRef,pauseRef,url,videoUrl,mode,pausedIntent]);
  return {controls,...state};
 }

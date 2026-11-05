@@ -1,5 +1,5 @@
 import {act,renderHook} from '@testing-library/react';
-import {beforeEach,expect,it,vi} from 'vitest';
+import {beforeEach,describe,expect,it,vi} from 'vitest';
 import {useBackgroundAudio} from './use-background-audio.js';
 vi.mock('./audio-source.js',()=>({attachAudioSource:()=>()=>{}}));
 const url='https://media.example/videos/r/packages/p/sessions/s/master.m3u8';
@@ -10,11 +10,12 @@ function media<K extends 'video'|'audio'>(tag:K,pauseEvents?:Array<()=>void>){
  vi.spyOn(element,'pause').mockImplementation(()=>{if(!paused){paused=true;const dispatch=()=>element.dispatchEvent(new Event('pause'));if(pauseEvents)pauseEvents.push(dispatch);else dispatch();}});
  return {element,play,setPaused:(value:boolean)=>{paused=value;},slow:()=>{seeking=true;ready=1;},ready:()=>{seeking=false;ready=4;element.dispatchEvent(new Event('seeked'));}};
 }
+describe.each(['vod','live'] as const)('%s ownership',mode=>{
 let hidden=false;
 beforeEach(()=>{hidden=false;vi.spyOn(document,'visibilityState','get').mockImplementation(()=>hidden?'hidden':'visible');});
 function setup(pauseEvents?:Array<()=>void>,pauseRef?:{current:(()=>void)|null}){
  const v=media('video',pauseEvents),a=media('audio',pauseEvents),mediaRef={current:v.element as HTMLMediaElement|null},pausedIntent={current:true};
- const options={videoRef:{current:v.element},audioRef:{current:a.element},mediaRef,pauseRef,url:url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8'),videoUrl:url,pausedIntent,onError:vi.fn(),onChange:vi.fn(),onBlocked:vi.fn()};
+ const options={videoRef:{current:v.element},audioRef:{current:a.element},mediaRef,pauseRef,mode,url:url.replace('master.m3u8',mode==='live'?'480p/index.m3u8':'audio/aac-hls-v1/index.m3u8'),videoUrl:url,pausedIntent,onError:vi.fn(),onChange:vi.fn(),onBlocked:vi.fn()};
  const hook=renderHook(()=>useBackgroundAudio(options));
  const visibility=(value:boolean)=>act(()=>{hidden=value;document.dispatchEvent(new Event('visibilitychange'));});
  const play=()=>act(()=>hook.result.current.controls.current!.play());
@@ -101,4 +102,6 @@ it('does not resume a background audio interruption on unlock',()=>{
  const t=setup(undefined,{current:null});t.play();t.visibility(true);
  act(()=>{t.a.setPaused(true);t.a.element.dispatchEvent(new Event('pause'));});t.visibility(false);
  expect(t.pausedIntent.current).toBe(true);expect(t.v.element.paused).toBe(true);expect(t.a.element.paused).toBe(true);
+});
+
 });
