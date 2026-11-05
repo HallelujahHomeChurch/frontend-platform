@@ -1392,3 +1392,20 @@ it('does not restore a stale quality position after background handoff advances'
  audio.currentTime=64;visibility.mockReturnValue('visible');fireEvent(document,new Event('visibilitychange'));fireEvent.loadedMetadata(video);
  expect(video.currentTime).toBe(64);
 });
+
+it.each(['companion','ordinary','live'] as const)('exposes an authority pause that stays stopped across hide for %s',async mode=>{
+ const playing=new WeakSet<HTMLMediaElement>();
+ vi.spyOn(HTMLMediaElement.prototype,'paused','get').mockImplementation(function(this:HTMLMediaElement){return !playing.has(this);});
+ vi.mocked(HTMLMediaElement.prototype.play).mockImplementation(function(this:HTMLMediaElement){playing.add(this);this.dispatchEvent(new Event('play'));return Promise.resolve();});
+ vi.mocked(HTMLMediaElement.prototype.pause).mockImplementation(function(this:HTMLMediaElement){if(playing.delete(this))this.dispatchEvent(new Event('pause'));});
+ vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
+ const p=props(),playbackPauseRef=createRef<(()=>void)|null>();
+ const {container,unmount}=render(<HlsPlayer {...p} {...{playbackPauseRef}} playbackMode={mode==='live'?'live':'vod'} backgroundAudioUrl={mode==='companion'?url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8'):undefined}/>);
+ await waitFor(()=>expect(playbackPauseRef.current).toBeTypeOf('function'));
+ fireEvent.canPlay(p.videoRef.current!);if(mode==='companion')fireEvent.click(screen.getByRole('button',{name:'Play'}));else await act(async()=>p.videoRef.current!.play());
+ expect(p.videoRef.current!.paused).toBe(false);
+ act(()=>{playing.delete(p.videoRef.current!);p.videoRef.current!.dispatchEvent(new Event('pause'));playbackPauseRef.current!();});
+ vi.spyOn(document,'visibilityState','get').mockReturnValue('hidden');fireEvent(document,new Event('visibilitychange'));
+ expect(p.videoRef.current!.paused).toBe(true);for(const media of container.querySelectorAll('audio'))expect(media.paused).toBe(true);
+ unmount();expect(playbackPauseRef.current).toBeNull();
+});

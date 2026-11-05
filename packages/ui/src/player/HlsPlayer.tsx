@@ -20,7 +20,7 @@ export type PlayerLabels = {
   settingsBack?:string; replay?:string; settings:string; togglePlayback:string; privateCopy:string; buffering:string;
 };
 export type HlsPlayerProps = {
-  backgroundAudioUrl?:string; playbackMediaRef?:RefObject<HTMLMediaElement|null>;
+  backgroundAudioUrl?:string; playbackMediaRef?:RefObject<HTMLMediaElement|null>; playbackPauseRef?:RefObject<(()=>void)|null>;
   onDiagnostic?:(value:PlayerDiagnostic)=>void;
   controls?:boolean; initialQuality?:Quality;
   playbackMode?: 'vod' | 'live'; live?: LivePlayerState; resume?: PlayerBookmark; onBookmark?: (value: PlayerBookmark) => void;
@@ -29,7 +29,7 @@ export type HlsPlayerProps = {
   labels:PlayerLabels; videoRef:RefObject<HTMLVideoElement|null>; onPlayingChange?:(playing:boolean)=>void; onError:(bookmark?:PlayerBookmark)=>void;
 };
 
-export function HlsPlayer({backgroundAudioUrl,playbackMediaRef,controls=true,initialQuality='auto',playbackUrl,availableQualities,watermark,muted=false,title,labels,videoRef,onPlayingChange,onError,poster,previousHref,nextHref,playbackMode='vod',live,resume,onBookmark,onNavigate,onDiagnostic}:HlsPlayerProps) {
+export function HlsPlayer({backgroundAudioUrl,playbackMediaRef,playbackPauseRef,controls=true,initialQuality='auto',playbackUrl,availableQualities,watermark,muted=false,title,labels,videoRef,onPlayingChange,onError,poster,previousHref,nextHref,playbackMode='vod',live,resume,onBookmark,onNavigate,onDiagnostic}:HlsPlayerProps) {
   const container=useRef<HTMLDivElement>(null), engine=useRef<Hls|null>(null);
   // Latch the source for this playback lifecycle: renewal must not silently introduce a new audible owner.
   const [audioUrl]=useState(()=>playbackMode==='vod'?backgroundAudioUrl:undefined);
@@ -108,7 +108,12 @@ export function HlsPlayer({backgroundAudioUrl,playbackMediaRef,controls=true,ini
     rebuildTimeout.current??=window.setTimeout(handleError,30000);
   },[handleError]);
 
-  const handoff=useBackgroundAudio({audioRef,videoRef,mediaRef,externalRef:playbackMediaRef,url:audioUrl,videoUrl:playbackUrl,pausedIntent,onError:handleError,onChange:remember,onBlocked:()=>setAutoplayBlocked(true)});
+  const handoff=useBackgroundAudio({audioRef,videoRef,mediaRef,externalRef:playbackMediaRef,pauseRef:playbackPauseRef,url:audioUrl,videoUrl:playbackUrl,pausedIntent,onError:handleError,onChange:remember,onBlocked:()=>setAutoplayBlocked(true)});
+  useEffect(()=>{
+    if(audioUrl||!playbackPauseRef)return;
+    const pause=()=>videoRef.current?.pause();playbackPauseRef.current=pause;
+    return()=>{if(playbackPauseRef.current===pause)playbackPauseRef.current=null;};
+  },[audioUrl,playbackPauseRef,videoRef]);
   useAudioSession(mediaRef,title,poster,audioUrl,()=>handoff.controls.current?.play(),()=>handoff.controls.current?.pause(),handoff.owner, time=>handoff.controls.current?.seek(time));
 
   useEffect(()=>{

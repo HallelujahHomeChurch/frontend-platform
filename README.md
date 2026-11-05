@@ -434,12 +434,17 @@ setting; video is muted and paused. On return, both pause at a fixed audio
 position until video has completed its seek and has a presentable frame. Video
 then owns sound and picture again, while audio becomes muted standby. A brief
 pause at the transition is expected. Explicit user pause/seek/settings win over
-pending transitions and late play promises; an observed OS interruption stays
+pending transitions and late play promises; an observed background-audio interruption stays
 paused until a new Play command.
 
 `playbackMediaRef` synchronously identifies video in foreground/returning and
-audio while hidden. Consumers read the ref for sharing, bookmarks and stopping
-playback. Controls and MediaSession listeners rebind when ownership changes.
+audio while hidden. Consumers read the ref for sharing and bookmarks. Supply `playbackPauseRef`
+and invoke it for every authority-driven stop (expiry, revocation, logout and
+navigation). This opts into preserving armed handoff intent when iPhone pauses
+foreground video before announcing hidden visibility. Interrupted foreground
+controls show paused; explicit Play or background handoff can recover. Explicit
+pause always cancels the intent and stops both media. Consumers without this ref
+retain the legacy raw-pause contract. Controls and MediaSession listeners rebind when ownership changes.
 Programmatic transition pauses do not overwrite user intent. Quality changes
 retain the foreground video position and do not chase a moving standby clock.
 Audio errors use the existing single `onError` bookmark contract; consumers may
