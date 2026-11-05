@@ -12,9 +12,9 @@ function media<K extends 'video'|'audio'>(tag:K,pauseEvents?:Array<()=>void>){
 }
 let hidden=false;
 beforeEach(()=>{hidden=false;vi.spyOn(document,'visibilityState','get').mockImplementation(()=>hidden?'hidden':'visible');});
-function setup(pauseEvents?:Array<()=>void>){
+function setup(pauseEvents?:Array<()=>void>,pauseRef?:{current:(()=>void)|null}){
  const v=media('video',pauseEvents),a=media('audio',pauseEvents),mediaRef={current:v.element as HTMLMediaElement|null},pausedIntent={current:true};
- const options={videoRef:{current:v.element},audioRef:{current:a.element},mediaRef,url:url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8'),videoUrl:url,pausedIntent,onError:vi.fn(),onChange:vi.fn(),onBlocked:vi.fn()};
+ const options={videoRef:{current:v.element},audioRef:{current:a.element},mediaRef,pauseRef,url:url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8'),videoUrl:url,pausedIntent,onError:vi.fn(),onChange:vi.fn(),onBlocked:vi.fn()};
  const hook=renderHook(()=>useBackgroundAudio(options));
  const visibility=(value:boolean)=>act(()=>{hidden=value;document.dispatchEvent(new Event('visibilitychange'));});
  const play=()=>act(()=>hook.result.current.controls.current!.play());
@@ -66,4 +66,39 @@ it('consumes each queued internal pause without replacing the latest play intent
  expect(t.pausedIntent.current).toBe(false);expect(t.v.element.paused).toBe(false);expect(t.a.element.paused).toBe(false);expect(t.v.element.muted).toBe(false);expect(t.a.element.muted).toBe(true);
  act(()=>{t.v.element.pause();while(queued.length)queued.shift()!();});
  expect(t.pausedIntent.current).toBe(true);expect(t.a.element.paused).toBe(true);
+});
+
+it('hands off after iPhone pauses foreground video before visibility becomes hidden',()=>{
+ const t=setup(undefined,{current:null});t.play();t.v.element.currentTime=17.5;
+ act(()=>{t.a.setPaused(true);t.v.setPaused(true);t.v.element.dispatchEvent(new Event('pause'));});
+ expect(t.hook.result.current.paused).toBe(true);
+ expect(t.pausedIntent.current).toBe(false);
+ t.visibility(true);
+ expect(t.a.element.currentTime).toBe(17.5);expect(t.a.element.paused).toBe(false);expect(t.a.element.muted).toBe(false);
+ expect(t.v.element.paused).toBe(true);expect(t.v.element.muted).toBe(true);
+ t.a.element.currentTime=30;t.visibility(false);
+ expect(t.v.element.currentTime).toBe(30);expect(t.v.element.paused).toBe(false);expect(t.a.element.muted).toBe(true);
+});
+
+it('shows an interrupted foreground as paused without clearing handoff intent, and explicit Play recovers',()=>{
+ const t=setup(undefined,{current:null});t.play();
+ act(()=>{t.v.setPaused(true);t.v.element.dispatchEvent(new Event('pause'));});
+ expect(t.hook.result.current.paused).toBe(true);expect(t.a.element.paused).toBe(true);expect(t.pausedIntent.current).toBe(false);
+ expect(t.hook.result.current.controls.current!.snapshot().paused).toBe(true);
+ t.play();expect(t.hook.result.current.paused).toBe(false);expect(t.v.element.paused).toBe(false);
+});
+
+it('an authority stop between native pause and hide fences late play completion',async()=>{
+ const pauseRef:{current:(()=>void)|null}={current:null},t=setup(undefined,pauseRef);let finish!:()=>void;
+ t.a.play.mockImplementation(()=>new Promise<void>(resolve=>{finish=()=>{t.a.setPaused(false);resolve();};}));t.play();
+ act(()=>{t.v.setPaused(true);t.v.element.dispatchEvent(new Event('pause'));});
+ expect(pauseRef.current).toBeTypeOf('function');act(()=>pauseRef.current!());t.visibility(true);
+ await act(async()=>finish());expect(t.pausedIntent.current).toBe(true);expect(t.v.element.paused).toBe(true);expect(t.a.element.paused).toBe(true);
+ t.visibility(false);expect(t.v.element.paused).toBe(true);t.hook.unmount();expect(pauseRef.current).toBeNull();
+});
+
+it('does not resume a background audio interruption on unlock',()=>{
+ const t=setup(undefined,{current:null});t.play();t.visibility(true);
+ act(()=>{t.a.setPaused(true);t.a.element.dispatchEvent(new Event('pause'));});t.visibility(false);
+ expect(t.pausedIntent.current).toBe(true);expect(t.v.element.paused).toBe(true);expect(t.a.element.paused).toBe(true);
 });

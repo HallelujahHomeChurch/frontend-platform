@@ -2,15 +2,15 @@ import {useEffect,useRef,useState,type RefObject} from 'react';
 import {attachAudioSource} from './audio-source.js';
 
 export type BackgroundControls={play:()=>void;pause:()=>void;seek:(time:number)=>void;hold:(time:number)=>void;stop:()=>void;snapshot:()=>{time:number;paused:boolean;rate:number};settings:(value:{muted?:boolean;volume?:number;rate?:number})=>void};
-type Options={audioRef:RefObject<HTMLAudioElement|null>;videoRef:RefObject<HTMLVideoElement|null>;mediaRef:RefObject<HTMLMediaElement|null>;externalRef?:RefObject<HTMLMediaElement|null>;url:string|undefined;videoUrl:string;pausedIntent:RefObject<boolean>;onError:()=>void;onChange:()=>void;onBlocked:()=>void};
+type Options={audioRef:RefObject<HTMLAudioElement|null>;videoRef:RefObject<HTMLVideoElement|null>;mediaRef:RefObject<HTMLMediaElement|null>;externalRef?:RefObject<HTMLMediaElement|null>;pauseRef?:RefObject<(()=>void)|null>;url:string|undefined;videoUrl:string;pausedIntent:RefObject<boolean>;onError:()=>void;onChange:()=>void;onBlocked:()=>void};
 export function useBackgroundAudio(options:Options){
  const callbacks=useRef(options);callbacks.current=options;
  const controls=useRef<BackgroundControls|null>(null);
  const [state,setState]=useState({owner:0,paused:true,muted:false,volume:1});
- const {audioRef,videoRef,mediaRef,externalRef,url,videoUrl,pausedIntent}=options;
+ const {audioRef,videoRef,mediaRef,externalRef,pauseRef,url,videoUrl,pausedIntent}=options;
  useEffect(()=>{
   const audio=audioRef.current,video=videoRef.current;if(!audio||!video||!url)return;
-  let phase:'foreground'|'background'|'returning'='foreground',disposed=false,stopped=false,armed=false,generation=0;
+  let phase:'foreground'|'background'|'returning'='foreground',disposed=false,stopped=false,armed=false,interrupted=false,generation=0;
   let pending:{token:number;target:number}|null=null;
   let userMuted=video.muted,volume=video.volume,rate=video.playbackRate;
   const expectedPause=new WeakMap<HTMLMediaElement,number>();
@@ -18,10 +18,10 @@ export function useBackgroundAudio(options:Options){
   const pause=(element:HTMLMediaElement)=>{if(!element.paused){expectedPause.set(element,(expectedPause.get(element)??0)+1);element.pause();}};
   const publish=()=>{
    mediaRef.current=owner();if(externalRef)externalRef.current=owner();
-   setState(previous=>{const next={owner:phase==='background'?1:0,paused:pausedIntent.current||!armed,muted:userMuted,volume};return previous.owner===next.owner&&previous.paused===next.paused&&previous.muted===next.muted&&previous.volume===next.volume?previous:next;});
+   setState(previous=>{const next={owner:phase==='background'?1:0,paused:pausedIntent.current||!armed||interrupted,muted:userMuted,volume};return previous.owner===next.owner&&previous.paused===next.paused&&previous.muted===next.muted&&previous.volume===next.volume?previous:next;});
    callbacks.current.onChange();
   };
-  const wanted=(element:HTMLMediaElement)=>!disposed&&!stopped&&armed&&!pausedIntent.current&&phase!=='returning'&&(element===audio||phase==='foreground');
+  const wanted=(element:HTMLMediaElement)=>!disposed&&!stopped&&armed&&!pausedIntent.current&&!interrupted&&phase!=='returning'&&(element===audio||phase==='foreground');
   const reconcile=()=>{
    const videoMuted=disposed||stopped||phase!=='foreground'||userMuted,audioMuted=disposed||stopped||phase!=='background'||userMuted;
    if(video.muted!==videoMuted)video.muted=videoMuted;if(audio.muted!==audioMuted)audio.muted=audioMuted;
@@ -39,15 +39,15 @@ export function useBackgroundAudio(options:Options){
    pending=null;phase='foreground';position(audio,video.currentTime);run();publish();
   };
   const api:BackgroundControls={
-   play:()=>{if(disposed||stopped)return;++generation;if(pending)pending.token=generation;pausedIntent.current=false;armed=true;if(phase==='foreground')position(audio,video.currentTime);run();publish();ready();},
-   pause:()=>{++generation;if(pending)pending.token=generation;pausedIntent.current=true;reconcile();publish();},
+   play:()=>{if(disposed||stopped)return;++generation;if(pending)pending.token=generation;pausedIntent.current=false;interrupted=false;armed=true;if(phase==='foreground')position(audio,video.currentTime);run();publish();ready();},
+   pause:()=>{++generation;if(pending)pending.token=generation;pausedIntent.current=true;interrupted=false;reconcile();publish();},
    seek:time=>{++generation;if(pending)pending={token:generation,target:time};position(owner(),time);if(phase==='foreground')position(audio,time);publish();ready();},
    hold:time=>{if(phase==='background')return;++generation;phase='returning';pending={token:generation,target:time};reconcile();publish();},
    settings:value=>{if(value.muted!==undefined)userMuted=value.muted;if(value.volume!==undefined)volume=value.volume;if(value.rate!==undefined)rate=value.rate;reconcile();publish();},
-   snapshot:()=>({time:pending?.target??owner().currentTime,paused:pausedIntent.current,rate}),
+   snapshot:()=>({time:pending?.target??owner().currentTime,paused:pausedIntent.current||interrupted,rate}),
    stop:()=>{stopped=true;++generation;pending=null;reconcile();},
   };
-  controls.current=api;
+  controls.current=api;if(pauseRef)pauseRef.current=api.pause;
   const visibility=()=>{
    if(stopped||disposed)return;
    ++generation;
@@ -55,7 +55,7 @@ export function useBackgroundAudio(options:Options){
     if(phase==='background')return;
     const target=pending?.target??video.currentTime;
     userMuted=phase==='foreground'?video.muted:userMuted;volume=video.volume;rate=video.playbackRate;
-    phase='background';pending=null;reconcile();position(audio,target);publish();if(armed&&wanted(audio))play(audio);
+    phase='background';pending=null;interrupted=false;reconcile();position(audio,target);publish();if(armed&&wanted(audio))play(audio);
    }else if(phase==='background'){
     // An OS interruption is not a new play command.
     if(armed&&audio.paused)pausedIntent.current=true;
@@ -65,8 +65,9 @@ export function useBackgroundAudio(options:Options){
   };
   const listeners:Array<[HTMLMediaElement,string,()=>void]>=[];
   const listen=(element:HTMLMediaElement,event:string,handler:()=>void)=>{element.addEventListener(event,handler);listeners.push([element,event,handler]);};
+  // Only callers with an explicit stop command can distinguish authority stops from iPhone's pre-hide pause.
   for(const element of [video,audio]){
-   listen(element,'pause',()=>{const expected=expectedPause.get(element)??0;if(expected){expectedPause.set(element,expected-1);return;}if(disposed||stopped||element!==owner()||phase==='returning')return;api.pause();});
+   listen(element,'pause',()=>{const expected=expectedPause.get(element)??0;if(expected){expectedPause.set(element,expected-1);return;}if(disposed||stopped||element!==owner()||phase==='returning')return;if(phase==='foreground'&&pauseRef){++generation;interrupted=true;reconcile();publish();}else api.pause();});
    listen(element,'ended',()=>{if(element===owner())api.pause();});
    listen(element,'volumechange',()=>{if(element!==owner()||phase==='returning'||disposed)return;userMuted=element.muted;volume=element.volume;reconcile();publish();});
    listen(element,'ratechange',()=>{if(element!==owner()||disposed)return;rate=element.playbackRate;reconcile();publish();});
@@ -81,7 +82,7 @@ export function useBackgroundAudio(options:Options){
   reconcile();publish();if(document.visibilityState==='hidden')visibility();
   let detach=()=>{};
   if(url!==new URL('audio/aac-hls-v1/index.m3u8',videoUrl).href)fail();else detach=attachAudioSource(audio,url,fail);
-  return()=>{disposed=true;++generation;for(const [element,event,handler]of listeners)element.removeEventListener(event,handler);document.removeEventListener('visibilitychange',visibility);if(controls.current===api)controls.current=null;reconcile();detach();};
- },[audioRef,videoRef,mediaRef,externalRef,url,videoUrl,pausedIntent]);
+  return()=>{disposed=true;++generation;for(const [element,event,handler]of listeners)element.removeEventListener(event,handler);document.removeEventListener('visibilitychange',visibility);if(controls.current===api)controls.current=null;if(pauseRef?.current===api.pause)pauseRef.current=null;reconcile();detach();};
+ },[audioRef,videoRef,mediaRef,externalRef,pauseRef,url,videoUrl,pausedIntent]);
  return {controls,...state};
 }
