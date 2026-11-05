@@ -2,7 +2,7 @@ import type Hls from 'hls.js';
 import {LIVE_HOLDBACK_SECONDS} from './live-player.js';
 import {verifyMediaRequest} from './media-request.js';
 
-// Native first; live uses only the existing protected 480p rendition.
+// VOD stays native first; live matches the video backend for the same timeline.
 export function attachAudioSource(audio:HTMLAudioElement,playbackUrl:string,onError:()=>void,liveMaster?:string){
  let disposed=false,engine:Hls|undefined;
  const verify=(target:string)=>{if(liveMaster){verifyMediaRequest(liveMaster,target);const url=new URL(target,liveMaster);if(!url.pathname.startsWith(new URL('480p/',liveMaster).pathname))throw new Error('Invalid live companion request');}else verifyMediaRequest(playbackUrl,target,true);};
@@ -10,9 +10,10 @@ export function attachAudioSource(audio:HTMLAudioElement,playbackUrl:string,onEr
  try{
   if(liveMaster?playbackUrl!==new URL('480p/index.m3u8',liveMaster).href:!new URL(playbackUrl).pathname.endsWith('/audio/aac-hls-v1/index.m3u8'))throw new Error('Invalid audio playlist');
   verify(playbackUrl);
-  if(audio.canPlayType('application/vnd.apple.mpegurl')){audio.src=playbackUrl;audio.load();}
+  const native=audio.canPlayType('application/vnd.apple.mpegurl');
+  if(native&&(!liveMaster||'ManagedMediaSource' in window)){audio.src=playbackUrl;audio.load();}
   else void import('hls.js').then(({default:Hls})=>{
-   if(disposed)return;if(!Hls.isSupported()){fail();return;}
+   if(disposed)return;if(!Hls.isSupported()){if(native){audio.src=playbackUrl;audio.load();}else fail();return;}
    const LatencyController=liveMaster?Hls.DefaultConfig.latencyController!:null;
    engine=new Hls({enableWorker:true,maxBufferLength:60,maxMaxBufferLength:120,
     ...(liveMaster?{backBufferLength:120,lowLatencyMode:false,liveSyncDuration:LIVE_HOLDBACK_SECONDS,liveMaxLatencyDuration:Infinity,maxLiveSyncPlaybackRate:1,latencyController:class extends LatencyController! {override get liveSyncPosition():number|null{return null;}}}:{}),

@@ -1463,3 +1463,23 @@ it('restores live companion DVR across hide, explicit pause, quality, return and
  act(()=>{hidden=true;document.dispatchEvent(new Event('visibilitychange'));});audio.currentTime=600;fireEvent.ended(audio);
  expect(bookmark.mock.lastCall?.[0]).toMatchObject({time:600,paused:true});expect(screen.getByRole('button',{name:'Live ended'})).toBeDisabled();
 });
+
+it.each([
+ {managed:false,supported:true,native:true,backend:'mse'},
+ {managed:true,supported:true,native:true,backend:'native'},
+ {managed:false,supported:false,native:true,backend:'native'},
+ {managed:true,supported:true,native:false,backend:'mse'},
+])('matches live companion transport to video: %j',async({managed,supported,native,backend})=>{
+ if(managed)vi.stubGlobal('ManagedMediaSource',class {});
+ engine.supported=supported;vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue(native?'probably':'');
+ const p=props(),audioUrl=url.replace('master.m3u8','480p/index.m3u8');
+ const {container}=render(<HlsPlayer {...p} playbackMode="live" backgroundAudioUrl={audioUrl}/>);
+ const audio=container.querySelector('audio')!;
+ if(backend==='native'){
+  await waitFor(()=>expect(p.videoRef.current!.src).toBe(url));expect(audio.src).toBe(audioUrl);expect(engine.instances).toHaveLength(0);
+ }else{
+  await waitFor(()=>expect(engine.instances).toHaveLength(2));
+  expect(engine.instances.map(item=>item.loadSource.mock.calls[0]?.[0])).toEqual(expect.arrayContaining([url,audioUrl]));
+  expect(audio.getAttribute('src')).toBeNull();expect(p.videoRef.current!.getAttribute('src')).toBeNull();
+ }
+});
