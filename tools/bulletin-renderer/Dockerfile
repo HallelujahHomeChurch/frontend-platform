@@ -4,6 +4,8 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/opt/browsers
 WORKDIR /opt/bulletin-renderer
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts --no-audit --no-fund \
+    && apt-get -o Acquire::Retries=0 update \
+    && apt-get -o Acquire::Retries=0 install -y --no-install-recommends apt=3.0.4 libapt-pkg7.0=3.0.4 \
     && npx playwright install --with-deps --only-shell chromium \
     && apt-get install -y --no-install-recommends \
        libpcre2-8-0=10.46-1~deb13u3 libssl3t64=3.5.7-1~deb13u3 openssl-provider-legacy=3.5.7-1~deb13u3 \
