@@ -1423,11 +1423,15 @@ it('uses live background owner for recovery and bounded lock-screen DVR seeks',a
  fireEvent.click(screen.getByRole('button',{name:'Play'}));
  act(()=>{hidden=true;document.dispatchEvent(new Event('visibilitychange'));});expect(media.current).toBe(audio);
  audio.currentTime=200;fireEvent.timeUpdate(audio);expect(audio.currentTime).toBe(410);
- act(()=>handlers.get('seekto')?.({action:'seekto',seekTime:999}));expect(audio.currentTime).toBe(500);
+ act(()=>handlers.get('seekto')?.({action:'seekto',seekTime:999}));expect(audio.currentTime).toBe(410);
  fireEvent.seeked(audio);audio.currentTime=200;fireEvent.timeUpdate(audio);expect(audio.currentTime).toBe(200);
  video.currentTime=105;fireEvent.seeking(video);fireEvent.timeUpdate(video);expect(audio.currentTime).toBe(200);
  expect(bookmark.mock.lastCall?.[0]).toMatchObject({intent:'dvr',time:200});
  act(()=>handlers.get('seekto')?.({action:'seekto',seekTime:0}));expect(audio.currentTime).toBe(100);
+ view.rerender(<HlsPlayer {...p} playbackMode="live" playbackMediaRef={media} backgroundAudioUrl={url.replace('master.m3u8','480p/index.m3u8')} live={{verifiedEnd:500,canFollow:false,ended:true,label:'Live ended',backToLive:'Back to live'}} onBookmark={bookmark}/>);
+ act(()=>handlers.get('pause')?.({action:'pause'}));
+ act(()=>handlers.get('seekto')?.({action:'seekto',seekTime:999}));expect(audio.currentTime).toBe(500);
+ expect(bookmark.mock.lastCall?.[0]).toMatchObject({intent:'dvr',time:500,paused:true});
  delete(navigator as {mediaSession?:unknown}).mediaSession;
 });
 
