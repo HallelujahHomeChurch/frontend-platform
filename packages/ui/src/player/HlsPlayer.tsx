@@ -32,7 +32,7 @@ export type HlsPlayerProps = {
 export function HlsPlayer({backgroundAudioUrl,playbackMediaRef,playbackPauseRef,controls=true,initialQuality='auto',playbackUrl,availableQualities,watermark,muted=false,title,labels,videoRef,onPlayingChange,onError,poster,previousHref,nextHref,playbackMode='vod',live,resume,onBookmark,onNavigate,onDiagnostic}:HlsPlayerProps) {
   const container=useRef<HTMLDivElement>(null), engine=useRef<Hls|null>(null);
   // Latch the source for this playback lifecycle: renewal must not silently introduce a new audible owner.
-  const [audioUrl]=useState(()=>playbackMode==='vod'?backgroundAudioUrl:undefined);
+  const [audioUrl]=useState(()=>backgroundAudioUrl);
   const audioRef=useRef<HTMLAudioElement|null>(null),mediaRef=useRef<HTMLMediaElement|null>(null);
   const bindVideo=useCallback((node:HTMLVideoElement|null)=>{videoRef.current=node;mediaRef.current=node;if(playbackMediaRef)playbackMediaRef.current=node;},[videoRef,playbackMediaRef]);
   const bindAudio=useCallback((node:HTMLAudioElement|null)=>{audioRef.current=node;},[]);
@@ -87,12 +87,12 @@ export function HlsPlayer({backgroundAudioUrl,playbackMediaRef,playbackPauseRef,
   },[videoRef,playbackMode,audioUrl]);
   const dvr=useCallback(()=>{pendingAutoplay.current=null;automaticSeek.current=null;intent.current='dvr';setFollowLive(false);if(playbackMode==='live'&&!initialBookmark.current)positioned.current=true;remember();},[remember,playbackMode]);
   const returnToLive=()=>{
-    const video=videoRef.current, state=currentLive.current;
+    const video=mediaRef.current, state=currentLive.current;
     if(!video||!state?.canFollow)return;
     const window=liveWindow(video.seekable,state.verifiedEnd);if(!window)return;
     if(qualityPosition.current){qualityPosition.current.time=window.edge;qualityPosition.current.paused=false;qualityPosition.current.rate=1;}
     pendingAutoplay.current=null;intent.current='followLive';setFollowLive(true);video.playbackRate=1;automaticSeek.current=window.edge;video.currentTime=window.edge;positioned.current=true;
-    void video.play().catch(()=>{});remember();
+    if(audioUrl){handoff.controls.current?.settings({rate:1});handoff.controls.current?.seek(window.edge);handoff.controls.current?.play();}else void video.play().catch(()=>{});remember();
   };
   const qualities=(['480p','720p','1080p'] as const).filter(name=>availableQualities.includes(name));
   const handleError=useCallback(()=>{
@@ -108,13 +108,13 @@ export function HlsPlayer({backgroundAudioUrl,playbackMediaRef,playbackPauseRef,
     rebuildTimeout.current??=window.setTimeout(handleError,30000);
   },[handleError]);
 
-  const handoff=useBackgroundAudio({audioRef,videoRef,mediaRef,externalRef:playbackMediaRef,pauseRef:playbackPauseRef,url:audioUrl,videoUrl:playbackUrl,pausedIntent,onError:handleError,onChange:remember,onBlocked:()=>setAutoplayBlocked(true)});
+  const handoff=useBackgroundAudio({audioRef,videoRef,mediaRef,externalRef:playbackMediaRef,pauseRef:playbackPauseRef,url:audioUrl,videoUrl:playbackUrl,mode:playbackMode,onPosition:time=>{if(playbackMode==='live')automaticSeek.current=time;},pausedIntent,onError:handleError,onChange:remember,onBlocked:()=>setAutoplayBlocked(true)});
   useEffect(()=>{
     if(audioUrl||!playbackPauseRef)return;
     const pause=()=>videoRef.current?.pause();playbackPauseRef.current=pause;
     return()=>{if(playbackPauseRef.current===pause)playbackPauseRef.current=null;};
   },[audioUrl,playbackPauseRef,videoRef]);
-  useAudioSession(mediaRef,title,poster,audioUrl,()=>handoff.controls.current?.play(),()=>handoff.controls.current?.pause(),handoff.owner, time=>handoff.controls.current?.seek(time));
+  useAudioSession(mediaRef,title,poster,audioUrl,()=>handoff.controls.current?.play(),()=>{if(playbackMode==='live')dvr();handoff.controls.current?.pause();},handoff.owner, time=>{if(playbackMode==='live')dvr();handoff.controls.current?.seek(time);},playbackMode==='live'?live:undefined);
 
   useEffect(()=>{
     const video=videoRef.current;
@@ -183,10 +183,10 @@ export function HlsPlayer({backgroundAudioUrl,playbackMediaRef,playbackPauseRef,
   },[playbackUrl,videoRef,handleError,handleMediaError,playbackMode,clearHeldFrame,finishRebuild,audioUrl]);
 
   useEffect(()=>{
-    const video=videoRef.current;if(!video)return;
+    const video=playbackMode==='live'?mediaRef.current:videoRef.current;if(!video)return;
     const position=()=>{
       const state=currentLive.current;
-      if(qualityPosition.current||closing.current||failed.current)return;
+      if(video!==mediaRef.current||qualityPosition.current&&video===videoRef.current||closing.current||failed.current)return;
       const window=playbackMode==='live'&&state?liveWindow(video.seekable,state.verifiedEnd):null;
       if(playbackMode==='live'&&!window||waitingForLiveReserve(window))return;
       if(!positioned.current){
@@ -202,12 +202,12 @@ export function HlsPlayer({backgroundAudioUrl,playbackMediaRef,playbackPauseRef,
         automaticSeek.current=window.edge;video.currentTime=window.edge;remember();
       }
     };
-    const seeking=()=>{if(!positioned.current||closing.current||qualityPosition.current||automaticSeek.current!==null)return;dvr();};
+    const seeking=()=>{if(video!==mediaRef.current||!positioned.current||closing.current||qualityPosition.current||automaticSeek.current!==null)return;dvr();};
     const revealFrame=()=>{
       if(!qualityPosition.current&&!video.seeking&&video.readyState>=2&&!video.error){finishRebuild();clearHeldFrame();}
     };
-    const seeked=()=>{automaticSeek.current=null;revealFrame();};
-    const resolution=()=>{if(!engine.current)setActiveHeight(video.videoHeight>0?video.videoHeight:null);};
+    const seeked=()=>{if(video!==mediaRef.current)return;automaticSeek.current=null;revealFrame();};
+    const resolution=()=>{if(video===videoRef.current&&!engine.current)setActiveHeight(videoRef.current.videoHeight>0?videoRef.current.videoHeight:null);};
     const paused=()=>{if(!audioUrl&&video.paused&&!closing.current&&!failed.current&&!video.error&&positioned.current&&!qualityPosition.current){pausedIntent.current=true;dvr();}};
     const online=()=>position();
     const events:[string,()=>void][]=[['loadedmetadata',position],['progress',position],['durationchange',position],['canplay',position],['seeking',seeking],['seeked',seeked],['loadeddata',revealFrame],['canplay',revealFrame],['playing',revealFrame],['pause',paused],['timeupdate',position],['timeupdate',remember],['ratechange',remember],['play',remember],['loadedmetadata',resolution],['resize',resolution]];
@@ -215,7 +215,7 @@ export function HlsPlayer({backgroundAudioUrl,playbackMediaRef,playbackPauseRef,
     window.addEventListener('online',online);
     if(playbackMode==='live')position();
     return()=>{for(const [event,handler] of events)video.removeEventListener(event,handler);window.removeEventListener('online',online);};
-  },[playbackUrl,playbackMode,videoRef,remember,dvr,live?.verifiedEnd,live?.canFollow,live?.ended,clearHeldFrame,finishRebuild,waitingForLiveReserve]);
+  },[playbackUrl,playbackMode,videoRef,remember,dvr,live?.verifiedEnd,live?.canFollow,live?.ended,clearHeldFrame,finishRebuild,waitingForLiveReserve,playbackMode==='live'?handoff.owner:0]);
 
   const changeQuality=(next:Quality)=>{
     const video=videoRef.current;

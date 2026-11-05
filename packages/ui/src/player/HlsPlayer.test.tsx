@@ -1277,9 +1277,9 @@ it('does not overwrite the saved audible bookmark with pre-metadata video events
  const video=p.videoRef.current!;Object.defineProperty(video,'readyState',{configurable:true,value:0});fireEvent.timeUpdate(video);
  expect(bookmark.mock.calls.every(([value])=>value.time===42&&value.rate===1.5)).toBe(true);
 });
-it('keeps live playback on its original video owner even when a companion URL is supplied',()=>{
+it('rejects the VOD companion in live mode',()=>{
  const p=props(),media=createRef<HTMLMediaElement>();const {container}=render(<HlsPlayer {...p} playbackMode="live" playbackMediaRef={media} backgroundAudioUrl={url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8')}/>);
- expect(container.querySelector('audio')).toBeNull();expect(media.current).toBe(p.videoRef.current);expect(p.videoRef.current!.muted).toBe(false);
+ expect(p.onError).toHaveBeenCalledOnce();
 });
 it('preserves a speed selected before audio metadata arrives',()=>{
  const p=props();vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
@@ -1344,7 +1344,7 @@ it.each(['auto','720p'] as const)('uses native HLS for companion video on a Mana
 it.each(['ordinary','live','no-native','no-managed'] as const)('retains hls.js selection for %s playback',async mode=>{
  if(mode!=='no-managed')vi.stubGlobal('ManagedMediaSource',class {});
  vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue(mode==='no-native'?'':'probably');
- const p=props();render(<HlsPlayer {...p} playbackMode={mode==='live'?'live':'vod'} backgroundAudioUrl={mode==='ordinary'?undefined:url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8')}/>);
+ const p=props();render(<HlsPlayer {...p} playbackMode={mode==='live'?'live':'vod'} backgroundAudioUrl={mode==='ordinary'||mode==='live'?undefined:url.replace('master.m3u8','audio/aac-hls-v1/index.m3u8')}/>);
  await waitFor(()=>expect(engine.instances.length).toBeGreaterThan(0));expect(p.videoRef.current!.src).not.toBe(url);
 });
 
@@ -1408,4 +1408,54 @@ it.each(['companion','ordinary','live'] as const)('exposes an authority pause th
  vi.spyOn(document,'visibilityState','get').mockReturnValue('hidden');fireEvent(document,new Event('visibilitychange'));
  expect(p.videoRef.current!.paused).toBe(true);for(const media of container.querySelectorAll('audio'))expect(media.paused).toBe(true);
  unmount();expect(playbackPauseRef.current).toBeNull();
+});
+
+it('uses live background owner for recovery and bounded lock-screen DVR seeks',async()=>{
+ const handlers=new Map<string,MediaSessionActionHandler|null>();
+ Object.defineProperty(navigator,'mediaSession',{configurable:true,value:{metadata:null,playbackState:'none',setActionHandler:(name:string,handler:MediaSessionActionHandler|null)=>handlers.set(name,handler),setPositionState:vi.fn()}});
+ let hidden=false;vi.spyOn(document,'visibilityState','get').mockImplementation(()=>hidden?'hidden':'visible');
+ vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
+ const p=props(),media=createRef<HTMLMediaElement>(),bookmark=vi.fn();
+ const view=render(<HlsPlayer {...p} playbackMode="live" playbackMediaRef={media} backgroundAudioUrl={url.replace('master.m3u8','480p/index.m3u8')} live={{verifiedEnd:500,canFollow:true,label:'Live',backToLive:'Back to live'}} onBookmark={bookmark}/>);
+ const video=p.videoRef.current!,audio=view.container.querySelector('audio')!;expect(audio).not.toBeNull();
+ for(const element of [video,audio])Object.defineProperties(element,{duration:{value:Infinity},readyState:{configurable:true,value:4},paused:{configurable:true,value:false},seekable:{value:{length:1,start:()=>100,end:()=>600}}});
+ fireEvent.loadedMetadata(video);expect(video.currentTime).toBe(410);
+ fireEvent.click(screen.getByRole('button',{name:'Play'}));
+ act(()=>{hidden=true;document.dispatchEvent(new Event('visibilitychange'));});expect(media.current).toBe(audio);
+ audio.currentTime=200;fireEvent.timeUpdate(audio);expect(audio.currentTime).toBe(410);
+ act(()=>handlers.get('seekto')?.({action:'seekto',seekTime:999}));expect(audio.currentTime).toBe(500);
+ fireEvent.seeked(audio);audio.currentTime=200;fireEvent.timeUpdate(audio);expect(audio.currentTime).toBe(200);
+ video.currentTime=105;fireEvent.seeking(video);fireEvent.timeUpdate(video);expect(audio.currentTime).toBe(200);
+ expect(bookmark.mock.lastCall?.[0]).toMatchObject({intent:'dvr',time:200});
+ act(()=>handlers.get('seekto')?.({action:'seekto',seekTime:0}));expect(audio.currentTime).toBe(100);
+ delete(navigator as {mediaSession?:unknown}).mediaSession;
+});
+
+it('restricts live companion transport to the current session 480p objects with no automatic catch-up',async()=>{
+ const p=props();render(<HlsPlayer {...p} playbackMode="live" backgroundAudioUrl={url.replace('master.m3u8','480p/index.m3u8')}/>);
+ await waitFor(()=>expect(engine.instances).toHaveLength(2));
+ const companion=engine.instances.find(item=>item.loadSource.mock.calls[0]?.[0].endsWith('480p/index.m3u8'))!;
+ expect(companion.config).toMatchObject({liveSyncDuration:90,liveMaxLatencyDuration:Infinity,maxLiveSyncPlaybackRate:1,lowLatencyMode:false});
+ const xhr=new XMLHttpRequest();for(const name of ['index.m3u8','init.mp4','seg-000001.m4s'])expect(()=>companion.config.xhrSetup(xhr,url.replace('master.m3u8','480p/'+name))).not.toThrow();
+ for(const target of [url,url.replace('master.m3u8','720p/index.m3u8'),url.replace('master.m3u8','480p/seg-000001.m4s?x=1'),url.replace('/sessions/s/','/sessions/other/').replace('master.m3u8','480p/index.m3u8')])expect(()=>companion.config.xhrSetup(xhr,target)).toThrow('Invalid');
+ expect(xhr.withCredentials).toBe(true);
+});
+
+it('restores live companion DVR across hide, explicit pause, quality, return and ENDLIST',async()=>{
+ engine.supported=false;vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('probably');
+ let hidden=false;vi.spyOn(document,'visibilityState','get').mockImplementation(()=>hidden?'hidden':'visible');
+ const p=props(),media=createRef<HTMLMediaElement>(),bookmark=vi.fn(),live={verifiedEnd:600,canFollow:true,label:'Live',backToLive:'Back to live'};
+ const input={...p,playbackMode:'live' as const,playbackMediaRef:media,backgroundAudioUrl:url.replace('master.m3u8','480p/index.m3u8'),live,onBookmark:bookmark,resume:{time:150,paused:true,rate:1.5,quality:'auto' as const,intent:'dvr' as const}};
+ const view=render(<HlsPlayer {...input}/>);await waitFor(()=>expect(p.videoRef.current!.src).toBe(url));
+ const video=p.videoRef.current!,audio=view.container.querySelector('audio')!;
+ for(const element of [video,audio])Object.defineProperties(element,{duration:{value:Infinity},readyState:{configurable:true,value:4},seekable:{value:{length:1,start:()=>100,end:()=>700}}});
+ fireEvent.loadedMetadata(video);expect(video.currentTime).toBe(150);expect(video.playbackRate).toBe(1.5);expect(video.play).not.toHaveBeenCalled();
+ act(()=>{hidden=true;document.dispatchEvent(new Event('visibilitychange'));});expect(audio.currentTime).toBe(150);expect(audio.playbackRate).toBe(1.5);expect(audio.play).not.toHaveBeenCalled();
+ chooseQuality('1080p');fireEvent.progress(audio);expect(audio.currentTime).toBe(150);
+ act(()=>{hidden=false;document.dispatchEvent(new Event('visibilitychange'));});fireEvent.canPlay(video);fireEvent.seeked(video);
+ expect(video.currentTime).toBe(150);expect(video.play).not.toHaveBeenCalled();
+ fireEvent.click(screen.getByRole('button',{name:'Back to live'}));expect(video.currentTime).toBe(510);expect(video.playbackRate).toBe(1);expect(video.play).toHaveBeenCalled();
+ view.rerender(<HlsPlayer {...input} live={{...live,canFollow:false,ended:true,label:'Live ended'}}/>);
+ act(()=>{hidden=true;document.dispatchEvent(new Event('visibilitychange'));});audio.currentTime=600;fireEvent.ended(audio);
+ expect(bookmark.mock.lastCall?.[0]).toMatchObject({time:600,paused:true});expect(screen.getByRole('button',{name:'Live ended'})).toBeDisabled();
 });
