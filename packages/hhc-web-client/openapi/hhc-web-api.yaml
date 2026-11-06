@@ -471,6 +471,124 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/RecordingCommentReport"
+  /member/recordings/continue-watching:
+    get:
+      operationId: getContinueWatching
+      summary: Get the most recently started eligible recording
+      description: Requires a human member with recording entitlement and current legal acceptance.
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      responses:
+        '200':
+          description: Operation result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecordingContinueWatchingEnvelope' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /member/recordings/{id}/progress:
+    get:
+      operationId: getRecordingProgress
+      summary: Get the current media version and saved progress
+      description: Requires a human member with recording entitlement and current legal acceptance.
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Operation result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecordingProgressReadEnvelope' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+    put:
+      operationId: updateRecordingProgress
+      summary: Save progress for the current owner and sequence
+      description: Requires a human member with recording entitlement and current legal acceptance.
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RecordingProgressUpdate' }
+      responses:
+        '200':
+          description: Operation result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecordingProgressWriteEnvelope' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /member/recordings/{id}/progress/claim:
+    post:
+      operationId: claimRecordingProgress
+      summary: Claim progress ownership after playback starts
+      description: Requires a human member with recording entitlement and current legal acceptance.
+      tags: [Authenticated]
+      x-hhc-visibility: authenticated
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: private, no-store
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RecordingProgressClaim' }
+      responses:
+        '200':
+          description: Operation result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecordingProgressOwnerEnvelope' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
   /member/recordings/{id}/heartbeat:
     post:
       operationId: recordPlaybackHeartbeat
@@ -14816,6 +14934,124 @@ components:
           additionalProperties: true
         error:
           type: "null"
+    RecordingProgressClaim:
+      type: object
+      additionalProperties: false
+      required: [sessionId, claimId, expectedGeneration, claimToken, mediaVersion, startKind, observedPositionSeconds]
+      properties:
+        sessionId: { type: string, format: uuid }
+        claimId: { type: string, format: uuid }
+        expectedGeneration: { type: [string, "null"], format: uuid }
+        claimToken: { type: string, maxLength: 80 }
+        mediaVersion: { type: string }
+        startKind: { type: string, enum: [resume, restart, at] }
+        observedPositionSeconds: { type: number, minimum: 0 }
+    RecordingProgressUpdate:
+      type: object
+      additionalProperties: false
+      required: [sessionId, generation, sequence, mediaVersion, positionSeconds, state]
+      properties:
+        sessionId: { type: string, format: uuid }
+        generation: { type: string, format: uuid }
+        sequence: { type: integer, minimum: 1, maximum: 9007199254740991 }
+        mediaVersion: { type: string }
+        positionSeconds: { type: number, minimum: 0 }
+        state: { type: string, enum: [playing, paused, waiting, ended] }
+    RecordingProgressSnapshot:
+      type: object
+      additionalProperties: false
+      required: [generation, mediaVersion, positionSeconds, completed, mode, updatedAt]
+      properties:
+        generation: { type: string, format: uuid }
+        mediaVersion: { type: string }
+        positionSeconds: { type: number, minimum: 0 }
+        completed: { type: boolean }
+        mode: { type: string, enum: [live, vod] }
+        updatedAt: { type: string, format: date-time }
+    RecordingProgressRead:
+      type: object
+      additionalProperties: false
+      required: [progress, mediaVersion, claimToken]
+      properties:
+        claimToken: { type: string, description: Short-lived progress intent bound to this snapshot }
+        progress:
+          anyOf:
+            - $ref: '#/components/schemas/RecordingProgressSnapshot'
+            - type: "null"
+        mediaVersion: { type: string }
+    RecordingProgressOwner:
+      type: object
+      additionalProperties: false
+      required: [generation, mediaVersion, positionSeconds, sequence]
+      properties:
+        generation: { type: string, format: uuid }
+        mediaVersion: { type: string }
+        positionSeconds: { type: number, minimum: 0 }
+        sequence: { type: integer, minimum: 0, maximum: 9007199254740991 }
+    RecordingProgressWrite:
+      type: object
+      additionalProperties: false
+      required: [accepted, sequence]
+      properties:
+        accepted: { type: boolean }
+        sequence: { type: integer, minimum: 1, maximum: 9007199254740991 }
+    RecordingResumeItem:
+      type: object
+      additionalProperties: false
+      required: [recordingId, publicId, title, mode, mediaVersion, positionSeconds, generation, claimedAt, updatedAt]
+      properties:
+        recordingId: { type: string, format: uuid }
+        publicId: { type: string }
+        title: { type: string }
+        mode: { type: string, enum: [live, vod] }
+        captureId: { type: string }
+        mediaVersion: { type: string }
+        positionSeconds: { type: number, minimum: 0 }
+        durationSeconds: { type: number, exclusiveMinimum: 0 }
+        generation: { type: string, format: uuid }
+        claimedAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    RecordingContinueWatching:
+      type: object
+      additionalProperties: false
+      required: [item]
+      properties:
+        item:
+          anyOf:
+            - $ref: '#/components/schemas/RecordingResumeItem'
+            - type: "null"
+    RecordingProgressReadEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data: { $ref: '#/components/schemas/RecordingProgressRead' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: "null" }
+    RecordingProgressOwnerEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data: { $ref: '#/components/schemas/RecordingProgressOwner' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: "null" }
+    RecordingProgressWriteEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data: { $ref: '#/components/schemas/RecordingProgressWrite' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: "null" }
+    RecordingContinueWatchingEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data: { $ref: '#/components/schemas/RecordingContinueWatching' }
+        meta: { type: object, additionalProperties: true }
+        error: { type: "null" }
     RecordingHeartbeatResultEnvelope:
       type: object
       additionalProperties: false
