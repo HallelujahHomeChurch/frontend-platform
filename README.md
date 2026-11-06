@@ -469,3 +469,11 @@ Resume items expose the existing owner `sessionId` from
 Publish this client only after that producer release. A present session ID must
 be a UUID; an absent field remains accepted during producer rollback. It is a
 correlation value for account-local dismissal, never an authorization credential.
+
+Persistent media consumers can pass `HlsPlayer.mini` to expose an expand action
+without recreating the media engine. On touch devices, the center expands and
+the upper-left button controls the existing playback owner; desktop keeps center
+playback and exposes expansion separately. `onMinimizeMove` reports a downward
+touch displacement and returns to zero on cancellation; the consumer owns its
+presentation animation and navigation. Keep `onMinimize` as the explicit,
+keyboard-accessible alternative and respect reduced-motion preferences.

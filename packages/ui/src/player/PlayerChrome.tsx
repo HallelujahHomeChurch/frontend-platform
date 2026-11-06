@@ -2,7 +2,7 @@
 
 import {useEffect, useRef, useState, useMemo, useSyncExternalStore, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type RefObject} from 'react';
 import {flushSync} from 'react-dom';
-import {Check, ChevronDown, ChevronLeft, ChevronRight, SkipBack, SkipForward, LoaderCircle, RectangleHorizontal, Maximize, Minimize, RotateCcw, Pause, Play, Settings, Volume2, VolumeX} from 'lucide-react';
+import {Check, ChevronDown, ChevronLeft, ChevronRight, SkipBack, SkipForward, LoaderCircle, RectangleHorizontal, ArrowUpRight, Maximize, Minimize, RotateCcw, Pause, Play, Settings, Volume2, VolumeX} from 'lucide-react';
 import {LIVE_EDGE_TOLERANCE_SECONDS,liveWindow,type LivePlayerState,type PlayerBookmark} from './live-player.js';
 import type {PlayerLabels} from './HlsPlayer.js';
 import {usePreviewIndex} from './use-preview-index.js';
@@ -15,6 +15,8 @@ import {previewCueAt} from './preview-cue.js';
 type Quality = 'auto' | '480p' | '720p' | '1080p';
 type Props = {
   onMinimize?:()=>void;
+  onMinimizeMove?:(offset:number)=>void;
+  mini?:{onExpand:()=>void;expandLabel:string};
   onPlayIntent?:(kind:"resume"|"restart")=>void;
   previousHref?:string; nextHref?:string; onNavigate?:(href:string)=>void;
   live?: LivePlayerState; followLive?:boolean; onDvr?:()=>void; onReturnToLive?:()=>void;
@@ -42,13 +44,14 @@ export function playerClock(seconds: number) {
   return total >= 3600 ? `${Math.floor(total / 3600)}:${String(Math.floor(total / 60) % 60).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}` : `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
 
-export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay, onMediaPause, mediaOwner, playbackPaused, playbackVolume, onMediaVolume, playbackUrl, watermark, labels, quality, activeHeight, qualities, autoplayBlocked=false, loading, buffering=false, failed, onQualityChange, onPlaybackChange,onPlayingChange,live,followLive=true,onDvr,onReturnToLive,previousHref,nextHref,onNavigate,onMinimize,onPlayIntent}: Props) {
+export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay, onMediaPause, mediaOwner, playbackPaused, playbackVolume, onMediaVolume, playbackUrl, watermark, labels, quality, activeHeight, qualities, autoplayBlocked=false, loading, buffering=false, failed, onQualityChange, onPlaybackChange,onPlayingChange,live,followLive=true,onDvr,onReturnToLive,previousHref,nextHref,onNavigate,onMinimize,onMinimizeMove,mini:miniPresentation,onPlayIntent}: Props) {
   const mediaRef=playbackMediaRef??videoRef;
   const pageVisible=useSyncExternalStore(subscribeVisibility,visibleSnapshot,()=>true);
   const touchUI = useSyncExternalStore(subscribeTouch, touchSnapshot, () => false);
   const fullscreenState = usePlayerFullscreen(container, videoRef, touchUI||Boolean(playbackMediaRef));
   const fullscreen = fullscreenState.mode !== 'inline';
-  const minimize = fullscreen ? undefined : onMinimize;
+  const mini = fullscreen ? undefined : miniPresentation;
+  const minimize = fullscreen || mini ? undefined : onMinimize;
   const [ended,setEnded]=useState(false), [playBlocked,setPlayBlocked]=useState(false);
   const [playing, setPlaying] = useState(false), [waiting, setWaiting] = useState(true);
   const [muted, setMuted] = useState(false), [volume, setVolume] = useState(1), [rate, setRate] = useState(1);
@@ -64,7 +67,7 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
   const cues = usePreviewIndex(playbackUrl, Boolean(live), !failed && pageVisible && (preview !== null || scrub !== null), warmPreviews);
   const preloadSprites=useMemo(()=>Array.from(new Set(cues.map(cue=>cue.url))),[cues]);
   const [holding, setHolding] = useState(false);
-  const gesture = useRef<{id:number;x:number;y:number;moved:boolean;held:boolean;rate:number|null}|null>(null);
+  const gesture = useRef<{id:number;x:number;y:number;moved:boolean;held:boolean;canMinimize:boolean;rate:number|null}|null>(null);
   const holdTimer = useRef(0), tapTimer = useRef(0), playCommand=useRef(0);
   const desktopClick=useRef<Pick<PlayerBookmark,'time'|'paused'|'rate'|'intent'>|null>(null);
   useEffect(()=>()=>{desktopClick.current=null;++playCommand.current;},[playbackUrl]);
@@ -184,12 +187,12 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
     desktopClick.current=null;
     window.clearTimeout(holdTimer.current);
     if (gesture.current?.rate != null) changeRate(gesture.current.rate);
-    gesture.current = null; setHolding(false);
+    gesture.current = null; setHolding(false); onMinimizeMove?.(0);
   };
   const pointerDown = (event:ReactPointerEvent<HTMLButtonElement>) => {
-    if (event.pointerType !== 'touch') return;
+    if (event.pointerType !== 'touch' || mini) return;
     if (!event.isPrimary) {cancelGesture();window.clearTimeout(tapTimer.current);lastTap.current=null;return;}
-    gesture.current = {id:event.pointerId,x:event.clientX,y:event.clientY,moved:false,held:false,rate:null};
+    gesture.current = {id:event.pointerId,x:event.clientX,y:event.clientY,moved:false,held:false,canMinimize:event.clientX>=24&&event.clientX<=window.innerWidth-24,rate:null};
     event.currentTarget.setPointerCapture(event.pointerId);
     holdTimer.current = window.setTimeout(() => {
       const video = mediaRef.current, active = gesture.current;
@@ -202,11 +205,12 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
   const pointerMove = (event:ReactPointerEvent<HTMLButtonElement>) => {
     const active = gesture.current;
     if (!active || active.id !== event.pointerId) return;
-    if (Math.hypot(event.clientX-active.x,event.clientY-active.y)>12) {
+    if (active.moved || Math.hypot(event.clientX-active.x,event.clientY-active.y)>12) {
       active.moved=true;window.clearTimeout(holdTimer.current);
-      if (minimize && event.clientY-active.y >= Math.abs(event.clientX-active.x)*1.5) {
+      if (minimize && active.canMinimize && !active.held && event.clientY-active.y >= Math.abs(event.clientX-active.x)*1.5) {
+        onMinimizeMove?.(event.clientY-active.y);
         window.clearTimeout(tapTimer.current);lastTap.current=null;
-      }
+      } else onMinimizeMove?.(0);
       if (active.rate != null && mediaRef.current) {changeRate(active.rate);active.rate=null;setHolding(false);}
     }
   };
@@ -216,7 +220,7 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
     const dx=event.clientX-active.x,dy=event.clientY-active.y,held=active.rate!=null;
     cancelGesture();
     if (held) return;
-    if (minimize && dy >= 64 && dy >= Math.abs(dx)*1.5) {
+    if (minimize && active.canMinimize && dy >= 64 && dy >= Math.abs(dx)*1.5) {
       window.clearTimeout(tapTimer.current);lastTap.current=null;
       if (!active.held) minimize();
       return;
@@ -297,16 +301,17 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
   const controlsVisible = visible || autoplayBlocked || playBlocked || settings || scrub !== null;
   useEffect(() => {
     const root=container.current;if(!root)return;
-    root.setAttribute('data-theater',String(theater&&!touchUI));root.setAttribute('data-touch',String(touchUI));root.setAttribute('data-controls-visible',String(controlsVisible));
-    return()=>{root.removeAttribute('data-theater');root.removeAttribute('data-touch');root.removeAttribute('data-controls-visible');};
-  }, [container,touchUI,controlsVisible,theater]);
+    root.setAttribute('data-mini',String(Boolean(mini)));root.setAttribute('data-theater',String(theater&&!touchUI&&!mini));root.setAttribute('data-touch',String(touchUI));root.setAttribute('data-controls-visible',String(controlsVisible));
+    return()=>{root.removeAttribute('data-mini');root.removeAttribute('data-theater');root.removeAttribute('data-touch');root.removeAttribute('data-controls-visible');};
+  }, [container,touchUI,controlsVisible,theater,mini]);
   const atLive = Boolean(live?.canFollow && followLive && liveRange && playing && rate===1 && !loading && !buffering && !waiting && !failed && scrub===null && current >= liveRange.edge - LIVE_EDGE_TOLERANCE_SECONDS);
   const seekDisabled = duration <= seekStart;
   const showLiveEdgeThumb = Boolean(live && !live.ended && seekDisabled);
   const displayedTime = atLive ? duration : current;
   const percentage = (value: number) => duration > seekStart ? `${Math.min(100, Math.max(0, (value - seekStart) / (duration - seekStart) * 100))}%` : '0%';
   return <>
-    <button type="button" className={styles.surface} aria-label={labels.togglePlayback} tabIndex={-1} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={cancelGesture} onLostPointerCapture={cancelGesture} onContextMenu={event=>{if(touchUI)event.preventDefault();}} onClick={event=>{
+    <button type="button" className={styles.surface} data-player-surface aria-label={mini&&touchUI?mini.expandLabel:labels.togglePlayback} tabIndex={mini&&touchUI?0:-1} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={cancelGesture} onLostPointerCapture={cancelGesture} onContextMenu={event=>{if(touchUI)event.preventDefault();}} onClick={event=>{
+      if(mini&&touchUI){mini.onExpand();return;}
       if(event.detail===0){desktopClick.current=null;toggle();return;}
       if(touchUI)return;container.current?.focus({preventScroll:true});
       const video=mediaRef.current;
@@ -324,15 +329,16 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
       }
       void toggleFullscreen();
     }} />
+    {mini ? <button type="button" data-controls className="hhc-player-miniAction" aria-label={touchUI ? (playing ? labels.pause : labels.play) : mini.expandLabel} onClick={touchUI ? toggle : mini.onExpand}>{touchUI ? (playing ? <Pause/> : <Play/>) : <ArrowUpRight/>}</button> : null}
     {watermark ? <RecordingWatermark container={container} videoRef={videoRef} code={watermark}/> : null}
     {fullscreenState.error ? <div className={styles.fullscreenError} role="alert">{labels.fullscreenError}</div> : null}
     {holding ? <div className={styles.speedFeedback} aria-hidden="true">2×</div> : null}
     {feedback ? <div className={`${styles.feedback} ${feedback.kind==='back'?styles.seekBack:feedback.kind==='forward'?styles.seekForward:styles.playbackFeedback}`} aria-hidden="true"><span key={feedback.id}>{feedback.kind === 'play' ? <Play size={36} fill="currentColor"/> : feedback.kind === 'pause' ? <Pause size={36} fill="currentColor"/> : <><span className={styles.seekArrows}>{touchUI ? <><i/><i/><i/></> : feedback.kind==='back' ? <ChevronLeft/> : <ChevronRight/>}</span><span>{feedback.kind==='back'?'−':'+'}{feedback.seconds}</span><span className={styles.srOnly}>{labels.seek}</span></>}</span></div> : null}
     {(loading || buffering || waiting) && !autoplayBlocked && !playBlocked && !failed && !feedback ? <div className={styles.loading} role="status"><LoaderCircle aria-hidden="true"/><span className={styles.srOnly}>{labels.buffering}</span></div> : null}
-    {!ended&&(touchUI || (autoplayBlocked||playBlocked) && !failed) ? <div data-controls className={`${styles.centerControls} ${controlsVisible ? '' : styles.hidden}`}>
-      {touchUI && previousHref && labels.previousVideo ? <a href={previousHref} onClick={event=>navigate(event,previousHref)} className={styles.skip} aria-label={labels.previousVideo}><SkipBack fill="currentColor"/></a> : <span/>}
+    {!ended&&!(mini&&touchUI)&&(touchUI || mini || (autoplayBlocked||playBlocked) && !failed) ? <div data-controls className={`${styles.centerControls} ${controlsVisible ? '' : styles.hidden}`}>
+      {!mini && touchUI && previousHref && labels.previousVideo ? <a href={previousHref} onClick={event=>navigate(event,previousHref)} className={styles.skip} aria-label={labels.previousVideo}><SkipBack fill="currentColor"/></a> : <span/>}
       {(!loading && !buffering && !waiting || autoplayBlocked||playBlocked) && !failed ? <button type="button" className={styles.centerPlay} aria-label={playing ? labels.pause : labels.play} onClick={toggle}>{playing ? <Pause fill="currentColor"/> : <Play fill="currentColor"/>}</button> : <span/>}
-      {touchUI && nextHref && labels.nextVideo ? <a href={nextHref} onClick={event=>navigate(event,nextHref)} className={styles.skip} aria-label={labels.nextVideo}><SkipForward fill="currentColor"/></a> : <span/>}
+      {!mini && touchUI && nextHref && labels.nextVideo ? <a href={nextHref} onClick={event=>navigate(event,nextHref)} className={styles.skip} aria-label={labels.nextVideo}><SkipForward fill="currentColor"/></a> : <span/>}
     </div> : null}
     {touchUI ? <div data-controls className={`${styles.topControls} ${controlsVisible ? '' : styles.hidden}`}>
       {fullscreen ? <button type="button" className={styles.button} aria-label={labels.exitFullscreen} onClick={()=>void fullscreenState.exit()}><ChevronDown/></button> : minimize && labels.minimize ? <button type="button" className={styles.button} aria-label={labels.minimize} onClick={minimize}><ChevronDown/></button> : <span/>}
