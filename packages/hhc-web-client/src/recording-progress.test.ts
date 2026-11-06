@@ -7,7 +7,7 @@ const stamp = '2026-11-06T06:00:00Z'
 
 it('decodes nullable progress and a live resume item without creating a media request', async () => {
   const paths: string[] = []
-  const item = {recordingId: id, publicId: 'short', title: 'Live', mode: 'live', captureId: mediaVersion.slice(5), mediaVersion, positionSeconds: 60, generation: id, claimedAt: stamp, updatedAt: stamp}
+  const item = {sessionId: id, recordingId: id, publicId: 'short', title: 'Live', mode: 'live', captureId: mediaVersion.slice(5), mediaVersion, positionSeconds: 60, generation: id, claimedAt: stamp, updatedAt: stamp}
   const api = createHhcWebClient({baseUrl: 'https://www.example/api', getAccessToken: () => 'member', fetcher: async request => {
     const path = new URL((request as Request).url).pathname
     paths.push(path)
@@ -40,3 +40,15 @@ it.each([[409, 'progress_conflict'], [409, 'progress_superseded'], [401, 'unauth
     await expect(api.claimRecordingProgress(id, {sessionId: id, claimId: id, expectedGeneration: null, claimToken: 'intent', mediaVersion, startKind: 'resume', observedPositionSeconds: 0})).rejects.toMatchObject({status, code})
   },
 )
+
+it.each([undefined, id])('accepts a resume session identity or an older producer without it: %s', async sessionId => {
+  const item = {sessionId, recordingId: id, publicId: 'short', title: 'Video', mode: 'vod', mediaVersion: 'vod:package', positionSeconds: 60, generation: id, claimedAt: stamp, updatedAt: stamp}
+  const api = createHhcWebClient({baseUrl: 'https://www.example/api', getAccessToken: () => 'member', fetcher: async () => Response.json({data: {item}})})
+  expect((await api.getContinueWatching()).item?.sessionId).toBe(sessionId)
+})
+
+it.each([null, 123, 'not-a-session', {}])('rejects an invalid resume session identity: %j', async sessionId => {
+  const item = {sessionId, recordingId: id, publicId: 'short', title: 'Video', mode: 'vod', mediaVersion: 'vod:package', positionSeconds: 60, generation: id, claimedAt: stamp, updatedAt: stamp}
+  const api = createHhcWebClient({baseUrl: 'https://www.example/api', getAccessToken: () => 'member', fetcher: async () => Response.json({data: {item}})})
+  await expect(api.getContinueWatching()).rejects.toBeInstanceOf(Error)
+})

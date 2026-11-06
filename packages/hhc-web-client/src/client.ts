@@ -340,6 +340,7 @@ export function createHhcWebClient(options: {
       if (!data) throw invalidProgressResponse()
       const item = data.item
       if (item !== null && (!validProgressPosition(item) || !progressUUID.test(item.recordingId) ||
+        (item.sessionId !== undefined && (typeof item.sessionId !== 'string' || !progressUUID.test(item.sessionId))) ||
         typeof item.publicId !== 'string' || typeof item.title !== 'string' || !validProgressMode(item.mode) ||
         (item.mode === 'live' && typeof item.captureId !== 'string') ||
         (item.durationSeconds !== undefined && (!Number.isFinite(item.durationSeconds) || item.durationSeconds <= 0)) ||

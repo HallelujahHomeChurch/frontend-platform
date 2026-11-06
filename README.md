@@ -463,3 +463,9 @@ Play → lock → unlock flow, user pause/seek, interruptions, expiry and foregr
 quality switching on supported phones before claiming device acceptance.
 Existing grant/session cookies and per-request media-path restrictions remain
 required; no credentials or private URLs enter diagnostics.
+
+Resume items expose the existing owner `sessionId` from
+[HHC Web API #441](https://github.com/HallelujahHomeChurch/hhc-web-api/pull/441).
+Publish this client only after that producer release. A present session ID must
+be a UUID; an absent field remains accepted during producer rollback. It is a
+correlation value for account-local dismissal, never an authorization credential.

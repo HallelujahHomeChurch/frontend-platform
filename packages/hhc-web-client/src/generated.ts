@@ -8192,6 +8192,11 @@ export interface components {
             durationSeconds?: number;
             /** Format: uuid */
             generation: string;
+            /**
+             * Format: uuid
+             * @description Existing owner session identity for account-local resume dismissal; not an authorization credential.
+             */
+            sessionId: string;
             /** Format: date-time */
             claimedAt: string;
             /** Format: date-time */
