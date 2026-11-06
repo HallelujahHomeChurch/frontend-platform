@@ -290,6 +290,8 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
     return()=>{root.removeAttribute('data-theater');root.removeAttribute('data-touch');root.removeAttribute('data-controls-visible');};
   }, [container,touchUI,controlsVisible,theater]);
   const atLive = Boolean(live?.canFollow && followLive && liveRange && playing && rate===1 && !loading && !buffering && !waiting && !failed && scrub===null && current >= liveRange.edge - LIVE_EDGE_TOLERANCE_SECONDS);
+  const seekDisabled = duration <= seekStart;
+  const showLiveEdgeThumb = Boolean(live && !live.ended && seekDisabled);
   const displayedTime = atLive ? duration : current;
   const percentage = (value: number) => duration > seekStart ? `${Math.min(100, Math.max(0, (value - seekStart) / (duration - seekStart) * 100))}%` : '0%';
   return <>
@@ -337,14 +339,15 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
       </>}
     </div> : null}
     <div data-controls className={`${styles.controls} ${controlsVisible ? '' : styles.hidden}`}>
-      <div className={styles.seek} onPointerLeave={() => { if (!dragging.current) {window.cancelAnimationFrame(previewFrame.current);setPreview(null);} }}>
+      <div className={styles.seek} data-live-edge-thumb={showLiveEdgeThumb || undefined} onPointerLeave={() => { if (!dragging.current) {window.cancelAnimationFrame(previewFrame.current);setPreview(null);} }}>
         <div className={styles.track} aria-hidden="true"><span className={styles.buffered} style={{width:percentage(buffered)}}/><span className={styles.played} style={{width:percentage(displayedTime)}}/></div>
-        <input type="range" aria-label={labels.seek} aria-valuetext={`${playerClock(current)} / ${playerClock(duration)}`} min={seekStart} max={duration} step={0.1} value={Math.max(seekStart, Math.min(duration, displayedTime))} disabled={duration <= seekStart}
+        <input type="range" aria-label={labels.seek} aria-valuetext={`${playerClock(current)} / ${playerClock(duration)}`} min={seekStart} max={duration} step={0.1} value={Math.max(seekStart, Math.min(duration, displayedTime))} disabled={seekDisabled}
           onPointerEnter={updatePreview} onPointerMove={updatePreview}
           onPointerDown={event => { dragging.current = true; setScrub(Number(event.currentTarget.value)); event.currentTarget.setPointerCapture?.(event.pointerId); }}
           onChange={event => { const value = Number(event.target.value); if (dragging.current) setScrub(value); else seek(value); }}
           onPointerUp={event => { if(dragging.current)seek(Number(event.currentTarget.value));cancelScrub(); }}
           onPointerCancel={cancelScrub} onLostPointerCapture={cancelScrub} />
+        {showLiveEdgeThumb ? <span className={styles.liveEdgeThumb} aria-hidden="true"/> : null}
         <div className={styles.preview} hidden={previewTime===null||duration<=0} aria-hidden="true" style={{left:`clamp(calc(var(--preview-width) / 2), ${percentage(previewTime??0)}, calc(100% - var(--preview-width) / 2))`}}>
           {!failed && cues.length > 0 ? <PreviewSprite key={`${playbackUrl}:${live?'live':'vod'}`} playbackUrl={playbackUrl} cue={cue} neighbor={neighbor} enabled={pageVisible&&!failed} preload={preloadSprites} preloadEnabled={warmPreviews}/> : null}
           <time>{playerClock(previewTime??0)}</time>
