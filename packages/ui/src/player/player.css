@@ -189,3 +189,12 @@
 @container (min-width: 640px) {
   .hhc-player-player[data-touch="true"] .hhc-player-preview { --preview-width:min(192px, 44cqw); }
 }
+
+.hhc-player-miniAction {position:absolute;top:4px;left:4px;z-index:6;display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:50%;background:rgb(0 0 0 / 60%);color:white;cursor:pointer;}
+.hhc-player-miniAction:focus-visible {outline:2px solid white;outline-offset:-3px;}
+.hhc-player-player[data-mini="true"] .hhc-player-skipGroup,
+.hhc-player-player[data-mini="true"] .hhc-player-volumeControl,
+.hhc-player-player[data-mini="true"] .hhc-player-topControls,
+.hhc-player-player[data-mini="true"] .hhc-player-rightControls > :not(:last-child) {display:none;}
+.hhc-player-player[data-mini="true"][data-touch="true"] .hhc-player-controls,
+.hhc-player-player[data-mini="true"][data-touch="true"] .hhc-player-replay {display:none;}

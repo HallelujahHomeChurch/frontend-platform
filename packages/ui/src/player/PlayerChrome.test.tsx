@@ -1,4 +1,4 @@
-import {useRef} from 'react';
+import {useRef, type ComponentProps} from 'react';
 import {act, cleanup, fireEvent, render, screen} from '@testing-library/react';
 import {afterEach, beforeEach, expect, it, vi} from 'vitest';
 import {PlayerChrome} from './PlayerChrome.js';
@@ -8,9 +8,9 @@ const playbackUrl='https://media.example/videos/r/captures/c/sessions/s/master.m
 const labels={quality:'Quality',auto:'Auto',play:'Play',pause:'Pause',mute:'Mute',unmute:'Unmute',seek:'Position',volume:'Volume',fullscreen:'Fullscreen',exitFullscreen:'Exit fullscreen',fullscreenError:'Error',playbackSpeed:'Speed',settings:'Settings',togglePlayback:'Toggle playback',privateCopy:'Private',buffering:'Loading'};
 const live={verifiedEnd:200,canFollow:true,label:'Live',backToLive:'Back to live'};
 const index=(start=30,sprite='seg-000001.jpg')=>`WEBVTT\n\n00:00:${String(start).padStart(2,'0')}.000 --> 00:00:${String(start+5).padStart(2,'0')}.000\n${sprite}#xywh=0,0,160,90\n`;
-function Harness({url=playbackUrl,state=live,onMinimize}:{url?:string;state?:LivePlayerState|null;onMinimize?:()=>void}){
+function Harness({url=playbackUrl,state=live,...props}:{url?:string;state?:LivePlayerState|null}&Pick<ComponentProps<typeof PlayerChrome>,'onMinimize'|'onMinimizeMove'|'mini'>){
   const container=useRef<HTMLDivElement>(null),videoRef=useRef<HTMLVideoElement>(null);
-  return <div ref={container}><video ref={videoRef}/><PlayerChrome container={container} videoRef={videoRef} playbackUrl={url} labels={{...labels,minimize:"Minimize player"}} onMinimize={onMinimize} quality="auto" qualities={['480p']} loading={false} failed={false} onQualityChange={()=>{}} live={state??undefined}/></div>;
+  return <div ref={container}><video ref={videoRef}/><PlayerChrome container={container} videoRef={videoRef} playbackUrl={url} labels={{...labels,minimize:"Minimize player"}} {...props} quality="auto" qualities={['480p']} loading={false} failed={false} onQualityChange={()=>{}} live={state??undefined}/></div>;
 }
 function hover(seconds=32){
   const input=screen.getByRole('slider',{name:'Position'});
@@ -184,7 +184,7 @@ it('only minimizes for a committed downward touch drag', () => {
   const surface = screen.getByRole('button', {name: labels.togglePlayback});
   Object.defineProperty(surface, 'setPointerCapture', {value: vi.fn()});
   function pointer(type: string, x: number, y: number) {
-    const event = new MouseEvent(type, {bubbles: true, clientX: x, clientY: y});
+    const event = new MouseEvent(type, {bubbles: true, clientX: x + 100, clientY: y});
     Object.defineProperties(event, {pointerType: {value: 'touch'}, pointerId: {value: 1}, isPrimary: {value: true}});
     fireEvent(surface, event);
   }
@@ -201,4 +201,66 @@ it('only minimizes for a committed downward touch drag', () => {
   pointer('pointermove', 50, 84);
   pointer('pointerup', 50, 84);
   expect(minimize).toHaveBeenCalledOnce();
+});
+
+
+it('expands touch mini without playing and uses its separate media command', () => {
+  vi.stubGlobal('matchMedia', vi.fn(() => ({matches:true,addEventListener:vi.fn(),removeEventListener:vi.fn()})));
+  const expand=vi.fn(),play=vi.spyOn(HTMLMediaElement.prototype,'play').mockResolvedValue();
+  const view=render(<Harness mini={{onExpand:expand,expandLabel:'Expand player'}}/>);
+  const video=view.container.querySelector('video');
+  fireEvent.click(screen.getByRole('button',{name:'Expand player'}));
+  expect(expand).toHaveBeenCalledOnce();expect(play).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button',{name:'Play'}));
+  expect(play).toHaveBeenCalledOnce();
+  view.rerender(<Harness/>);
+  expect(view.container.querySelector('video')).toBe(video);
+});
+
+it('reports touch minimize movement and resets it on cancellation without minimizing', () => {
+  const move=vi.fn(),minimize=vi.fn();render(<Harness onMinimize={minimize} onMinimizeMove={move}/>);
+  const surface=screen.getByRole('button',{name:'Toggle playback'});
+  surface.setPointerCapture=vi.fn();
+  function pointer(type:string,y:number,primary=true) {
+    const event=new MouseEvent(type,{bubbles:true,clientX:120,clientY:y});
+    Object.defineProperties(event,{pointerType:{value:'touch'},pointerId:{value:1},isPrimary:{value:primary}});
+    fireEvent(surface,event);
+  }
+  pointer('pointerdown',20);pointer('pointermove',60);
+  expect(move).toHaveBeenLastCalledWith(40);
+  pointer('pointermove',25);expect(move).toHaveBeenLastCalledWith(5);
+  pointer('pointermove',15);expect(move).toHaveBeenLastCalledWith(0);
+  pointer('pointercancel',60);expect(move).toHaveBeenLastCalledWith(0);
+  pointer('pointerup',100);expect(minimize).not.toHaveBeenCalled();
+  pointer('pointerdown',20);pointer('pointermove',70);pointer('pointerdown',70,false);
+  expect(move).toHaveBeenLastCalledWith(0);pointer('pointerup',100);expect(minimize).not.toHaveBeenCalled();
+});
+
+
+it('keeps mini commands on the background media owner and desktop expand separate', () => {
+  const play=vi.fn(),pause=vi.fn(),expand=vi.fn();
+  function Owner({paused}:{paused:boolean}) {
+    const container=useRef<HTMLDivElement>(null),videoRef=useRef<HTMLVideoElement>(null);
+    return <div ref={container}><video ref={videoRef}/><PlayerChrome container={container} videoRef={videoRef} playbackUrl={playbackUrl} labels={labels} mini={{onExpand:expand,expandLabel:'Expand'}} playbackPaused={paused} onMediaPlay={play} onMediaPause={pause} quality="auto" qualities={['480p']} loading={false} failed={false} onQualityChange={()=>{}}/></div>;
+  }
+  const view=render(<Owner paused={true}/>);
+  fireEvent.click(screen.getByRole('button',{name:'Expand'}));
+  expect(expand).toHaveBeenCalledOnce();expect(play).not.toHaveBeenCalled();expect(pause).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button',{name:'Toggle playback'}));expect(play).toHaveBeenCalledOnce();
+  view.rerender(<Owner paused={false}/>);
+  fireEvent.click(screen.getByRole('button',{name:'Toggle playback'}));expect(pause).toHaveBeenCalledOnce();
+});
+
+it('does not minimize from the system back edge or after a long hold', async () => {
+  const move=vi.fn(),minimize=vi.fn();const view=render(<Harness onMinimize={minimize} onMinimizeMove={move}/>);
+  const surface=screen.getByRole('button',{name:'Toggle playback'});surface.setPointerCapture=vi.fn();
+  function pointer(type:string,x:number,y:number) {
+    const event=new MouseEvent(type,{bubbles:true,clientX:x,clientY:y});
+    Object.defineProperties(event,{pointerType:{value:'touch'},pointerId:{value:1},isPrimary:{value:true}});fireEvent(surface,event);
+  }
+  pointer('pointerdown',10,20);pointer('pointermove',10,100);pointer('pointerup',10,100);
+  expect(minimize).not.toHaveBeenCalled();expect(move).not.toHaveBeenCalledWith(80);
+  vi.spyOn(view.container.querySelector('video')!,'paused','get').mockReturnValue(false);
+  pointer('pointerdown',120,20);await tick(450);pointer('pointermove',120,100);pointer('pointerup',120,100);
+  expect(minimize).not.toHaveBeenCalled();expect(view.container.querySelector('video')!.playbackRate).toBe(1);
 });
