@@ -15,6 +15,7 @@ import {previewCueAt} from './preview-cue.js';
 type Quality = 'auto' | '480p' | '720p' | '1080p';
 type Props = {
   onMinimize?:()=>void;
+  onPlayIntent?:(kind:"resume"|"restart")=>void;
   previousHref?:string; nextHref?:string; onNavigate?:(href:string)=>void;
   live?: LivePlayerState; followLive?:boolean; onDvr?:()=>void; onReturnToLive?:()=>void;
   container: RefObject<HTMLDivElement | null>; videoRef: RefObject<HTMLVideoElement | null>;
@@ -41,7 +42,7 @@ export function playerClock(seconds: number) {
   return total >= 3600 ? `${Math.floor(total / 3600)}:${String(Math.floor(total / 60) % 60).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}` : `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
 
-export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay, onMediaPause, mediaOwner, playbackPaused, playbackVolume, onMediaVolume, playbackUrl, watermark, labels, quality, activeHeight, qualities, autoplayBlocked=false, loading, buffering=false, failed, onQualityChange, onPlaybackChange,onPlayingChange,live,followLive=true,onDvr,onReturnToLive,previousHref,nextHref,onNavigate,onMinimize}: Props) {
+export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay, onMediaPause, mediaOwner, playbackPaused, playbackVolume, onMediaVolume, playbackUrl, watermark, labels, quality, activeHeight, qualities, autoplayBlocked=false, loading, buffering=false, failed, onQualityChange, onPlaybackChange,onPlayingChange,live,followLive=true,onDvr,onReturnToLive,previousHref,nextHref,onNavigate,onMinimize,onPlayIntent}: Props) {
   const mediaRef=playbackMediaRef??videoRef;
   const pageVisible=useSyncExternalStore(subscribeVisibility,visibleSnapshot,()=>true);
   const touchUI = useSyncExternalStore(subscribeTouch, touchSnapshot, () => false);
@@ -143,11 +144,11 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
   const toggle = () => {
     const video = mediaRef.current;
     if (!video) return;
-    if(ended&&video.ended&&!live){video.currentTime=0;setTime(0);setEnded(false);onPlaybackChange?.({time:0,paused:false});play(video);showControls();return;}
+    if(ended&&video.ended&&!live){onPlayIntent?.("restart");video.currentTime=0;setTime(0);setEnded(false);onPlaybackChange?.({time:0,paused:false});play(video);showControls();return;}
     const paused=playbackPaused??video.paused;
     const kind = paused ? 'play' : 'pause';
     onPlaybackChange?.({paused:!paused});
-    if (paused) play(video); else {++playCommand.current;onDvr?.();if(onMediaPause)onMediaPause();else video.pause();}
+    if (paused) {onPlayIntent?.("resume");play(video);} else {++playCommand.current;onDvr?.();if(onMediaPause)onMediaPause();else video.pause();}
     if (!touchUI) {
       setFeedback({kind, id: Date.now()});
       window.clearTimeout(feedbackTimer.current);
