@@ -144,3 +144,29 @@ it('coalesces timeline movement into the next frame and cancels a pending move o
  const input=hover(40);fireEvent.pointerLeave(input.parentElement!);await tick(16);
  expect(view.container.querySelector('.hhc-player-preview')).toHaveAttribute('hidden');
 });
+
+it.each([
+  {end: 0, duration: 0, liveState: live, edgeMarker: true},
+  {end: 45, duration: 0, liveState: live, edgeMarker: true},
+  {end: 90, duration: 0, liveState: live, edgeMarker: true},
+  {end: 91, duration: 1, liveState: live, edgeMarker: false},
+  {end: 0, duration: 0, liveState: null, edgeMarker: false},
+])('preserves the seek range with end=$end and live=$liveState', ({end, duration, liveState, edgeMarker}) => {
+  vi.mocked(Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'seekable')!.get!)
+    .mockReturnValue({length: end ? 1 : 0, start: () => 0, end: () => end});
+  vi.mocked(Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'duration')!.get!)
+    .mockReturnValue(duration);
+  const view = render(<Harness state={liveState}/>);
+  const slider = screen.getByRole<HTMLInputElement>('slider', {name: 'Position'});
+
+  expect(slider.min).toBe('0');
+  expect(slider.max).toBe(String(duration));
+  expect(slider.disabled).toBe(duration === 0);
+  expect(view.container.querySelector('video')?.currentTime).toBe(0);
+  expect(Boolean(view.container.querySelector('.hhc-player-liveEdgeThumb'))).toBe(edgeMarker);
+  if (!end && liveState) {
+    const liveButton = screen.getByRole('button', {name: 'Back to live'});
+    expect(liveButton).toBeDisabled();
+    expect(liveButton).toHaveAttribute('data-live-edge', 'false');
+  }
+});

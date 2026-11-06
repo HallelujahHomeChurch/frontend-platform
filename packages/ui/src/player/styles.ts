@@ -12,6 +12,7 @@ export default {
   heldFrame: "hhc-player-heldFrame",
   hidden: "hhc-player-hidden",
   liveButton: "hhc-player-liveButton",
+  liveEdgeThumb: "hhc-player-liveEdgeThumb",
   liveDot: "hhc-player-liveDot",
   liveText: "hhc-player-liveText",
   loading: "hhc-player-loading",
