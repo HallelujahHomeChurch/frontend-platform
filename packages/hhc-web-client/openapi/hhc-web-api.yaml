@@ -14998,7 +14998,7 @@ components:
     RecordingResumeItem:
       type: object
       additionalProperties: false
-      required: [recordingId, publicId, title, mode, mediaVersion, positionSeconds, generation, claimedAt, updatedAt]
+      required: [recordingId, publicId, title, mode, mediaVersion, positionSeconds, generation, sessionId, claimedAt, updatedAt]
       properties:
         recordingId: { type: string, format: uuid }
         publicId: { type: string }
@@ -15009,6 +15009,10 @@ components:
         positionSeconds: { type: number, minimum: 0 }
         durationSeconds: { type: number, exclusiveMinimum: 0 }
         generation: { type: string, format: uuid }
+        sessionId:
+          type: string
+          format: uuid
+          description: Existing owner session identity for account-local resume dismissal; not an authorization credential.
         claimedAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
     RecordingContinueWatching:
