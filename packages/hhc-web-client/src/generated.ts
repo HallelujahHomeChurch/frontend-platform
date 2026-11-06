@@ -152,6 +152,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/member/recordings/continue-watching": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the most recently started eligible recording
+         * @description Requires a human member with recording entitlement and current legal acceptance.
+         */
+        get: operations["getContinueWatching"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/recordings/{id}/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the current media version and saved progress
+         * @description Requires a human member with recording entitlement and current legal acceptance.
+         */
+        get: operations["getRecordingProgress"];
+        /**
+         * Save progress for the current owner and sequence
+         * @description Requires a human member with recording entitlement and current legal acceptance.
+         */
+        put: operations["updateRecordingProgress"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/member/recordings/{id}/progress/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Claim progress ownership after playback starts
+         * @description Requires a human member with recording entitlement and current legal acceptance.
+         */
+        post: operations["claimRecordingProgress"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/member/recordings/{id}/heartbeat": {
         parameters: {
             query?: never;
@@ -8063,6 +8127,107 @@ export interface components {
             };
             error: null;
         };
+        RecordingProgressClaim: {
+            /** Format: uuid */
+            sessionId: string;
+            /** Format: uuid */
+            claimId: string;
+            /** Format: uuid */
+            expectedGeneration: string | null;
+            claimToken: string;
+            mediaVersion: string;
+            /** @enum {string} */
+            startKind: "resume" | "restart" | "at";
+            observedPositionSeconds: number;
+        };
+        RecordingProgressUpdate: {
+            /** Format: uuid */
+            sessionId: string;
+            /** Format: uuid */
+            generation: string;
+            sequence: number;
+            mediaVersion: string;
+            positionSeconds: number;
+            /** @enum {string} */
+            state: "playing" | "paused" | "waiting" | "ended";
+        };
+        RecordingProgressSnapshot: {
+            /** Format: uuid */
+            generation: string;
+            mediaVersion: string;
+            positionSeconds: number;
+            completed: boolean;
+            /** @enum {string} */
+            mode: "live" | "vod";
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        RecordingProgressRead: {
+            /** @description Short-lived progress intent bound to this snapshot */
+            claimToken: string;
+            progress: components["schemas"]["RecordingProgressSnapshot"] | null;
+            mediaVersion: string;
+        };
+        RecordingProgressOwner: {
+            /** Format: uuid */
+            generation: string;
+            mediaVersion: string;
+            positionSeconds: number;
+            sequence: number;
+        };
+        RecordingProgressWrite: {
+            accepted: boolean;
+            sequence: number;
+        };
+        RecordingResumeItem: {
+            /** Format: uuid */
+            recordingId: string;
+            publicId: string;
+            title: string;
+            /** @enum {string} */
+            mode: "live" | "vod";
+            captureId?: string;
+            mediaVersion: string;
+            positionSeconds: number;
+            durationSeconds?: number;
+            /** Format: uuid */
+            generation: string;
+            /** Format: date-time */
+            claimedAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        RecordingContinueWatching: {
+            item: components["schemas"]["RecordingResumeItem"] | null;
+        };
+        RecordingProgressReadEnvelope: {
+            data: components["schemas"]["RecordingProgressRead"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        RecordingProgressOwnerEnvelope: {
+            data: components["schemas"]["RecordingProgressOwner"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        RecordingProgressWriteEnvelope: {
+            data: components["schemas"]["RecordingProgressWrite"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
+        RecordingContinueWatchingEnvelope: {
+            data: components["schemas"]["RecordingContinueWatching"];
+            meta: {
+                [key: string]: unknown;
+            };
+            error: null;
+        };
         RecordingHeartbeatResultEnvelope: {
             data: components["schemas"]["RecordingHeartbeatResult"];
             meta: {
@@ -8860,6 +9025,130 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecordingReportedEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getContinueWatching: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingContinueWatchingEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getRecordingProgress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingProgressReadEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    updateRecordingProgress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingProgressUpdate"];
+            };
+        };
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingProgressWriteEnvelope"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    claimRecordingProgress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingProgressClaim"];
+            };
+        };
+        responses: {
+            /** @description Operation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingProgressOwnerEnvelope"];
                 };
             };
             400: components["responses"]["Error"];

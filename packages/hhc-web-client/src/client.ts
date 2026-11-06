@@ -82,6 +82,14 @@ export type RecordingCommentReport = components['schemas']['RecordingCommentRepo
 export type RecordingCommentPage = components['schemas']['RecordingCommentPage']
 export type RecordingModerationInput = components['schemas']['RecordingModerationInput']
 export type RecordingModerationPage = components['schemas']['RecordingModerationPage']
+export type RecordingProgressClaim = components['schemas']['RecordingProgressClaim']
+export type RecordingProgressUpdate = components['schemas']['RecordingProgressUpdate']
+export type RecordingProgressSnapshot = components['schemas']['RecordingProgressSnapshot']
+export type RecordingProgressOwner = components['schemas']['RecordingProgressOwner']
+export type RecordingProgressRead = components['schemas']['RecordingProgressRead']
+export type RecordingProgressWrite = components['schemas']['RecordingProgressWrite']
+export type RecordingResumeItem = components['schemas']['RecordingResumeItem']
+export type RecordingContinueWatching = components['schemas']['RecordingContinueWatching']
 export type RecordingHeartbeatInput = components['schemas']['RecordingHeartbeatInput']
 export type RecordingHeartbeatResult = components['schemas']['RecordingHeartbeatResult']
 export type RecordingMemberMetrics = components['schemas']['RecordingMemberMetrics']
@@ -200,8 +208,9 @@ export class HhcWebApiError extends Error {
   readonly currentVersion?: number
   readonly canonicalVersion?: number
   readonly bulletinUnavailable: boolean
+  readonly retryAfter?: string
 
-  constructor(status: number, code: string, message: string, contentId?: string, versions?: {currentVersion?: number; canonicalVersion?: number}, bulletinUnavailable = false) {
+  constructor(status: number, code: string, message: string, contentId?: string, versions?: {currentVersion?: number; canonicalVersion?: number}, bulletinUnavailable = false, retryAfter?: string) {
     super(message)
     this.name = 'HhcWebApiError'
     this.status = status
@@ -210,6 +219,7 @@ export class HhcWebApiError extends Error {
     this.currentVersion = versions?.currentVersion
     this.canonicalVersion = versions?.canonicalVersion
     this.bulletinUnavailable = bulletinUnavailable
+    this.retryAfter = retryAfter
   }
 }
 
@@ -302,6 +312,39 @@ export function createHhcWebClient(options: {
     },
     async reportRecordingComment(id: string, commentId: string, body: RecordingCommentReport, signal?: AbortSignal) {
       return (await unwrap(client.PUT('/member/recordings/{id}/comments/{commentId}/report', {params: {path: {id, commentId}}, body, signal, cache: 'no-store', redirect: 'error'}))).data
+    },
+    async getRecordingProgress(id: string, signal?: AbortSignal) {
+      const {data} = await unwrap(client.GET('/member/recordings/{id}/progress', {params: {path: {id}}, signal, cache: 'no-store', redirect: 'error'}))
+      if (!data || typeof data.mediaVersion !== 'string' || typeof data.claimToken !== 'string' || !data.claimToken || data.progress !== null &&
+        (!validProgressPosition(data.progress) || data.progress.mediaVersion !== data.mediaVersion ||
+          typeof data.progress.completed !== 'boolean' || !validProgressMode(data.progress.mode) ||
+          !Number.isFinite(Date.parse(data.progress.updatedAt)))) throw invalidProgressResponse()
+      return data
+    },
+    async claimRecordingProgress(id: string, body: RecordingProgressClaim, signal?: AbortSignal) {
+      const {data} = await unwrap(client.POST('/member/recordings/{id}/progress/claim', {params: {path: {id}}, body, signal, cache: 'no-store', redirect: 'error'}))
+      if (!validProgressPosition(data) || data.mediaVersion !== body.mediaVersion ||
+        !Number.isSafeInteger(data.sequence) || data.sequence < 0) throw invalidProgressResponse()
+      return data
+    },
+    async updateRecordingProgress(id: string, body: RecordingProgressUpdate, options: {signal?: AbortSignal; keepalive?: boolean} = {}) {
+      if (options.keepalive && new TextEncoder().encode(JSON.stringify(body)).byteLength > 4096) {
+        throw new HhcWebApiError(400, 'invalid_request', 'The progress update exceeds 4 KiB.')
+      }
+      const {data} = await unwrap(client.PUT('/member/recordings/{id}/progress', {params: {path: {id}}, body, ...options, cache: 'no-store', redirect: 'error'}))
+      if (!data || typeof data.accepted !== 'boolean' || !Number.isSafeInteger(data.sequence) || data.sequence < 1) throw invalidProgressResponse()
+      return data
+    },
+    async getContinueWatching(signal?: AbortSignal) {
+      const {data} = await unwrap(client.GET('/member/recordings/continue-watching', {signal, cache: 'no-store', redirect: 'error'}))
+      if (!data) throw invalidProgressResponse()
+      const item = data.item
+      if (item !== null && (!validProgressPosition(item) || !progressUUID.test(item.recordingId) ||
+        typeof item.publicId !== 'string' || typeof item.title !== 'string' || !validProgressMode(item.mode) ||
+        (item.mode === 'live' && typeof item.captureId !== 'string') ||
+        (item.durationSeconds !== undefined && (!Number.isFinite(item.durationSeconds) || item.durationSeconds <= 0)) ||
+        !Number.isFinite(Date.parse(item.claimedAt)) || !Number.isFinite(Date.parse(item.updatedAt)))) throw invalidProgressResponse()
+      return data
     },
     async recordPlaybackHeartbeat(id: string, body: RecordingHeartbeatInput, signal?: AbortSignal) {
       return (await unwrap(client.POST('/member/recordings/{id}/heartbeat', {params: {path: {id}}, body, signal, cache: 'no-store', redirect: 'error'}))).data
@@ -1096,6 +1139,21 @@ export function createHhcWebClient(options: {
   }
 }
 
+const progressUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+
+function validProgressPosition(value: Pick<RecordingProgressSnapshot, 'generation' | 'positionSeconds' | 'mediaVersion'> | null | undefined) {
+  return value != null && progressUUID.test(value.generation) && typeof value.mediaVersion === 'string' &&
+    Number.isFinite(value.positionSeconds) && value.positionSeconds >= 0
+}
+
+function validProgressMode(mode: unknown) {
+  return mode === 'live' || mode === 'vod'
+}
+
+function invalidProgressResponse() {
+  return new HhcWebApiError(502, 'invalid_response', 'The playback progress response is invalid.')
+}
+
 function apiError(response: Response, value: unknown) {
   const error = value && typeof value === 'object' && 'error' in value
     ? (value as { error?: { code?: string; message?: string; contentId?: string } }).error
@@ -1111,6 +1169,7 @@ function apiError(response: Response, value: unknown) {
     typeof error?.contentId === 'string' ? error.contentId : undefined,
     {currentVersion: version(meta?.currentVersion), canonicalVersion: version(meta?.canonicalVersion)},
     response.status === 404 && error?.code === 'not_found' && response.headers.get('X-HHC-Bulletin-Access') === 'unavailable',
+    response.headers.get('Retry-After') ?? undefined,
   )
 }
 

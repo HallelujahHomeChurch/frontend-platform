@@ -8,9 +8,9 @@ const playbackUrl='https://media.example/videos/r/captures/c/sessions/s/master.m
 const labels={quality:'Quality',auto:'Auto',play:'Play',pause:'Pause',mute:'Mute',unmute:'Unmute',seek:'Position',volume:'Volume',fullscreen:'Fullscreen',exitFullscreen:'Exit fullscreen',fullscreenError:'Error',playbackSpeed:'Speed',settings:'Settings',togglePlayback:'Toggle playback',privateCopy:'Private',buffering:'Loading'};
 const live={verifiedEnd:200,canFollow:true,label:'Live',backToLive:'Back to live'};
 const index=(start=30,sprite='seg-000001.jpg')=>`WEBVTT\n\n00:00:${String(start).padStart(2,'0')}.000 --> 00:00:${String(start+5).padStart(2,'0')}.000\n${sprite}#xywh=0,0,160,90\n`;
-function Harness({url=playbackUrl,state=live}:{url?:string;state?:LivePlayerState|null}){
+function Harness({url=playbackUrl,state=live,onMinimize}:{url?:string;state?:LivePlayerState|null;onMinimize?:()=>void}){
   const container=useRef<HTMLDivElement>(null),videoRef=useRef<HTMLVideoElement>(null);
-  return <div ref={container}><video ref={videoRef}/><PlayerChrome container={container} videoRef={videoRef} playbackUrl={url} labels={labels} quality="auto" qualities={['480p']} loading={false} failed={false} onQualityChange={()=>{}} live={state??undefined}/></div>;
+  return <div ref={container}><video ref={videoRef}/><PlayerChrome container={container} videoRef={videoRef} playbackUrl={url} labels={{...labels,minimize:"Minimize player"}} onMinimize={onMinimize} quality="auto" qualities={['480p']} loading={false} failed={false} onQualityChange={()=>{}} live={state??undefined}/></div>;
 }
 function hover(seconds=32){
   const input=screen.getByRole('slider',{name:'Position'});
@@ -169,4 +169,36 @@ it.each([
     expect(liveButton).toBeDisabled();
     expect(liveButton).toHaveAttribute('data-live-edge', 'false');
   }
+});
+
+it('minimizes explicitly with a labeled button', () => {
+  const minimize = vi.fn();
+  render(<Harness onMinimize={minimize}/>);
+  fireEvent.click(screen.getByRole('button', {name: 'Minimize player'}));
+  expect(minimize).toHaveBeenCalledOnce();
+});
+
+it('only minimizes for a committed downward touch drag', () => {
+  const minimize = vi.fn();
+  render(<Harness onMinimize={minimize}/>);
+  const surface = screen.getByRole('button', {name: labels.togglePlayback});
+  Object.defineProperty(surface, 'setPointerCapture', {value: vi.fn()});
+  function pointer(type: string, x: number, y: number) {
+    const event = new MouseEvent(type, {bubbles: true, clientX: x, clientY: y});
+    Object.defineProperties(event, {pointerType: {value: 'touch'}, pointerId: {value: 1}, isPrimary: {value: true}});
+    fireEvent(surface, event);
+  }
+  pointer('pointerdown', 20, 20);
+  pointer('pointermove', 20, 100);
+  pointer('pointercancel', 20, 100);
+  pointer('pointerup', 20, 100);
+  pointer('pointerdown', 20, 20);
+  pointer('pointerup', 80, 100);
+  pointer('pointerdown', 20, 20);
+  pointer('pointerup', 20, 83);
+  expect(minimize).not.toHaveBeenCalled();
+  pointer('pointerdown', 20, 20);
+  pointer('pointermove', 50, 84);
+  pointer('pointerup', 50, 84);
+  expect(minimize).toHaveBeenCalledOnce();
 });
