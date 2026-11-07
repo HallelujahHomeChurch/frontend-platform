@@ -87,6 +87,30 @@ export async function reconcileImage({tag, config}, registry, publish) {
   return {image, retained: false};
 }
 
+export function verifiedImageConfig(inspected, archive) {
+  assert.equal(inspected.Os, 'linux');
+  assert.equal(inspected.Architecture, 'amd64');
+  // Read the scanned archive: containerd's inspect ID may identify an OCI index.
+  const member = name => {
+    const result = spawnSync('tar', ['-xOf', archive, name], {timeout: 30_000, maxBuffer: 1024 * 1024});
+    assert.ok(!result.error && !result.signal && result.status === 0, 'verified image metadata unavailable');
+    return result.stdout;
+  };
+  const manifests = JSON.parse(member('manifest.json'));
+  assert.ok(Array.isArray(manifests), 'verified image manifest missing');
+  const images = manifests.filter(item => item.RepoTags?.includes('hhc-bulletin-renderer:verify'));
+  assert.equal(images.length, 1, 'verified image tag must be unique');
+  const path = images[0].Config;
+  assert.match(path ?? '', /^(?:blobs\/sha256\/[a-f0-9]{64}|[a-f0-9]{64}\.json)$/);
+  const bytes = member(path);
+  const hash = createHash('sha256').update(bytes).digest('hex');
+  assert.ok(path === `blobs/sha256/${hash}` || path === `${hash}.json`, 'verified config digest mismatch');
+  const config = JSON.parse(bytes);
+  assert.equal(config.os, 'linux');
+  assert.equal(config.architecture, 'amd64');
+  return `sha256:${hash}`;
+}
+
 function docker(args, input) {
   const result = spawnSync('docker', args, {encoding: 'utf8', input, timeout: 300_000, maxBuffer: 1024 * 1024});
   assert.ok(!result.error && !result.signal && result.status === 0, 'renderer registry command failed');
@@ -100,10 +124,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     assert.match(hash, /^[a-f0-9]{64}$/);
     assert.match(head ?? '', /^[a-f0-9]{40}$/);
     const inspected = JSON.parse(docker(['image', 'inspect', 'hhc-bulletin-renderer:verify']))[0];
-    assert.equal(inspected.Os, 'linux');
-    assert.equal(inspected.Architecture, 'amd64');
-    const config = inspected.Id;
-    assert.match(config, sha256);
+    const config = verifiedImageConfig(inspected, resolve(process.env.RUNNER_TEMP, 'renderer-inputs/renderer-image.tar'));
     const tag = `${hash}-${head}`;
     const result = await reconcileImage({tag, config}, ghcrClient({actor: process.env.GITHUB_ACTOR, token: process.env.GH_TOKEN}), async image => {
       docker(['login', 'ghcr.io', '-u', process.env.GITHUB_ACTOR, '--password-stdin'], process.env.GH_TOKEN);

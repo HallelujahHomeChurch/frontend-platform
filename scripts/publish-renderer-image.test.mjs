@@ -1,8 +1,11 @@
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {readFile} from 'node:fs/promises';
+import {readFile, mkdtemp, mkdir, writeFile, rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {execFileSync} from 'node:child_process';
 import {test} from 'node:test';
-import {ghcrClient, reconcileImage, validateManifest} from './publish-renderer-image.mjs';
+import {ghcrClient, reconcileImage, validateManifest, verifiedImageConfig} from './publish-renderer-image.mjs';
 
 const config = `sha256:${'a'.repeat(64)}`;
 const tag = `${'b'.repeat(64)}-${'c'.repeat(40)}`;
@@ -94,4 +97,46 @@ test('registry readback resolves one verified linux amd64 image inside an attest
   await assert.rejects(client.lookup(tag, config));
   child = response;
   await assert.rejects(client.lookup(tag, `sha256:${'0'.repeat(64)}`), /differs/);
+});
+
+// Docker's containerd store reports an index/manifest ID, not the config digest.
+test('verified archive config remains the identity when inspect returns an index ID', async t => {
+  const root = await mkdtemp(join(tmpdir(), 'renderer-config-'));
+  t.after(() => rm(root, {recursive: true, force: true}));
+  const content = Buffer.from(JSON.stringify({os: 'linux', architecture: 'amd64', rootfs: {type: 'layers', diff_ids: []}}));
+  const hash = createHash('sha256').update(content).digest('hex');
+  await mkdir(join(root, 'blobs/sha256'), {recursive: true});
+  await writeFile(join(root, 'blobs/sha256', hash), content);
+  await writeFile(join(root, 'manifest.json'), JSON.stringify([{Config: `blobs/sha256/${hash}`, RepoTags: ['hhc-bulletin-renderer:verify'], Layers: []}]));
+  const archive = join(root, 'image.tar');
+  execFileSync('tar', ['-cf', archive, '-C', root, 'manifest.json', 'blobs']);
+  for (const Id of [config, `sha256:${hash}`]) {
+    assert.equal(verifiedImageConfig({Os: 'linux', Architecture: 'amd64', Id}, archive), `sha256:${hash}`);
+  }
+});
+
+test('archive identity rejects ambiguous tags, wrong platform and corrupt config bytes', async t => {
+  const root = await mkdtemp(join(tmpdir(), 'renderer-config-invalid-'));
+  t.after(() => rm(root, {recursive: true, force: true}));
+  const inspected = {Os: 'linux', Architecture: 'amd64', Id: config};
+  const content = Buffer.from(JSON.stringify({os: 'linux', architecture: 'amd64'}));
+  const hash = createHash('sha256').update(content).digest('hex');
+  const file = `${hash}.json`;
+  const entry = {Config: file, RepoTags: ['hhc-bulletin-renderer:verify'], Layers: []};
+  const archive = join(root, 'image.tar');
+  async function pack(entries, bytes = content) {
+    await writeFile(join(root, file), bytes);
+    await writeFile(join(root, 'manifest.json'), JSON.stringify(entries));
+    execFileSync('tar', ['-cf', archive, '-C', root, 'manifest.json', file]);
+  }
+  await pack([entry]);
+  assert.equal(verifiedImageConfig(inspected, archive), `sha256:${hash}`);
+  assert.throws(() => verifiedImageConfig({...inspected, Architecture: 'arm64'}, archive));
+  for (const entries of [[], [entry, entry], [{...entry, RepoTags: ['other:verify']}], [{...entry, Config: '../secret'}]]) {
+    await pack(entries);
+    assert.throws(() => verifiedImageConfig(inspected, archive));
+  }
+  await pack([entry], Buffer.from('corrupt'));
+  assert.throws(() => verifiedImageConfig(inspected, archive), /digest mismatch/);
+  assert.throws(() => verifiedImageConfig(inspected, join(root, 'missing.tar')), /unavailable/);
 });
