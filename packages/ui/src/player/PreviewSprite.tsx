@@ -5,7 +5,8 @@ import {createPreviewCache} from './preview-cache.js';
 import type {PreviewCue} from './preview-index.js';
 import styles from './styles.js';
 
-export function PreviewSprite({playbackUrl,cue,neighbor,enabled=true,preload,preloadEnabled=false}:{playbackUrl:string;cue?:PreviewCue;neighbor?:string;enabled?:boolean;preload?:readonly string[];preloadEnabled?:boolean}) {
+// Legacy preload props remain accepted; full-timeline warming is intentionally disabled.
+export function PreviewSprite({playbackUrl,cue,neighbor,enabled=true,position}:{playbackUrl:string;cue?:PreviewCue;neighbor?:string;enabled?:boolean;position?:number;preload?:readonly string[];preloadEnabled?:boolean}) {
   const [cache,setCache]=useState<{scope:string;loader:ReturnType<typeof createPreviewCache>}|null>(null);
   const [image,setImage]=useState({source:'',url:''});
   const loader=cache?.scope===playbackUrl?cache.loader:undefined;
@@ -25,8 +26,8 @@ export function PreviewSprite({playbackUrl,cue,neighbor,enabled=true,preload,pre
     return ()=>window.clearTimeout(timer);
   },[cue?.url,neighbor,loader,enabled]);
   useEffect(()=>{
-    loader?.preload(preload??[],enabled&&preloadEnabled);
-  },[loader,preload,enabled,preloadEnabled]);
+    if(enabled&&loader?.canRetry())loader.request(cue?.url??'',neighbor);
+  },[position,cue?.url,neighbor,loader,enabled]);
   // Read decoded hits in this render; an effect round-trip would briefly remove the image.
   const url=loader?.peek(cue?.url??image.source);
     return <div className={styles.previewImage}>

@@ -40,3 +40,36 @@ it('shows a decoded neighbor from cache without waiting for the 60ms network tim
   expect(view.container.querySelector('img')).toHaveAttribute('src','blob:2');expect(fetcher).toHaveBeenCalledTimes(2);
   view.unmount();
 });
+
+it('retries a failed sheet only after cooldown and a later interaction on that same sheet',async()=>{
+  vi.useFakeTimers();
+  vi.stubGlobal('URL',class extends URL{static createObjectURL(){return 'blob:retry';}static revokeObjectURL=vi.fn();});
+  const fetcher=vi.fn().mockResolvedValueOnce(new Response(null,{status:503})).mockImplementation(async()=>new Response(new Uint8Array([255,216,255,192,0,11,8,0,90,3,192,1,1,17,0,255,217]),{headers:{'Content-Type':'image/jpeg'}}));
+  vi.stubGlobal('fetch',fetcher);
+  const playbackUrl='https://media.example/videos/r/packages/p/sessions/s/master.m3u8';
+  const cue={start:0,end:5,url:new URL('previews/seg-000000.jpg',playbackUrl).href,x:0};
+  const view=render(<PreviewSprite playbackUrl={playbackUrl} cue={cue} position={1}/>);
+  await act(async()=>{await vi.advanceTimersByTimeAsync(60);});
+  view.rerender(<PreviewSprite playbackUrl={playbackUrl} cue={cue} position={2}/>);
+  await act(async()=>{await vi.advanceTimersByTimeAsync(6000);});
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  view.rerender(<PreviewSprite playbackUrl={playbackUrl} cue={cue} position={3}/>);
+  await act(async()=>{await vi.advanceTimersByTimeAsync(60);});
+  expect(fetcher).toHaveBeenCalledTimes(2);
+  expect(view.container.querySelector('img')).toHaveAttribute('src','blob:retry');
+  view.unmount();
+});
+
+it('starts an uncached sheet during continuous movement within it',async()=>{
+  vi.useFakeTimers();
+  const fetcher=vi.fn(()=>new Promise<Response>(()=>{}));vi.stubGlobal('fetch',fetcher);
+  const playbackUrl='https://media.example/videos/r/packages/p/sessions/s/master.m3u8';
+  const cue={start:0,end:5,url:new URL('previews/seg-000000.jpg',playbackUrl).href,x:0};
+  const view=render(<PreviewSprite playbackUrl={playbackUrl} cue={cue} position={0}/>);
+  for(let position=1;position<=5;position++){
+    await act(async()=>{await vi.advanceTimersByTimeAsync(16);});
+    view.rerender(<PreviewSprite playbackUrl={playbackUrl} cue={cue} position={position/10}/>);
+  }
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  view.unmount();
+});

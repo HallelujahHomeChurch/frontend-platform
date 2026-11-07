@@ -92,14 +92,14 @@ it.each([401,403])('drops downloaded private previews after the index returns %s
   expect(view.container.querySelector('time')).toHaveTextContent('0:32');
 });
 
-it('warms a VOD index and current sprite after canplay without waiting for pointer movement',async()=>{
+it('warms only the VOD index and defers even the current sprite until pointer movement',async()=>{
   const fetcher=network();fetcher.mockResolvedValueOnce(new Response(index(0)));
   const view=render(<Harness state={null}/>);await tick(100);expect(fetcher).not.toHaveBeenCalled();
   fireEvent.canPlay(view.container.querySelector('video')!);await tick(0);await tick(100);
   expect(fetcher.mock.calls.filter(([url])=>url.endsWith('.vtt'))).toHaveLength(1);
-  expect(view.container.querySelector('img')).toHaveAttribute('src','blob:preview');
+  expect(fetcher.mock.calls.filter(([url])=>url.endsWith('.jpg'))).toHaveLength(0);
   expect(view.container.querySelector('.hhc-player-preview')).toHaveAttribute('hidden');
-  hover(1);await tick(16);
+  hover(1);await tick(100);
   expect(view.container.querySelector('.hhc-player-preview')).not.toHaveAttribute('hidden');
   expect(view.container.querySelector('time')).toHaveTextContent('0:01');expect(fetcher).toHaveBeenCalledTimes(2);
 });
@@ -126,12 +126,13 @@ it('aborts the preview index immediately when the document becomes hidden',async
  visibility='hidden';fireEvent(document,new Event('visibilitychange'));await tick(0);
  expect(signal.aborted).toBe(true);view.unmount();
 });
-it('preloads distant VOD sprites and aborts them immediately when hidden',async()=>{
+it('loads a distant VOD sprite on demand and aborts it immediately when hidden',async()=>{
  let visibility:DocumentVisibilityState='visible';vi.spyOn(document,'visibilityState','get').mockImplementation(()=>visibility);
  const signals:AbortSignal[]=[];
  const fetcher=vi.fn((url:string,options:RequestInit)=>url.endsWith('.vtt')?Promise.resolve(new Response(index(0)+'\n00:01:00.000 --> 00:01:05.000\nseg-000002.jpg#xywh=0,0,160,90\n')):url.endsWith('seg-000002.jpg')?new Promise<Response>(()=>{signals.push(options.signal!);}):Promise.resolve(new Response(new Uint8Array([255,216,255,192,0,11,8,0,90,3,192,1,1,17,0,255,217]),{headers:{'Content-Type':'image/jpeg'}})));
  vi.stubGlobal('fetch',fetcher);const view=render(<Harness state={null}/>);
  fireEvent.canPlay(view.container.querySelector('video')!);await tick(100);
+ expect(signals).toHaveLength(0);hover(62);await tick(100);
  expect(signals).toHaveLength(1);
  visibility='hidden';fireEvent(document,new Event('visibilitychange'));await tick(0);
  expect(signals[0].aborted).toBe(true);view.unmount();
@@ -363,4 +364,11 @@ it('restores a held playback rate when the visual viewport changes',async()=>{
  await tick(450);expect(video.playbackRate).toBe(2);
  Object.assign(viewport,{width:800,height:400});act(()=>viewport.dispatchEvent(new Event('resize')));
  expect(video.playbackRate).toBe(1.5);
+});
+
+it('keeps the paused desktop mini play control visible after the control timeout',async()=>{
+ network();const view=render(<Harness state={null} mini={{onExpand:vi.fn(),expandLabel:'Expand'}}/>);
+ fireEvent.canPlay(view.container.querySelector('video')!);await tick(4000);
+ expect(view.container.querySelector('.hhc-player-centerControls')).not.toHaveClass('hhc-player-hidden');
+ view.unmount();
 });
