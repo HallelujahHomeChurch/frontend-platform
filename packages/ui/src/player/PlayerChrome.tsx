@@ -1,6 +1,6 @@
 'use client';
 
-import {useEffect, useRef, useState, useMemo, useSyncExternalStore, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type RefObject} from 'react';
+import {useEffect, useCallback, useRef, useState, useMemo, useSyncExternalStore, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type RefObject} from 'react';
 import {flushSync} from 'react-dom';
 import {Check, ChevronDown, ChevronLeft, ChevronRight, SkipBack, SkipForward, LoaderCircle, RectangleHorizontal, ArrowUpRight, Maximize, Minimize, RotateCcw, Pause, Play, Settings, Volume2, VolumeX} from 'lucide-react';
 import {LIVE_EDGE_TOLERANCE_SECONDS,liveWindow,type LivePlayerState,type PlayerBookmark} from './live-player.js';
@@ -68,7 +68,7 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
   const preloadSprites=useMemo(()=>Array.from(new Set(cues.map(cue=>cue.url))),[cues]);
   const [holding, setHolding] = useState(false);
   const suppressGestureClick = useRef(false);
-  const gesture = useRef<{id:number;x:number;y:number;moved:boolean;held:boolean;canMinimize:boolean;minimizing:boolean;threshold:number;rate:number|null}|null>(null);
+  const gesture = useRef<{id:number;x:number;y:number;moved:boolean;held:boolean;canMinimize:boolean;minimizing:boolean;threshold:number;viewportWidth:number;viewportHeight:number;rate:number|null}|null>(null);
   const holdTimer = useRef(0), tapTimer = useRef(0), playCommand=useRef(0);
   const desktopClick=useRef<Pick<PlayerBookmark,'time'|'paused'|'rate'|'intent'>|null>(null);
   useEffect(()=>()=>{desktopClick.current=null;++playCommand.current;},[playbackUrl]);
@@ -183,8 +183,8 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
     feedbackTimer.current=window.setTimeout(()=>setFeedback(null),900);
   };
   const changeVolume=(value:{muted?:boolean;volume?:number})=>{if(onMediaVolume){onMediaVolume(value);return;}const media=mediaRef.current;if(media){if(value.muted!==undefined)media.muted=value.muted;if(value.volume!==undefined)media.volume=value.volume;}};
-  const changeRate=(rate:number)=>{if(mediaRef.current){if(live)onDvr?.();mediaRef.current.playbackRate=rate;onPlaybackChange?.({rate});}};
-  const finishGesture = (resetOffset: boolean) => {
+  const changeRate=useCallback((rate:number)=>{if(mediaRef.current){if(live)onDvr?.();mediaRef.current.playbackRate=rate;onPlaybackChange?.({rate});}},[mediaRef,live,onDvr,onPlaybackChange]);
+  const finishGesture = useCallback((resetOffset: boolean) => {
     const active = gesture.current;
     desktopClick.current=null;
     window.clearTimeout(holdTimer.current);
@@ -192,13 +192,26 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
     gesture.current = null; setHolding(false);
     if (active?.moved || active?.held) suppressGestureClick.current = true;
     if (active && resetOffset) onMinimizeMove?.(0);
-  };
-  const cancelGesture = () => finishGesture(true);
+  }, [changeRate, onMinimizeMove]);
+  const cancelGesture = useCallback(() => finishGesture(true), [finishGesture]);
+  useEffect(() => {
+    const resize = () => {
+      const active = gesture.current;
+      if (!active) return;
+      const width = window.visualViewport?.width ?? window.innerWidth;
+      const height = window.visualViewport?.height ?? window.innerHeight;
+      // Small browser-toolbar shifts keep the gesture; rotation or zoom cancels it.
+      if (Math.abs(width - active.viewportWidth) >= 16 || Math.abs(height - active.viewportHeight) >= 64) cancelGesture();
+    };
+    window.addEventListener('resize', resize);
+    window.visualViewport?.addEventListener('resize', resize);
+    return () => { window.removeEventListener('resize', resize); window.visualViewport?.removeEventListener('resize', resize); };
+  }, [cancelGesture]);
   const pointerDown = (event:ReactPointerEvent<HTMLButtonElement>) => {
     suppressGestureClick.current = false;
     if (event.pointerType !== 'touch' || mini) return;
     if (!event.isPrimary) {cancelGesture();window.clearTimeout(tapTimer.current);lastTap.current=null;return;}
-    gesture.current = {id:event.pointerId,x:event.clientX,y:event.clientY,moved:false,held:false,minimizing:false,canMinimize:event.clientX>=24&&event.clientX<=window.innerWidth-24,threshold:Math.min(120,Math.max(64,(container.current?.getBoundingClientRect().height??0)*0.25)),rate:null};
+    gesture.current = {id:event.pointerId,x:event.clientX,y:event.clientY,moved:false,held:false,minimizing:false,canMinimize:event.clientX>=24&&event.clientX<=window.innerWidth-24,threshold:Math.min(120,Math.max(64,(container.current?.getBoundingClientRect().height??0)*0.25)),viewportWidth:window.visualViewport?.width??window.innerWidth,viewportHeight:window.visualViewport?.height??window.innerHeight,rate:null};
     event.currentTarget.setPointerCapture(event.pointerId);
     holdTimer.current = window.setTimeout(() => {
       const video = mediaRef.current, active = gesture.current;
