@@ -195,7 +195,7 @@
 .hhc-player-player[data-mini="true"] .hhc-player-skipGroup,
 .hhc-player-player[data-mini="true"] .hhc-player-volumeControl,
 .hhc-player-player[data-mini="true"] .hhc-player-topControls,
-.hhc-player-player[data-mini="true"] .hhc-player-rightControls > :not(:last-child) {display:none;}
+.hhc-player-player[data-mini="true"] .hhc-player-rightControls {display:none;}
 .hhc-player-player[data-mini="true"][data-touch="true"] .hhc-player-controls,
 .hhc-player-player[data-mini="true"][data-touch="true"] .hhc-player-replay {display:none;}
 
@@ -208,3 +208,12 @@
 .hhc-player-player[data-mini="true"][data-touch="false"] .hhc-player-time {min-height:32px;line-height:32px;}
 .hhc-player-player[data-mini="true"][data-touch="false"] .hhc-player-rightControls .hhc-player-button {width:32px;height:32px;}
 .hhc-player-player[data-mini="true"][data-touch="false"] .hhc-player-seek {height:8px;}
+
+/* The enclosing mini host may reveal its own close button with the same variables. */
+.hhc-player-player[data-mini="true"][data-touch="false"] :is(.hhc-player-miniAction,.hhc-player-centerControls) {
+  opacity:var(--hhc-mini-actions-opacity,0);pointer-events:none;transition:none;
+}
+.hhc-player-player[data-mini="true"][data-touch="false"]:is(:hover,:has(button:focus-visible,input:focus-visible)) :is(.hhc-player-miniAction,.hhc-player-centerControls) {opacity:1;}
+.hhc-player-player[data-mini="true"][data-touch="false"] .hhc-player-miniAction,
+.hhc-player-player[data-mini="true"][data-touch="false"] .hhc-player-centerPlay {pointer-events:var(--hhc-mini-actions-pointer-events,none);}
+.hhc-player-player[data-mini="true"][data-touch="false"]:is(:hover,:has(button:focus-visible,input:focus-visible)) :is(.hhc-player-miniAction,.hhc-player-centerPlay) {pointer-events:auto;}

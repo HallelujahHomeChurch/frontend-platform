@@ -2,7 +2,7 @@
 
 import {useEffect, useCallback, useRef, useState, useSyncExternalStore, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type RefObject} from 'react';
 import {flushSync} from 'react-dom';
-import {Check, ChevronDown, ChevronLeft, ChevronRight, SkipBack, SkipForward, LoaderCircle, RectangleHorizontal, ArrowUpRight, Maximize, Minimize, RotateCcw, Pause, Play, Settings, Volume2, VolumeX} from 'lucide-react';
+import {Check, ChevronDown, ChevronLeft, ChevronRight, SkipBack, SkipForward, LoaderCircle, RectangleHorizontal, Maximize, Minimize, RotateCcw, Pause, Play, Settings, Volume2, VolumeX} from 'lucide-react';
 import {LIVE_EDGE_TOLERANCE_SECONDS,liveWindow,type LivePlayerState,type PlayerBookmark} from './live-player.js';
 import type {PlayerLabels} from './HlsPlayer.js';
 import {usePreviewIndex} from './use-preview-index.js';
@@ -270,6 +270,7 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
     const key = event.key.toLowerCase();
     const seekInput=event.target instanceof HTMLInputElement && event.target.getAttribute('aria-label')===labels.seek;
     if (event.altKey || event.ctrlKey || event.metaKey || event.target instanceof HTMLElement && (event.target.closest('input,select,textarea,[contenteditable=true]') && !seekInput || event.key === ' ' && event.target.closest('button'))) return;
+    if (mini && ![' ', 'k', 'm'].includes(key) && !(seekInput && ['arrowleft','arrowright','home','end'].includes(key))) return;
     if (![' ', 'k', 'arrowleft', 'arrowright', 'arrowup', 'arrowdown', 'j', 'l', 'm', 'f', 't', '<', '>', 'home', 'end'].includes(key) && !/^[0-9]$/.test(key) && !(event.shiftKey && ['p','n'].includes(key))) return;
     event.preventDefault();
     if (event.repeat && [' ', 'k', 'm', 'f', 't', 'p', 'n'].includes(key)) return;
@@ -339,7 +340,7 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
       const video=mediaRef.current;
       if(event.detail===1&&video){desktopClick.current={paused:playbackPaused??video.paused,time:video.currentTime,rate:video.playbackRate,intent:followLive?'followLive':'dvr'};toggle();}
     }} onDoubleClick={()=>{
-      if(touchUI)return;
+      if(touchUI||mini)return;
       const saved=desktopClick.current,video=mediaRef.current;desktopClick.current=null;
       if(saved&&video){
         ++playCommand.current;
@@ -351,18 +352,18 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
       }
       void toggleFullscreen();
     }} />
-    {mini ? <button type="button" data-controls className="hhc-player-miniAction" aria-label={touchUI ? (playing ? labels.pause : labels.play) : mini.expandLabel} onClick={touchUI ? toggle : mini.onExpand}>{touchUI ? (playing ? <Pause/> : <Play/>) : <ArrowUpRight/>}</button> : null}
+    {mini ? <button type="button" data-controls className="hhc-player-miniAction" aria-label={touchUI ? (playing ? labels.pause : labels.play) : mini.expandLabel} onClick={touchUI ? toggle : mini.onExpand}>{touchUI ? (playing ? <Pause/> : <Play/>) : <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M20 10V4H4v16h6M13 13l7 7m-6 0h6v-6"/></svg>}</button> : null}
     {watermark ? <RecordingWatermark container={container} videoRef={videoRef} code={watermark}/> : null}
     {fullscreenState.error ? <div className={styles.fullscreenError} role="alert">{labels.fullscreenError}</div> : null}
     {holding ? <div className={styles.speedFeedback} aria-hidden="true">2×</div> : null}
     {feedback && !mini ? <div className={`${styles.feedback} ${feedback.kind==='back'?styles.seekBack:feedback.kind==='forward'?styles.seekForward:styles.playbackFeedback}`} aria-hidden="true"><span key={feedback.id}>{feedback.kind === 'play' ? <Play size={36} fill="currentColor"/> : feedback.kind === 'pause' ? <Pause size={36} fill="currentColor"/> : <><span className={styles.seekArrows}>{touchUI ? <><i/><i/><i/></> : feedback.kind==='back' ? <ChevronLeft/> : <ChevronRight/>}</span><span>{feedback.kind==='back'?'−':'+'}{feedback.seconds}</span><span className={styles.srOnly}>{labels.seek}</span></>}</span></div> : null}
     {(loading || buffering || waiting) && !autoplayBlocked && !playBlocked && !failed && (!feedback || mini) ? <div className={styles.loading} role="status"><LoaderCircle aria-hidden="true"/><span className={styles.srOnly}>{labels.buffering}</span></div> : null}
-    {!ended&&!(mini&&touchUI)&&(touchUI || mini || (autoplayBlocked||playBlocked) && !failed) ? <div data-controls className={`${styles.centerControls} ${controlsVisible || mini&&!playing ? '' : styles.hidden}`}>
+    {!ended&&!(mini&&touchUI)&&(touchUI || mini || (autoplayBlocked||playBlocked) && !failed) ? <div data-controls className={`${styles.centerControls} ${mini&&!touchUI || controlsVisible ? '' : styles.hidden}`}>
       {!mini && touchUI && previousHref && labels.previousVideo ? <a href={previousHref} onClick={event=>navigate(event,previousHref)} className={styles.skip} aria-label={labels.previousVideo}><SkipBack fill="currentColor"/></a> : <span/>}
-      {(!loading && !buffering && !waiting || autoplayBlocked||playBlocked) && !failed ? <button type="button" className={styles.centerPlay} aria-label={playing ? labels.pause : labels.play} onClick={toggle}>{playing ? <Pause fill="currentColor"/> : <Play fill="currentColor"/>}</button> : <span/>}
+      {(!loading && !buffering && !waiting || autoplayBlocked||playBlocked) && !failed ? <button type="button" className={styles.centerPlay} aria-label={playing ? labels.pause : labels.play} onClick={event=>{if(!mini||event.detail<2)toggle();}}>{playing ? <Pause fill="currentColor"/> : <Play fill="currentColor"/>}</button> : <span/>}
       {!mini && touchUI && nextHref && labels.nextVideo ? <a href={nextHref} onClick={event=>navigate(event,nextHref)} className={styles.skip} aria-label={labels.nextVideo}><SkipForward fill="currentColor"/></a> : <span/>}
     </div> : null}
-    {touchUI ? <div data-controls className={`${styles.topControls} ${controlsVisible ? '' : styles.hidden}`}>
+    {touchUI && !mini ? <div data-controls className={`${styles.topControls} ${controlsVisible ? '' : styles.hidden}`}>
       {fullscreen ? <button type="button" className={styles.button} aria-label={labels.exitFullscreen} onClick={()=>void fullscreenState.exit()}><ChevronDown/></button> : minimize && labels.minimize ? <button type="button" className={styles.button} aria-label={labels.minimize} onClick={minimize}><ChevronDown/></button> : <span/>}
       <button ref={settingsButton} type="button" className={styles.button} aria-label={labels.settings} aria-expanded={settings} onClick={openSettings}><Settings/></button>
     </div> : null}
@@ -401,12 +402,12 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
         <div className={styles.volumeControl}><button type="button" className={styles.button} aria-label={muted || volume === 0 ? labels.unmute : labels.mute} title={`${muted || volume === 0 ? labels.unmute : labels.mute} (m)}`} onClick={() => { const video = mediaRef.current; if (video) { changeVolume((playbackVolume?.volume??video.volume)===0?{volume:1,muted:false}:{muted:!(playbackVolume?.muted??video.muted)}); } }}>{muted || volume === 0 ? <VolumeX size={22}/> : <Volume2 size={22}/>}</button>
         <input type="range" className={styles.volume} aria-label={labels.volume} min={0} max={1} step={0.05} value={muted ? 0 : volume} onChange={event => { if (mediaRef.current) { changeVolume({volume:Number(event.target.value),muted:false}); } }}/></div></> : null}
         {live ? <button type="button" className={`${styles.button} ${styles.liveButton}`} data-live-edge={atLive} disabled={!live.canFollow || !liveRange} aria-label={live.canFollow ? live.backToLive : live.label} title={live.canFollow ? live.backToLive : live.label} onClick={onReturnToLive}><span className={styles.liveDot} aria-hidden="true"/><span className={styles.liveText}>{live.canFollow ? live.liveLabel ?? live.label : live.label}</span></button> : <span className={styles.time} title={`${playerClock(current)} / ${playerClock(duration)}`}>{playerClock(current)} / {playerClock(duration)}</span>}<span className={styles.spacer}/>
-        <div className={styles.rightControls}>
+        {!mini && <div className={styles.rightControls}>
         {!touchUI && minimize && labels.minimize ? <button type="button" className={styles.button} aria-label={labels.minimize} onClick={minimize}><ChevronDown size={22}/></button> : null}
         {!touchUI ? <button ref={settingsButton} type="button" className={styles.button} aria-label={labels.settings} title={labels.settings} aria-expanded={settings} onClick={openSettings}><Settings size={22}/></button> : null}
         {!touchUI && labels.theaterMode && labels.exitTheaterMode ? <button type="button" className={`${styles.button} ${styles.theaterButton}`} aria-label={theater ? labels.exitTheaterMode : labels.theaterMode} title={`${theater ? labels.exitTheaterMode : labels.theaterMode} (t)}`} aria-pressed={theater} onClick={()=>setTheater(value=>!value)}><RectangleHorizontal size={22}/></button> : null}
         <button type="button" className={styles.button} aria-label={fullscreen ? labels.exitFullscreen : labels.fullscreen} title={`${fullscreen ? labels.exitFullscreen : labels.fullscreen} (f)}`} onClick={() => void toggleFullscreen()}>{fullscreen ? <Minimize size={22}/> : <Maximize size={22}/>}</button>
-        </div>
+        </div>}
       </div>
     </div>
   </>;
