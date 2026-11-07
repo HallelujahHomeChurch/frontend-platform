@@ -67,7 +67,8 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
   const cues = usePreviewIndex(playbackUrl, Boolean(live), !failed && pageVisible && (preview !== null || scrub !== null), warmPreviews);
   const preloadSprites=useMemo(()=>Array.from(new Set(cues.map(cue=>cue.url))),[cues]);
   const [holding, setHolding] = useState(false);
-  const gesture = useRef<{id:number;x:number;y:number;moved:boolean;held:boolean;canMinimize:boolean;rate:number|null}|null>(null);
+  const suppressGestureClick = useRef(false);
+  const gesture = useRef<{id:number;x:number;y:number;moved:boolean;held:boolean;canMinimize:boolean;minimizing:boolean;threshold:number;rate:number|null}|null>(null);
   const holdTimer = useRef(0), tapTimer = useRef(0), playCommand=useRef(0);
   const desktopClick=useRef<Pick<PlayerBookmark,'time'|'paused'|'rate'|'intent'>|null>(null);
   useEffect(()=>()=>{desktopClick.current=null;++playCommand.current;},[playbackUrl]);
@@ -183,16 +184,21 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
   };
   const changeVolume=(value:{muted?:boolean;volume?:number})=>{if(onMediaVolume){onMediaVolume(value);return;}const media=mediaRef.current;if(media){if(value.muted!==undefined)media.muted=value.muted;if(value.volume!==undefined)media.volume=value.volume;}};
   const changeRate=(rate:number)=>{if(mediaRef.current){if(live)onDvr?.();mediaRef.current.playbackRate=rate;onPlaybackChange?.({rate});}};
-  const cancelGesture = () => {
+  const finishGesture = (resetOffset: boolean) => {
+    const active = gesture.current;
     desktopClick.current=null;
     window.clearTimeout(holdTimer.current);
     if (gesture.current?.rate != null) changeRate(gesture.current.rate);
-    gesture.current = null; setHolding(false); onMinimizeMove?.(0);
+    gesture.current = null; setHolding(false);
+    if (active?.moved || active?.held) suppressGestureClick.current = true;
+    if (active && resetOffset) onMinimizeMove?.(0);
   };
+  const cancelGesture = () => finishGesture(true);
   const pointerDown = (event:ReactPointerEvent<HTMLButtonElement>) => {
+    suppressGestureClick.current = false;
     if (event.pointerType !== 'touch' || mini) return;
     if (!event.isPrimary) {cancelGesture();window.clearTimeout(tapTimer.current);lastTap.current=null;return;}
-    gesture.current = {id:event.pointerId,x:event.clientX,y:event.clientY,moved:false,held:false,canMinimize:event.clientX>=24&&event.clientX<=window.innerWidth-24,rate:null};
+    gesture.current = {id:event.pointerId,x:event.clientX,y:event.clientY,moved:false,held:false,minimizing:false,canMinimize:event.clientX>=24&&event.clientX<=window.innerWidth-24,threshold:Math.min(120,Math.max(64,(container.current?.getBoundingClientRect().height??0)*0.25)),rate:null};
     event.currentTarget.setPointerCapture(event.pointerId);
     holdTimer.current = window.setTimeout(() => {
       const video = mediaRef.current, active = gesture.current;
@@ -208,6 +214,7 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
     if (active.moved || Math.hypot(event.clientX-active.x,event.clientY-active.y)>12) {
       active.moved=true;window.clearTimeout(holdTimer.current);
       if (minimize && active.canMinimize && !active.held && event.clientY-active.y >= Math.abs(event.clientX-active.x)*1.5) {
+        active.minimizing = true;
         onMinimizeMove?.(event.clientY-active.y);
         window.clearTimeout(tapTimer.current);lastTap.current=null;
       } else onMinimizeMove?.(0);
@@ -218,11 +225,12 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
     const active = gesture.current;
     if (!active || active.id !== event.pointerId) return;
     const dx=event.clientX-active.x,dy=event.clientY-active.y,held=active.rate!=null;
-    cancelGesture();
+    const committed = Boolean(minimize && active.canMinimize && active.minimizing && !active.held && dy >= active.threshold && dy >= Math.abs(dx)*1.5);
+    finishGesture(!committed);
     if (held) return;
-    if (minimize && active.canMinimize && dy >= 64 && dy >= Math.abs(dx)*1.5) {
+    if (committed) {
       window.clearTimeout(tapTimer.current);lastTap.current=null;
-      if (!active.held) minimize();
+      minimize?.();
       return;
     }
     if (Math.abs(dy)>60 && Math.abs(dy)>Math.abs(dx)*1.5) {
@@ -311,6 +319,9 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
   const percentage = (value: number) => duration > seekStart ? `${Math.min(100, Math.max(0, (value - seekStart) / (duration - seekStart) * 100))}%` : '0%';
   return <>
     <button type="button" className={styles.surface} data-player-surface aria-label={mini&&touchUI?mini.expandLabel:labels.togglePlayback} tabIndex={mini&&touchUI?0:-1} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={cancelGesture} onLostPointerCapture={cancelGesture} onContextMenu={event=>{if(touchUI)event.preventDefault();}} onClick={event=>{
+      const suppress = suppressGestureClick.current;
+      suppressGestureClick.current = false;
+      if (suppress && event.detail > 0) {event.preventDefault(); return;}
       if(mini&&touchUI){mini.onExpand();return;}
       if(event.detail===0){desktopClick.current=null;toggle();return;}
       if(touchUI)return;container.current?.focus({preventScroll:true});
