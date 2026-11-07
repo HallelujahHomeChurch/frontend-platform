@@ -12307,11 +12307,26 @@ components:
         data: { $ref: '#/components/schemas/MemberRecording' }
         meta: { type: object, additionalProperties: true }
         error: { type: ['null'] }
+    MemberRecordingCard:
+      allOf:
+        - $ref: '#/components/schemas/MemberRecording'
+        - type: object
+          properties:
+            playbackProgress:
+              description: Optional for legacy responses; account-scoped current VOD progress for paginated member cards. Null when unavailable or incompatible. Does not claim playback ownership.
+              oneOf:
+                - type: 'null'
+                - type: object
+                  required: [mediaVersion, positionSeconds, completed]
+                  properties:
+                    mediaVersion: {type: string}
+                    positionSeconds: {type: number, minimum: 0}
+                    completed: {type: boolean}
     RecordingListEnvelope:
       type: object
       required: [data, meta]
       properties:
-        data: { type: array, items: { $ref: '#/components/schemas/MemberRecording' } }
+        data: { type: array, items: { $ref: '#/components/schemas/MemberRecordingCard' } }
         meta:
           type: object
           additionalProperties: true

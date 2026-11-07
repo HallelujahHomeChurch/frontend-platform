@@ -6259,8 +6259,16 @@ export interface components {
             };
             error?: null;
         };
+        MemberRecordingCard: components["schemas"]["MemberRecording"] & {
+            /** @description Optional for legacy responses; account-scoped current VOD progress for paginated member cards. Null when unavailable or incompatible. Does not claim playback ownership. */
+            playbackProgress?: null | {
+                mediaVersion: string;
+                positionSeconds: number;
+                completed: boolean;
+            };
+        };
         RecordingListEnvelope: {
-            data: components["schemas"]["MemberRecording"][];
+            data: components["schemas"]["MemberRecordingCard"][];
             meta: {
                 /** @description Present for limit-based requests; null when no more candidates remain. */
                 nextCursor?: string | null;

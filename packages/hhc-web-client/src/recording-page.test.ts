@@ -32,3 +32,12 @@ it('forwards literal query words in recording and live reads while retaining old
  expect(new URL(requests[2]!.url).search).toBe('');
  controller.abort();expect(requests.every(r=>r.signal.aborted&&r.cache==='no-store')).toBe(true);
 });
+
+it.each([undefined,null,{mediaVersion:'vod:package',positionSeconds:42,completed:false},{mediaVersion:'vod:package',positionSeconds:100,completed:true}])('preserves optional member card progress without claiming playback %j',async(progress)=>{
+ const item={id:'one',...(progress===undefined?{}:{playbackProgress:progress})};
+ const fetcher=vi.fn<typeof fetch>().mockResolvedValue(Response.json({data:[item],meta:{nextCursor:null},error:null}));
+ const client=createHhcWebClient({baseUrl:'/api',getAccessToken:()=>'test-member',fetcher});
+ const page=await client.listMemberRecordingsPage();
+ expect(page.items).toEqual([item]);expect(page.items[0]?.playbackProgress).toEqual(progress);
+ expect(fetcher).toHaveBeenCalledTimes(1);expect((fetcher.mock.calls[0]![0] as Request).method).toBe('GET');
+});
