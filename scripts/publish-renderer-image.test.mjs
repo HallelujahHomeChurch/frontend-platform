@@ -68,3 +68,30 @@ test('release image publisher and checkpoint remain behind verified inputs and u
   assert.ok(release.indexOf('run: node scripts/publish-renderer-image.mjs') < release.indexOf('Seal successfully published release evidence'));
   assert.doesNotMatch(release, /RepoDigests/);
 });
+
+test('registry readback resolves one verified linux amd64 image inside an attested OCI index', async () => {
+  const descriptor = {mediaType: manifest.mediaType, digest, size: bytes.length, platform: {os: 'linux', architecture: 'amd64'}};
+  const index = {schemaVersion: 2, mediaType: 'application/vnd.oci.image.index.v1+json', manifests: [descriptor,
+    {...descriptor, platform: {os: 'unknown', architecture: 'unknown'}, annotations: {'vnd.docker.reference.type': 'attestation-manifest'}}]};
+  const requests = [];
+  let value = index, child = response;
+  const client = ghcrClient({actor: 'actor', token: 'test-token', fetcher: async (url, init) => {
+    requests.push({url, init});
+    if (url.includes('/token?')) return Response.json({token: 'test-bearer'});
+    if (url.endsWith(`/${digest}`)) return child();
+    const body = Buffer.from(JSON.stringify(value));
+    return new Response(body, {headers: {'Docker-Content-Digest': `sha256:${createHash('sha256').update(body).digest('hex')}`}});
+  }});
+  assert.equal(await client.lookup(tag, config), image);
+  assert.ok(requests.at(-1).url.endsWith(`/manifests/${digest}`));
+  assert.ok(requests.every(r => r.init.redirect === 'error' && r.url.startsWith('https://ghcr.io/')));
+  for (const manifests of [[], [descriptor, descriptor], [{...descriptor, platform: {os: 'linux', architecture: 'arm64'}}], [{...descriptor, digest: '../other'}], [{...descriptor, size: bytes.length + 1}]]) {
+    value = {...index, manifests};
+    await assert.rejects(client.lookup(tag, config));
+  }
+  value = index;
+  child = () => new Response(bytes, {headers: {'Docker-Content-Digest': `sha256:${'0'.repeat(64)}`}});
+  await assert.rejects(client.lookup(tag, config));
+  child = response;
+  await assert.rejects(client.lookup(tag, `sha256:${'0'.repeat(64)}`), /differs/);
+});
