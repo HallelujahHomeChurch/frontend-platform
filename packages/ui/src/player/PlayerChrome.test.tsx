@@ -365,3 +365,10 @@ it('restores a held playback rate when the visual viewport changes',async()=>{
  Object.assign(viewport,{width:800,height:400});act(()=>viewport.dispatchEvent(new Event('resize')));
  expect(video.playbackRate).toBe(1.5);
 });
+
+it('keeps the paused desktop mini play control visible after the control timeout',async()=>{
+ network();const view=render(<Harness state={null} mini={{onExpand:vi.fn(),expandLabel:'Expand'}}/>);
+ fireEvent.canPlay(view.container.querySelector('video')!);await tick(4000);
+ expect(view.container.querySelector('.hhc-player-centerControls')).not.toHaveClass('hhc-player-hidden');
+ view.unmount();
+});

@@ -203,3 +203,8 @@
 .hhc-player-player[data-mini="true"][data-touch="false"] .hhc-player-centerPlay {background:transparent;}
 .hhc-player-player[data-mini="true"][data-touch="false"] .hhc-player-controls {display:flex;flex-direction:column-reverse;padding:20px 0 0;}
 .hhc-player-player[data-mini="true"][data-touch="false"] .hhc-player-seek {margin-bottom:0;}
+.hhc-player-player[data-mini="true"][data-touch="false"] .hhc-player-time,
+.hhc-player-player[data-mini="true"][data-touch="false"] .hhc-player-rightControls {background:transparent;}
+.hhc-player-player[data-mini="true"][data-touch="false"] .hhc-player-time {min-height:32px;line-height:32px;}
+.hhc-player-player[data-mini="true"][data-touch="false"] .hhc-player-rightControls .hhc-player-button {width:32px;height:32px;}
+.hhc-player-player[data-mini="true"][data-touch="false"] .hhc-player-seek {height:8px;}
