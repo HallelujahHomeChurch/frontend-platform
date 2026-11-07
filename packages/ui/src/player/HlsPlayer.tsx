@@ -23,7 +23,7 @@ export type HlsPlayerProps = {
   backgroundAudioUrl?:string; playbackMediaRef?:RefObject<HTMLMediaElement|null>; playbackPauseRef?:RefObject<(()=>void)|null>;
   onDiagnostic?:(value:PlayerDiagnostic)=>void;
   onMinimize?:()=>void;
-  onMinimizeMove?:(offset:number)=>void|false;
+  onMinimizeMove?:(offset:number,phase?:'tracking'|'reset')=>void|false;
   mini?:{onExpand:()=>void;expandLabel:string;compact?:boolean};
   onPlayIntent?:(kind:"resume"|"restart")=>void;
   controls?:boolean; initialQuality?:Quality;

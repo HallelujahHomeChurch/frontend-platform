@@ -15,7 +15,7 @@ import {previewCueAt} from './preview-cue.js';
 type Quality = 'auto' | '480p' | '720p' | '1080p';
 type Props = {
   onMinimize?:()=>void;
-  onMinimizeMove?:(offset:number)=>void|false;
+  onMinimizeMove?:(offset:number,phase?:'tracking'|'reset')=>void|false;
   mini?:{onExpand:()=>void;expandLabel:string;compact?:boolean};
   onPlayIntent?:(kind:"resume"|"restart")=>void;
   previousHref?:string; nextHref?:string; onNavigate?:(href:string)=>void;
@@ -196,7 +196,7 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
     if (gesture.current?.rate != null) changeRate(gesture.current.rate);
     gesture.current = null; setHolding(false);
     if (active?.moved || active?.held) suppressGestureClick.current = true;
-    if (active && resetOffset) onMinimizeMove?.(0);
+    if (active && resetOffset) onMinimizeMove?.(0,'reset');
   }, [changeRate, onMinimizeMove]);
   const cancelGesture = useCallback(() => finishGesture(true), [finishGesture]);
   useEffect(() => {
@@ -228,7 +228,7 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
     if (!event.isPrimary) {cancelGesture();window.clearTimeout(tapTimer.current);lastTap.current=null;return;}
     if (minimize && (event.clientX < 24 || event.clientX > window.innerWidth - 24)) return;
     gesture.current = {id:event.pointerId,x:event.clientX,y:event.clientY,moved:false,held:false,minimizing:false,canMinimize:event.clientX>=24&&event.clientX<=window.innerWidth-24,threshold:Math.min(120,Math.max(64,(container.current?.getBoundingClientRect().height??0)*0.25)),viewportWidth:window.visualViewport?.width??window.innerWidth,viewportHeight:window.visualViewport?.height??window.innerHeight,viewportLeft:window.visualViewport?.offsetLeft??0,viewportTop:window.visualViewport?.offsetTop??0,rate:null};
-    if(minimize)onMinimizeMove?.(0);
+    if(minimize)onMinimizeMove?.(0,'reset');
     event.currentTarget.setPointerCapture(event.pointerId);
     holdTimer.current = window.setTimeout(() => {
       const video = mediaRef.current, active = gesture.current;
@@ -243,11 +243,11 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
     if (!active || active.id !== event.pointerId) return;
     if (active.moved || Math.hypot(event.clientX-active.x,event.clientY-active.y)>12) {
       active.moved=true;window.clearTimeout(holdTimer.current);
-      if (minimize && active.canMinimize && !active.held && event.clientY-active.y >= Math.abs(event.clientX-active.x)*1.5) {
+      if (minimize && active.canMinimize && !active.held && (active.minimizing || event.clientY-active.y >= Math.abs(event.clientX-active.x)*1.5)) {
         active.minimizing = true;
-        if(onMinimizeMove?.(event.clientY-active.y)===false){cancelGesture();return;}
+        if(onMinimizeMove?.(event.clientY-active.y,'tracking')===false){cancelGesture();return;}
         window.clearTimeout(tapTimer.current);lastTap.current=null;
-      } else onMinimizeMove?.(0);
+      } else onMinimizeMove?.(0,'reset');
       if (active.rate != null && mediaRef.current) {changeRate(active.rate);active.rate=null;setHolding(false);}
     }
   };
@@ -255,8 +255,8 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
     const active = gesture.current;
     if (!active || active.id !== event.pointerId) return;
     const dx=event.clientX-active.x,dy=event.clientY-active.y,held=active.rate!=null;
-    const committed = Boolean(minimize && active.canMinimize && active.minimizing && !active.held && dy >= active.threshold && dy >= Math.abs(dx)*1.5);
-    if(committed&&onMinimizeMove?.(dy)===false){cancelGesture();return;}
+    const committed = Boolean(minimize && active.canMinimize && active.minimizing && !active.held && dy >= active.threshold);
+    if(committed&&onMinimizeMove?.(dy,'tracking')===false){cancelGesture();return;}
     finishGesture(!committed);
     if (held) return;
     if (committed) {
