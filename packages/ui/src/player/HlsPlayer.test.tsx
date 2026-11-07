@@ -496,18 +496,24 @@ function touchSurface() {
 function touch(element:HTMLElement,type:string,x=300,y=100) {
   fireEvent(element,new PointerEvent(type,{bubbles:true,pointerId:1,pointerType:'touch',isPrimary:true,clientX:x,clientY:y}));
 }
-it.each([false,true])('shows transient play/pause feedback only on desktop, touch=%s',async(touchUI)=>{
+it.each([[false,false],[false,true],[true,false],[true,true]])('shows transient play/pause feedback only on desktop watch, touch=%s mini=%s',async(touchUI,mini)=>{
   vi.stubGlobal('matchMedia',vi.fn().mockReturnValue({matches:touchUI,addEventListener:vi.fn(),removeEventListener:vi.fn()}));
-  const p=props();const view=render(<HlsPlayer {...p}/>);
+  const p=props();const view=render(<HlsPlayer {...p} mini={mini ? {onExpand:vi.fn(),expandLabel:'Expand'} : undefined}/>);
   await waitFor(()=>expect(engine.instances).toHaveLength(1));
   const video=p.videoRef.current!;fireEvent.canPlay(video);
-  fireEvent.click(screen.getByRole('button',{name:'Play'}));
+  fireEvent.click(screen.getAllByRole('button',{name:'Play'})[0]);
   expect(video.play).toHaveBeenCalledTimes(2);
-  expect(Boolean(view.container.querySelector(`.${playerStyles.feedback}`))).toBe(!touchUI);
+  expect(Boolean(view.container.querySelector(`.${playerStyles.feedback}`))).toBe(!touchUI&&!mini);
   Object.defineProperty(video,'paused',{configurable:true,value:false});fireEvent.play(video);
-  fireEvent.click(screen.getByRole('button',{name:'Pause'}));
+  fireEvent.click(screen.getAllByRole('button',{name:'Pause'})[0]);
   expect(video.pause).toHaveBeenCalledOnce();
-  expect(Boolean(view.container.querySelector(`.${playerStyles.feedback}`))).toBe(!touchUI);
+  if(mini)expect(screen.getAllByRole('button',{name:'Pause'})).toHaveLength(1);
+  expect(Boolean(view.container.querySelector(`.${playerStyles.feedback}`))).toBe(!touchUI&&!mini);
+  if(!touchUI&&!mini){
+    view.rerender(<HlsPlayer {...p} mini={{onExpand:vi.fn(),expandLabel:'Expand'}}/>);
+    expect(view.container.querySelector(`.${playerStyles.feedback}`)).toBeNull();
+    expect(p.videoRef.current).toBe(video);
+  }
 });
 it('touch taps toggle controls without pausing; double taps seek and clamp at the video ends',async()=>{
   touchSurface();const p=props();render(<HlsPlayer {...p}/>);

@@ -27,6 +27,8 @@ it.each([[false,'pointerMove'],[true,'pointerMove'],[false,'pointerEnter'],[true
     if(preview&&!preview.hasAttribute('hidden'))commits.push(preview.querySelector('img')?.getAttribute('src')??null);
   }}><PlayerChrome container={container} videoRef={videoRef} playbackUrl={playbackUrl} labels={labels} quality="auto" qualities={['480p']} loading={false} failed={false} onQualityChange={()=>{}}/></Profiler></div></StrictMode>);
   fireEvent.canPlay(videoRef.current);
+  await act(async()=>{await vi.advanceTimersByTimeAsync(1000);});
+  expect(fetcher.mock.calls.filter(([url])=>url.endsWith('.jpg'))).toHaveLength(0);
   const input=view.getByRole('slider',{name:'Seek'});
   vi.spyOn(input,'getBoundingClientRect').mockReturnValue({left:0,width:1000} as DOMRect);
   // Warm both sheets through the real pointer/index/cache path, even with saveData.

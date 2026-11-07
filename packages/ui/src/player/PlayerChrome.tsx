@@ -1,6 +1,6 @@
 'use client';
 
-import {useEffect, useCallback, useRef, useState, useMemo, useSyncExternalStore, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type RefObject} from 'react';
+import {useEffect, useCallback, useRef, useState, useSyncExternalStore, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type RefObject} from 'react';
 import {flushSync} from 'react-dom';
 import {Check, ChevronDown, ChevronLeft, ChevronRight, SkipBack, SkipForward, LoaderCircle, RectangleHorizontal, ArrowUpRight, Maximize, Minimize, RotateCcw, Pause, Play, Settings, Volume2, VolumeX} from 'lucide-react';
 import {LIVE_EDGE_TOLERANCE_SECONDS,liveWindow,type LivePlayerState,type PlayerBookmark} from './live-player.js';
@@ -65,7 +65,6 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
   const saveData=typeof navigator!=='undefined'&&(navigator as Navigator&{connection?:{saveData?:boolean}}).connection?.saveData===true;
   const warmPreviews=!live&&!failed&&!loading&&!waiting&&!buffering&&duration>0&&!saveData&&pageVisible;
   const cues = usePreviewIndex(playbackUrl, Boolean(live), !failed && pageVisible && (preview !== null || scrub !== null), warmPreviews);
-  const preloadSprites=useMemo(()=>Array.from(new Set(cues.map(cue=>cue.url))),[cues]);
   const [holding, setHolding] = useState(false);
   const suppressGestureClick = useRef(false);
   const gesture = useRef<{id:number;x:number;y:number;moved:boolean;held:boolean;canMinimize:boolean;minimizing:boolean;threshold:number;viewportWidth:number;viewportHeight:number;rate:number|null}|null>(null);
@@ -153,7 +152,7 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
     const kind = paused ? 'play' : 'pause';
     onPlaybackChange?.({paused:!paused});
     if (paused) {onPlayIntent?.("resume");play(video);} else {++playCommand.current;onDvr?.();if(onMediaPause)onMediaPause();else video.pause();}
-    if (!touchUI) {
+    if (!touchUI && !mini) {
       setFeedback({kind, id: Date.now()});
       window.clearTimeout(feedbackTimer.current);
       feedbackTimer.current = window.setTimeout(() => setFeedback(null), 1000);
@@ -316,8 +315,7 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
   };
   const previewTime = scrub ?? preview;
   const visibleCues = live ? cues.filter(cue => cue.start >= seekStart && cue.end <= duration) : cues;
-  const targetTime=previewTime??(warmPreviews?time:null);
-  const cue = targetTime === null ? undefined : previewCueAt(visibleCues,targetTime);
+  const cue = previewTime === null ? undefined : previewCueAt(visibleCues,previewTime);
   const neighbor = cue&&!saveData ? visibleCues.find(item => item.start >= cue.end && item.url !== cue.url)?.url : undefined;
   const controlsVisible = visible || autoplayBlocked || playBlocked || settings || scrub !== null;
   useEffect(() => {
@@ -357,8 +355,8 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
     {watermark ? <RecordingWatermark container={container} videoRef={videoRef} code={watermark}/> : null}
     {fullscreenState.error ? <div className={styles.fullscreenError} role="alert">{labels.fullscreenError}</div> : null}
     {holding ? <div className={styles.speedFeedback} aria-hidden="true">2×</div> : null}
-    {feedback ? <div className={`${styles.feedback} ${feedback.kind==='back'?styles.seekBack:feedback.kind==='forward'?styles.seekForward:styles.playbackFeedback}`} aria-hidden="true"><span key={feedback.id}>{feedback.kind === 'play' ? <Play size={36} fill="currentColor"/> : feedback.kind === 'pause' ? <Pause size={36} fill="currentColor"/> : <><span className={styles.seekArrows}>{touchUI ? <><i/><i/><i/></> : feedback.kind==='back' ? <ChevronLeft/> : <ChevronRight/>}</span><span>{feedback.kind==='back'?'−':'+'}{feedback.seconds}</span><span className={styles.srOnly}>{labels.seek}</span></>}</span></div> : null}
-    {(loading || buffering || waiting) && !autoplayBlocked && !playBlocked && !failed && !feedback ? <div className={styles.loading} role="status"><LoaderCircle aria-hidden="true"/><span className={styles.srOnly}>{labels.buffering}</span></div> : null}
+    {feedback && !mini ? <div className={`${styles.feedback} ${feedback.kind==='back'?styles.seekBack:feedback.kind==='forward'?styles.seekForward:styles.playbackFeedback}`} aria-hidden="true"><span key={feedback.id}>{feedback.kind === 'play' ? <Play size={36} fill="currentColor"/> : feedback.kind === 'pause' ? <Pause size={36} fill="currentColor"/> : <><span className={styles.seekArrows}>{touchUI ? <><i/><i/><i/></> : feedback.kind==='back' ? <ChevronLeft/> : <ChevronRight/>}</span><span>{feedback.kind==='back'?'−':'+'}{feedback.seconds}</span><span className={styles.srOnly}>{labels.seek}</span></>}</span></div> : null}
+    {(loading || buffering || waiting) && !autoplayBlocked && !playBlocked && !failed && (!feedback || mini) ? <div className={styles.loading} role="status"><LoaderCircle aria-hidden="true"/><span className={styles.srOnly}>{labels.buffering}</span></div> : null}
     {!ended&&!(mini&&touchUI)&&(touchUI || mini || (autoplayBlocked||playBlocked) && !failed) ? <div data-controls className={`${styles.centerControls} ${controlsVisible ? '' : styles.hidden}`}>
       {!mini && touchUI && previousHref && labels.previousVideo ? <a href={previousHref} onClick={event=>navigate(event,previousHref)} className={styles.skip} aria-label={labels.previousVideo}><SkipBack fill="currentColor"/></a> : <span/>}
       {(!loading && !buffering && !waiting || autoplayBlocked||playBlocked) && !failed ? <button type="button" className={styles.centerPlay} aria-label={playing ? labels.pause : labels.play} onClick={toggle}>{playing ? <Pause fill="currentColor"/> : <Play fill="currentColor"/>}</button> : <span/>}
@@ -390,12 +388,12 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
           onPointerCancel={cancelScrub} onLostPointerCapture={cancelScrub} />
         {showLiveEdgeThumb ? <span className={styles.liveEdgeThumb} aria-hidden="true"/> : null}
         <div className={styles.preview} hidden={previewTime===null||duration<=0} aria-hidden="true" style={{left:`clamp(calc(var(--preview-width) / 2), ${percentage(previewTime??0)}, calc(100% - var(--preview-width) / 2))`}}>
-          {!failed && cues.length > 0 ? <PreviewSprite key={`${playbackUrl}:${live?'live':'vod'}`} playbackUrl={playbackUrl} cue={cue} neighbor={neighbor} enabled={pageVisible&&!failed} preload={preloadSprites} preloadEnabled={warmPreviews}/> : null}
+          {!failed && cues.length > 0 ? <PreviewSprite key={`${playbackUrl}:${live?'live':'vod'}`} playbackUrl={playbackUrl} cue={cue} neighbor={neighbor} position={previewTime??undefined} enabled={pageVisible&&!failed&&previewTime!==null}/> : null}
           <time>{playerClock(previewTime??0)}</time>
         </div>
       </div>
       <div className={styles.row}>
-        {!touchUI ? <><button type="button" className={styles.button} aria-label={ended?labels.replay??'Replay':playing ? labels.pause : labels.play} title={`${playing ? labels.pause : labels.play} (k)}`} onClick={toggle}>{playing ? <Pause size={22} fill="currentColor"/> : <Play size={22} fill="currentColor"/>}</button>
+        {!touchUI && !mini ? <><button type="button" className={styles.button} aria-label={ended?labels.replay??'Replay':playing ? labels.pause : labels.play} title={`${playing ? labels.pause : labels.play} (k)}`} onClick={toggle}>{playing ? <Pause size={22} fill="currentColor"/> : <Play size={22} fill="currentColor"/>}</button>
         {previousHref && labels.previousVideo || nextHref && labels.nextVideo ? <div className={styles.skipGroup}>
           {previousHref && labels.previousVideo ? <a href={previousHref} onClick={event=>navigate(event,previousHref)} className={styles.button} aria-label={labels.previousVideo}><SkipBack size={20} fill="currentColor"/></a> : null}
           {nextHref && labels.nextVideo ? <a href={nextHref} onClick={event=>navigate(event,nextHref)} className={styles.button} aria-label={labels.nextVideo}><SkipForward size={20} fill="currentColor"/></a> : null}

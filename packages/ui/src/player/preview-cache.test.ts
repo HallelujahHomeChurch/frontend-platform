@@ -95,33 +95,10 @@ it('aborts requests on pause and resumes only after reenabled',async()=>{
  cache.setPaused(false);cache.request(url(1));expect(jobs).toHaveLength(2);
  cache.dispose();
 });
-it('preloads each sprite once without recycling evicted entries',async()=>{
- const {cache,jobs}=setup();const sources=Array.from({length:20},(_,i)=>url(i));
- cache.preload(sources,true);expect(jobs).toHaveLength(1);
- for(let n=0;n<20;n++){expect(jobs[n].url).toBe(url(n));jobs[n].resolve(jpg());await tick();}
- expect(jobs).toHaveLength(20);expect(cache.has(url(0))).toBe(false);
- cache.preload(sources,true);await tick();expect(jobs).toHaveLength(20);
- cache.request(url(0));expect(jobs).toHaveLength(21);cache.dispose();
-});
-it('reserves foreground capacity and aborts background downloads when disabled',async()=>{
- const {cache,jobs}=setup();cache.preload([url(0),url(1)],true);
- cache.request(url(99));expect(jobs.map(j=>j.url)).toEqual([url(0),url(99)]);
- cache.preload([],false);expect(jobs[0].signal.aborted).toBe(true);expect(jobs[1].signal.aborted).toBe(false);
- cache.dispose();
-});
-it('ends background traversal at the transfer budget',async()=>{
- const {cache,jobs}=setup();cache.preload(Array.from({length:20},(_,i)=>url(i)),true);
- for(let n=0;n<9;n++){
-   const bytes=new Uint8Array(1_000_000);bytes.set([255,216,255,192,0,11,8,0,90,3,192,1,1,17,0]);
-   jobs[n].resolve(new Response(bytes,{headers:{'Content-Type':'image/jpeg'}}));await tick();
- }
- expect(jobs).toHaveLength(9);cache.preload([url(19)],true);await tick();expect(jobs).toHaveLength(9);
- cache.dispose();
-});
-it('keeps an active background sprite when foreground hover promotes it',async()=>{
- const {cache,jobs,loaded}=setup();cache.preload([url(0),url(1)],true);
- cache.request(url(0));cache.preload([],false);
- expect(jobs[0].signal.aborted).toBe(false);
- jobs[0].resolve(jpg());await tick();
- expect(loaded).toHaveBeenLastCalledWith(url(0),'blob:1');cache.dispose();
+it('backs off failed sprites without traversing queued neighbors or retrying automatically',async()=>{
+ const now=vi.spyOn(Date,'now').mockReturnValue(1000);
+ const {cache,jobs}=setup();cache.request(url(0));jobs[0].resolve(new Response(null,{status:503}));await tick();
+ cache.request(url(1),url(2));expect(jobs).toHaveLength(1);
+ now.mockReturnValue(6001);cache.request(url(1));expect(jobs).toHaveLength(2);
+ jobs[1].resolve(jpg());await tick();cache.request(url(1));expect(jobs).toHaveLength(2);cache.dispose();
 });
