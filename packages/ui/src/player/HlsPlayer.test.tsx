@@ -523,7 +523,7 @@ it('touch taps toggle controls without pausing; double taps seek and clamp at th
   Object.defineProperty(video,'duration',{configurable:true,value:100});
   fireEvent.play(video);fireEvent.canPlay(video);fireEvent.durationChange(video);
   const surface=screen.getByRole('button',{name:'Play or pause'});
-  vi.spyOn(surface,'getBoundingClientRect').mockReturnValue({left:0,width:600} as DOMRect);
+  vi.spyOn(screen.getByRole('region'),'getBoundingClientRect').mockReturnValue({left:0,width:600} as DOMRect);
   vi.useFakeTimers();
   touch(surface,'pointerdown');touch(surface,'pointerup');
   act(()=>vi.advanceTimersByTime(300));

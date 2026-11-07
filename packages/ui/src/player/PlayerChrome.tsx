@@ -15,8 +15,8 @@ import {previewCueAt} from './preview-cue.js';
 type Quality = 'auto' | '480p' | '720p' | '1080p';
 type Props = {
   onMinimize?:()=>void;
-  onMinimizeMove?:(offset:number)=>void;
-  mini?:{onExpand:()=>void;expandLabel:string};
+  onMinimizeMove?:(offset:number)=>void|false;
+  mini?:{onExpand:()=>void;expandLabel:string;compact?:boolean};
   onPlayIntent?:(kind:"resume"|"restart")=>void;
   previousHref?:string; nextHref?:string; onNavigate?:(href:string)=>void;
   live?: LivePlayerState; followLive?:boolean; onDvr?:()=>void; onReturnToLive?:()=>void;
@@ -30,6 +30,9 @@ type Props = {
 
 const visibleSnapshot=()=>document.visibilityState==='visible';
 const subscribeVisibility=(notify:()=>void)=>{document.addEventListener('visibilitychange',notify);return()=>document.removeEventListener('visibilitychange',notify);};
+
+const pipSnapshot=()=>Boolean(document.pictureInPictureElement||Array.from(document.querySelectorAll('video')).some(video=>(video as HTMLVideoElement&{webkitPresentationMode?:string}).webkitPresentationMode==='picture-in-picture'));
+const subscribePiP=(notify:()=>void)=>{const events=['enterpictureinpicture','leavepictureinpicture','webkitpresentationmodechanged'];events.forEach(event=>document.addEventListener(event,notify,true));return()=>events.forEach(event=>document.removeEventListener(event,notify,true));};
 
 const touchQuery = '(pointer: coarse)';
 const touchSnapshot = () => typeof window.matchMedia === 'function' && window.matchMedia(touchQuery).matches;
@@ -47,7 +50,9 @@ export function playerClock(seconds: number) {
 export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay, onMediaPause, mediaOwner, playbackPaused, playbackVolume, onMediaVolume, playbackUrl, watermark, labels, quality, activeHeight, qualities, autoplayBlocked=false, loading, buffering=false, failed, onQualityChange, onPlaybackChange,onPlayingChange,live,followLive=true,onDvr,onReturnToLive,previousHref,nextHref,onNavigate,onMinimize,onMinimizeMove,mini:miniPresentation,onPlayIntent}: Props) {
   const mediaRef=playbackMediaRef??videoRef;
   const pageVisible=useSyncExternalStore(subscribeVisibility,visibleSnapshot,()=>true);
-  const touchUI = useSyncExternalStore(subscribeTouch, touchSnapshot, () => false);
+  const pointerTouch = useSyncExternalStore(subscribeTouch, touchSnapshot, () => false);
+  const touchUI = miniPresentation?.compact ?? pointerTouch;
+  const inPiP = useSyncExternalStore(subscribePiP,pipSnapshot,()=>false);
   const fullscreenState = usePlayerFullscreen(container, videoRef, touchUI||Boolean(playbackMediaRef));
   const fullscreen = fullscreenState.mode !== 'inline';
   const mini = fullscreen ? undefined : miniPresentation;
@@ -60,6 +65,7 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
   const [theater,setTheater]=useState(false);
   const [settingsView,setSettingsView]=useState<'root'|'speed'|'quality'>('root');
   const [settings, setSettings] = useState(false), [visible, setVisible] = useState(true);
+  if(mini&&settings)setSettings(false);
   const [feedback, setFeedback] = useState<{kind: 'play' | 'pause' | 'back' | 'forward'; id: number; seconds?:number} | null>(null);
   const [preview, setPreview] = useState<number | null>(null), [scrub, setScrub] = useState<number | null>(null);
   const saveData=typeof navigator!=='undefined'&&(navigator as Navigator&{connection?:{saveData?:boolean}}).connection?.saveData===true;
@@ -67,7 +73,7 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
   const cues = usePreviewIndex(playbackUrl, Boolean(live), !failed && pageVisible && (preview !== null || scrub !== null), warmPreviews);
   const [holding, setHolding] = useState(false);
   const suppressGestureClick = useRef(false);
-  const gesture = useRef<{id:number;x:number;y:number;moved:boolean;held:boolean;canMinimize:boolean;minimizing:boolean;threshold:number;viewportWidth:number;viewportHeight:number;rate:number|null}|null>(null);
+  const gesture = useRef<{id:number;x:number;y:number;moved:boolean;held:boolean;canMinimize:boolean;minimizing:boolean;threshold:number;viewportWidth:number;viewportHeight:number;viewportLeft:number;viewportTop:number;rate:number|null}|null>(null);
   const holdTimer = useRef(0), tapTimer = useRef(0), playCommand=useRef(0);
   const desktopClick=useRef<Pick<PlayerBookmark,'time'|'paused'|'rate'|'intent'>|null>(null);
   useEffect(()=>()=>{desktopClick.current=null;++playCommand.current;},[playbackUrl]);
@@ -199,18 +205,30 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
       if (!active) return;
       const width = window.visualViewport?.width ?? window.innerWidth;
       const height = window.visualViewport?.height ?? window.innerHeight;
-      // Small browser-toolbar shifts keep the gesture; rotation or zoom cancels it.
-      if (Math.abs(width - active.viewportWidth) >= 16 || Math.abs(height - active.viewportHeight) >= 64) cancelGesture();
+      const left = window.visualViewport?.offsetLeft ?? 0, top = window.visualViewport?.offsetTop ?? 0;
+      if (onMinimize ? width !== active.viewportWidth || height !== active.viewportHeight || left !== active.viewportLeft || top !== active.viewportTop
+        : Math.abs(width - active.viewportWidth) >= 16 || Math.abs(height - active.viewportHeight) >= 64) cancelGesture();
     };
     window.addEventListener('resize', resize);
+    const secondaryTouch = (event: PointerEvent) => {if (event.pointerType === 'touch' && !event.isPrimary && gesture.current) cancelGesture();};
     window.visualViewport?.addEventListener('resize', resize);
-    return () => { window.removeEventListener('resize', resize); window.visualViewport?.removeEventListener('resize', resize); };
-  }, [cancelGesture]);
-  const pointerDown = (event:ReactPointerEvent<HTMLButtonElement>) => {
+    window.visualViewport?.addEventListener('scroll', resize);
+    document.addEventListener('pointerdown', secondaryTouch, true);
+    return () => { window.removeEventListener('resize', resize); window.visualViewport?.removeEventListener('resize', resize); window.visualViewport?.removeEventListener('scroll', resize); document.removeEventListener('pointerdown', secondaryTouch, true); };
+  }, [cancelGesture, onMinimize]);
+  useEffect(()=>{
+    const cancelOnPiP=()=>{if(pipSnapshot())cancelGesture();};
+    document.addEventListener('enterpictureinpicture',cancelOnPiP,true);
+    document.addEventListener('webkitpresentationmodechanged',cancelOnPiP,true);
+    return()=>{document.removeEventListener('enterpictureinpicture',cancelOnPiP,true);document.removeEventListener('webkitpresentationmodechanged',cancelOnPiP,true);};
+  },[cancelGesture]);
+  const pointerDown = (event:ReactPointerEvent<HTMLElement>) => {
     suppressGestureClick.current = false;
-    if (event.pointerType !== 'touch' || mini) return;
+    if (event.pointerType !== 'touch' || mini || pipSnapshot()) return;
     if (!event.isPrimary) {cancelGesture();window.clearTimeout(tapTimer.current);lastTap.current=null;return;}
-    gesture.current = {id:event.pointerId,x:event.clientX,y:event.clientY,moved:false,held:false,minimizing:false,canMinimize:event.clientX>=24&&event.clientX<=window.innerWidth-24,threshold:Math.min(120,Math.max(64,(container.current?.getBoundingClientRect().height??0)*0.25)),viewportWidth:window.visualViewport?.width??window.innerWidth,viewportHeight:window.visualViewport?.height??window.innerHeight,rate:null};
+    if (minimize && (event.clientX < 24 || event.clientX > window.innerWidth - 24)) return;
+    gesture.current = {id:event.pointerId,x:event.clientX,y:event.clientY,moved:false,held:false,minimizing:false,canMinimize:event.clientX>=24&&event.clientX<=window.innerWidth-24,threshold:Math.min(120,Math.max(64,(container.current?.getBoundingClientRect().height??0)*0.25)),viewportWidth:window.visualViewport?.width??window.innerWidth,viewportHeight:window.visualViewport?.height??window.innerHeight,viewportLeft:window.visualViewport?.offsetLeft??0,viewportTop:window.visualViewport?.offsetTop??0,rate:null};
+    if(minimize)onMinimizeMove?.(0);
     event.currentTarget.setPointerCapture(event.pointerId);
     holdTimer.current = window.setTimeout(() => {
       const video = mediaRef.current, active = gesture.current;
@@ -220,24 +238,25 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
       }
     }, 450);
   };
-  const pointerMove = (event:ReactPointerEvent<HTMLButtonElement>) => {
+  const pointerMove = (event:ReactPointerEvent<HTMLElement>) => {
     const active = gesture.current;
     if (!active || active.id !== event.pointerId) return;
     if (active.moved || Math.hypot(event.clientX-active.x,event.clientY-active.y)>12) {
       active.moved=true;window.clearTimeout(holdTimer.current);
       if (minimize && active.canMinimize && !active.held && event.clientY-active.y >= Math.abs(event.clientX-active.x)*1.5) {
         active.minimizing = true;
-        onMinimizeMove?.(event.clientY-active.y);
+        if(onMinimizeMove?.(event.clientY-active.y)===false){cancelGesture();return;}
         window.clearTimeout(tapTimer.current);lastTap.current=null;
       } else onMinimizeMove?.(0);
       if (active.rate != null && mediaRef.current) {changeRate(active.rate);active.rate=null;setHolding(false);}
     }
   };
-  const pointerUp = (event:ReactPointerEvent<HTMLButtonElement>) => {
+  const pointerUp = (event:ReactPointerEvent<HTMLElement>) => {
     const active = gesture.current;
     if (!active || active.id !== event.pointerId) return;
     const dx=event.clientX-active.x,dy=event.clientY-active.y,held=active.rate!=null;
     const committed = Boolean(minimize && active.canMinimize && active.minimizing && !active.held && dy >= active.threshold && dy >= Math.abs(dx)*1.5);
+    if(committed&&onMinimizeMove?.(dy)===false){cancelGesture();return;}
     finishGesture(!committed);
     if (held) return;
     if (committed) {
@@ -252,7 +271,7 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
       return;
     }
     if (active.moved) return;
-    const bounds=event.currentTarget.getBoundingClientRect();
+    const bounds=container.current?.getBoundingClientRect()??event.currentTarget.getBoundingClientRect();
     const fraction=bounds.width>0?(event.clientX-bounds.left)/bounds.width:0.5;
     const side=fraction<0.35?'back':fraction>0.65?'forward':'center';
     const previous=lastTap.current,now=Date.now();
@@ -329,8 +348,7 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
   const showLiveEdgeThumb = Boolean(live && !live.ended && seekDisabled);
   const displayedTime = atLive ? duration : current;
   const percentage = (value: number) => duration > seekStart ? `${Math.min(100, Math.max(0, (value - seekStart) / (duration - seekStart) * 100))}%` : '0%';
-  return <>
-    <button type="button" className={styles.surface} data-player-surface aria-label={mini&&touchUI?mini.expandLabel:labels.togglePlayback} tabIndex={mini&&touchUI?0:-1} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={cancelGesture} onLostPointerCapture={cancelGesture} onContextMenu={event=>{if(touchUI)event.preventDefault();}} onClick={event=>{
+  const surfaceClick=(event:ReactMouseEvent<HTMLElement>)=>{
       const suppress = suppressGestureClick.current;
       suppressGestureClick.current = false;
       if (suppress && event.detail > 0) {event.preventDefault(); return;}
@@ -339,7 +357,9 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
       if(touchUI)return;container.current?.focus({preventScroll:true});
       const video=mediaRef.current;
       if(event.detail===1&&video){desktopClick.current={paused:playbackPaused??video.paused,time:video.currentTime,rate:video.playbackRate,intent:followLive?'followLive':'dvr'};toggle();}
-    }} onDoubleClick={()=>{
+
+  };
+  const surfaceDoubleClick=()=>{
       if(touchUI||mini)return;
       const saved=desktopClick.current,video=mediaRef.current;desktopClick.current=null;
       if(saved&&video){
@@ -351,7 +371,13 @@ export function PlayerChrome({container, videoRef, playbackMediaRef, onMediaPlay
         setFeedback(null);setPlayBlocked(false);showControls();
       }
       void toggleFullscreen();
-    }} />
+
+  };
+  return <>
+    <button type="button" className={styles.surface} data-player-surface data-pull-watch={Boolean(minimize) || undefined} aria-label={mini&&touchUI?mini.expandLabel:labels.togglePlayback} tabIndex={mini&&touchUI?0:-1} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={cancelGesture} onLostPointerCapture={cancelGesture} onContextMenu={event=>{if(touchUI)event.preventDefault();}} onClick={surfaceClick} onDoubleClick={surfaceDoubleClick} />
+    {minimize&&!inPiP ? <div aria-hidden="true" data-player-pull-surface data-player-surface className={styles.pullSurface}
+      onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={cancelGesture} onLostPointerCapture={cancelGesture}
+      onContextMenu={event=>{if(touchUI)event.preventDefault();}} onClick={surfaceClick} onDoubleClick={surfaceDoubleClick}/> : null}
     {mini ? <button type="button" data-controls className="hhc-player-miniAction" aria-label={touchUI ? (playing ? labels.pause : labels.play) : mini.expandLabel} onClick={touchUI ? toggle : mini.onExpand}>{touchUI ? (playing ? <Pause/> : <Play/>) : <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M20 10V4H4v16h6M13 13l7 7m-6 0h6v-6"/></svg>}</button> : null}
     {watermark ? <RecordingWatermark container={container} videoRef={videoRef} code={watermark}/> : null}
     {fullscreenState.error ? <div className={styles.fullscreenError} role="alert">{labels.fullscreenError}</div> : null}

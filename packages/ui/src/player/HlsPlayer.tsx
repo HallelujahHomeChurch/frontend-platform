@@ -23,8 +23,8 @@ export type HlsPlayerProps = {
   backgroundAudioUrl?:string; playbackMediaRef?:RefObject<HTMLMediaElement|null>; playbackPauseRef?:RefObject<(()=>void)|null>;
   onDiagnostic?:(value:PlayerDiagnostic)=>void;
   onMinimize?:()=>void;
-  onMinimizeMove?:(offset:number)=>void;
-  mini?:{onExpand:()=>void;expandLabel:string};
+  onMinimizeMove?:(offset:number)=>void|false;
+  mini?:{onExpand:()=>void;expandLabel:string;compact?:boolean};
   onPlayIntent?:(kind:"resume"|"restart")=>void;
   controls?:boolean; initialQuality?:Quality;
   playbackMode?: 'vod' | 'live'; live?: LivePlayerState; resume?: PlayerBookmark; onBookmark?: (value: PlayerBookmark) => void;
