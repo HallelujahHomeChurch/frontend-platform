@@ -325,3 +325,42 @@ it('does not commit a release before a directional drag was recognized', () => {
   }
   expect(minimize).not.toHaveBeenCalled();
 });
+
+it('cancels a resized drag even after sideways motion, then accepts a fresh gesture',()=>{
+ const move=vi.fn(),minimize=vi.fn();render(<Harness onMinimize={minimize} onMinimizeMove={move}/>);
+ const surface=screen.getByRole('button',{name:labels.togglePlayback});surface.setPointerCapture=vi.fn();
+ const pointer=(type:string,x:number,y:number)=>{const event=new MouseEvent(type,{bubbles:true,clientX:x,clientY:y});Object.defineProperties(event,{pointerType:{value:'touch'},pointerId:{value:1},isPrimary:{value:true}});fireEvent(surface,event);};
+ const width=window.innerWidth;
+ try{
+  pointer('pointerdown',120,20);pointer('pointermove',120,100);
+  Object.defineProperty(window,'innerWidth',{configurable:true,value:width+100});fireEvent(window,new Event('resize'));
+  expect(move).toHaveBeenLastCalledWith(0);
+  pointer('pointermove',240,40);pointer('pointermove',120,160);pointer('pointerup',120,160);
+  expect(minimize).not.toHaveBeenCalled();
+  pointer('pointerdown',120,20);pointer('pointermove',120,160);pointer('pointerup',120,160);
+  expect(minimize).toHaveBeenCalledOnce();
+ }finally{Object.defineProperty(window,'innerWidth',{configurable:true,value:width});}
+});
+
+it('keeps a drag through small toolbar resizing',()=>{
+ const minimize=vi.fn();render(<Harness onMinimize={minimize}/>);
+ const surface=screen.getByRole('button',{name:labels.togglePlayback});surface.setPointerCapture=vi.fn();
+ const pointer=(type:string,y:number)=>{const event=new MouseEvent(type,{bubbles:true,clientX:120,clientY:y});Object.defineProperties(event,{pointerType:{value:'touch'},pointerId:{value:1},isPrimary:{value:true}});fireEvent(surface,event);};
+ const height=window.innerHeight;
+ try{
+  pointer('pointerdown',20);pointer('pointermove',100);
+  Object.defineProperty(window,'innerHeight',{configurable:true,value:height-24});fireEvent(window,new Event('resize'));
+  pointer('pointerup',100);expect(minimize).toHaveBeenCalledOnce();
+ }finally{Object.defineProperty(window,'innerHeight',{configurable:true,value:height});}
+});
+
+it('restores a held playback rate when the visual viewport changes',async()=>{
+ const viewport=new EventTarget();Object.assign(viewport,{width:400,height:800});vi.stubGlobal('visualViewport',viewport);
+ const view=render(<Harness/>);const video=view.container.querySelector('video')!;
+ vi.spyOn(video,'paused','get').mockReturnValue(false);video.playbackRate=1.5;
+ const surface=screen.getByRole('button',{name:labels.togglePlayback});surface.setPointerCapture=vi.fn();
+ const event=new MouseEvent('pointerdown',{bubbles:true,clientX:120,clientY:20});Object.defineProperties(event,{pointerType:{value:'touch'},pointerId:{value:1},isPrimary:{value:true}});fireEvent(surface,event);
+ await tick(450);expect(video.playbackRate).toBe(2);
+ Object.assign(viewport,{width:800,height:400});act(()=>viewport.dispatchEvent(new Event('resize')));
+ expect(video.playbackRate).toBe(1.5);
+});
