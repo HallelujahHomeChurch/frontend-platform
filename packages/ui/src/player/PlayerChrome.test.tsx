@@ -366,9 +366,38 @@ it('restores a held playback rate when the visual viewport changes',async()=>{
  expect(video.playbackRate).toBe(1.5);
 });
 
-it('keeps the paused desktop mini play control visible after the control timeout',async()=>{
- network();const view=render(<Harness state={null} mini={{onExpand:vi.fn(),expandLabel:'Expand'}}/>);
- fireEvent.canPlay(view.container.querySelector('video')!);await tick(4000);
- expect(view.container.querySelector('.hhc-player-centerControls')).not.toHaveClass('hhc-player-hidden');
- view.unmount();
+it('keeps mini fullscreen and theater unavailable through buttons, keys and double click',()=>{
+ const view=render(<Harness state={null} mini={{onExpand:vi.fn(),expandLabel:'Expand'}}/>);
+ const root=view.container.firstElementChild!;
+ const request=vi.fn();Object.assign(root,{requestFullscreen:request});
+ expect(screen.queryByRole('button',{name:labels.fullscreen})).toBeNull();
+ for(const key of ['f','t','j','ArrowRight']){
+  const event=new KeyboardEvent('keydown',{key,bubbles:true,cancelable:true});
+  fireEvent(root,event);expect(event.defaultPrevented).toBe(false);
+ }
+ fireEvent.doubleClick(screen.getByRole('button',{name:labels.togglePlayback}));
+ expect(request).not.toHaveBeenCalled();
+});
+
+it('keeps mini playback and mute shortcuts while preserving editable fields',()=>{
+ const view=render(<Harness state={null} mini={{onExpand:vi.fn(),expandLabel:'Expand'}}/>);
+ const root=view.container.firstElementChild!;const video=view.container.querySelector('video')!;
+ const play=vi.spyOn(video,'play').mockResolvedValue();
+ fireEvent.keyDown(root,{key:'k'});expect(play).toHaveBeenCalledOnce();
+ fireEvent.keyDown(root,{key:'m'});expect(video.muted).toBe(true);
+ const input=document.createElement('input');root.append(input);
+ fireEvent.keyDown(input,{key:'k'});expect(play).toHaveBeenCalledOnce();
+});
+
+it('toggles the mini center only once for a real double-click sequence',()=>{
+ const view=render(<Harness state={null} mini={{onExpand:vi.fn(),expandLabel:'Expand'}}/>);
+ const video=view.container.querySelector('video')!;
+ let paused=true;
+ vi.spyOn(video,'paused','get').mockImplementation(()=>paused);
+ vi.spyOn(video,'play').mockImplementation(async()=>{paused=false;});
+ const pause=vi.spyOn(video,'pause').mockImplementation(()=>{paused=true;});
+ fireEvent.canPlay(video);
+ const button=screen.getByRole('button',{name:'Play'});
+ fireEvent.click(button,{detail:1});fireEvent.click(button,{detail:2});fireEvent.doubleClick(button);
+ expect(paused).toBe(false);expect(pause).not.toHaveBeenCalled();
 });
