@@ -9,12 +9,19 @@ const repository = 'hallelujahhomechurch/hhc-bulletin-renderer';
 const registryImage = `ghcr.io/${repository}`;
 const sha256 = /^sha256:[a-f0-9]{64}$/;
 const mediaTypes = ['application/vnd.docker.distribution.manifest.v2+json', 'application/vnd.oci.image.manifest.v1+json'];
+const indexType = 'application/vnd.oci.image.index.v1+json';
 
-export function validateManifest(bytes, headerDigest, expectedConfig) {
+function parseManifest(bytes, headerDigest) {
+  assert.ok(bytes.length <= 1024 * 1024, 'registry manifest exceeds limit');
   assert.match(headerDigest ?? '', sha256, 'registry manifest digest unavailable');
   assert.equal(`sha256:${createHash('sha256').update(bytes).digest('hex')}`, headerDigest, 'registry manifest digest mismatch');
   const manifest = JSON.parse(bytes);
   assert.equal(manifest.schemaVersion, 2, 'unsupported registry manifest schema');
+  return manifest;
+}
+
+export function validateManifest(bytes, headerDigest, expectedConfig) {
+  const manifest = parseManifest(bytes, headerDigest);
   assert.ok(mediaTypes.includes(manifest.mediaType), 'unsupported registry manifest type');
   assert.equal(manifest.config?.digest, expectedConfig, 'published renderer differs from verified image');
   assert.ok(Array.isArray(manifest.layers) && manifest.layers.length > 0, 'registry layers missing');
@@ -25,7 +32,7 @@ export function validateManifest(bytes, headerDigest, expectedConfig) {
 export function ghcrClient({actor, token, fetcher = fetch}) {
   let bearer;
   async function request(url, authorization) {
-    const response = await fetcher(url, {headers: {Authorization: authorization, Accept: mediaTypes.join(', ')},
+    const response = await fetcher(url, {headers: {Authorization: authorization, Accept: [...mediaTypes, indexType].join(', ')},
       redirect: 'error', signal: AbortSignal.timeout(30_000)});
     return response;
   }
@@ -50,7 +57,22 @@ export function ghcrClient({actor, token, fetcher = fetch}) {
       }
       assert.equal(response.status, 200, 'registry lookup unavailable');
       const bytes = Buffer.from(await response.arrayBuffer());
-      assert.ok(bytes.length <= 1024 * 1024, 'registry manifest exceeds limit');
+      const manifest = parseManifest(bytes, response.headers.get('Docker-Content-Digest'));
+      if (manifest.mediaType === indexType) {
+        assert.ok(Array.isArray(manifest.manifests), 'registry index manifests missing');
+        const images = manifest.manifests.filter(item => item.platform?.os === 'linux' && item.platform?.architecture === 'amd64');
+        assert.equal(images.length, 1, 'registry index must contain exactly one linux amd64 image');
+        const target = images[0];
+        assert.ok(mediaTypes.includes(target.mediaType), 'unsupported registry child manifest type');
+        assert.match(target.digest, sha256);
+        assert.ok(Number.isInteger(target.size) && target.size > 0 && target.size <= 1024 * 1024, 'invalid registry child manifest size');
+        const child = await request(`https://ghcr.io/v2/${repository}/manifests/${target.digest}`, `Bearer ${bearer}`);
+        assert.equal(child.status, 200, 'registry child manifest unavailable');
+        assert.equal(child.headers.get('Docker-Content-Digest'), target.digest, 'registry child digest mismatch');
+        const childBytes = Buffer.from(await child.arrayBuffer());
+        assert.equal(childBytes.length, target.size, 'registry child size mismatch');
+        return validateManifest(childBytes, target.digest, config);
+      }
       return validateManifest(bytes, response.headers.get('Docker-Content-Digest'), config);
     },
   };
