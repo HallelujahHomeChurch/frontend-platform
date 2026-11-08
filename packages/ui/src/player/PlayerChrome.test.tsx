@@ -228,13 +228,13 @@ it('reports touch minimize movement and resets it on cancellation without minimi
     fireEvent(surface,event);
   }
   pointer('pointerdown',20);pointer('pointermove',60);
-  expect(move).toHaveBeenLastCalledWith(40);
-  pointer('pointermove',25);expect(move).toHaveBeenLastCalledWith(5);
-  pointer('pointermove',15);expect(move).toHaveBeenLastCalledWith(0);
-  pointer('pointercancel',60);expect(move).toHaveBeenLastCalledWith(0);
+  expect(move).toHaveBeenLastCalledWith(40,'tracking');
+  pointer('pointermove',25);expect(move).toHaveBeenLastCalledWith(5,'tracking');
+  pointer('pointermove',15);expect(move).toHaveBeenLastCalledWith(-5,'tracking');
+  pointer('pointercancel',60);expect(move).toHaveBeenLastCalledWith(0,'reset');
   pointer('pointerup',100);expect(minimize).not.toHaveBeenCalled();
   pointer('pointerdown',20);pointer('pointermove',70);pointer('pointerdown',70,false);
-  expect(move).toHaveBeenLastCalledWith(0);pointer('pointerup',100);expect(minimize).not.toHaveBeenCalled();
+  expect(move).toHaveBeenLastCalledWith(0,'reset');pointer('pointerup',100);expect(minimize).not.toHaveBeenCalled();
 });
 
 
@@ -260,7 +260,7 @@ it('does not minimize from the system back edge or after a long hold', async () 
     Object.defineProperties(event,{pointerType:{value:'touch'},pointerId:{value:1},isPrimary:{value:true}});fireEvent(surface,event);
   }
   pointer('pointerdown',10,20);pointer('pointermove',10,100);pointer('pointerup',10,100);
-  expect(minimize).not.toHaveBeenCalled();expect(move).not.toHaveBeenCalledWith(80);
+  expect(minimize).not.toHaveBeenCalled();expect(move).not.toHaveBeenCalledWith(80,'tracking');
   vi.spyOn(view.container.querySelector('video')!,'paused','get').mockReturnValue(false);
   pointer('pointerdown',120,20);await tick(450);pointer('pointermove',120,100);pointer('pointerup',120,100);
   expect(minimize).not.toHaveBeenCalled();expect(view.container.querySelector('video')!.playbackRate).toBe(1);
@@ -277,7 +277,7 @@ it('preserves committed drag offset through late pointer capture loss', () => {
     fireEvent(surface,event);
   };
   pointer('pointerdown',20);pointer('pointermove',100);pointer('pointerup',100);pointer('lostpointercapture',100);
-  expect(events).toEqual([80,'commit']);
+  expect(events).toEqual([0,80,80,'commit']);
 });
 
 it('requires a bounded quarter-height drag and can cancel by pulling back', () => {
@@ -291,7 +291,7 @@ it('requires a bounded quarter-height drag and can cancel by pulling back', () =
     fireEvent(surface,event);
   };
   pointer('pointerdown',20);pointer('pointermove',110);pointer('pointerup',110);
-  expect(minimize).not.toHaveBeenCalled();expect(move).toHaveBeenLastCalledWith(0);
+  expect(minimize).not.toHaveBeenCalled();expect(move).toHaveBeenLastCalledWith(0,'reset');
   pointer('pointerdown',20);pointer('pointermove',150);pointer('pointermove',60);pointer('pointerup',60);
   expect(minimize).not.toHaveBeenCalled();
   pointer('pointerdown',20);pointer('pointermove',120);pointer('pointerup',120);
@@ -335,7 +335,7 @@ it('cancels a resized drag even after sideways motion, then accepts a fresh gest
  try{
   pointer('pointerdown',120,20);pointer('pointermove',120,100);
   Object.defineProperty(window,'innerWidth',{configurable:true,value:width+100});fireEvent(window,new Event('resize'));
-  expect(move).toHaveBeenLastCalledWith(0);
+  expect(move).toHaveBeenLastCalledWith(0,'reset');
   pointer('pointermove',240,40);pointer('pointermove',120,160);pointer('pointerup',120,160);
   expect(minimize).not.toHaveBeenCalled();
   pointer('pointerdown',120,20);pointer('pointermove',120,160);pointer('pointerup',120,160);
@@ -343,7 +343,7 @@ it('cancels a resized drag even after sideways motion, then accepts a fresh gest
  }finally{Object.defineProperty(window,'innerWidth',{configurable:true,value:width});}
 });
 
-it('keeps a drag through small toolbar resizing',()=>{
+it('cancels a pending pull through small toolbar resizing',()=>{
  const minimize=vi.fn();render(<Harness onMinimize={minimize}/>);
  const surface=screen.getByRole('button',{name:labels.togglePlayback});surface.setPointerCapture=vi.fn();
  const pointer=(type:string,y:number)=>{const event=new MouseEvent(type,{bubbles:true,clientX:120,clientY:y});Object.defineProperties(event,{pointerType:{value:'touch'},pointerId:{value:1},isPrimary:{value:true}});fireEvent(surface,event);};
@@ -351,7 +351,7 @@ it('keeps a drag through small toolbar resizing',()=>{
  try{
   pointer('pointerdown',20);pointer('pointermove',100);
   Object.defineProperty(window,'innerHeight',{configurable:true,value:height-24});fireEvent(window,new Event('resize'));
-  pointer('pointerup',100);expect(minimize).toHaveBeenCalledOnce();
+  pointer('pointerup',100);expect(minimize).not.toHaveBeenCalled();
  }finally{Object.defineProperty(window,'innerHeight',{configurable:true,value:height});}
 });
 
@@ -400,4 +400,71 @@ it('toggles the mini center only once for a real double-click sequence',()=>{
  const button=screen.getByRole('button',{name:'Play'});
  fireEvent.click(button,{detail:1});fireEvent.click(button,{detail:2});fireEvent.doubleClick(button);
  expect(paused).toBe(false);expect(pause).not.toHaveBeenCalled();
+});
+
+it('discards an open watch settings menu when entering mini presentation',()=>{
+ const view=render(<Harness state={null}/>);
+ fireEvent.click(screen.getByRole('button',{name:'Settings'}));expect(screen.getByRole('menu')).toBeInTheDocument();
+ view.rerender(<Harness state={null} mini={{onExpand:vi.fn(),expandLabel:'Expand'}}/>);
+ expect(screen.queryByRole('menu')).toBeNull();
+ view.rerender(<Harness state={null}/>);expect(screen.queryByRole('menu')).toBeNull();
+});
+
+it('uses an explicit compact mini layout independently of primary pointer capability',()=>{
+ network();const view=render(<Harness state={null} mini={{onExpand:vi.fn(),expandLabel:'Expand',compact:true}}/>);
+ expect(screen.getByRole('button',{name:'Expand'})).toHaveAttribute('data-player-surface');
+ view.rerender(<Harness state={null} mini={{onExpand:vi.fn(),expandLabel:'Expand',compact:false}}/>);
+ expect(screen.getByRole('button',{name:'Expand'})).not.toHaveAttribute('data-player-surface');
+});
+
+it('cancels pull minimization when native PiP starts and removes its gesture hit area',()=>{
+ const move=vi.fn(),minimize=vi.fn();const view=render(<Harness onMinimize={minimize} onMinimizeMove={move}/>);
+ const surface=screen.getByRole('button',{name:labels.togglePlayback});surface.setPointerCapture=vi.fn();
+ const pointer=(type:string,y:number)=>{const event=new MouseEvent(type,{bubbles:true,clientX:120,clientY:y});Object.defineProperties(event,{pointerType:{value:'touch'},pointerId:{value:1},isPrimary:{value:true}});fireEvent(surface,event);};
+ pointer('pointerdown',20);pointer('pointermove',100);
+ const previous=Object.getOwnPropertyDescriptor(document,'pictureInPictureElement');
+ try{
+  Object.defineProperty(document,'pictureInPictureElement',{configurable:true,value:view.container.querySelector('video')});
+  fireEvent(view.container.querySelector('video')!,new Event('enterpictureinpicture'));
+  expect(move).toHaveBeenLastCalledWith(0,'reset');expect(view.container.querySelector('[data-player-pull-surface]')).toBeNull();
+  pointer('pointerup',100);expect(minimize).not.toHaveBeenCalled();
+ }finally{if(previous)Object.defineProperty(document,'pictureInPictureElement',previous);else delete (document as Document&{pictureInPictureElement?:Element}).pictureInPictureElement;}
+});
+
+it('uses a sibling pull hit area without covering the full watch edge surface',()=>{
+ const view=render(<Harness onMinimize={vi.fn()}/>);
+ const base=screen.getByRole('button',{name:labels.togglePlayback});
+ const pull=view.container.querySelector('[data-player-pull-surface]')!;
+ expect(base).toHaveAttribute('data-pull-watch','true');expect(pull.parentElement).toBe(base.parentElement);
+ expect(pull.contains(screen.getByRole('slider',{name:labels.seek}))).toBe(false);
+});
+
+
+it.each(['second-touch','viewport-scroll'])('cancels a pending pull after %s outside the surface',kind=>{
+ const viewport=new EventTarget();Object.assign(viewport,{width:400,height:800,offsetLeft:0,offsetTop:0});vi.stubGlobal('visualViewport',viewport);
+ const minimize=vi.fn(),move=vi.fn();render(<Harness onMinimize={minimize} onMinimizeMove={move}/>);
+ const surface=screen.getByRole('button',{name:labels.togglePlayback});surface.setPointerCapture=vi.fn();
+ const pointer=(target:EventTarget,type:string,y:number,primary=true)=>{const event=new MouseEvent(type,{bubbles:true,clientX:120,clientY:y});Object.defineProperties(event,{pointerType:{value:'touch'},pointerId:{value:primary?1:2},isPrimary:{value:primary}});fireEvent(target,event);};
+ pointer(surface,'pointerdown',20);pointer(surface,'pointermove',100);
+ if(kind==='second-touch')pointer(document.body,'pointerdown',20,false);
+ else{Object.assign(viewport,{offsetTop:24});act(()=>viewport.dispatchEvent(new Event('scroll')));}
+ expect(move).toHaveBeenLastCalledWith(0,'reset');pointer(surface,'pointerup',100);expect(minimize).not.toHaveBeenCalled();
+});
+
+
+it('lets the host reject invalid geometry before a pull commits',()=>{
+ let reject=false;const minimize=vi.fn(),move=vi.fn((offset:number)=>offset>0&&reject?false:undefined);
+ render(<Harness onMinimize={minimize} onMinimizeMove={move}/>);
+ const surface=screen.getByRole('button',{name:labels.togglePlayback});surface.setPointerCapture=vi.fn();
+ const pointer=(type:string,y:number)=>{const event=new MouseEvent(type,{bubbles:true,clientX:120,clientY:y});Object.defineProperties(event,{pointerType:{value:'touch'},pointerId:{value:1},isPrimary:{value:true}});fireEvent(surface,event);};
+ pointer('pointerdown',20);pointer('pointermove',100);reject=true;pointer('pointerup',100);
+ expect(minimize).not.toHaveBeenCalled();expect(move).toHaveBeenLastCalledWith(0,'reset');
+ reject=false;pointer('pointerdown',20);pointer('pointermove',100);pointer('pointerup',100);expect(minimize).toHaveBeenCalledOnce();
+});
+
+it('keeps a locked pull through sideways and reverse movement',()=>{
+ const minimize=vi.fn(),move=vi.fn();render(<Harness onMinimize={minimize} onMinimizeMove={move}/>);
+ const surface=screen.getByRole('button',{name:labels.togglePlayback});surface.setPointerCapture=vi.fn();
+ const pointer=(type:string,x:number,y:number)=>{const event=new MouseEvent(type,{bubbles:true,clientX:x,clientY:y});Object.defineProperties(event,{pointerType:{value:'touch'},pointerId:{value:1},isPrimary:{value:true}});fireEvent(surface,event);};
+ pointer('pointerdown',120,20);pointer('pointermove',120,100);pointer('pointermove',300,40);expect(move).toHaveBeenLastCalledWith(20,'tracking');pointer('pointermove',300,20);expect(move).toHaveBeenLastCalledWith(0,'tracking');pointer('pointermove',300,120);pointer('pointerup',300,120);expect(minimize).toHaveBeenCalledOnce();
 });

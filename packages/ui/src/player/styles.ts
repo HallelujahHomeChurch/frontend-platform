@@ -36,6 +36,7 @@ export default {
   spacer: "hhc-player-spacer",
   speedFeedback: "hhc-player-speedFeedback",
   surface: "hhc-player-surface",
+  pullSurface: "hhc-player-pullSurface",
   theaterButton: "hhc-player-theaterButton",
   time: "hhc-player-time",
   topControls: "hhc-player-topControls",
