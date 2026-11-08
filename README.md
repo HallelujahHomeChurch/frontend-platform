@@ -487,3 +487,10 @@ secondary touch or native picture-in-picture. `onMinimizeMove` can return
 phase distinguishes tracking through zero from an actual reset, so a reversed
 pull retains its original direction lock and interpolation origin. These source and automated
 contracts still require native browser and physical-device acceptance.
+
+Member recording card clients preserve optional nullable `playbackMediaVersion`
+independently from nullable saved progress. The CMS producer must publish this
+read-only authority field before consumers rely on it for first-watch local card
+progress. A broadcast range version is supplied by the producer; consumers must
+not infer it from package IDs. This candidate follows the preceding shared UI
+package candidate; neither local packing nor generated types prove publication.
