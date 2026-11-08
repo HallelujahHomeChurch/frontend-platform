@@ -41,3 +41,13 @@ it.each([undefined,null,{mediaVersion:'vod:package',positionSeconds:42,completed
  expect(page.items).toEqual([item]);expect(page.items[0]?.playbackProgress).toEqual(progress);
  expect(fetcher).toHaveBeenCalledTimes(1);expect((fetcher.mock.calls[0]![0] as Request).method).toBe('GET');
 });
+
+
+it.each([undefined,null,'vod:package:7'])('preserves current card version separately from absent history %j',async(version)=>{
+ const item={id:'one',playbackProgress:null,...(version===undefined?{}:{playbackMediaVersion:version})};
+ const fetcher=vi.fn<typeof fetch>().mockResolvedValue(Response.json({data:[item],meta:{nextCursor:null},error:null}));
+ const client=createHhcWebClient({baseUrl:'/api',getAccessToken:()=>'test-member',fetcher});
+ const page=await client.listMemberRecordingsPage();
+ expect(page.items[0]?.playbackMediaVersion).toEqual(version);expect(page.items[0]?.playbackProgress).toBeNull();
+ expect(fetcher).toHaveBeenCalledTimes(1);expect((fetcher.mock.calls[0]![0] as Request).method).toBe('GET');
+});
