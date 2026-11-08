@@ -213,7 +213,11 @@
 .hhc-player-player[data-mini="true"][data-touch="false"] :is(.hhc-player-miniAction,.hhc-player-centerControls) {
   opacity:var(--hhc-mini-actions-opacity,0);pointer-events:none;transition:none;
 }
-.hhc-player-player[data-mini="true"][data-touch="false"]:is(:hover,:has(button:focus-visible,input:focus-visible)) :is(.hhc-player-miniAction,.hhc-player-centerControls) {opacity:1;}
+.hhc-player-player[data-mini="true"][data-touch="false"]:is(:hover,:has(button:focus-visible,input:focus-visible)) :is(.hhc-player-miniAction,.hhc-player-centerControls) {opacity:var(--hhc-mini-actions-opacity,1);}
 .hhc-player-player[data-mini="true"][data-touch="false"] .hhc-player-miniAction,
 .hhc-player-player[data-mini="true"][data-touch="false"] .hhc-player-centerPlay {pointer-events:var(--hhc-mini-actions-pointer-events,none);}
-.hhc-player-player[data-mini="true"][data-touch="false"]:is(:hover,:has(button:focus-visible,input:focus-visible)) :is(.hhc-player-miniAction,.hhc-player-centerPlay) {pointer-events:auto;}
+.hhc-player-player[data-mini="true"][data-touch="false"]:is(:hover,:has(button:focus-visible,input:focus-visible)) :is(.hhc-player-miniAction,.hhc-player-centerPlay) {pointer-events:var(--hhc-mini-actions-pointer-events,auto);}
+
+.hhc-player-pullSurface {position:absolute;inset:0 24px;z-index:1;touch-action:none;}
+
+.hhc-player-player[data-touch="true"] .hhc-player-surface[data-pull-watch] {touch-action:auto;}

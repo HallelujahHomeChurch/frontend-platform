@@ -478,10 +478,19 @@ touch displacement and returns to zero on cancellation; the consumer owns its
 presentation animation and navigation. Keep `onMinimize` as the explicit,
 keyboard-accessible alternative and respect reduced-motion preferences.
 
+Hosts can optionally set `HlsPlayer.mini.compact` from their available layout;
+when omitted, the existing pointer-based presentation remains compatible.
+The pull surface reserves 24 CSS pixels on both sides for system navigation,
+keeps controls as siblings, and cancels a pending pull on viewport changes,
+secondary touch or native picture-in-picture. `onMinimizeMove` can return
+`false` to cancel geometry that the host can no longer accept. Its optional
+phase distinguishes tracking through zero from an actual reset, so a reversed
+pull retains its original direction lock and interpolation origin. These source and automated
+contracts still require native browser and physical-device acceptance.
+
 Member recording card clients preserve optional nullable `playbackMediaVersion`
 independently from nullable saved progress. The CMS producer must publish this
 read-only authority field before consumers rely on it for first-watch local card
 progress. A broadcast range version is supplied by the producer; consumers must
-not infer it from package IDs. This contract-only candidate contains no pending
-shared-player gesture changes. Local packing and generated types do not prove
-registry publication.
+not infer it from package IDs. This card contract was split from the gesture candidate for independent
+delivery. Local packing and generated types do not prove registry publication.
