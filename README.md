@@ -477,3 +477,11 @@ playback and exposes expansion separately. `onMinimizeMove` reports a downward
 touch displacement and returns to zero on cancellation; the consumer owns its
 presentation animation and navigation. Keep `onMinimize` as the explicit,
 keyboard-accessible alternative and respect reduced-motion preferences.
+
+Member recording card clients preserve optional nullable `playbackMediaVersion`
+independently from nullable saved progress. The CMS producer must publish this
+read-only authority field before consumers rely on it for first-watch local card
+progress. A broadcast range version is supplied by the producer; consumers must
+not infer it from package IDs. This contract-only candidate contains no pending
+shared-player gesture changes. Local packing and generated types do not prove
+registry publication.

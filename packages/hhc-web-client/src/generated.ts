@@ -6260,6 +6260,8 @@ export interface components {
             error?: null;
         };
         MemberRecordingCard: components["schemas"]["MemberRecording"] & {
+            /** @description Optional for legacy responses. Current eligible VOD version, including its broadcast range revision, independently of saved account history. Null when eligibility cannot be established. Read-only; never claims an owner or maps historical live coordinates. */
+            playbackMediaVersion?: string | null;
             /** @description Optional for legacy responses; account-scoped current VOD progress for paginated member cards. Null when unavailable or incompatible. Does not claim playback ownership. */
             playbackProgress?: null | {
                 mediaVersion: string;
