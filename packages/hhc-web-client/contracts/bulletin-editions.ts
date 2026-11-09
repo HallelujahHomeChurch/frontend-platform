@@ -21,3 +21,11 @@ type _AdminClientUsesCompositeEdition = Assert<ClientEdition extends BulletinEdi
 type ExpectedTranslationTarget = 'zh-Hans' | 'en'
 type _TranslationTargetsAreEditions = Assert<BulletinTranslationTargetEdition extends ExpectedTranslationTarget ? true : false>
 type _EveryBulletinTargetIsAvailable = Assert<ExpectedTranslationTarget extends BulletinTranslationTargetEdition ? true : false>
+
+// Publication remains opt-in when older callers omit the new flags.
+type ExtractionInput = Parameters<HhcWebClient['startOnlineBulletinExtraction']>[2]
+type UploadInput = Parameters<HhcWebClient['completeBulletinUpload']>[3]
+type _ExtractionAuthorizationIsOptional = Assert<{canonicalVersion:number;retry:boolean} extends ExtractionInput ? true : false>
+type _ExtractionAuthorizationIsBoolean = Assert<ExtractionInput['autoPublish'] extends boolean | undefined ? true : false>
+type _UploadAuthorizationIsBoolean = Assert<UploadInput['autoPublish'] extends boolean | undefined ? true : false>
+type _AutomationStatusIsAvailable = NonNullable<Awaited<ReturnType<HhcWebClient['getOnlineBulletinState']>>['automation']>

@@ -494,3 +494,12 @@ read-only authority field before consumers rely on it for first-watch local card
 progress. A broadcast range version is supplied by the producer; consumers must
 not infer it from package IDs. This card contract was split from the gesture candidate for independent
 delivery. Local packing and generated types do not prove registry publication.
+
+## Automatic bulletin publication inputs
+
+The coordinated 1.1.34 client adds optional publisher-authorized `autoPublish` and
+`notifySubscribers` inputs to PDF completion and online extraction, plus the
+optional `OnlineBulletinState.automation` status/summary. Existing calls normalize
+to draft behavior. Server permissions, source/version checks and publication proof
+remain authoritative. Publish after the canonical CMS producer release, then pin
+the published exact version in Admin. Existing renderer artifacts are unchanged.

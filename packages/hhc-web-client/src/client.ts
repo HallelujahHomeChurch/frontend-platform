@@ -134,6 +134,8 @@ export type BulletinVersion = components['schemas']['BulletinVersion']
 export type BulletinRevision = components['schemas']['BulletinRevision']
 export type OnlineBulletinSelector = operations['getOnlineBulletinState']['parameters']['path']
 export type OnlineBulletinState = components['schemas']['OnlineBulletinAdminState']
+type AutomaticBulletinPublicationInput = {autoPublish?: boolean; notifySubscribers?: boolean}
+export type OnlineBulletinExtractionInput = Omit<components['schemas']['OnlineBulletinExtractionInput'], 'retry' | 'autoPublish' | 'notifySubscribers'> & AutomaticBulletinPublicationInput & {retry?: boolean}
 export type OnlineBulletinDraftInput = components['schemas']['OnlineBulletinDraftInput']
 export type OnlineBulletinCompareInput = components['schemas']['OnlineBulletinCompareInput']
 export type OnlineBulletinComparison = components['schemas']['OnlineBulletinComparison']
@@ -152,7 +154,7 @@ export type PageMeta = components['schemas']['PageMeta']
 export type UploadTarget = components['schemas']['UploadTarget']
 export type CreatedBulletinUpload = components['schemas']['CreatedUpload']
 export type CreateBulletinUploadInput = Omit<components['schemas']['CreateBulletinUploadInput'], 'series' | 'locale'> & BulletinEdition
-export type CompleteBulletinUploadInput = Omit<components['schemas']['CompleteBulletinUploadInput'], 'series' | 'locale'> & BulletinEdition
+export type CompleteBulletinUploadInput = Omit<components['schemas']['CompleteBulletinUploadInput'], 'series' | 'locale' | 'autoPublish' | 'notifySubscribers'> & BulletinEdition & AutomaticBulletinPublicationInput
 export type CustomNotificationSubmission = components['schemas']['CustomNotificationSubmission']
 export type BulletinNotificationPreview = components['schemas']['BulletinNotificationPreview']
 export type BulletinNotificationSubmission = components['schemas']['BulletinNotificationSubmission']
@@ -537,8 +539,8 @@ export function createHhcWebClient(options: {
     async startOnlineBulletinConversion(edition: operations['startOnlineBulletinConversion']['parameters']['path'], version: number, input: components['schemas']['OnlineBulletinConversionInput'], signal?: AbortSignal) {
       return (await unwrap(client.POST('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/conversions', {params: {path: edition, header: {'If-Match': `"${version}"`}}, body: input, cache: 'no-store', signal}))).data
     },
-    async startOnlineBulletinExtraction(edition: operations['startOnlineBulletinExtraction']['parameters']['path'], version: number, input: components['schemas']['OnlineBulletinExtractionInput'], signal?: AbortSignal) {
-      return (await unwrap(client.POST('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/extractions', {params: {path: edition, header: {'If-Match': `"${version}"`}}, body: input, cache: 'no-store', signal}))).data
+    async startOnlineBulletinExtraction(edition: operations['startOnlineBulletinExtraction']['parameters']['path'], version: number, input: OnlineBulletinExtractionInput, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/extractions', {params: {path: edition, header: {'If-Match': `"${version}"`}}, body: {retry: false, autoPublish: false, notifySubscribers: false, ...input}, cache: 'no-store', signal}))).data
     },
     async saveOnlineBulletinDraft(edition: OnlineBulletinSelector, version: number, input: OnlineBulletinDraftInput, signal?: AbortSignal) {
       return (await unwrap(client.PUT('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/draft', {params: {path: edition, header: {'If-Match': `"${version}"`}}, body: input, cache: 'no-store', signal}))).data
@@ -876,7 +878,7 @@ export function createHhcWebClient(options: {
     async completeBulletinUpload(issueId: string, assetId: string, version: number, input: CompleteBulletinUploadInput, signal?: AbortSignal) {
       return (await unwrap(client.POST('/admin/bulletins/{issueId}/assets/{assetId}/complete', {
         params: { path: { issueId, assetId }, header: { 'If-Match': `"${version}"` } },
-        body: input,
+        body: {autoPublish: false, notifySubscribers: false, ...input},
         signal,
       }))).data
     },

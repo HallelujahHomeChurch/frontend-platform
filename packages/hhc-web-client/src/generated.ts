@@ -5198,6 +5198,16 @@ export interface components {
             layoutJobId: string;
         };
         OnlineBulletinExtractionInput: {
+            /**
+             * @description Authorize verified current-source PDF and online publication; requires cms:bulletins:publish in addition to write. Explicit draft or unpublish cancels this intent.
+             * @default false
+             */
+            autoPublish: boolean;
+            /**
+             * @description Requires autoPublish; retains existing once-per-issue notification policy.
+             * @default false
+             */
+            notifySubscribers: boolean;
             /** Format: int64 */
             canonicalVersion: number;
             /** @default false */
@@ -5309,7 +5319,24 @@ export interface components {
             /** @default false */
             retry: boolean;
         };
+        OnlineBulletinAutomation: {
+            autoPublish: boolean;
+            summary: string;
+            /** @enum {string} */
+            changeKind: "" | "first" | "unchanged" | "layout" | "correction" | "structure";
+            update: null | {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                status: "queued" | "planning" | "ready" | "failed" | "superseded";
+                attempts: number;
+                errorCode: string;
+                /** Format: int64 */
+                resultRevision: number | null;
+            };
+        };
         OnlineBulletinAdminState: {
+            automation?: components["schemas"]["OnlineBulletinAutomation"];
             /** Format: uuid */
             issueId: string;
             /** @enum {string} */
@@ -6915,6 +6942,16 @@ export interface components {
             subtitle: string;
         };
         CompleteBulletinUploadInput: {
+            /**
+             * @description General Traditional bulletin only; requires publisher capability. Process and publish only after source and layout verification.
+             * @default false
+             */
+            autoPublish: boolean;
+            /**
+             * @description Requires autoPublish; retains existing notification deduplication.
+             * @default false
+             */
+            notifySubscribers: boolean;
             /** @default general */
             series: components["schemas"]["BulletinSeries"];
             locale: components["schemas"]["BulletinLocale"];

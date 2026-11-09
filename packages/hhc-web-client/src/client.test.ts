@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { HhcWebApiError, createHhcWebClient } from './client'
+import type { OnlineBulletinExtractionInput } from './client'
 import type {
+  CompleteBulletinUploadInput,
+  OnlineBulletinState,
   HomeBannerCompleteInput,
   HomeBannerUploadInput,
   HomePageWriteInputV2,
@@ -15,6 +18,24 @@ describe('hhc web client', () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json({data: {receipt: {}, current: {id: 'rec-1'}, outcome: 'state_changed'}, meta: {}, error: null}))
     const client = createHhcWebClient({baseUrl: '/api', getAccessToken: () => 'admin-token', fetcher})
     await expect(client.publishAdminRecording('rec-1', 1)).rejects.toMatchObject({code: 'invalid_response'})
+  })
+  it('preserves explicit automatic source authorization and processing status', async () => {
+    const automation: NonNullable<OnlineBulletinState['automation']> = {autoPublish:true,summary:'已核對週報內容',changeKind:'layout',update:{id:'update-1',status:'planning',attempts:1,errorCode:'',resultRevision:null}}
+    const fetcher=vi.fn<typeof fetch>().mockImplementation(async()=>Response.json({data:{automation},meta:{},error:null}))
+    const client=createHhcWebClient({baseUrl:'/api',getAccessToken:()=> 'admin-token',fetcher})
+    const edition={issueId:'issue-1',series:'general',contentLocale:'zh-Hant'} as const
+    const upload:CompleteBulletinUploadInput={series:'general',locale:'zh-Hant',title:'週報',subtitle:'',fileName:'weekly.pdf',mimeType:'application/pdf',sizeBytes:100,checksumSha256:'a'.repeat(64),autoPublish:true,notifySubscribers:true}
+    const extraction:OnlineBulletinExtractionInput={canonicalVersion:3,autoPublish:true,notifySubscribers:false}
+    await client.completeBulletinUpload('issue-1','asset-1',3,upload)
+    await client.startOnlineBulletinExtraction(edition,5,extraction)
+    await client.startOnlineBulletinExtraction(edition,5,{canonicalVersion:3})
+    expect((await client.getOnlineBulletinState(edition)).automation).toEqual(automation)
+    const requests=fetcher.mock.calls.map(call=>call[0] as Request)
+    await expect(requests[0]!.json()).resolves.toEqual(upload)
+    await expect(requests[1]!.json()).resolves.toEqual({retry:false,...extraction})
+    await expect(requests[2]!.json()).resolves.toEqual({canonicalVersion:3,retry:false,autoPublish:false,notifySubscribers:false})
+    expect(requests[0]!.headers.get('If-Match')).toBe('"3"')
+    expect(requests[1]!.headers.get('If-Match')).toBe('"5"')
   })
   it('uses independent Online CAS and no-store for every editor operation', async () => {
     const fetcher=vi.fn<typeof fetch>().mockImplementation(async()=>new Response(JSON.stringify({data:{},meta:{},error:null}),{headers:{'Content-Type':'application/json'}}))
