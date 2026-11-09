@@ -1574,7 +1574,7 @@ export interface paths {
         put?: never;
         /**
          * Queue current source extraction or explicitly retry a failed job
-         * @description Source asset and checksum are verified server-side. Initial If-Match is the quoted Online version zero; later calls use the current Online ETag. canonicalVersion independently fences PDF or metadata replacement. Identical source/template/extractor identities reuse the existing job without another audit mutation. retry=true resets only a failed job without an immutable snapshot. After a parser upgrade, retrying a non-superseded failed same-source job without a snapshot creates a new current-parser job under the same version fences. Re-upload never overwrites Base, Local, Incoming, or publication. A superseded completed snapshot cannot be rerun; edit or restore the existing revision instead.
+         * @description Source asset and checksum are verified server-side. Initial If-Match is the quoted Online version zero; later calls use the current Online ETag. canonicalVersion independently fences PDF or metadata replacement. Identical source/template/extractor identities reuse the existing job without another audit mutation. retry=true resets only a failed job without an immutable snapshot. After a parser upgrade, retrying a non-superseded failed same-source job without a snapshot creates a new current-parser job under the same version fences. Without autoPublish, re-upload preserves the existing manual comparison workflow. autoPublish captures publisher authorization for verified semantic adoption, historical annotation fallback and fresh layout before PDF/online publication. Inference never grants authority. A superseded completed snapshot cannot be rerun; edit or restore the existing revision instead.
          */
         post: operations["startOnlineBulletinExtraction"];
         delete?: never;
@@ -5198,6 +5198,16 @@ export interface components {
             layoutJobId: string;
         };
         OnlineBulletinExtractionInput: {
+            /**
+             * @description Authorize verified current-source PDF and online publication; requires cms:bulletins:publish in addition to write. Explicit draft or unpublish cancels this intent.
+             * @default false
+             */
+            autoPublish: boolean;
+            /**
+             * @description Requires autoPublish; retains existing once-per-issue notification policy.
+             * @default false
+             */
+            notifySubscribers: boolean;
             /** Format: int64 */
             canonicalVersion: number;
             /** @default false */
@@ -5309,7 +5319,24 @@ export interface components {
             /** @default false */
             retry: boolean;
         };
+        OnlineBulletinAutomation: {
+            autoPublish: boolean;
+            summary: string;
+            /** @enum {string} */
+            changeKind: "" | "first" | "unchanged" | "layout" | "correction" | "structure";
+            update: null | {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                status: "queued" | "planning" | "ready" | "failed" | "superseded";
+                attempts: number;
+                errorCode: string;
+                /** Format: int64 */
+                resultRevision: number | null;
+            };
+        };
         OnlineBulletinAdminState: {
+            automation?: components["schemas"]["OnlineBulletinAutomation"];
             /** Format: uuid */
             issueId: string;
             /** @enum {string} */
@@ -6915,6 +6942,16 @@ export interface components {
             subtitle: string;
         };
         CompleteBulletinUploadInput: {
+            /**
+             * @description General Traditional bulletin only; requires publisher capability. Process and publish only after source and layout verification.
+             * @default false
+             */
+            autoPublish: boolean;
+            /**
+             * @description Requires autoPublish; retains existing notification deduplication.
+             * @default false
+             */
+            notifySubscribers: boolean;
             /** @default general */
             series: components["schemas"]["BulletinSeries"];
             locale: components["schemas"]["BulletinLocale"];

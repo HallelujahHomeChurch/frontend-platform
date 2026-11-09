@@ -525,6 +525,16 @@
           "canonicalVersion"
         ],
         "properties": {
+          "autoPublish": {
+            "type": "boolean",
+            "default": false,
+            "description": "Authorize verified current-source PDF and online publication; requires cms:bulletins:publish in addition to write. Explicit draft or unpublish cancels this intent."
+          },
+          "notifySubscribers": {
+            "type": "boolean",
+            "default": false,
+            "description": "Requires autoPublish; retains existing once-per-issue notification policy."
+          },
           "canonicalVersion": {
             "type": "integer",
             "format": "int64",
@@ -928,6 +938,86 @@
           }
         }
       },
+      "OnlineBulletinAutomation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "autoPublish",
+          "update",
+          "summary",
+          "changeKind"
+        ],
+        "properties": {
+          "autoPublish": {
+            "type": "boolean"
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 800
+          },
+          "changeKind": {
+            "type": "string",
+            "enum": [
+              "",
+              "first",
+              "unchanged",
+              "layout",
+              "correction",
+              "structure"
+            ]
+          },
+          "update": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "status",
+                  "attempts",
+                  "errorCode",
+                  "resultRevision"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "queued",
+                      "planning",
+                      "ready",
+                      "failed",
+                      "superseded"
+                    ]
+                  },
+                  "attempts": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 10
+                  },
+                  "errorCode": {
+                    "type": "string"
+                  },
+                  "resultRevision": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "format": "int64",
+                    "minimum": 1
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
       "OnlineBulletinAdminState": {
         "type": "object",
         "additionalProperties": false,
@@ -952,6 +1042,9 @@
           "layout"
         ],
         "properties": {
+          "automation": {
+            "$ref": "#/components/schemas/OnlineBulletinAutomation"
+          },
           "issueId": {
             "type": "string",
             "format": "uuid"
