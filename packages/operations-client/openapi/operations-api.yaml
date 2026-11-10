@@ -9,45 +9,11 @@ tags:
 x-hhc-service: operations-api
 x-hhc-owner: HHC Platform
 x-hhc-repository: HallelujahHomeChurch/operations-api
+x-hhc-public-contract-source: 74467d366b0f16659d4cc4c67e392eab62e89d9e
 servers:
   - url: /
     description: Direct service probe base.
 paths:
-  /priv/operations/member-qualifications:
-    post:
-      tags: [Operations]
-      operationId: checkMemberQualification
-      summary: Check current church membership without exposing member details
-      x-hhc-visibility: private
-      x-hhc-callers: [account-api, hhc-web-api]
-      security: [{ daprCallerAppID: [] }]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: false
-              required: [subjectId]
-              properties:
-                subjectId: { type: string, format: uuid }
-      responses:
-        '200':
-          description: Current membership qualification, private no-store
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: false
-                required: [subjectId, qualified, version]
-                properties:
-                  subjectId: { type: string, format: uuid }
-                  qualified: { type: boolean }
-                  version: { type: string, pattern: '^[a-f0-9]{64}$' }
-        '400': { description: Invalid request or duplicate caller }
-        '401': { description: Missing caller }
-        '403': { description: Caller not admitted }
-        '503': { description: Membership authority unavailable }
   /api/meetings:
     get:
       tags: [Operations]
@@ -306,7 +272,7 @@ paths:
       x-hhc-required-permission: operations:meetings:read
       security: [{ gatewayPrincipal: [] }]
       parameters: [{ $ref: '#/components/parameters/IncludeArchived' }]
-      responses: { '200': { description: Scoped meetings, content: { application/json: { schema: { $ref: '#/components/schemas/MeetingList' } } } }, '503': { description: Authorization unavailable } }
+      responses: { '200': { description: Scoped meetings, content: { application/json: { schema: { $ref: '#/components/schemas/AdminMeetingList' } } } }, '503': { description: Authorization unavailable } }
     post:
       tags: [Operations]
       operationId: createAdminMeeting
@@ -378,219 +344,6 @@ paths:
       parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/IfMatch' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CollectionBindingInput' } } } }
       responses: { '200': { description: Meeting, content: { application/json: { schema: { $ref: '#/components/schemas/Meeting' } } } }, '403': { description: Scope denied }, '412': { description: Version mismatch }, '503': { description: Authorization unavailable } }
-  /priv/operations/org-units:
-    get:
-      tags: [Operations]
-      operationId: listOrgUnits
-      summary: List organization units for an allowlisted service caller
-      x-hhc-visibility: private
-      x-hhc-callers: [hhc-web-api]
-      security: [{ daprCallerAppID: [] }]
-      responses:
-        '200': { description: Organization units }
-        '401': { description: Missing caller identity }
-        '403': { description: Caller is not allowlisted }
-    post:
-      tags: [Operations]
-      operationId: createOrgUnit
-      summary: Create an organization unit
-      x-hhc-visibility: private
-      x-hhc-callers: [hhc-web-api]
-      security: [{ daprCallerAppID: [], gatewayPrincipal: [] }]
-      parameters: [{ $ref: '#/components/parameters/ActorUserID' }, { $ref: '#/components/parameters/IdempotencyKey' }]
-      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/OrgUnitInput' } } } }
-      responses: { '200': { description: Organization unit, content: { application/json: { schema: { $ref: '#/components/schemas/OrgUnit' } } } }, '400': { description: Invalid mutation }, '409': { description: Conflict } }
-  /priv/operations/org-units/{id}:
-    get:
-      tags: [Operations]
-      operationId: getOrgUnit
-      summary: Get an organization unit for an allowlisted service caller
-      x-hhc-visibility: private
-      x-hhc-callers: [hhc-web-api]
-      security: [{ daprCallerAppID: [] }]
-      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
-      responses:
-        '200': { description: Organization unit }
-        '404': { description: Organization unit not found }
-    put:
-      tags: [Operations]
-      operationId: updateOrgUnit
-      summary: Update an organization unit
-      x-hhc-visibility: private
-      x-hhc-callers: [hhc-web-api]
-      security: [{ daprCallerAppID: [], gatewayPrincipal: [] }]
-      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/ActorUserID' }, { $ref: '#/components/parameters/IfMatch' }]
-      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/OrgUnitInput' } } } }
-      responses: { '200': { description: Organization unit, content: { application/json: { schema: { $ref: '#/components/schemas/OrgUnit' } } } }, '400': { description: Invalid mutation }, '412': { description: Version mismatch } }
-  /priv/operations/org-units/{id}/{action}:
-    post:
-      tags: [Operations]
-      operationId: transitionOrgUnitStatus
-      summary: Change an organization unit status
-      x-hhc-visibility: private
-      x-hhc-callers: [hhc-web-api]
-      security: [{ daprCallerAppID: [], gatewayPrincipal: [] }]
-      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/StatusAction' }, { $ref: '#/components/parameters/ActorUserID' }, { $ref: '#/components/parameters/IfMatch' }]
-      responses: { '200': { description: Organization unit, content: { application/json: { schema: { $ref: '#/components/schemas/OrgUnit' } } } }, '400': { description: Invalid or same-state transition }, '412': { description: Version mismatch } }
-  /priv/operations/meetings:
-    get:
-      tags: [Operations]
-      operationId: listMeetings
-      summary: List operational meetings for an allowlisted service caller
-      x-hhc-visibility: private
-      x-hhc-callers: [hhc-web-api]
-      security: [{ daprCallerAppID: [] }]
-      responses:
-        '200': { description: Meetings }
-    post:
-      tags: [Operations]
-      operationId: createMeeting
-      summary: Create a meeting kernel record
-      x-hhc-visibility: private
-      x-hhc-callers: [hhc-web-api]
-      security: [{ daprCallerAppID: [], gatewayPrincipal: [] }]
-      parameters: [{ $ref: '#/components/parameters/ActorUserID' }, { $ref: '#/components/parameters/IdempotencyKey' }]
-      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/MeetingInput' } } } }
-      responses: { '200': { description: Meeting, content: { application/json: { schema: { $ref: '#/components/schemas/Meeting' } } } }, '400': { description: Invalid mutation }, '409': { description: Conflict } }
-  /priv/operations/resources:
-    get:
-      tags: [Operations]
-      operationId: listResources
-      summary: List resources for an allowlisted service caller
-      x-hhc-visibility: private
-      x-hhc-callers: [hhc-web-api]
-      security: [{ daprCallerAppID: [] }]
-      responses: { '200': { description: Resources } }
-    post:
-      tags: [Operations]
-      operationId: createResource
-      summary: Create a resource kernel record
-      x-hhc-visibility: private
-      x-hhc-callers: [hhc-web-api]
-      security: [{ daprCallerAppID: [], gatewayPrincipal: [] }]
-      parameters: [{ $ref: '#/components/parameters/ActorUserID' }, { $ref: '#/components/parameters/IdempotencyKey' }]
-      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceInput' } } } }
-      responses: { '200': { description: Resource, content: { application/json: { schema: { $ref: '#/components/schemas/Resource' } } } }, '400': { description: Invalid mutation }, '409': { description: Conflict } }
-  /priv/operations/resources/{id}:
-    get:
-      tags: [Operations]
-      operationId: getResource
-      summary: Get a resource
-      x-hhc-visibility: private
-      x-hhc-callers: [hhc-web-api]
-      security: [{ daprCallerAppID: [] }]
-      parameters: [{ $ref: '#/components/parameters/ID' }]
-      responses: { '200': { description: Resource }, '404': { description: Resource not found } }
-    put:
-      tags: [Operations]
-      operationId: updateResource
-      summary: Update a resource
-      x-hhc-visibility: private
-      x-hhc-callers: [hhc-web-api]
-      security: [{ daprCallerAppID: [], gatewayPrincipal: [] }]
-      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/ActorUserID' }, { $ref: '#/components/parameters/IfMatch' }]
-      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceInput' } } } }
-      responses: { '200': { description: Resource, content: { application/json: { schema: { $ref: '#/components/schemas/Resource' } } } }, '400': { description: Invalid mutation }, '412': { description: Version mismatch } }
-  /priv/operations/resources/{id}/{action}:
-    post:
-      tags: [Operations]
-      operationId: transitionResourceStatus
-      summary: Change a resource status
-      x-hhc-visibility: private
-      x-hhc-callers: [hhc-web-api]
-      security: [{ daprCallerAppID: [], gatewayPrincipal: [] }]
-      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/StatusAction' }, { $ref: '#/components/parameters/ActorUserID' }, { $ref: '#/components/parameters/IfMatch' }]
-      responses: { '200': { description: Resource, content: { application/json: { schema: { $ref: '#/components/schemas/Resource' } } } }, '400': { description: Invalid or same-state transition }, '412': { description: Version mismatch } }
-  /priv/operations/meetings/{id}:
-    get:
-      tags: [Operations]
-      operationId: getMeeting
-      summary: Get a meeting with overrides and collection bindings
-      x-hhc-visibility: private
-      x-hhc-callers: [hhc-web-api]
-      security: [{ daprCallerAppID: [] }]
-      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
-      responses: { '200': { description: Meeting detail } }
-    put:
-      tags: [Operations]
-      operationId: updateMeeting
-      summary: Update a meeting
-      x-hhc-visibility: private
-      x-hhc-callers: [hhc-web-api]
-      security: [{ daprCallerAppID: [], gatewayPrincipal: [] }]
-      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/ActorUserID' }, { $ref: '#/components/parameters/IfMatch' }]
-      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/MeetingInput' } } } }
-      responses: { '200': { description: Meeting, content: { application/json: { schema: { $ref: '#/components/schemas/Meeting' } } } }, '400': { description: Invalid mutation }, '412': { description: Version mismatch } }
-  /priv/operations/meetings/{id}/{action}:
-    post:
-      tags: [Operations]
-      operationId: transitionMeetingStatus
-      summary: Change a meeting status
-      x-hhc-visibility: private
-      x-hhc-callers: [hhc-web-api]
-      security: [{ daprCallerAppID: [], gatewayPrincipal: [] }]
-      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/StatusAction' }, { $ref: '#/components/parameters/ActorUserID' }, { $ref: '#/components/parameters/IfMatch' }]
-      responses: { '200': { description: Meeting, content: { application/json: { schema: { $ref: '#/components/schemas/Meeting' } } } }, '400': { description: Invalid or same-state transition }, '412': { description: Version mismatch } }
-  /priv/operations/meetings/{id}/overrides/{date}:
-    put:
-      tags: [Operations]
-      operationId: putMeetingOverride
-      summary: Put a meeting occurrence override
-      x-hhc-visibility: private
-      x-hhc-callers: [hhc-web-api]
-      security: [{ daprCallerAppID: [], gatewayPrincipal: [] }]
-      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/OccurrenceDate' }, { $ref: '#/components/parameters/ActorUserID' }, { $ref: '#/components/parameters/IfMatch' }]
-      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/OccurrenceOverrideInput' } } } }
-      responses: { '200': { description: Occurrence override, content: { application/json: { schema: { $ref: '#/components/schemas/OccurrenceOverride' } } } }, '400': { description: Invalid mutation }, '412': { description: Version mismatch } }
-    delete:
-      tags: [Operations]
-      operationId: deleteMeetingOverride
-      summary: Delete a meeting occurrence override
-      x-hhc-visibility: private
-      x-hhc-callers: [hhc-web-api]
-      security: [{ daprCallerAppID: [], gatewayPrincipal: [] }]
-      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/OccurrenceDate' }, { $ref: '#/components/parameters/ActorUserID' }, { $ref: '#/components/parameters/IfMatch' }]
-      responses: { '200': { description: Meeting, content: { application/json: { schema: { $ref: '#/components/schemas/Meeting' } } } }, '400': { description: Invalid mutation }, '404': { description: Override not found }, '412': { description: Version mismatch } }
-  /priv/operations/meetings/{id}/collections:
-    put:
-      tags: [Operations]
-      operationId: replaceMeetingCollections
-      summary: Replace meeting collection bindings
-      x-hhc-visibility: private
-      x-hhc-callers: [hhc-web-api]
-      security: [{ daprCallerAppID: [], gatewayPrincipal: [] }]
-      parameters: [{ $ref: '#/components/parameters/ID' }, { $ref: '#/components/parameters/ActorUserID' }, { $ref: '#/components/parameters/IfMatch' }]
-      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CollectionBindingInput' } } } }
-      responses: { '200': { description: Meeting, content: { application/json: { schema: { $ref: '#/components/schemas/Meeting' } } } }, '400': { description: Invalid mutation }, '412': { description: Version mismatch } }
-  /priv/operations/occurrences:
-    get:
-      tags: [Operations]
-      operationId: listOccurrences
-      summary: Resolve meeting occurrences in a bounded range
-      x-hhc-visibility: private
-      x-hhc-callers: [hhc-web-api]
-      security: [{ daprCallerAppID: [] }]
-      responses: { '200': { description: Occurrences } }
-  /priv/operations/meeting-occurrences:
-    get:
-      tags: [Operations]
-      operationId: listLineMeetingOccurrences
-      summary: List private meeting occurrences for the LINE schedule reader
-      x-hhc-visibility: private
-      x-hhc-callers: [hhc-line-function-bot]
-      security: [{ daprCallerAppID: [] }]
-      parameters: [{ name: from, in: query, schema: { type: string, format: date-time } }, { name: to, in: query, schema: { type: string, format: date-time } }]
-      responses: { '200': { description: Occurrences envelope }, '400': { description: Invalid window }, '401': { description: Missing trusted caller }, '403': { description: Caller is not the LINE bot } }
-  /priv/operations/sync-windows:
-    get:
-      tags: [Operations]
-      operationId: listSyncWindows
-      summary: List collection-bound media sync windows
-      x-hhc-visibility: private
-      x-hhc-callers: [hhc-web-api]
-      x-hhc-workload-principals: [asset-scan-warmer, hhc-line-function-bot]
-      security: [{ daprCallerAppID: [] }, { workloadPrincipal: [] }]
-      responses: { '200': { description: Sync windows, content: { application/json: { schema: { $ref: '#/components/schemas/MediaSyncWindowsEnvelope' } } } }, '401': { description: Missing trusted caller or workload identity } }
   /api/admin/operations/account-resolutions:
     post:
       tags: [Operations]
@@ -1140,45 +893,6 @@ paths:
           description: Organization role assignment
           content: { application/json: { schema: { $ref: '#/components/schemas/OrgRole' } } }
         '412': { description: Version mismatch }
-  /priv/operations/entitlement-checks:
-    post:
-      tags: [Operations]
-      operationId: checkEntitlements
-      summary: Resolve exact member entitlement decisions for Engagement
-      x-hhc-visibility: private
-      x-hhc-callers: [engagement-api]
-      security: [{ daprCallerAppID: [] }]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/EntitlementCheckRequest' }
-      responses:
-        '200':
-          description: Ordered entitlement decisions
-          content: { application/json: { schema: { $ref: '#/components/schemas/EntitlementCheckResponse' } } }
-        '400': { description: Invalid subject or entitlement code list }
-        '401': { description: Missing caller identity }
-        '403': { description: Caller is not allowlisted }
-        '503': { description: Authorization facts are unavailable }
-  /priv/operations/managed-audiences/resolve:
-    post:
-      tags: [Operations]
-      operationId: resolveManagedAudience
-      summary: Authorize a responsible person and resolve a deduplicated organization audience
-      x-hhc-visibility: private
-      x-hhc-callers: [engagement-api]
-      security: [{ daprCallerAppID: [] }]
-      parameters:
-        - { name: X-HHC-Actor-ID, in: header, required: true, schema: { type: string, format: uuid } }
-        - { name: X-HHC-Request-ID, in: header, required: true, schema: { type: string } }
-      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedAudienceRequest' } } } }
-      responses:
-        '200': { description: Deduplicated active Account audience, content: { application/json: { schema: { $ref: '#/components/schemas/ManagedAudience' } } } }
-        '400': { description: Invalid provenance or body }
-        '401': { description: Missing caller identity }
-        '403': { description: Caller or responsibility scope denied }
-        '503': { description: Authorization facts are unavailable }
   /api/operations/manage/roots:
     get:
       tags: [Operations]
@@ -1640,89 +1354,6 @@ paths:
       security: [{ gatewayPrincipal: [] }]
       parameters: [{ name: blockId, in: path, required: true, schema: { type: string, format: uuid } }, { $ref: '#/components/parameters/IfMatch' }]
       responses: { '200': { description: Cancelled maintenance block, content: { application/json: { schema: { $ref: '#/components/schemas/ResourceMaintenanceBlock' } } } }, '400': { description: Immutable terminal state }, '412': { description: version_mismatch } }
-  /priv/operations/account-cleanup:
-    post:
-      tags: [Operations]
-      operationId: cleanupOperationsAccountData
-      summary: Remove Account-linked Operations data for manual Account deletion
-      x-hhc-visibility: private
-      x-hhc-callers: [account-api]
-      security: [{ daprCallerAppID: [] }]
-      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/AccountCleanupRequest' } } } }
-      responses:
-        '200': { description: Retry-safe cleanup result, content: { application/json: { schema: { $ref: '#/components/schemas/AccountCleanupEnvelope' } } } }
-        '400': { description: Invalid request }
-        '401': { description: Missing caller identity }
-        '403': { description: Caller is not Account API }
-        '500': { description: Internal owner failure, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
-  /priv/operations/member-details-access-check:
-    post:
-      tags: [Operations]
-      operationId: checkMemberDetailsAccess
-      summary: Check effective church membership for Account member details
-      description: Active church membership without a processing restriction. Does not grant access based on email verification, staff scopes or entitlements.
-      x-hhc-visibility: private
-      x-hhc-callers: [account-api]
-      security: [{ daprCallerAppID: [] }]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: false
-              required: [accountUserId]
-              properties:
-                accountUserId: { type: string, format: uuid }
-      responses:
-        '200':
-          description: Eligibility only; no member data. Cache-Control private, no-store.
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: false
-                required: [eligible]
-                properties:
-                  eligible: { type: boolean }
-        '400': { description: Invalid request or body exceeding 1024 bytes }
-        '401': { description: Missing caller identity }
-        '403': { description: Caller is not Account API }
-        '503': { description: Membership lookup unavailable, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
-  /priv/operations/member-details-retention:
-    post:
-      tags: [Operations]
-      operationId: getMemberDetailsRetention
-      summary: Get the expired membership-gap watermark for Account retention
-      description: Latest matured deadline (ended-at plus 720 hours) of an uninterrupted membership gap. Renewing within the grace period cancels that gap; renewing later does not resurrect expired data. DSR processing restrictions do not start expiry. Missing or incomplete membership history fails closed. Account must compare record creation time and version before deleting; this is not authorization to read private data.
-      x-hhc-visibility: private
-      x-hhc-callers: [account-api]
-      security: [{ daprCallerAppID: [] }]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: false
-              required: [accountUserId]
-              properties:
-                accountUserId: { type: string, format: uuid }
-      responses:
-        '200':
-          description: Retention metadata only; no member data. Cache-Control private, no-store.
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: false
-                required: [expiredBefore]
-                properties:
-                  expiredBefore: { type: [string, "null"], format: date-time }
-        '400': { description: Invalid request or body exceeding 1024 bytes }
-        '401': { description: Missing caller identity }
-        '403': { description: Caller is not Account API }
-        '503': { description: Membership lookup unavailable, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
   /health:
     get:
       tags: [Operations]
@@ -2177,6 +1808,18 @@ components:
         endsAt: { type: string, format: date-time }
         status: { type: string, enum: [scheduled, cancelled] }
         version: { type: integer, minimum: 1 }
+    AdminMeetingList:
+      type: array
+      items:
+        allOf:
+          - { $ref: '#/components/schemas/Meeting' }
+          - type: object
+            required: [collectionIds]
+            properties:
+              collectionIds:
+                type: array
+                description: Enabled collection bindings for this already authorized meeting. Presentation only; reread detail and version before saving.
+                items: { type: string }
     MeetingList:
       type: array
       items: { $ref: '#/components/schemas/Meeting' }
@@ -2342,12 +1985,12 @@ components:
     ManagedMemberSummary:
       type: object
       additionalProperties: false
-      required: [memberId, displayName, email]
+      required: [memberId, displayName]
       properties:
         isResponsible: { type: boolean, description: Active responsibility assigned directly to the listed unit. }
         memberId: { type: string, format: uuid }
         displayName: { type: string }
-        email: { type: string, format: email }
+        email: { type: string, format: email, description: Present only for viewers with existing responsibility scope for the unit. }
     ManagedMemberPage:
       type: object
       additionalProperties: false

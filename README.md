@@ -503,3 +503,9 @@ optional `OnlineBulletinState.automation` status/summary. Existing calls normali
 to draft behavior. Server permissions, source/version checks and publication proof
 remain authoritative. Publish after the canonical CMS producer release, then pin
 the published exact version in Admin. Existing renderer artifacts are unchanged.
+
+## Operations public contract candidate
+
+The Operations subset is synchronized from producer `74467d366b0f16659d4cc4c67e392eab62e89d9e` for optional managed-member email and the Admin meeting list collection IDs. The 20 pre-existing private service paths are removed from this browser SDK export; consumers must not use it for service-to-service calls. Email remains subject to the producer’s privacy scope. Admin consumers must keep their old-producer collection-ID fallback during the rollback window.
+
+The coordinated 1.1.35 release carries this contract through the existing version-tag workflow after merge and required verification. That workflow publishes all seven packages and the immutable renderer image; it does not activate a consumer or change frozen renderer artifacts. Website/Admin must pin the actually published Operations client and registry lockfiles, retain the old-producer fallbacks, and pass their required checks before release. Earlier candidate artifacts remain identified by their original commit and SHA-256; candidate integration is development evidence only.

@@ -60,6 +60,7 @@ function collectExportTargets(value) {
 
 
 const operationsSpec = await readFile(new URL('operations-client/openapi/operations-api.yaml', packageRoot), 'utf8');
+assert.doesNotMatch(operationsSpec, /^  \/priv\//m, 'browser Operations SDK must not expose private service routes');
 for (const action of ['archive', 'restore']) {
   const block = operationsSpec.split(`  /api/operations/manage/org-units/{unitId}/${action}:`)[1].split('\n  /')[0];
   assert.match(block, /deprecated: true/);
