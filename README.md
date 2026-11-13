@@ -12,6 +12,20 @@ Shared, versioned frontend packages for HHC web applications:
 
 Packages are published to GitHub Packages from version tags.
 
+The bulletin publication reliability additions are prepared for coordinated
+release 1.1.36. They add explicit
+PDF publication options, exact qualified-draft recovery receipts and optional
+Admin production progress through the existing transport. Omitted publication
+options preserve the legacy request; recovery never retries a mutation
+automatically. A replay returns the original receipt, so refresh current state
+before interpreting availability. Capability fields are server evidence, not
+client authorization. The progress contract reserves layout/publication phases;
+the current producer reports scan/recognition/reconciliation, while existing
+channel states remain authoritative. Builds and local tarballs do not establish a
+registry release: verify the normal version-tag workflow and registry integrity
+before consumers pin the exact published version. Package publication does not
+activate producer capabilities or deploy an Admin consumer.
+
 ## Isolated bulletin renderer
 
 The bulletin worker uses the same compiled renderer, CSS, fixed assets and legal
@@ -176,12 +190,13 @@ and Unicode-scalar offsets remain unchanged.
 
 ## Donation Sandbox source gate
 
-The Donation packages use the local delivery 1A Donation API contract, not an
-accepted or deployed bank integration. They retain the workspace version for
-local packing only; neither Donation package has been published. Before consumer
-release, release the canonical API contract and bump the coordinated workspace
-version through the existing tag/publish workflow. Consumers must use an actually
-published exact version; local tarball overrides are development evidence only.
+The Donation packages originated with the delivery 1A API contract. Subsequent
+coordinated releases, including the verified v1.1.35 release, published both
+packages; the earlier local-only publication status is historical. Publication
+does not accept or deploy a bank integration or enable Sandbox operations. Keep
+canonical API compatibility and independent runtime/consumer acceptance gates.
+Consumers must use an actually published exact version through the normal
+coordinated tag workflow; local tarball overrides are development evidence only.
 
 `createSandboxDonationClient` fixes routes to Admin Sandbox and receives existing
 Account runtime token/401-refresh functions. `DonationForm` accepts a typed

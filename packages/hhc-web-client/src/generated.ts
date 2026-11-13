@@ -1975,6 +1975,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/bulletins/{issueId}/online/general/zh-Hant/recover-publication": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publish an existing qualified Traditional online draft
+         * @description Capability-gated synchronous CMS transaction. Requires current human publication scope, exact source/canonical/Local and immutable semantic and measured layout evidence. Never queues extraction or layout, never creates notifications, and preserves original authorizer evidence. Successful recovery may trigger the existing Simplified derivation. The same actor/key/input replays its original receipt after withdrawal without republishing; changed input conflicts. Qualification conflicts return sanitized meta.blockers. All responses are private, no-store.
+         */
+        post: operations["recoverOnlineBulletinPublication"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/bulletins/{issueId}/publish": {
         parameters: {
             query?: never;
@@ -5320,6 +5340,7 @@ export interface components {
             retry: boolean;
         };
         OnlineBulletinAutomation: {
+            disposition?: components["schemas"]["PublicationDisposition"];
             autoPublish: boolean;
             summary: string;
             /** @enum {string} */
@@ -5336,6 +5357,8 @@ export interface components {
             };
         };
         OnlineBulletinAdminState: {
+            capabilities?: components["schemas"]["OnlineBulletinCapabilities"];
+            production?: components["schemas"]["OnlineBulletinProduction"];
             automation?: components["schemas"]["OnlineBulletinAutomation"];
             /** Format: uuid */
             issueId: string;
@@ -6892,6 +6915,7 @@ export interface components {
             version: number;
         };
         Workflow: {
+            onlinePublication?: components["schemas"]["BulletinOnlinePublicationOutcome"];
             /** Format: uuid */
             id: string;
             status: string;
@@ -7036,10 +7060,124 @@ export interface components {
             unpublishOnline?: false;
             onlineVersion?: unknown;
         });
+        BulletinOnlinePublicationOutcome: {
+            /** @enum {string} */
+            outcome: "preserved" | "absent" | "terminal" | "cancelled";
+            disposition?: components["schemas"]["PublicationDisposition"];
+        };
+        OnlineBulletinCapabilities: {
+            /** @description Inactive until every publisher and worker supports durable intent epochs. */
+            explicitOnlinePublication: boolean;
+            qualifiedDraftRecovery: boolean;
+        };
+        /** @description Latest append-only disposition for a known intent. Omitted for legacy history without evidence; a false autoPublish flag never implies a historical cancellation reason. */
+        PublicationDisposition: {
+            /** Format: uuid */
+            intentId: string;
+            /** Format: int64 */
+            epoch: number;
+            /** @enum {string} */
+            status: "authorized" | "running" | "completed" | "cancelled" | "superseded" | "failed";
+            /** @enum {string} */
+            reasonCode: "automatic_authorized" | "automatic_running" | "automatic_published" | "pdf_only" | "source_replaced" | "canonical_edited" | "draft_edited" | "explicit_draft" | "unpublished" | "manual_published" | "recovery_authorized" | "recovery_started" | "recovery_published" | "processing_failed" | "manual_state_change";
+            /** Format: date-time */
+            changedAt: string;
+            /** Format: int64 */
+            canonicalVersion: number;
+            sourceAssetId: string;
+            sourceChecksum: string;
+            /** Format: uuid */
+            documentId?: string;
+            /** Format: int64 */
+            revision?: number;
+            /** Format: uuid */
+            receiptId?: string;
+        };
+        /** @enum {string} */
+        OnlineBulletinRecoveryBlocker: "missing_local" | "pdf_not_published" | "source_changed" | "stale_metadata" | "review_required" | "incompatible_proof" | "layout_not_ready" | "semantic_proof_missing";
+        OnlineBulletinRecoveryBlockedEnvelope: {
+            data: null;
+            meta: {
+                blockers: components["schemas"]["OnlineBulletinRecoveryBlocker"][];
+            };
+            error: {
+                /** @constant */
+                code: "recovery_blocked";
+                message: string;
+            };
+        };
+        OnlineBulletinRecoveryInput: {
+            /** Format: int64 */
+            canonicalVersion: number;
+            /** Format: int64 */
+            revision: number;
+            layoutValidationHash: string;
+        };
+        OnlineBulletinRecoveryReceipt: {
+            /** Format: uuid */
+            id: string;
+            operationKey: string;
+            /** Format: uuid */
+            documentId: string;
+            /** Format: int64 */
+            revision: number;
+            /** Format: int64 */
+            canonicalVersion: number;
+            /** Format: int64 */
+            onlineVersion: number;
+            layoutValidationHash: string;
+            /** @enum {string} */
+            outcome: "published";
+            /** Format: date-time */
+            createdAt: string;
+        };
+        OnlineBulletinRecoveryResult: {
+            receipt: components["schemas"]["OnlineBulletinRecoveryReceipt"];
+            publication: components["schemas"]["OnlineBulletinConfirmedRevision"];
+            /** @description Returns the immutable original outcome after withdrawal without publishing again. */
+            replayed: boolean;
+        };
+        /** @description Admin-only progress currently reports scan, recognition and reconciliation. Layout and publication enum values are reserved; existing layout/publication fields remain the authority for later stages. Verification subphase is reserved. Progress never qualifies content for publication. */
+        OnlineBulletinProduction: {
+            sourceIdentity: string;
+            /** Format: uuid */
+            jobId: string;
+            attemptId: string;
+            /** Format: int64 */
+            progressVersion: number;
+            /** @enum {string} */
+            phase: "scan" | "recognition" | "reconciliation" | "layout" | "publication";
+            /** @enum {string} */
+            status: "queued" | "running" | "waiting" | "completed" | "failed" | "cancelled" | "superseded";
+            totalPages: number | null;
+            currentPage: number | null;
+            verifiedPages: number;
+            /** @enum {string} */
+            subphase: "" | "source" | "recognition" | "verification" | "verified" | "checkpoint_reuse" | "snapshot_reuse";
+            /** Format: date-time */
+            startedAt: string | null;
+            /** Format: date-time */
+            lastProgressAt: string | null;
+            /** Format: date-time */
+            heartbeatAt: string | null;
+            /** Format: date-time */
+            observedAt: string;
+            verifiedReuseCount: number;
+        };
         PublicationInput: {
             /** @default general */
             series: components["schemas"]["BulletinSeries"];
             locale: components["schemas"]["BulletinLocale"];
+            /**
+             * @description Capability-gated explicit choice. Omission or continue_automatic preserves existing exact-source authority only. pdf_only cancels pending automatic online work before starting the independent PDF workflow; existing online publication remains available.
+             * @enum {string}
+             */
+            onlinePublication?: "continue_automatic" | "pdf_only";
+            /**
+             * Format: int64
+             * @description Only valid and required with pdf_only; zero means no online document exists.
+             */
+            onlineVersion?: number;
             /**
              * @description Queue one member-only Email and Web Push notification pair for the first notification-enabled publication in this series. Ignored by unpublish operations.
              * @default false
@@ -12432,6 +12570,57 @@ export interface operations {
             401: components["responses"]["AdminUnauthorized"];
             403: components["responses"]["AdminForbidden"];
             412: components["responses"]["Error"];
+        };
+    };
+    recoverOnlineBulletinPublication: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+                "Idempotency-Key": string;
+            };
+            path: {
+                issueId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnlineBulletinRecoveryInput"];
+            };
+        };
+        responses: {
+            /** @description Immutable recovery receipt and original publication outcome */
+            200: {
+                headers: {
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OnlineBulletinRecoveryResult"];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            /** @description CAS/key conflict or sanitized saved-draft qualification blockers */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnlineBulletinRecoveryBlockedEnvelope"] | components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
         };
     };
     publishBulletin: {

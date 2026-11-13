@@ -134,6 +134,18 @@ export type BulletinVersion = components['schemas']['BulletinVersion']
 export type BulletinRevision = components['schemas']['BulletinRevision']
 export type OnlineBulletinSelector = operations['getOnlineBulletinState']['parameters']['path']
 export type OnlineBulletinState = components['schemas']['OnlineBulletinAdminState']
+export type OnlineBulletinCapabilities = components['schemas']['OnlineBulletinCapabilities']
+export type OnlineBulletinProduction = components['schemas']['OnlineBulletinProduction']
+export type PublicationDisposition = components['schemas']['PublicationDisposition']
+export type BulletinOnlinePublicationOutcome = components['schemas']['BulletinOnlinePublicationOutcome']
+export type OnlineBulletinRecoveryInput = components['schemas']['OnlineBulletinRecoveryInput']
+export type OnlineBulletinRecoveryReceipt = components['schemas']['OnlineBulletinRecoveryReceipt']
+export type OnlineBulletinRecoveryResult = components['schemas']['OnlineBulletinRecoveryResult']
+export type OnlineBulletinRecoveryBlocker = components['schemas']['OnlineBulletinRecoveryBlocker']
+export type BulletinPublishOptions = {notifySubscribers:boolean} & (
+  {onlinePublication?:'continue_automatic';onlineVersion?:never} |
+  {onlinePublication:'pdf_only';onlineVersion:number}
+)
 type AutomaticBulletinPublicationInput = {autoPublish?: boolean; notifySubscribers?: boolean}
 export type OnlineBulletinExtractionInput = Omit<components['schemas']['OnlineBulletinExtractionInput'], 'retry' | 'autoPublish' | 'notifySubscribers'> & AutomaticBulletinPublicationInput & {retry?: boolean}
 export type OnlineBulletinDraftInput = components['schemas']['OnlineBulletinDraftInput']
@@ -212,8 +224,9 @@ export class HhcWebApiError extends Error {
   readonly canonicalVersion?: number
   readonly bulletinUnavailable: boolean
   readonly retryAfter?: string
+  readonly blockers?: readonly OnlineBulletinRecoveryBlocker[]
 
-  constructor(status: number, code: string, message: string, contentId?: string, versions?: {currentVersion?: number; canonicalVersion?: number}, bulletinUnavailable = false, retryAfter?: string) {
+  constructor(status: number, code: string, message: string, contentId?: string, versions?: {currentVersion?: number; canonicalVersion?: number}, bulletinUnavailable = false, retryAfter?: string, blockers?: readonly OnlineBulletinRecoveryBlocker[]) {
     super(message)
     this.name = 'HhcWebApiError'
     this.status = status
@@ -223,6 +236,7 @@ export class HhcWebApiError extends Error {
     this.canonicalVersion = versions?.canonicalVersion
     this.bulletinUnavailable = bulletinUnavailable
     this.retryAfter = retryAfter
+    this.blockers = blockers?.length ? Object.freeze([...blockers]) : undefined
   }
 }
 
@@ -554,6 +568,22 @@ export function createHhcWebClient(options: {
     async publishOnlineBulletin(edition: OnlineBulletinSelector, version: number, input: OnlineBulletinPublishInput, signal?: AbortSignal) {
       return (await unwrap(client.POST('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/publish', {params: {path: edition, header: {'If-Match': `"${version}"`}}, body: input, cache: 'no-store', signal}))).data
     },
+    // A replay is the original immutable receipt, not a fresh authorization or current state.
+    async recoverOnlineBulletinPublication(edition: OnlineBulletinSelector, version: number, input: OnlineBulletinRecoveryInput, idempotencyKey: string, signal?: AbortSignal) {
+      if (edition.series !== 'general' || edition.contentLocale !== 'zh-Hant' ||
+          !Number.isSafeInteger(version) || version < 1 ||
+          !Number.isSafeInteger(input.canonicalVersion) || input.canonicalVersion < 1 ||
+          !Number.isSafeInteger(input.revision) || input.revision < 1 ||
+          !/^[a-f0-9]{64}$/.test(input.layoutValidationHash) ||
+          idempotencyKey.length < 1 || idempotencyKey.trim() !== idempotencyKey ||
+          new TextEncoder().encode(idempotencyKey).length > 128 || /[\r\n]/.test(idempotencyKey)) {
+        throw new HhcWebApiError(400, 'invalid_request', 'Recovery requires the exact qualified Traditional draft, current versions and an idempotency key.')
+      }
+      return (await unwrap(client.POST('/admin/bulletins/{issueId}/online/general/zh-Hant/recover-publication', {
+        params: {path: {issueId:edition.issueId}, header: {'If-Match': `"${version}"`, 'Idempotency-Key':idempotencyKey}},
+        body: input, cache: 'no-store', signal,
+      }))).data
+    },
     async unpublishOnlineBulletin(edition: OnlineBulletinSelector, version: number, input: components['schemas']['OnlineBulletinRestoreInput'], signal?: AbortSignal) {
       return (await unwrap(client.POST('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/unpublish', {params: {path: edition, header: {'If-Match': `"${version}"`}}, body: input, cache: 'no-store', signal}))).data
     },
@@ -882,10 +912,21 @@ export function createHhcWebClient(options: {
         signal,
       }))).data
     },
-    async publishBulletin(issueId: string, version: number, edition: BulletinEdition, options: { notifySubscribers: boolean }) {
+    async publishBulletin(issueId: string, version: number, edition: BulletinEdition, options: BulletinPublishOptions, signal?: AbortSignal) {
+      if (options.onlinePublication !== undefined &&
+          (edition.series !== 'general' || edition.locale !== 'zh-Hant' ||
+           !['continue_automatic','pdf_only'].includes(options.onlinePublication) ||
+           !Number.isSafeInteger(version) || version < 1) ||
+          options.onlinePublication === 'pdf_only' && options.onlineVersion === undefined ||
+          options.onlineVersion !== undefined && (options.onlinePublication !== 'pdf_only' || !Number.isSafeInteger(options.onlineVersion) || options.onlineVersion < 0)) {
+        throw new HhcWebApiError(400, 'invalid_request', 'Explicit online publication requires a supported edition and current versions; PDF-only also requires the Online version.')
+      }
       return (await unwrap(client.POST('/admin/bulletins/{issueId}/publish', {
         params: { path: { issueId }, header: { 'If-Match': `"${version}"` } },
-        body: { ...edition, notifySubscribers: options.notifySubscribers },
+        body: { ...edition, notifySubscribers: options.notifySubscribers,
+          ...(options.onlinePublication !== undefined ? {onlinePublication:options.onlinePublication} : {}),
+          ...(options.onlineVersion !== undefined ? {onlineVersion:options.onlineVersion} : {}) },
+        cache: 'no-store', signal,
       }))).data
     },
     async unpublishBulletin(issueId: string, version: number, edition: BulletinEdition, options?: { unpublishOnline: true; onlineVersion: number }) {
@@ -1158,14 +1199,19 @@ function invalidProgressResponse() {
   return new HhcWebApiError(502, 'invalid_response', 'The playback progress response is invalid.')
 }
 
+const recoveryBlockerCodes: readonly OnlineBulletinRecoveryBlocker[] = ['missing_local','pdf_not_published','source_changed','stale_metadata','review_required','incompatible_proof','layout_not_ready','semantic_proof_missing']
+
 function apiError(response: Response, value: unknown) {
   const error = value && typeof value === 'object' && 'error' in value
     ? (value as { error?: { code?: string; message?: string; contentId?: string } }).error
     : undefined
   const meta = value && typeof value === 'object' && 'meta' in value && value.meta && typeof value.meta === 'object'
-    ? value.meta as {currentVersion?: unknown; canonicalVersion?: unknown}
+    ? value.meta as {currentVersion?: unknown; canonicalVersion?: unknown; blockers?:unknown}
     : undefined
   const version = (value: unknown) => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : undefined
+  const blockers = response.status === 409 && error?.code === 'recovery_blocked' && Array.isArray(meta?.blockers)
+    ? [...new Set(meta.blockers.filter((item):item is OnlineBulletinRecoveryBlocker => typeof item === 'string' && recoveryBlockerCodes.some(code=>code===item)))]
+    : undefined
   return new HhcWebApiError(
     response.status,
     error?.code ?? 'request_failed',
@@ -1174,6 +1220,7 @@ function apiError(response: Response, value: unknown) {
     {currentVersion: version(meta?.currentVersion), canonicalVersion: version(meta?.canonicalVersion)},
     response.status === 404 && error?.code === 'not_found' && response.headers.get('X-HHC-Bulletin-Access') === 'unavailable',
     response.headers.get('Retry-After') ?? undefined,
+    blockers,
   )
 }
 
