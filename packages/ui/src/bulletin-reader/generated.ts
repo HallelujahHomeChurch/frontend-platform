@@ -252,6 +252,7 @@ export interface components {
             retry: boolean;
         };
         OnlineBulletinAutomation: {
+            disposition?: components["schemas"]["PublicationDisposition"];
             autoPublish: boolean;
             summary: string;
             /** @enum {string} */
@@ -268,6 +269,8 @@ export interface components {
             };
         };
         OnlineBulletinAdminState: {
+            capabilities?: components["schemas"]["OnlineBulletinCapabilities"];
+            production?: components["schemas"]["OnlineBulletinProduction"];
             automation?: components["schemas"]["OnlineBulletinAutomation"];
             /** Format: uuid */
             issueId: string;
@@ -619,6 +622,105 @@ export interface components {
              */
             type: "backSummary" | "announcements" | "victoriesAndPrayers";
             items: components["schemas"]["OnlineBulletinItem"][];
+        };
+        OnlineBulletinCapabilities: {
+            /** @description Inactive until every publisher and worker supports durable intent epochs. */
+            explicitOnlinePublication: boolean;
+            qualifiedDraftRecovery: boolean;
+        };
+        /** @enum {string} */
+        OnlineBulletinRecoveryBlocker: "missing_local" | "pdf_not_published" | "source_changed" | "stale_metadata" | "review_required" | "incompatible_proof" | "layout_not_ready" | "semantic_proof_missing";
+        OnlineBulletinRecoveryBlockedEnvelope: {
+            data: null;
+            meta: {
+                blockers: components["schemas"]["OnlineBulletinRecoveryBlocker"][];
+            };
+            error: {
+                /** @constant */
+                code: "recovery_blocked";
+                message: string;
+            };
+        };
+        OnlineBulletinRecoveryInput: {
+            /** Format: int64 */
+            canonicalVersion: number;
+            /** Format: int64 */
+            revision: number;
+            layoutValidationHash: string;
+        };
+        OnlineBulletinRecoveryReceipt: {
+            /** Format: uuid */
+            id: string;
+            operationKey: string;
+            /** Format: uuid */
+            documentId: string;
+            /** Format: int64 */
+            revision: number;
+            /** Format: int64 */
+            canonicalVersion: number;
+            /** Format: int64 */
+            onlineVersion: number;
+            layoutValidationHash: string;
+            /** @enum {string} */
+            outcome: "published";
+            /** Format: date-time */
+            createdAt: string;
+        };
+        OnlineBulletinRecoveryResult: {
+            receipt: components["schemas"]["OnlineBulletinRecoveryReceipt"];
+            publication: components["schemas"]["OnlineBulletinConfirmedRevision"];
+            /** @description Returns the immutable original outcome after withdrawal without publishing again. */
+            replayed: boolean;
+        };
+        /** @description Admin-only progress currently reports scan, recognition and reconciliation. Layout and publication enum values are reserved; existing layout/publication fields remain the authority for later stages. Verification subphase is reserved. Progress never qualifies content for publication. */
+        OnlineBulletinProduction: {
+            sourceIdentity: string;
+            /** Format: uuid */
+            jobId: string;
+            attemptId: string;
+            /** Format: int64 */
+            progressVersion: number;
+            /** @enum {string} */
+            phase: "scan" | "recognition" | "reconciliation" | "layout" | "publication";
+            /** @enum {string} */
+            status: "queued" | "running" | "waiting" | "completed" | "failed" | "cancelled" | "superseded";
+            totalPages: number | null;
+            currentPage: number | null;
+            verifiedPages: number;
+            /** @enum {string} */
+            subphase: "" | "source" | "recognition" | "verification" | "verified" | "checkpoint_reuse" | "snapshot_reuse";
+            /** Format: date-time */
+            startedAt: string | null;
+            /** Format: date-time */
+            lastProgressAt: string | null;
+            /** Format: date-time */
+            heartbeatAt: string | null;
+            /** Format: date-time */
+            observedAt: string;
+            verifiedReuseCount: number;
+        };
+        /** @description Latest append-only disposition for a known intent. Omitted for legacy history without evidence; a false autoPublish flag never implies a historical cancellation reason. */
+        PublicationDisposition: {
+            /** Format: uuid */
+            intentId: string;
+            /** Format: int64 */
+            epoch: number;
+            /** @enum {string} */
+            status: "authorized" | "running" | "completed" | "cancelled" | "superseded" | "failed";
+            /** @enum {string} */
+            reasonCode: "automatic_authorized" | "automatic_running" | "automatic_published" | "pdf_only" | "source_replaced" | "canonical_edited" | "draft_edited" | "explicit_draft" | "unpublished" | "manual_published" | "recovery_authorized" | "recovery_started" | "recovery_published" | "processing_failed" | "manual_state_change";
+            /** Format: date-time */
+            changedAt: string;
+            /** Format: int64 */
+            canonicalVersion: number;
+            sourceAssetId: string;
+            sourceChecksum: string;
+            /** Format: uuid */
+            documentId?: string;
+            /** Format: int64 */
+            revision?: number;
+            /** Format: uuid */
+            receiptId?: string;
         };
         /** @enum {string} */
         BulletinVersionStatus: "draft" | "publishing" | "published" | "unpublishing" | "unpublish_failed" | "unpublished";

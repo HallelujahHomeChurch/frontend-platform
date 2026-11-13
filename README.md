@@ -12,6 +12,19 @@ Shared, versioned frontend packages for HHC web applications:
 
 Packages are published to GitHub Packages from version tags.
 
+The bulletin publication reliability additions in this branch are an unpublished
+SDK candidate at the existing coordinated source version 1.1.35. They add explicit
+PDF publication options, exact qualified-draft recovery receipts and optional
+Admin production progress through the existing transport. Omitted publication
+options preserve the legacy request; recovery never retries a mutation
+automatically. A replay returns the original receipt, so refresh current state
+before interpreting availability. Capability fields are server evidence, not
+client authorization. The progress contract reserves layout/publication phases;
+the current producer reports scan/recognition/reconciliation, while existing
+channel states remain authoritative. Candidate builds and tarballs do not establish a registry
+release. Admin remains pinned to registry 1.1.34 until a separately authorized SDK
+publication and exact dependency upgrade; no new control is enabled by this work.
+
 ## Isolated bulletin renderer
 
 The bulletin worker uses the same compiled renderer, CSS, fixed assets and legal
