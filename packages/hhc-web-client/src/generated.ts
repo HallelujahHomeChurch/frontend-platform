@@ -1995,6 +1995,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/bulletins/{issueId}/online/general/zh-Hans/recover-publication": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publish an existing qualified Simplified online draft
+         * @description Default-off capability gates new human publication grants for exact saved Simplified conversion, semantic assessment and measured layout proof from an immutable Traditional Published source. Requires current publish permission, targetDocumentId, canonical and source/target CAS. No conversion, OCR, layout, Asset or notification work is created. The original automatic operation authorizer and terminal cause remain history. Exact actor/key/input replay returns the original immutable receipt before all live source/Local/capability eligibility gates; it is historical and never proves current availability. All responses are private, no-store. Idempotency keys are 1..128 UTF-8 bytes, reject leading/trailing Unicode whitespace and ASCII controls, and are never normalized. Duplicate key headers are invalid.
+         */
+        post: operations["recoverSimplifiedOnlineBulletinPublication"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/bulletins/{issueId}/publish": {
         parameters: {
             query?: never;
@@ -5357,6 +5377,8 @@ export interface components {
             };
         };
         OnlineBulletinAdminState: {
+            derivedPublication?: components["schemas"]["OnlineBulletinDerivedPublication"];
+            notification?: components["schemas"]["OnlineBulletinInitialNotification"];
             capabilities?: components["schemas"]["OnlineBulletinCapabilities"];
             production?: components["schemas"]["OnlineBulletinProduction"];
             automation?: components["schemas"]["OnlineBulletinAutomation"];
@@ -7069,6 +7091,8 @@ export interface components {
             /** @description Inactive until every publisher and worker supports durable intent epochs. */
             explicitOnlinePublication: boolean;
             qualifiedDraftRecovery: boolean;
+            /** @description Default-off dedicated saved-proof Simplified recovery capability. */
+            simplifiedPublicationRecovery?: boolean;
         };
         /** @description Latest append-only disposition for a known intent. Omitted for legacy history without evidence; a false autoPublish flag never implies a historical cancellation reason. */
         PublicationDisposition: {
@@ -8452,6 +8476,159 @@ export interface components {
                 [key: string]: unknown;
             };
             error: null;
+        };
+        OnlineBulletinSimplifiedRecoveryBlockedEnvelope: {
+            data: null;
+            meta: {
+                blockers: components["schemas"]["OnlineBulletinSimplifiedRecoveryBlocker"][];
+            };
+            error: {
+                /** @constant */
+                code: "recovery_blocked";
+                message: string;
+            };
+        };
+        /** @enum {string} */
+        OnlineBulletinSimplifiedRecoveryBlocker: "publication_intent_missing" | "missing_local" | "source_changed" | "review_required" | "incompatible_proof" | "semantic_proof_missing" | "layout_not_ready" | "stale_metadata" | "mapping_review_required";
+        OnlineBulletinSimplifiedRecoverySource: {
+            /** Format: uuid */
+            documentId: string;
+            /** Format: int64 */
+            revision: number;
+            contentHash: string;
+            /** Format: int64 */
+            onlineVersion: number;
+        };
+        OnlineBulletinSimplifiedRecoveryRequest: {
+            /** Format: uuid */
+            targetDocumentId: string;
+            /** Format: int64 */
+            canonicalVersion: number;
+            source: components["schemas"]["OnlineBulletinSimplifiedRecoverySource"];
+            /** Format: uuid */
+            publicationOperationId: string;
+            /** Format: int64 */
+            revision: number;
+            layoutValidationHash: string;
+        };
+        OnlineBulletinSimplifiedRecoveryReceipt: {
+            /** Format: uuid */
+            id: string;
+            operationKey: string;
+            /** Format: uuid */
+            documentId: string;
+            /** Format: int64 */
+            revision: number;
+            /** Format: int64 */
+            canonicalVersion: number;
+            /** Format: int64 */
+            onlineVersion: number;
+            layoutValidationHash: string;
+            /** @enum {string} */
+            outcome: "published";
+            /** Format: date-time */
+            createdAt: string;
+            source: components["schemas"]["OnlineBulletinSimplifiedRecoverySource"];
+            /** Format: uuid */
+            publicationOperationId: string;
+            /** Format: uuid */
+            authorizationId: string;
+        };
+        OnlineBulletinSimplifiedRecoveryResult: {
+            receipt: components["schemas"]["OnlineBulletinSimplifiedRecoveryReceipt"];
+            publication: components["schemas"]["OnlineBulletinConfirmedRevision"];
+            /** @description Original immutable historical outcome, independent of current availability. */
+            replayed: boolean;
+        };
+        OnlineBulletinSimplifiedPublicationSource: {
+            /** Format: uuid */
+            documentId: string;
+            /** Format: int64 */
+            revision: number;
+            contentHash: string | null;
+            metadataHash: string | null;
+        };
+        OnlineBulletinSimplifiedPublicationFailure: {
+            /** @enum {string} */
+            code: "simplified_publication_failed" | "simplified_conversion_failed" | "simplified_layout_failed" | "simplified_target_changed" | "simplified_review_required" | "simplified_mapping_review_required" | "source_publication_changed" | "publication_withdrawn" | "stale_metadata" | "publication_authority_superseded";
+            /** @enum {string} */
+            kind: "failure" | "cancelled" | "superseded";
+            /** @enum {string} */
+            phase: "conversion" | "assessment" | "layout" | "publication" | "unknown";
+            /** Format: date-time */
+            at: string;
+            attempts: number;
+        };
+        /** @enum {string} */
+        OnlineBulletinSimplifiedPublicationErrorCode: "" | "simplified_publication_failed" | "simplified_conversion_failed" | "simplified_layout_failed" | "simplified_target_changed" | "simplified_review_required" | "simplified_mapping_review_required" | "source_publication_changed" | "publication_withdrawn" | "stale_metadata" | "publication_authority_superseded";
+        OnlineBulletinSimplifiedPublicationRecovery: {
+            /** Format: uuid */
+            authorizationId: string;
+            /** Format: uuid */
+            receiptId: string;
+            /** Format: int64 */
+            revision: number;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /** @description Original automatic source-bound operation history; completed and human recovery receipts never prove current Hans availability. Counts cover only tracked history, with unknown legacy facts nullable. */
+        OnlineBulletinDerivedPublication: {
+            /** Format: uuid */
+            operationId: string;
+            source: components["schemas"]["OnlineBulletinSimplifiedPublicationSource"];
+            /** @description True only for the complete proven Published revision/hash/frozen metadata tuple; false for proven change; null for insufficient legacy evidence. */
+            sourceCurrent: boolean | null;
+            /** @enum {string} */
+            status: "pending" | "processing" | "completed" | "failed" | "cancelled" | "superseded" | "unknown";
+            /** @enum {string} */
+            phase: "waiting" | "conversion" | "assessment" | "layout" | "publication" | "complete" | "unknown";
+            /** Format: uuid */
+            conversionJobId: string | null;
+            /** Format: int64 */
+            resultRevision: number | null;
+            /** @description Current retry budget count, never lifetime history count. */
+            attempts: number | null;
+            /**
+             * Format: int64
+             * @description Tracked kind=failure records only; excludes cancelled and superseded.
+             */
+            failureCount: number | null;
+            /** Format: date-time */
+            createdAt: string | null;
+            /** Format: date-time */
+            updatedAt: string | null;
+            /** Format: date-time */
+            nextAttemptAt: string | null;
+            errorCode: components["schemas"]["OnlineBulletinSimplifiedPublicationErrorCode"];
+            lastFailure: components["schemas"]["OnlineBulletinSimplifiedPublicationFailure"] | null;
+            history: components["schemas"]["OnlineBulletinSimplifiedPublicationFailure"][];
+            hasMore: boolean;
+            /** @enum {string} */
+            historyCoverage: "complete" | "partial" | "unknown";
+            recovery: components["schemas"]["OnlineBulletinSimplifiedPublicationRecovery"] | null;
+        };
+        /** @description Exact initial generation-zero command for this issue/series. Accepted means downstream command acceptance, never email/push delivery. Later manual generations do not replace it; overloaded outbox aggregate_version never implies canonical/source version. */
+        OnlineBulletinInitialNotification: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: int64
+             * @constant
+             */
+            generation: 0;
+            /** @enum {string} */
+            status: "pending" | "processing" | "accepted" | "failed" | "unknown";
+            attempts: number | null;
+            /** @enum {string} */
+            errorCode: "" | "notification_submission_failed";
+            /** Format: int64 */
+            canonicalVersion: number | null;
+            /** Format: date-time */
+            createdAt: string | null;
+            /** Format: date-time */
+            updatedAt: string | null;
+            /** Format: date-time */
+            nextAttemptAt: string | null;
         };
     };
     responses: {
@@ -12619,6 +12796,58 @@ export interface operations {
                     "application/json": components["schemas"]["OnlineBulletinRecoveryBlockedEnvelope"] | components["schemas"]["ErrorEnvelope"];
                 };
             };
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    recoverSimplifiedOnlineBulletinPublication: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+                "Idempotency-Key": string;
+            };
+            path: {
+                issueId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnlineBulletinSimplifiedRecoveryRequest"];
+            };
+        };
+        responses: {
+            /** @description Immutable recovery receipt and original publication outcome */
+            200: {
+                headers: {
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OnlineBulletinSimplifiedRecoveryResult"];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            /** @description CAS/key conflict or sanitized saved-draft qualification blockers */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnlineBulletinSimplifiedRecoveryBlockedEnvelope"] | components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            412: components["responses"]["Error"];
             428: components["responses"]["Error"];
             503: components["responses"]["Error"];
         };

@@ -142,6 +142,17 @@ export type OnlineBulletinRecoveryInput = components['schemas']['OnlineBulletinR
 export type OnlineBulletinRecoveryReceipt = components['schemas']['OnlineBulletinRecoveryReceipt']
 export type OnlineBulletinRecoveryResult = components['schemas']['OnlineBulletinRecoveryResult']
 export type OnlineBulletinRecoveryBlocker = components['schemas']['OnlineBulletinRecoveryBlocker']
+export type OnlineBulletinSimplifiedRecoveryInput = components['schemas']['OnlineBulletinSimplifiedRecoveryRequest']
+export type OnlineBulletinSimplifiedRecoverySource = components['schemas']['OnlineBulletinSimplifiedRecoverySource']
+export type OnlineBulletinSimplifiedRecoveryReceipt = components['schemas']['OnlineBulletinSimplifiedRecoveryReceipt']
+export type OnlineBulletinSimplifiedRecoveryResult = components['schemas']['OnlineBulletinSimplifiedRecoveryResult']
+export type OnlineBulletinSimplifiedRecoveryBlocker = components['schemas']['OnlineBulletinSimplifiedRecoveryBlocker']
+export type OnlineBulletinDerivedPublication = components['schemas']['OnlineBulletinDerivedPublication']
+export type OnlineBulletinSimplifiedPublicationSource = components['schemas']['OnlineBulletinSimplifiedPublicationSource']
+export type OnlineBulletinSimplifiedPublicationFailure = components['schemas']['OnlineBulletinSimplifiedPublicationFailure']
+export type OnlineBulletinSimplifiedPublicationErrorCode = components['schemas']['OnlineBulletinSimplifiedPublicationErrorCode']
+export type OnlineBulletinSimplifiedPublicationRecovery = components['schemas']['OnlineBulletinSimplifiedPublicationRecovery']
+export type OnlineBulletinInitialNotification = components['schemas']['OnlineBulletinInitialNotification']
 export type BulletinPublishOptions = {notifySubscribers:boolean} & (
   {onlinePublication?:'continue_automatic';onlineVersion?:never} |
   {onlinePublication:'pdf_only';onlineVersion:number}
@@ -225,8 +236,9 @@ export class HhcWebApiError extends Error {
   readonly bulletinUnavailable: boolean
   readonly retryAfter?: string
   readonly blockers?: readonly OnlineBulletinRecoveryBlocker[]
+  readonly simplifiedRecoveryBlockers?: readonly OnlineBulletinSimplifiedRecoveryBlocker[]
 
-  constructor(status: number, code: string, message: string, contentId?: string, versions?: {currentVersion?: number; canonicalVersion?: number}, bulletinUnavailable = false, retryAfter?: string, blockers?: readonly OnlineBulletinRecoveryBlocker[]) {
+  constructor(status: number, code: string, message: string, contentId?: string, versions?: {currentVersion?: number; canonicalVersion?: number}, bulletinUnavailable = false, retryAfter?: string, blockers?: readonly OnlineBulletinRecoveryBlocker[], simplifiedRecoveryBlockers?: readonly OnlineBulletinSimplifiedRecoveryBlocker[]) {
     super(message)
     this.name = 'HhcWebApiError'
     this.status = status
@@ -237,6 +249,7 @@ export class HhcWebApiError extends Error {
     this.bulletinUnavailable = bulletinUnavailable
     this.retryAfter = retryAfter
     this.blockers = blockers?.length ? Object.freeze([...blockers]) : undefined
+    this.simplifiedRecoveryBlockers = simplifiedRecoveryBlockers?.length ? Object.freeze([...simplifiedRecoveryBlockers]) : undefined
   }
 }
 
@@ -260,9 +273,9 @@ export function createHhcWebClient(options: {
     },
   })
 
-  async function unwrap<T>(request: Promise<{ data?: T; error?: unknown; response: Response }>) {
+  async function unwrap<T>(request: Promise<{ data?: T; error?: unknown; response: Response }>, simplifiedRecovery = false) {
     const result = await request
-    if (result.error !== undefined || !result.response.ok) throw apiError(result.response, result.error)
+    if (result.error !== undefined || !result.response.ok) throw apiError(result.response, result.error, simplifiedRecovery)
     if (result.data === undefined) throw new HhcWebApiError(result.response.status, 'invalid_response', 'The API response did not include data.')
     return result.data
   }
@@ -583,6 +596,28 @@ export function createHhcWebClient(options: {
         params: {path: {issueId:edition.issueId}, header: {'If-Match': `"${version}"`, 'Idempotency-Key':idempotencyKey}},
         body: input, cache: 'no-store', signal,
       }))).data
+    },
+    // Exact replay returns historical publication, never current availability.
+    async recoverSimplifiedOnlineBulletinPublication(edition: OnlineBulletinSelector, targetVersion: number, input: OnlineBulletinSimplifiedRecoveryInput, idempotencyKey: string, signal?: AbortSignal) {
+      const positive = (value: number) => Number.isSafeInteger(value) && value > 0
+      const uuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
+      const hash = (value: string) => /^[a-f0-9]{64}$/.test(value)
+      const keyBytes = new TextEncoder().encode(idempotencyKey)
+      const exactKey = new TextDecoder('utf-8', {fatal:true, ignoreBOM:true}).decode(keyBytes) === idempotencyKey
+      if (edition.series !== 'general' || edition.contentLocale !== 'zh-Hans' || !uuid(edition.issueId) ||
+          !positive(targetVersion) || !positive(input.canonicalVersion) || !positive(input.revision) ||
+          !uuid(input.targetDocumentId) || !uuid(input.publicationOperationId) ||
+          !input.source || !uuid(input.source.documentId) || !positive(input.source.revision) || !positive(input.source.onlineVersion) ||
+          !hash(input.source.contentHash) || !hash(input.layoutValidationHash) ||
+          !exactKey || keyBytes.length < 1 || keyBytes.length > 128 ||
+          /^\p{White_Space}|\p{White_Space}$/u.test(idempotencyKey) || keyBytes.some(byte => byte < 32 || byte === 127)) {
+        throw new HhcWebApiError(400, 'invalid_request', 'Recovery requires the exact qualified Simplified draft, source, current versions and an idempotency key.')
+      }
+      return (await unwrap(client.POST('/admin/bulletins/{issueId}/online/general/zh-Hans/recover-publication', {
+        // Fetch headers take ByteString; encode the caller's exact UTF-8 wire bytes.
+        params: {path: {issueId:edition.issueId}, header: {'If-Match': `"${targetVersion}"`, 'Idempotency-Key':String.fromCharCode(...keyBytes)}},
+        body: input, cache: 'no-store', signal,
+      }), true)).data
     },
     async unpublishOnlineBulletin(edition: OnlineBulletinSelector, version: number, input: components['schemas']['OnlineBulletinRestoreInput'], signal?: AbortSignal) {
       return (await unwrap(client.POST('/admin/bulletins/{issueId}/online/{series}/{contentLocale}/unpublish', {params: {path: edition, header: {'If-Match': `"${version}"`}}, body: input, cache: 'no-store', signal}))).data
@@ -1200,8 +1235,9 @@ function invalidProgressResponse() {
 }
 
 const recoveryBlockerCodes: readonly OnlineBulletinRecoveryBlocker[] = ['missing_local','pdf_not_published','source_changed','stale_metadata','review_required','incompatible_proof','layout_not_ready','semantic_proof_missing']
+const simplifiedRecoveryBlockerCodes: readonly OnlineBulletinSimplifiedRecoveryBlocker[] = ['publication_intent_missing','missing_local','source_changed','review_required','incompatible_proof','semantic_proof_missing','layout_not_ready','stale_metadata','mapping_review_required']
 
-function apiError(response: Response, value: unknown) {
+function apiError(response: Response, value: unknown, simplifiedRecovery = false) {
   const error = value && typeof value === 'object' && 'error' in value
     ? (value as { error?: { code?: string; message?: string; contentId?: string } }).error
     : undefined
@@ -1212,6 +1248,9 @@ function apiError(response: Response, value: unknown) {
   const blockers = response.status === 409 && error?.code === 'recovery_blocked' && Array.isArray(meta?.blockers)
     ? [...new Set(meta.blockers.filter((item):item is OnlineBulletinRecoveryBlocker => typeof item === 'string' && recoveryBlockerCodes.some(code=>code===item)))]
     : undefined
+  const simplifiedBlockers = simplifiedRecovery && response.status === 409 && error?.code === 'recovery_blocked' && Array.isArray(meta?.blockers)
+    ? [...new Set(meta.blockers.filter((item):item is OnlineBulletinSimplifiedRecoveryBlocker => typeof item === 'string' && simplifiedRecoveryBlockerCodes.some(code=>code===item)))]
+    : undefined
   return new HhcWebApiError(
     response.status,
     error?.code ?? 'request_failed',
@@ -1221,6 +1260,7 @@ function apiError(response: Response, value: unknown) {
     response.status === 404 && error?.code === 'not_found' && response.headers.get('X-HHC-Bulletin-Access') === 'unavailable',
     response.headers.get('Retry-After') ?? undefined,
     blockers,
+    simplifiedBlockers,
   )
 }
 
