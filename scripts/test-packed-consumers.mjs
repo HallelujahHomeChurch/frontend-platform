@@ -9,6 +9,7 @@ const temp = mkdtempSync(resolve(tmpdir(), 'hhc-package-smoke-'));
 const {version} = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
 const bulletinFixture = JSON.parse(readFileSync(resolve(root, 'scripts/testdata/bulletin/1739-typography.json'), 'utf8'));
 const publicationContract = readFileSync(resolve(root, 'packages/hhc-web-client/contracts/bulletin-publication-reliability.ts'), 'utf8').replace("'../src/client.js'", "'@hallelujahhomechurch/hhc-web-client'");
+const simplifiedPublicationContract = readFileSync(resolve(root, 'packages/hhc-web-client/contracts/simplified-publication.ts'), 'utf8').replace("'../src/index.js'", "'@hallelujahhomechurch/hhc-web-client'");
 const bulletinModule = `import {BULLETIN_RENDERER_V1_DIGEST, BULLETIN_RENDERER_V6_DIGEST, getBulletinRendererCapabilities, type BulletinRendererCapabilities, type BulletinDocument} from '@hallelujahhomechurch/ui';
 export const capabilities: Readonly<BulletinRendererCapabilities> = getBulletinRendererCapabilities('v10');
 if (!capabilities.usesTemplateSnapshot || capabilities.fontFamily !== 'v7') throw new Error('renderer_capabilities');
@@ -75,6 +76,7 @@ try {
   write(resolve(vite, 'vite.config.ts'), "import react from '@vitejs/plugin-react';\nimport {defineConfig} from 'vite';\nexport default defineConfig({plugins: [react()]});\n");
   write(resolve(vite, 'src/bulletin.ts'), bulletinModule);
   write(resolve(vite, 'src/publication-contract.ts'), publicationContract);
+  write(resolve(vite, 'src/simplified-publication-contract.ts'), simplifiedPublicationContract);
   write(resolve(vite, 'src/main.tsx'), `import React from 'react';
 import {createRoot} from 'react-dom/client';
 import {createAccountSessionClient, createBrowserAccountAuthRuntime, createAccountDataRequestsClient, type AccountSessionUser, type EmailReauthView, type EmailCorrectionSubmitInput, type EmailCorrectionRequest, type EmailCorrectionErrorCode} from '@hallelujahhomechurch/account-client';
@@ -197,6 +199,7 @@ export default function Layout({children}: {children: React.ReactNode}) {
 `);
   write(resolve(next, 'app/bulletin.ts'), bulletinModule);
   write(resolve(next, 'app/publication-contract.ts'), publicationContract);
+  write(resolve(next, 'app/simplified-publication-contract.ts'), simplifiedPublicationContract);
   write(resolve(next, 'app/page.tsx'), `'use client';
 import {createAccountSessionClient, createBrowserAccountAuthRuntime, createAccountDataRequestsClient, type AccountSessionUser, type EmailReauthView, type EmailCorrectionSubmitInput, type EmailCorrectionRequest, type EmailCorrectionErrorCode} from '@hallelujahhomechurch/account-client';
 import {canAccessAdmin} from '@hallelujahhomechurch/account-client/admin-access';
