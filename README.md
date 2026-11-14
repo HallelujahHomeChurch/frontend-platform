@@ -12,8 +12,15 @@ Shared, versioned frontend packages for HHC web applications:
 
 Packages are published to GitHub Packages from version tags.
 
-The bulletin publication reliability additions are prepared for coordinated
-release 1.1.36. They add explicit
+Coordinated release 1.1.37 is prepared with source-bound Simplified publication
+history, independent initial-notification submission status and exact saved-proof
+Simplified publication recovery. Each edition's published revision remains the
+availability authority. Notification acceptance records downstream command
+acceptance; it does not establish email or push delivery. Recovery replays retain
+their original historical receipt. Optional capabilities and projections preserve
+compatibility with older producers.
+
+The bulletin publication reliability additions from 1.1.36 retain explicit
 PDF publication options, exact qualified-draft recovery receipts and optional
 Admin production progress through the existing transport. Omitted publication
 options preserve the legacy request; recovery never retries a mutation

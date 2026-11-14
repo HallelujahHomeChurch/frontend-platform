@@ -1045,6 +1045,12 @@
           "layout"
         ],
         "properties": {
+          "derivedPublication": {
+            "$ref": "#/components/schemas/OnlineBulletinDerivedPublication"
+          },
+          "notification": {
+            "$ref": "#/components/schemas/OnlineBulletinInitialNotification"
+          },
           "capabilities": {
             "$ref": "#/components/schemas/OnlineBulletinCapabilities"
           },
@@ -2580,6 +2586,10 @@
           },
           "qualifiedDraftRecovery": {
             "type": "boolean"
+          },
+          "simplifiedPublicationRecovery": {
+            "type": "boolean",
+            "description": "Default-off dedicated saved-proof Simplified recovery capability."
           }
         }
       },
@@ -2872,6 +2882,605 @@
             "type": "integer",
             "minimum": 0,
             "maximum": 40
+          }
+        }
+      },
+      "OnlineBulletinSimplifiedRecoveryBlockedEnvelope": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data",
+          "meta",
+          "error"
+        ],
+        "properties": {
+          "data": {
+            "type": "null"
+          },
+          "meta": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "blockers"
+            ],
+            "properties": {
+              "blockers": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 8,
+                "uniqueItems": true,
+                "items": {
+                  "$ref": "#/components/schemas/OnlineBulletinSimplifiedRecoveryBlocker"
+                }
+              }
+            }
+          },
+          "error": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "const": "recovery_blocked",
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "OnlineBulletinSimplifiedRecoveryBlocker": {
+        "type": "string",
+        "enum": [
+          "publication_intent_missing",
+          "missing_local",
+          "source_changed",
+          "review_required",
+          "incompatible_proof",
+          "semantic_proof_missing",
+          "layout_not_ready",
+          "stale_metadata",
+          "mapping_review_required"
+        ]
+      },
+      "OnlineBulletinSimplifiedRecoverySource": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "documentId",
+          "revision",
+          "contentHash",
+          "onlineVersion"
+        ],
+        "properties": {
+          "documentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "contentHash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "onlineVersion": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          }
+        }
+      },
+      "OnlineBulletinSimplifiedRecoveryRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "targetDocumentId",
+          "canonicalVersion",
+          "source",
+          "publicationOperationId",
+          "revision",
+          "layoutValidationHash"
+        ],
+        "properties": {
+          "targetDocumentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "canonicalVersion": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "source": {
+            "$ref": "#/components/schemas/OnlineBulletinSimplifiedRecoverySource"
+          },
+          "publicationOperationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "layoutValidationHash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      },
+      "OnlineBulletinSimplifiedRecoveryReceipt": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "operationKey",
+          "documentId",
+          "revision",
+          "canonicalVersion",
+          "onlineVersion",
+          "layoutValidationHash",
+          "outcome",
+          "createdAt",
+          "source",
+          "publicationOperationId",
+          "authorizationId"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "operationKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "documentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "canonicalVersion": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "onlineVersion": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "layoutValidationHash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "published"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source": {
+            "$ref": "#/components/schemas/OnlineBulletinSimplifiedRecoverySource"
+          },
+          "publicationOperationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "authorizationId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "OnlineBulletinSimplifiedRecoveryResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "receipt",
+          "publication",
+          "replayed"
+        ],
+        "properties": {
+          "receipt": {
+            "$ref": "#/components/schemas/OnlineBulletinSimplifiedRecoveryReceipt"
+          },
+          "publication": {
+            "$ref": "#/components/schemas/OnlineBulletinConfirmedRevision"
+          },
+          "replayed": {
+            "type": "boolean",
+            "description": "Original immutable historical outcome, independent of current availability."
+          }
+        }
+      },
+      "OnlineBulletinSimplifiedPublicationSource": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "documentId",
+          "revision",
+          "contentHash",
+          "metadataHash"
+        ],
+        "properties": {
+          "documentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "contentHash": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "metadataHash": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      },
+      "OnlineBulletinSimplifiedPublicationFailure": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "kind",
+          "phase",
+          "at",
+          "attempts"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "simplified_publication_failed",
+              "simplified_conversion_failed",
+              "simplified_layout_failed",
+              "simplified_target_changed",
+              "simplified_review_required",
+              "simplified_mapping_review_required",
+              "source_publication_changed",
+              "publication_withdrawn",
+              "stale_metadata",
+              "publication_authority_superseded"
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "failure",
+              "cancelled",
+              "superseded"
+            ]
+          },
+          "phase": {
+            "type": "string",
+            "enum": [
+              "conversion",
+              "assessment",
+              "layout",
+              "publication",
+              "unknown"
+            ]
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "attempts": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "OnlineBulletinSimplifiedPublicationErrorCode": {
+        "type": "string",
+        "enum": [
+          "",
+          "simplified_publication_failed",
+          "simplified_conversion_failed",
+          "simplified_layout_failed",
+          "simplified_target_changed",
+          "simplified_review_required",
+          "simplified_mapping_review_required",
+          "source_publication_changed",
+          "publication_withdrawn",
+          "stale_metadata",
+          "publication_authority_superseded"
+        ]
+      },
+      "OnlineBulletinSimplifiedPublicationRecovery": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "authorizationId",
+          "receiptId",
+          "revision",
+          "createdAt"
+        ],
+        "properties": {
+          "authorizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "receiptId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "OnlineBulletinDerivedPublication": {
+        "type": "object",
+        "description": "Original automatic source-bound operation history; completed and human recovery receipts never prove current Hans availability. Counts cover only tracked history, with unknown legacy facts nullable.",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "source",
+          "sourceCurrent",
+          "status",
+          "phase",
+          "conversionJobId",
+          "resultRevision",
+          "attempts",
+          "failureCount",
+          "createdAt",
+          "updatedAt",
+          "nextAttemptAt",
+          "errorCode",
+          "lastFailure",
+          "history",
+          "hasMore",
+          "historyCoverage",
+          "recovery"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "source": {
+            "$ref": "#/components/schemas/OnlineBulletinSimplifiedPublicationSource"
+          },
+          "sourceCurrent": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "True only for the complete proven Published revision/hash/frozen metadata tuple; false for proven change; null for insufficient legacy evidence."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "processing",
+              "completed",
+              "failed",
+              "cancelled",
+              "superseded",
+              "unknown"
+            ]
+          },
+          "phase": {
+            "type": "string",
+            "enum": [
+              "waiting",
+              "conversion",
+              "assessment",
+              "layout",
+              "publication",
+              "complete",
+              "unknown"
+            ]
+          },
+          "conversionJobId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "resultRevision": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 1
+          },
+          "attempts": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "description": "Current retry budget count, never lifetime history count."
+          },
+          "failureCount": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0,
+            "description": "Tracked kind=failure records only; excludes cancelled and superseded."
+          },
+          "createdAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "nextAttemptAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "errorCode": {
+            "$ref": "#/components/schemas/OnlineBulletinSimplifiedPublicationErrorCode"
+          },
+          "lastFailure": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OnlineBulletinSimplifiedPublicationFailure"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "history": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/OnlineBulletinSimplifiedPublicationFailure"
+            }
+          },
+          "hasMore": {
+            "type": "boolean"
+          },
+          "historyCoverage": {
+            "type": "string",
+            "enum": [
+              "complete",
+              "partial",
+              "unknown"
+            ]
+          },
+          "recovery": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OnlineBulletinSimplifiedPublicationRecovery"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "OnlineBulletinInitialNotification": {
+        "type": "object",
+        "description": "Exact initial generation-zero command for this issue/series. Accepted means downstream command acceptance, never email/push delivery. Later manual generations do not replace it; overloaded outbox aggregate_version never implies canonical/source version.",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "generation",
+          "status",
+          "attempts",
+          "errorCode",
+          "canonicalVersion",
+          "createdAt",
+          "updatedAt",
+          "nextAttemptAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "generation": {
+            "type": "integer",
+            "format": "int64",
+            "const": 0
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "processing",
+              "accepted",
+              "failed",
+              "unknown"
+            ]
+          },
+          "attempts": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "errorCode": {
+            "type": "string",
+            "enum": [
+              "",
+              "notification_submission_failed"
+            ]
+          },
+          "canonicalVersion": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 1
+          },
+          "createdAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "nextAttemptAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
           }
         }
       },
