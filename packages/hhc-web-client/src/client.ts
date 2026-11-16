@@ -130,6 +130,9 @@ export type RecordingRendition = components['schemas']['RecordingRendition']
 export type OperationProgress = components['schemas']['OperationProgress']
 export type BulletinDownloadJob = components['schemas']['BulletinDownloadJob']
 export type BulletinIssue = components['schemas']['BulletinIssue']
+export type BulletinPublicationOutcome = components['schemas']['BulletinPublicationOutcome']
+export type BulletinPublicationUpdateInput = components['schemas']['BulletinPublicationUpdateInput']
+export type BulletinPublicationUpdateResult = components['schemas']['BulletinPublicationUpdateResult']
 export type BulletinVersion = components['schemas']['BulletinVersion']
 export type BulletinRevision = components['schemas']['BulletinRevision']
 export type OnlineBulletinSelector = operations['getOnlineBulletinState']['parameters']['path']
@@ -908,6 +911,12 @@ export function createHhcWebClient(options: {
       return (await unwrap(client.PUT('/admin/bulletins/{issueId}', {
         params: { path: { issueId }, header: { 'If-Match': `"${version}"` } },
         body: { issueNumber, issueDate },
+      }))).data
+    },
+    async updateBulletinPublication(issueId: string, version: number, input: BulletinPublicationUpdateInput, idempotencyKey: string, signal?: AbortSignal) {
+      return (await unwrap(client.POST('/admin/bulletins/{issueId}/publication-update', {
+        params: {path: {issueId}, header: {'If-Match': `"${version}"`, 'Idempotency-Key': idempotencyKey}},
+        body: input, signal, cache: 'no-store',
       }))).data
     },
     async getBulletinAssetStatus(issueId: string, assetId: string, signal?: AbortSignal) {

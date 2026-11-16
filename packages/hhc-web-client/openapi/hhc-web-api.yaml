@@ -23,6 +23,47 @@ servers:
   - url: https://www.alive.org.tw/api
     description: Public and admin gateway surface; api-gateway validates browser JWTs and injects trusted identity headers.
 paths:
+  /admin/bulletins/{issueId}/publication-update:
+    post:
+      operationId: updateBulletinPublication
+      summary: Publish an existing draft, resume publication, or stage a metadata correction
+      description: Publisher command for General Traditional bulletins. An empty object resumes the eligible current stage. Action publish starts publication from the selected saved PDF. A metadata snapshot requests a correction while existing editions remain readable. Publish and metadata require the current commandToken. Repeating the same actor, key, version and body returns the original command response. Read the issue for current availability.
+      tags: [Admin]
+      x-hhc-visibility: admin
+      x-hhc-callers: [api-gateway]
+      x-hhc-cache: 'private, no-store'
+      x-required-scopes: [cms:bulletins:write, cms:bulletins:publish]
+      security: [{ daprApiToken: [], daprCallerAppId: [], trustedUserId: [], trustedAuthProvider: [], trustedScopes: [] }]
+      servers: [{ url: https://admin.alive.org.tw/api }]
+      parameters:
+        - $ref: '#/components/parameters/IssueID'
+        - $ref: '#/components/parameters/IfMatch'
+        - { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 1, maxLength: 128 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BulletinPublicationUpdateInput' }
+      responses:
+        '202':
+          description: Publication command accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta, error]
+                properties:
+                  data: { $ref: '#/components/schemas/BulletinPublicationUpdateResult' }
+                  meta: { type: object, additionalProperties: true }
+                  error: { type: 'null' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/AdminUnauthorized' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '428': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
   /member/videos/{publicId}/watch:
     get:
       operationId: getVideoWatch
@@ -8384,6 +8425,52 @@ components:
       description: Public revalidation policy for Site Layout projections.
       schema: { type: string, const: 'public, max-age=30, must-revalidate' }
   schemas:
+    BulletinPublicationChannels:
+      type: object
+      required: [pdf, traditional, simplified]
+      properties:
+        pdf: { type: boolean }
+        traditional: { type: boolean }
+        simplified: { type: boolean }
+    BulletinPublicationOutcome:
+      type: object
+      required: [status, availability, current]
+      properties:
+        status: { type: string, enum: [draft, withdrawn, preparing, published, needs_attention] }
+        pendingMetadata: { $ref: '#/components/schemas/BulletinPublicationMetadata' }
+        commandToken: { type: string, pattern: '^[0-9a-f]{64}$', description: Opaque precondition for publish or metadata commands. }
+        reason: { type: string, enum: [source_invalid, metadata_mismatch, processing_failed, review_required, unsupported_source] }
+        nextAction: { type: string, enum: [replace_source, update_metadata, resume, review, publish] }
+        availability: { $ref: '#/components/schemas/BulletinPublicationChannels', description: Editions currently readable by entitled members, including earlier healthy editions. }
+        current: { $ref: '#/components/schemas/BulletinPublicationChannels', description: Readable editions matching the current requested publication. }
+    BulletinPublicationMetadata:
+      type: object
+      additionalProperties: false
+      required: [issueNumber, issueDate, title, subtitle]
+      properties:
+        issueNumber: { type: integer, minimum: 1, maximum: 2147483647 }
+        issueDate: { type: string, format: date }
+        title: { type: string, minLength: 1, maxLength: 200 }
+        subtitle: { type: string, maxLength: 300 }
+    BulletinPublicationUpdateInput:
+      type: object
+      additionalProperties: false
+      properties:
+        action: { type: string, enum: [publish], description: Mutually exclusive with metadata. }
+        commandToken: { type: string, pattern: '^[0-9a-f]{64}$', description: Required with publish or metadata. }
+        metadata: { $ref: '#/components/schemas/BulletinPublicationMetadata' }
+    BulletinPublicationUpdateResult:
+      type: object
+      required: [issue, outcome]
+      properties:
+        issue: { $ref: '#/components/schemas/BulletinIssue' }
+        outcome: { $ref: '#/components/schemas/BulletinPublicationOutcome' }
+    BulletinDeletionEligibility:
+      type: object
+      required: [allowed]
+      properties:
+        allowed: { type: boolean }
+        reason: { type: string, enum: [published, cleanup_pending, retained_history] }
     StudioBroadcastEnvelope:
       type: object
       required:
@@ -13282,6 +13369,7 @@ components:
       type: object
       required: [id, issueId, series, locale, title, subtitle, pdfAssetId, pdfFileName, status, version, createdAt, updatedAt]
       properties:
+        deletion: { $ref: '#/components/schemas/BulletinDeletionEligibility' }
         id: { type: string, format: uuid }
         issueId: { type: string, format: uuid }
         series: { $ref: '#/components/schemas/BulletinSeries' }
@@ -13301,6 +13389,8 @@ components:
       type: object
       required: [id, issueDate, status, version, createdBy, updatedBy, createdAt, updatedAt, versions]
       properties:
+        deletion: { $ref: '#/components/schemas/BulletinDeletionEligibility' }
+        publicationOutcome: { $ref: '#/components/schemas/BulletinPublicationOutcome' }
         id: { type: string, format: uuid }
         issueNumber: { type: integer, minimum: 1 }
         issueDate: { type: string, format: date }

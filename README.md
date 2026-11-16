@@ -12,6 +12,14 @@ Shared, versioned frontend packages for HHC web applications:
 
 Packages are published to GitHub Packages from version tags.
 
+Coordinated release 1.1.38 adds one durable bulletin publication-update command,
+a member-facing availability outcome, staged metadata corrections and explicit
+deletion eligibility. The command requires current write and publish scopes;
+replays use the original key, version and body. Refresh the issue after an
+accepted response to observe current availability. Existing methods and optional
+producer fields remain backward compatible. Publish through the normal reviewed
+tag workflow before consumers pin this version.
+
 Coordinated release 1.1.37 is prepared with source-bound Simplified publication
 history, independent initial-notification submission status and exact saved-proof
 Simplified publication recovery. Each edition's published revision remains the

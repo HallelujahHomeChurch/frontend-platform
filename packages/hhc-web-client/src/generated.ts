@@ -4,6 +4,26 @@
  */
 
 export interface paths {
+    "/admin/bulletins/{issueId}/publication-update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publish an existing draft, resume publication, or stage a metadata correction
+         * @description Publisher command for General Traditional bulletins. An empty object resumes the eligible current stage. Action publish starts publication from the selected saved PDF. A metadata snapshot requests a correction while existing editions remain readable. Publish and metadata require the current commandToken. Repeating the same actor, key, version and body returns the original command response. Read the issue for current availability.
+         */
+        post: operations["updateBulletinPublication"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/member/videos/{publicId}/watch": {
         parameters: {
             query?: never;
@@ -3872,6 +3892,52 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        BulletinPublicationChannels: {
+            pdf: boolean;
+            traditional: boolean;
+            simplified: boolean;
+        };
+        BulletinPublicationOutcome: {
+            /** @enum {string} */
+            status: "draft" | "withdrawn" | "preparing" | "published" | "needs_attention";
+            pendingMetadata?: components["schemas"]["BulletinPublicationMetadata"];
+            /** @description Opaque precondition for publish or metadata commands. */
+            commandToken?: string;
+            /** @enum {string} */
+            reason?: "source_invalid" | "metadata_mismatch" | "processing_failed" | "review_required" | "unsupported_source";
+            /** @enum {string} */
+            nextAction?: "replace_source" | "update_metadata" | "resume" | "review" | "publish";
+            /** @description Editions currently readable by entitled members */
+            availability: components["schemas"]["BulletinPublicationChannels"];
+            /** @description Readable editions matching the current requested publication. */
+            current: components["schemas"]["BulletinPublicationChannels"];
+        };
+        BulletinPublicationMetadata: {
+            issueNumber: number;
+            /** Format: date */
+            issueDate: string;
+            title: string;
+            subtitle: string;
+        };
+        BulletinPublicationUpdateInput: {
+            /**
+             * @description Mutually exclusive with metadata.
+             * @enum {string}
+             */
+            action?: "publish";
+            /** @description Required with publish or metadata. */
+            commandToken?: string;
+            metadata?: components["schemas"]["BulletinPublicationMetadata"];
+        };
+        BulletinPublicationUpdateResult: {
+            issue: components["schemas"]["BulletinIssue"];
+            outcome: components["schemas"]["BulletinPublicationOutcome"];
+        };
+        BulletinDeletionEligibility: {
+            allowed: boolean;
+            /** @enum {string} */
+            reason?: "published" | "cleanup_pending" | "retained_history";
+        };
         StudioBroadcastEnvelope: {
             data: components["schemas"]["StudioBroadcast"];
             meta: {
@@ -6857,6 +6923,7 @@ export interface components {
             message: string;
         };
         BulletinVersion: {
+            deletion?: components["schemas"]["BulletinDeletionEligibility"];
             /** Format: uuid */
             id: string;
             /** Format: uuid */
@@ -6880,6 +6947,8 @@ export interface components {
             updatedAt: string;
         };
         BulletinIssue: {
+            deletion?: components["schemas"]["BulletinDeletionEligibility"];
+            publicationOutcome?: components["schemas"]["BulletinPublicationOutcome"];
             /** Format: uuid */
             id: string;
             issueNumber?: number;
@@ -9095,6 +9164,49 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    updateBulletinPublication: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": components["parameters"]["IfMatch"];
+                "Idempotency-Key": string;
+            };
+            path: {
+                issueId: components["parameters"]["IssueID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulletinPublicationUpdateInput"];
+            };
+        };
+        responses: {
+            /** @description Publication command accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["BulletinPublicationUpdateResult"];
+                        meta: {
+                            [key: string]: unknown;
+                        };
+                        error: null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["AdminUnauthorized"];
+            403: components["responses"]["AdminForbidden"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            428: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
     getVideoWatch: {
         parameters: {
             query?: never;
