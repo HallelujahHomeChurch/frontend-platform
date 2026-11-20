@@ -12,7 +12,7 @@ it('uses source-scoped authenticated mutations without redirects or implicit ret
   await api.createStudioSource({...input,streamKey:'test-key'})
   await api.renameStudioSource('source',input)
   await api.setStudioSourceKey('source',{...input,streamKey:'test-key'})
-  await api.ensureDirectBroadcast('source',input)
+  await api.ensureDirectBroadcast('source',{...input,prepareNext:true})
   await api.prepareStudioSource('source',{operationKey:'prepare',expectedSourceRevision:2,expectedRevision:1,recordingId:'recording'})
   await api.getStudioBroadcast('recording')
   await api.createStudioSchedule({operationKey:'schedule',sourceId:'source',title:'Sunday',description:'',scheduledAt:'2026-10-18T01:00:00Z'})
@@ -25,6 +25,7 @@ it('uses source-scoped authenticated mutations without redirects or implicit ret
   ])
   for(const r of requests){expect(r.cache).toBe('no-store');expect(r.redirect).toBe('error');expect(r.headers.get('Authorization')).toBe('Bearer staff')}
   expect(await requests[2].json()).toEqual(input)
+  expect(await requests[4].json()).toEqual({...input,prepareNext:true})
 })
 
 it('reveals a key only through an explicit no-store authenticated POST',async()=>{
