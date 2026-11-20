@@ -16,3 +16,12 @@ it('waits for valid native seekable and never uses Infinity as a duration',()=>{
  expect(liveWindow(ranges(0,Infinity),90)).toEqual({start:0,end:90,edge:0});
  expect(liveWindow(ranges(0,90),Infinity)).toBeNull();
 });
+
+it('recovers inside a seekable range bounded by the published end, including gaps',async()=>{
+ const {playableReturnTime}=await import('./live-player.js');
+ const split:TimeRanges={length:2,start:i=>[4,40][i],end:i=>[20,80][i]};
+ expect(playableReturnTime(36,split,60)).toBe(40);
+ expect(playableReturnTime(120,split,60)).toBeLessThanOrEqual(60);
+ expect(playableReturnTime(15,split,60)).toBe(15);
+ expect(playableReturnTime(15,split,2)).toBeNull();
+});

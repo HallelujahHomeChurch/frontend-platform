@@ -1,8 +1,9 @@
 import {useEffect,useRef,useState,type RefObject} from 'react';
 import {attachAudioSource} from './audio-source.js';
 
+export type ForegroundFailure='foreground-return'|'foreground-rebuild';
 export type BackgroundControls={play:()=>void;pause:()=>void;seek:(time:number)=>void;hold:(time:number)=>void;stop:()=>void;snapshot:()=>{time:number;paused:boolean;rate:number};settings:(value:{muted?:boolean;volume?:number;rate?:number})=>void};
-type Options={audioRef:RefObject<HTMLAudioElement|null>;videoRef:RefObject<HTMLVideoElement|null>;mediaRef:RefObject<HTMLMediaElement|null>;externalRef?:RefObject<HTMLMediaElement|null>;pauseRef?:RefObject<(()=>void)|null>;url:string|undefined;videoUrl:string;mode?:'vod'|'live';onPosition?:(time:number)=>void;pausedIntent:RefObject<boolean>;onError:()=>void;onChange:()=>void;onBlocked:()=>void};
+type Options={audioRef:RefObject<HTMLAudioElement|null>;videoRef:RefObject<HTMLVideoElement|null>;mediaRef:RefObject<HTMLMediaElement|null>;externalRef?:RefObject<HTMLMediaElement|null>;pauseRef?:RefObject<(()=>void)|null>;url:string|undefined;videoUrl:string;mode?:'vod'|'live';onPosition?:(time:number)=>void;pausedIntent:RefObject<boolean>;onError:()=>void;recoverForeground?:boolean;onReturnFailure?:(reason:ForegroundFailure)=>void;returnTarget?:(time:number,ranges:TimeRanges)=>number|null;onChange:()=>void;onBlocked:()=>void};
 export function useBackgroundAudio(options:Options){
  const callbacks=useRef(options);callbacks.current=options;
  const controls=useRef<BackgroundControls|null>(null);
@@ -11,7 +12,37 @@ export function useBackgroundAudio(options:Options){
  useEffect(()=>{
   const audio=audioRef.current,video=videoRef.current;if(!audio||!video||!url)return;
   let phase:'foreground'|'background'|'returning'='foreground',disposed=false,stopped=false,armed=false,interrupted=false,generation=0;
-  let pending:{token:number;target:number}|null=null;
+  let pending:{token:number;target:number;unlock:boolean}|null=null;
+  let returnGeneration=0,lastTarget:number|undefined;
+  let returnTimer:ReturnType<typeof setTimeout>|undefined,frameCallback:number|undefined;
+  let fallbackFrameTime:number|undefined,verifyingRebuild=Boolean(options.recoverForeground&&!pausedIntent.current);
+  const clearReturn=()=>{
+   ++returnGeneration;lastTarget=undefined;clearTimeout(returnTimer);returnTimer=undefined;fallbackFrameTime=undefined;
+   if(frameCallback!==undefined){video.cancelVideoFrameCallback(frameCallback);frameCallback=undefined;}
+  };
+  const boundReturn=(reason:ForegroundFailure='foreground-return')=>{
+   clearReturn();
+   returnTimer=setTimeout(()=>{
+    if(disposed||stopped||document.visibilityState==='hidden')return;
+    clearReturn();
+    if(callbacks.current.onReturnFailure)callbacks.current.onReturnFailure(reason);else callbacks.current.onError();
+   },10000);
+  };
+  const checkProgress=()=>{
+   if(pausedIntent.current||!armed||interrupted){clearReturn();return;}
+   if(typeof video.requestVideoFrameCallback!=='function'||typeof video.cancelVideoFrameCallback!=='function'){
+    fallbackFrameTime=video.currentTime;return;
+   }
+   let first:number|undefined;
+   const serial=returnGeneration;
+   const frame:VideoFrameRequestCallback=(_now,metadata)=>{
+    if(serial!==returnGeneration||disposed||stopped)return;
+    frameCallback=undefined;
+    if(first!==undefined&&metadata.mediaTime>first){clearReturn();return;}
+    first=metadata.mediaTime;frameCallback=video.requestVideoFrameCallback(frame);
+   };
+   frameCallback=video.requestVideoFrameCallback(frame);
+  };
   let userMuted=video.muted,volume=video.volume,rate=video.playbackRate;
   const expectedPause=new WeakMap<HTMLMediaElement,number>();
   const owner=()=>phase==='background'?audio:video;
@@ -29,23 +60,32 @@ export function useBackgroundAudio(options:Options){
   };
   const play=(element:HTMLMediaElement)=>{
    const token=generation;
-   void element.play().then(reconcile).catch(()=>{if(!disposed&&!stopped&&token===generation&&wanted(element)&&element===owner()){pausedIntent.current=true;reconcile();publish();callbacks.current.onBlocked();}});
+   void element.play().then(reconcile).catch(()=>{if(!disposed&&!stopped&&token===generation&&wanted(element)&&element===owner()){clearReturn();pausedIntent.current=true;reconcile();publish();callbacks.current.onBlocked();}});
   };
   const run=()=>{reconcile();if(wanted(audio))play(audio);if(wanted(video))play(video);};
   const position=(element:HTMLMediaElement,time:number)=>{if(element.readyState&&Number.isFinite(time)){if(element===owner())callbacks.current.onPosition?.(time);element.currentTime=Math.max(0,Number.isFinite(element.duration)?Math.min(element.duration,time):time);}};
   const ready=()=>{
    const target=pending;
-   if(disposed||stopped||phase!=='returning'||!target||target.token!==generation||document.visibilityState==='hidden'||video.seeking||video.readyState<2||Math.abs(video.currentTime-target.target)>.1)return;
+   if(disposed||stopped||phase!=='returning'||!target||target.token!==generation||document.visibilityState==='hidden'||video.seeking||video.readyState<2)return;
+   const resolveTarget=target.unlock?callbacks.current.returnTarget:undefined;
+   const time=resolveTarget?resolveTarget(target.target,video.seekable):target.target;
+   if(time===null)return;
+   const tolerance=target.unlock?1:.1;
+   if(Math.abs(video.currentTime-time)>tolerance||resolveTarget&&resolveTarget(video.currentTime,video.seekable)!==video.currentTime){
+    if(target.unlock&&video.currentTime!==time&&lastTarget!==time){lastTarget=time;position(video,time);}
+    return;
+   }
    pending=null;phase='foreground';position(audio,video.currentTime);run();publish();
+   if(target.unlock)checkProgress();
   };
   const api:BackgroundControls={
-   play:()=>{if(disposed||stopped)return;++generation;if(pending)pending.token=generation;pausedIntent.current=false;interrupted=false;armed=true;if(phase==='foreground')position(audio,video.currentTime);run();publish();ready();},
-   pause:()=>{++generation;if(pending)pending.token=generation;pausedIntent.current=true;interrupted=false;reconcile();publish();},
-   seek:time=>{++generation;if(pending)pending={token:generation,target:time};position(owner(),time);if(phase==='foreground')position(audio,time);publish();ready();},
-   hold:time=>{if(phase==='background')return;++generation;phase='returning';pending={token:generation,target:time};reconcile();publish();},
+   play:()=>{if(disposed||stopped)return;++generation;if(pending){pending.token=generation;if(pending.unlock)boundReturn();}pausedIntent.current=false;interrupted=false;armed=true;if(phase==='foreground')position(audio,video.currentTime);run();publish();ready();if(verifyingRebuild){verifyingRebuild=false;checkProgress();}},
+   pause:()=>{clearReturn();++generation;if(pending)pending.token=generation;pausedIntent.current=true;interrupted=false;reconcile();publish();},
+   seek:time=>{++generation;if(pending)pending={...pending,token:generation,target:time};position(owner(),time);if(phase==='foreground')position(audio,time);publish();ready();},
+   hold:time=>{if(phase==='background')return;clearReturn();++generation;phase='returning';pending={token:generation,target:time,unlock:false};reconcile();publish();},
    settings:value=>{if(value.muted!==undefined)userMuted=value.muted;if(value.volume!==undefined)volume=value.volume;if(value.rate!==undefined)rate=value.rate;reconcile();publish();},
    snapshot:()=>({time:pending?.target??owner().currentTime,paused:pausedIntent.current||interrupted,rate}),
-   stop:()=>{stopped=true;++generation;pending=null;reconcile();},
+   stop:()=>{clearReturn();stopped=true;++generation;pending=null;reconcile();},
   };
   controls.current=api;if(pauseRef)pauseRef.current=api.pause;
   const visibility=()=>{
@@ -53,6 +93,7 @@ export function useBackgroundAudio(options:Options){
    ++generation;
    if(document.visibilityState==='hidden'){
     if(phase==='background')return;
+    clearReturn();
     const target=pending?.target??video.currentTime;
     userMuted=phase==='foreground'?video.muted:userMuted;volume=video.volume;rate=video.playbackRate;
     phase='background';pending=null;interrupted=false;reconcile();position(audio,target);publish();if(armed&&wanted(audio))play(audio);
@@ -60,29 +101,32 @@ export function useBackgroundAudio(options:Options){
     // An OS interruption is not a new play command.
     if(armed&&audio.paused)pausedIntent.current=true;
     userMuted=audio.muted;volume=audio.volume;rate=audio.playbackRate;
-    phase='returning';pending={token:generation,target:audio.currentTime};reconcile();position(video,pending.target);publish();ready();
+    phase='returning';pending={token:generation,target:audio.currentTime,unlock:true};boundReturn();reconcile();
+    const target=callbacks.current.returnTarget?callbacks.current.returnTarget(pending.target,video.seekable):pending.target;
+    if(target!==null&&video.readyState){lastTarget=target;position(video,target);}
+    publish();ready();
    }
   };
   const listeners:Array<[HTMLMediaElement,string,()=>void]>=[];
   const listen=(element:HTMLMediaElement,event:string,handler:()=>void)=>{element.addEventListener(event,handler);listeners.push([element,event,handler]);};
   // Only callers with an explicit stop command can distinguish authority stops from iPhone's pre-hide pause.
   for(const element of [video,audio]){
-   listen(element,'pause',()=>{const expected=expectedPause.get(element)??0;if(expected){expectedPause.set(element,expected-1);return;}if(disposed||stopped||element!==owner()||phase==='returning')return;if(phase==='foreground'&&pauseRef){++generation;interrupted=true;reconcile();publish();}else api.pause();});
+   listen(element,'pause',()=>{const expected=expectedPause.get(element)??0;if(expected){expectedPause.set(element,expected-1);return;}if(disposed||stopped||element!==owner()||phase==='returning')return;if(phase==='foreground'&&pauseRef){clearReturn();++generation;interrupted=true;reconcile();publish();}else api.pause();});
    listen(element,'ended',()=>{if(element===owner())api.pause();});
    listen(element,'volumechange',()=>{if(element!==owner()||phase==='returning'||disposed)return;userMuted=element.muted;volume=element.volume;reconcile();publish();});
    listen(element,'ratechange',()=>{if(element!==owner()||disposed)return;rate=element.playbackRate;reconcile();publish();});
-   listen(element,'timeupdate',()=>{if(element===owner())publish();});
+   listen(element,'timeupdate',()=>{if(element===video&&fallbackFrameTime!==undefined&&!video.seeking&&!video.paused&&video.readyState>=2&&video.currentTime>fallbackFrameTime)clearReturn();if(element===owner())publish();});
   }
   listen(video,'seeked',()=>{if(phase==='foreground')position(audio,video.currentTime);ready();});
-  for(const event of ['loadedmetadata','canplay','loadeddata'])listen(video,event,()=>{if(pending&&video.readyState&&Math.abs(video.currentTime-pending.target)>.1)position(video,pending.target);ready();});
+  for(const event of ['loadedmetadata','canplay','loadeddata'])listen(video,event,()=>{if(pending&&!pending.unlock&&video.readyState&&Math.abs(video.currentTime-pending.target)>.1)position(video,pending.target);ready();});
   listen(audio,'loadedmetadata',()=>{if(phase==='foreground')position(audio,video.currentTime);});
   const fail=()=>{if(!disposed&&!stopped){callbacks.current.onError();api.stop();}};
   listen(audio,'error',fail);
   document.addEventListener('visibilitychange',visibility);
-  reconcile();publish();if(document.visibilityState==='hidden')visibility();
+  reconcile();publish();if(verifyingRebuild)boundReturn('foreground-rebuild');if(document.visibilityState==='hidden')visibility();
   let detach=()=>{};
   if(url!==new URL(mode==='live'?'480p/index.m3u8':'audio/aac-hls-v1/index.m3u8',videoUrl).href)fail();else detach=attachAudioSource(audio,url,fail,mode==='live'?videoUrl:undefined);
-  return()=>{disposed=true;++generation;for(const [element,event,handler]of listeners)element.removeEventListener(event,handler);document.removeEventListener('visibilitychange',visibility);if(controls.current===api)controls.current=null;if(pauseRef?.current===api.pause)pauseRef.current=null;reconcile();detach();};
+  return()=>{clearReturn();disposed=true;++generation;for(const [element,event,handler]of listeners)element.removeEventListener(event,handler);document.removeEventListener('visibilitychange',visibility);if(controls.current===api)controls.current=null;if(pauseRef?.current===api.pause)pauseRef.current=null;reconcile();detach();};
  },[audioRef,videoRef,mediaRef,externalRef,pauseRef,url,videoUrl,mode,pausedIntent]);
  return {controls,...state};
 }
