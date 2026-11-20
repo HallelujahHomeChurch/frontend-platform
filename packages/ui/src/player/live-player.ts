@@ -20,3 +20,16 @@ export function liveWindow(seekable: TimeRanges, verifiedEnd: number) {
   if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
   return {start, end, edge: Math.max(start, end - LIVE_HOLDBACK_SECONDS)};
 }
+
+// The audio and video decoders can expose different seekable islands on unlock.
+export function playableReturnTime(time:number,ranges:TimeRanges,verifiedEnd:number) {
+  let nearest:number|null=null;
+  for(let i=0;i<ranges.length;i++){
+    const start=ranges.start(i),end=Math.min(ranges.end(i),verifiedEnd);
+    if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start)continue;
+    if(time>=start&&time<end)return time;
+    const candidate=time<start?start:Math.max(start,end-.05);
+    if(nearest===null||Math.abs(time-candidate)<Math.abs(time-nearest))nearest=candidate;
+  }
+  return nearest;
+}

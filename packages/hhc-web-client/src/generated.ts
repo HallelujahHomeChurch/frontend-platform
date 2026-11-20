@@ -3996,6 +3996,12 @@ export interface components {
             sourceId: string;
             expectedSourceRevision: number;
         };
+        DirectPrepareInput: {
+            operationKey: string;
+            expectedRevision: number;
+            /** @description Explicit user intent to prepare the next direct event. An early handoff requires the feature and matching stop and seal receipts. */
+            prepareNext?: boolean;
+        };
         StudioSource: {
             revision: number;
             configured: boolean;
@@ -4007,6 +4013,12 @@ export interface components {
             id: string;
             name: string;
             directEnabled: boolean;
+            /** @description Current non-deleted direct event for this source, independently of its scheduled target. */
+            directRecordingId?: string | null;
+            /** @description The indicated direct event has matching final stop and seal receipts and no longer holds input. */
+            directInputReleased?: boolean;
+            /** @description The server allows an explicit handoff before media publication finishes. */
+            directHandoffEnabled?: boolean;
         };
         BroadcastPolicy: {
             autoStart: boolean;
@@ -17155,7 +17167,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BroadcastMutationInput"];
+                "application/json": components["schemas"]["DirectPrepareInput"];
             };
         };
         responses: {

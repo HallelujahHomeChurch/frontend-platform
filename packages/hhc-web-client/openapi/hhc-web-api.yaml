@@ -7991,7 +7991,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BroadcastMutationInput'
+              $ref: '#/components/schemas/DirectPrepareInput'
       responses:
         '200':
           description: Operation result
@@ -8605,6 +8605,16 @@ components:
         expectedRevision: {type: integer, minimum: 1}
         sourceId: {type: string, format: uuid}
         expectedSourceRevision: {type: integer, minimum: 1}
+    DirectPrepareInput:
+      type: object
+      additionalProperties: false
+      required: [operationKey, expectedRevision]
+      properties:
+        operationKey: {type: string, pattern: '^[a-zA-Z0-9._:-]{1,128}$'}
+        expectedRevision: {type: integer, minimum: 1, maximum: 9007199254740991}
+        prepareNext:
+          type: boolean
+          description: Explicit user intent to prepare the next direct event. An early handoff requires the feature and matching stop and seal receipts.
     StudioSource:
       type: object
       additionalProperties: false
@@ -8648,6 +8658,17 @@ components:
           maxLength: 100
         directEnabled:
           type: boolean
+        directRecordingId:
+          description: Current non-deleted direct event for this source, independently of its scheduled target.
+          anyOf:
+          - {type: string, format: uuid}
+          - {type: 'null'}
+        directInputReleased:
+          type: boolean
+          description: The indicated direct event has matching final stop and seal receipts and no longer holds input.
+        directHandoffEnabled:
+          type: boolean
+          description: The server allows an explicit handoff before media publication finishes.
     BroadcastPolicy:
       type: object
       additionalProperties: false

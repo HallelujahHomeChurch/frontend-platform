@@ -1489,3 +1489,15 @@ it.each([
   expect(audio.getAttribute('src')).toBeNull();expect(p.videoRef.current!.getAttribute('src')).toBeNull();
  }
 });
+
+it('resumes explicitly recovered live playback only after the bookmark can be positioned',async()=>{
+ const p=props();
+ render(<HlsPlayer {...p} playbackMode="live" live={{verifiedEnd:200,canFollow:true,label:'Live',backToLive:'Live'}}
+   recoverForeground resume={{time:35,paused:false,rate:1,quality:'auto',intent:'dvr'}} backgroundAudioUrl={url.replace('master.m3u8','480p/index.m3u8')}/>);
+ await waitFor(()=>expect(engine.instances.length).toBeGreaterThan(0));
+ const video=p.videoRef.current!;
+ Object.defineProperties(video,{seekable:{configurable:true,value:{length:1,start:()=>0,end:()=>200}},readyState:{configurable:true,value:4}});
+ fireEvent.loadedMetadata(video);
+ await waitFor(()=>expect(video.currentTime).toBe(35));
+ expect(video.play).toHaveBeenCalled();
+});

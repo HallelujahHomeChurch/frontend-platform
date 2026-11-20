@@ -15,7 +15,7 @@ let hidden=false;
 beforeEach(()=>{hidden=false;vi.spyOn(document,'visibilityState','get').mockImplementation(()=>hidden?'hidden':'visible');});
 function setup(pauseEvents?:Array<()=>void>,pauseRef?:{current:(()=>void)|null}){
  const v=media('video',pauseEvents),a=media('audio',pauseEvents),mediaRef={current:v.element as HTMLMediaElement|null},pausedIntent={current:true};
- const options={videoRef:{current:v.element},audioRef:{current:a.element},mediaRef,pauseRef,mode,url:url.replace('master.m3u8',mode==='live'?'480p/index.m3u8':'audio/aac-hls-v1/index.m3u8'),videoUrl:url,pausedIntent,onError:vi.fn(),onChange:vi.fn(),onBlocked:vi.fn()};
+ const options={videoRef:{current:v.element},audioRef:{current:a.element},mediaRef,pauseRef,mode,url:url.replace('master.m3u8',mode==='live'?'480p/index.m3u8':'audio/aac-hls-v1/index.m3u8'),videoUrl:url,pausedIntent,onError:vi.fn(),onReturnFailure:vi.fn(),onChange:vi.fn(),onBlocked:vi.fn()};
  const hook=renderHook(()=>useBackgroundAudio(options));
  const visibility=(value:boolean)=>act(()=>{hidden=value;document.dispatchEvent(new Event('visibilitychange'));});
  const play=()=>act(()=>hook.result.current.controls.current!.play());
@@ -32,6 +32,29 @@ it.each([false,true])('freezes return target and preserves explicit paused=%s',p
  t.a.element.currentTime=40;t.v.slow();t.visibility(false);expect(t.mediaRef.current).toBe(t.v.element);expect(t.a.element.paused).toBe(true);expect(t.v.element.currentTime).toBe(40);
  t.a.element.currentTime=41;act(()=>t.a.element.dispatchEvent(new Event('timeupdate')));expect(t.v.element.currentTime).toBe(40);
  act(()=>t.v.ready());expect(t.v.element.paused).toBe(paused);expect(t.a.element.muted).toBe(true);expect(t.v.element.muted).toBe(false);
+});
+it('accepts a decodable nearby foreground frame without waiting for an exact keyframe',()=>{
+ const t=setup();t.play();t.visibility(true);t.a.element.currentTime=40;t.v.slow();t.visibility(false);
+ t.v.element.currentTime=39.5;act(()=>t.v.ready());
+ expect(t.v.element.paused).toBe(false);expect(t.a.element.muted).toBe(true);
+ t.hook.unmount();
+});
+it('reports a stuck foreground return once and fences it after another hide',()=>{
+ vi.useFakeTimers();
+ try {
+  const t=setup();t.play();t.visibility(true);t.v.slow();t.visibility(false);
+  t.visibility(true);act(()=>vi.advanceTimersByTime(15000));expect(t.options.onReturnFailure).not.toHaveBeenCalled();
+  t.visibility(false);act(()=>vi.advanceTimersByTime(30000));expect(t.options.onReturnFailure).toHaveBeenCalledTimes(1);
+  t.hook.unmount();
+ } finally {vi.useRealTimers();}
+});
+it('reports a restored playing video that never presents a progressing frame',()=>{
+ vi.useFakeTimers();
+ try {
+  const t=setup();t.play();t.visibility(true);t.visibility(false);
+  act(()=>vi.advanceTimersByTime(15000));expect(t.options.onReturnFailure).toHaveBeenCalledOnce();
+  t.hook.unmount();
+ } finally {vi.useRealTimers();}
 });
 it('retains the frozen target across re-hide before a slow return seek finishes',()=>{
  const t=setup();t.play();t.visibility(true);t.a.element.currentTime=40;t.v.slow();t.visibility(false);t.v.element.currentTime=4;

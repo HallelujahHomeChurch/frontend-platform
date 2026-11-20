@@ -416,7 +416,7 @@ export function createHhcWebClient(options: {
     async setStudioSourceKey(sourceId:string,body:StudioSourceInput,signal?:AbortSignal) {
       return (await unwrap(client.PUT('/admin/broadcast-sources/{sourceId}/stream-key', {params:{path:{sourceId}},body,signal,cache:'no-store',redirect:'error'}))).data
     },
-    async ensureDirectBroadcast(sourceId:string,body:BroadcastMutationInput,signal?:AbortSignal) {
+    async ensureDirectBroadcast(sourceId:string,body:components['schemas']['DirectPrepareInput'],signal?:AbortSignal) {
       return (await unwrap(client.POST('/admin/broadcast-sources/{sourceId}/direct/ensure', {params:{path:{sourceId}},body,signal,cache:'no-store',redirect:'error'}))).data
     },
     async prepareStudioSource(sourceId:string,body:BroadcastSourceTargetInput,signal?:AbortSignal) {
