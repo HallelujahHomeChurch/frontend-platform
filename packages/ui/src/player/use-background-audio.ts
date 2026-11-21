@@ -1,5 +1,5 @@
 import {useEffect,useRef,useState,type RefObject} from 'react';
-import {attachAudioSource} from './audio-source.js';
+import {attachAudioSource,primeNativeLiveAudio} from './audio-source.js';
 
 export type ForegroundFailure='foreground-return'|'foreground-rebuild';
 export type BackgroundControls={play:()=>void;pause:()=>void;seek:(time:number)=>void;hold:(time:number)=>void;stop:()=>void;snapshot:()=>{time:number;paused:boolean;rate:number};settings:(value:{muted?:boolean;volume?:number;rate?:number})=>void};
@@ -16,6 +16,21 @@ export function useBackgroundAudio(options:Options){
   let returnGeneration=0,lastTarget:number|undefined;
   let returnTimer:ReturnType<typeof setTimeout>|undefined,frameCallback:number|undefined;
   let fallbackFrameTime:number|undefined,verifyingRebuild=Boolean(options.recoverForeground&&!pausedIntent.current);
+  const lazyLive=mode==='live';
+  let detach:(()=>void)|undefined;
+  // Preserve the DVR clock while the newly attached background source gets metadata.
+  let audioStart:number|null=null;
+  let sourceGeneration=0;
+  let finishPrimer:(()=>void)|undefined;
+  let audioPrimed=false;
+  const cancelPrimer=()=>{const release=finishPrimer;finishPrimer=undefined;release?.();};
+  const expectedPause=new WeakMap<HTMLMediaElement,number>();
+  const releaseSource=()=>{
+   ++sourceGeneration;
+   const release=detach;detach=undefined;
+   release?.();
+   expectedPause.delete(audio);
+  };
   const clearReturn=()=>{
    ++returnGeneration;lastTarget=undefined;clearTimeout(returnTimer);returnTimer=undefined;fallbackFrameTime=undefined;
    if(frameCallback!==undefined){video.cancelVideoFrameCallback(frameCallback);frameCallback=undefined;}
@@ -44,7 +59,7 @@ export function useBackgroundAudio(options:Options){
    frameCallback=video.requestVideoFrameCallback(frame);
   };
   let userMuted=video.muted,volume=video.volume,rate=video.playbackRate;
-  const expectedPause=new WeakMap<HTMLMediaElement,number>();
+
   const owner=()=>phase==='background'?audio:video;
   const pause=(element:HTMLMediaElement)=>{if(!element.paused){expectedPause.set(element,(expectedPause.get(element)??0)+1);element.pause();}};
   const publish=()=>{
@@ -52,17 +67,23 @@ export function useBackgroundAudio(options:Options){
    setState(previous=>{const next={owner:phase==='background'?1:0,paused:pausedIntent.current||!armed||interrupted,muted:userMuted,volume};return previous.owner===next.owner&&previous.paused===next.paused&&previous.muted===next.muted&&previous.volume===next.volume?previous:next;});
    callbacks.current.onChange();
   };
-  const wanted=(element:HTMLMediaElement)=>!disposed&&!stopped&&armed&&!pausedIntent.current&&!interrupted&&phase!=='returning'&&(element===audio||phase==='foreground');
+  const wanted=(element:HTMLMediaElement)=>!disposed&&!stopped&&armed&&!pausedIntent.current&&!interrupted&&phase!=='returning'&&(element===owner()||element===audio&&!lazyLive&&phase==='foreground');
   const reconcile=()=>{
-   const videoMuted=disposed||stopped||phase!=='foreground'||userMuted,audioMuted=disposed||stopped||phase!=='background'||userMuted;
-   if(video.muted!==videoMuted)video.muted=videoMuted;if(audio.muted!==audioMuted)audio.muted=audioMuted;
-   for(const element of [video,audio]){if(element.volume!==volume)element.volume=volume;if(element.playbackRate!==rate)element.playbackRate=rate;if(!wanted(element))pause(element);}
+   const videoMuted=disposed||stopped||phase!=='foreground'||userMuted,audioMuted=disposed||stopped||phase!=='background'||audioStart!==null||userMuted;
+   if(video.muted!==videoMuted)video.muted=videoMuted;if(!finishPrimer&&audio.muted!==audioMuted)audio.muted=audioMuted;
+   for(const element of [video,audio]){if(element===audio&&finishPrimer)continue;if(element.volume!==volume)element.volume=volume;if(element.playbackRate!==rate)element.playbackRate=rate;if(!wanted(element))pause(element);}
   };
   const play=(element:HTMLMediaElement)=>{
    const token=generation;
    void element.play().then(reconcile).catch(()=>{if(!disposed&&!stopped&&token===generation&&wanted(element)&&element===owner()){clearReturn();pausedIntent.current=true;reconcile();publish();callbacks.current.onBlocked();}});
   };
-  const run=()=>{reconcile();if(wanted(audio))play(audio);if(wanted(video))play(video);};
+  const loadBackground=()=>{
+   if(!lazyLive||detach||phase!=='background'||!armed||pausedIntent.current)return;
+   const token=++sourceGeneration;
+   const release=attachAudioSource(audio,url,()=>{if(token===sourceGeneration)fail();},videoUrl,audioStart??undefined);
+   if(token===sourceGeneration)detach=release;else release();
+  };
+  const run=()=>{loadBackground();reconcile();if(wanted(audio)&&(!lazyLive||audioStart===null))play(audio);if(wanted(video))play(video);};
   const position=(element:HTMLMediaElement,time:number)=>{if(element.readyState&&Number.isFinite(time)){if(element===owner())callbacks.current.onPosition?.(time);element.currentTime=Math.max(0,Number.isFinite(element.duration)?Math.min(element.duration,time):time);}};
   const ready=()=>{
    const target=pending;
@@ -75,17 +96,30 @@ export function useBackgroundAudio(options:Options){
     if(target.unlock&&video.currentTime!==time&&lastTarget!==time){lastTarget=time;position(video,time);}
     return;
    }
-   pending=null;phase='foreground';position(audio,video.currentTime);run();publish();
+   pending=null;phase='foreground';if(!lazyLive)position(audio,video.currentTime);run();publish();
    if(target.unlock)checkProgress();
   };
   const api:BackgroundControls={
-   play:()=>{if(disposed||stopped)return;++generation;if(pending){pending.token=generation;if(pending.unlock)boundReturn();}pausedIntent.current=false;interrupted=false;armed=true;if(phase==='foreground')position(audio,video.currentTime);run();publish();ready();if(verifyingRebuild){verifyingRebuild=false;checkProgress();}},
-   pause:()=>{clearReturn();++generation;if(pending)pending.token=generation;pausedIntent.current=true;interrupted=false;reconcile();publish();},
-   seek:time=>{++generation;if(pending)pending={...pending,token:generation,target:time};position(owner(),time);if(phase==='foreground')position(audio,time);publish();ready();},
+   play:()=>{
+    if(disposed||stopped)return;
+    ++generation;
+    if(pending){pending.token=generation;if(pending.unlock)boundReturn();}
+    pausedIntent.current=false;interrupted=false;armed=true;
+    if(phase==='foreground'){
+     if(!lazyLive)position(audio,video.currentTime);
+     else if(!audioPrimed&&!finishPrimer)finishPrimer=primeNativeLiveAudio(audio,played=>{
+      finishPrimer=undefined;audioPrimed=played;reconcile();
+     });
+    }
+    run();publish();ready();
+    if(verifyingRebuild){verifyingRebuild=false;checkProgress();}
+   },
+   pause:()=>{cancelPrimer();clearReturn();++generation;if(pending)pending.token=generation;pausedIntent.current=true;interrupted=false;reconcile();publish();},
+   seek:time=>{++generation;if(pending)pending={...pending,token:generation,target:time};if(audioStart!==null)audioStart=time;position(owner(),time);if(phase==='foreground'&&!lazyLive)position(audio,time);publish();ready();},
    hold:time=>{if(phase==='background')return;clearReturn();++generation;phase='returning';pending={token:generation,target:time,unlock:false};reconcile();publish();},
    settings:value=>{if(value.muted!==undefined)userMuted=value.muted;if(value.volume!==undefined)volume=value.volume;if(value.rate!==undefined)rate=value.rate;reconcile();publish();},
-   snapshot:()=>({time:pending?.target??owner().currentTime,paused:pausedIntent.current||interrupted,rate}),
-   stop:()=>{clearReturn();stopped=true;++generation;pending=null;reconcile();},
+   snapshot:()=>({time:pending?.target??audioStart??owner().currentTime,paused:pausedIntent.current||interrupted,rate}),
+   stop:()=>{cancelPrimer();clearReturn();stopped=true;++generation;pending=null;reconcile();if(lazyLive)releaseSource();},
   };
   controls.current=api;if(pauseRef)pauseRef.current=api.pause;
   const visibility=()=>{
@@ -96,12 +130,20 @@ export function useBackgroundAudio(options:Options){
     clearReturn();
     const target=pending?.target??video.currentTime;
     userMuted=phase==='foreground'?video.muted:userMuted;volume=video.volume;rate=video.playbackRate;
-    phase='background';pending=null;interrupted=false;reconcile();position(audio,target);publish();if(armed&&wanted(audio))play(audio);
+    cancelPrimer();
+    phase='background';pending=null;interrupted=false;
+    if(lazyLive)audioStart=target;
+    reconcile();loadBackground();
+    if(!lazyLive)position(audio,target);
+    else if(detach&&audio.readyState){position(audio,target);audioStart=null;}
+    reconcile();publish();if(armed&&wanted(audio)&&(!lazyLive||audioStart===null))play(audio);
    }else if(phase==='background'){
     // An OS interruption is not a new play command.
-    if(armed&&audio.paused)pausedIntent.current=true;
-    userMuted=audio.muted;volume=audio.volume;rate=audio.playbackRate;
-    phase='returning';pending={token:generation,target:audio.currentTime,unlock:true};boundReturn();reconcile();
+    if(armed&&audio.paused&&audioStart===null)pausedIntent.current=true;
+    if(audioStart===null)userMuted=audio.muted;
+    volume=audio.volume;rate=audio.playbackRate;
+    phase='returning';pending={token:generation,target:audioStart??audio.currentTime,unlock:true};audioStart=null;boundReturn();reconcile();
+    if(lazyLive)releaseSource();
     const target=callbacks.current.returnTarget?callbacks.current.returnTarget(pending.target,video.seekable):pending.target;
     if(target!==null&&video.readyState){lastTarget=target;position(video,target);}
     publish();ready();
@@ -113,20 +155,23 @@ export function useBackgroundAudio(options:Options){
   for(const element of [video,audio]){
    listen(element,'pause',()=>{const expected=expectedPause.get(element)??0;if(expected){expectedPause.set(element,expected-1);return;}if(disposed||stopped||element!==owner()||phase==='returning')return;if(phase==='foreground'&&pauseRef){clearReturn();++generation;interrupted=true;reconcile();publish();}else api.pause();});
    listen(element,'ended',()=>{if(element===owner())api.pause();});
-   listen(element,'volumechange',()=>{if(element!==owner()||phase==='returning'||disposed)return;userMuted=element.muted;volume=element.volume;reconcile();publish();});
+   listen(element,'volumechange',()=>{if(element!==owner()||phase==='returning'||disposed||element===audio&&audioStart!==null)return;userMuted=element.muted;volume=element.volume;reconcile();publish();});
    listen(element,'ratechange',()=>{if(element!==owner()||disposed)return;rate=element.playbackRate;reconcile();publish();});
    listen(element,'timeupdate',()=>{if(element===video&&fallbackFrameTime!==undefined&&!video.seeking&&!video.paused&&video.readyState>=2&&video.currentTime>fallbackFrameTime)clearReturn();if(element===owner())publish();});
   }
-  listen(video,'seeked',()=>{if(phase==='foreground')position(audio,video.currentTime);ready();});
+  listen(video,'seeked',()=>{if(phase==='foreground'&&!lazyLive)position(audio,video.currentTime);ready();});
   for(const event of ['loadedmetadata','canplay','loadeddata'])listen(video,event,()=>{if(pending&&!pending.unlock&&video.readyState&&Math.abs(video.currentTime-pending.target)>.1)position(video,pending.target);ready();});
-  listen(audio,'loadedmetadata',()=>{if(phase==='foreground')position(audio,video.currentTime);});
-  const fail=()=>{if(!disposed&&!stopped){callbacks.current.onError();api.stop();}};
+  listen(audio,'loadedmetadata',()=>{
+   if(lazyLive&&phase==='background'&&audioStart!==null){position(audio,audioStart);audioStart=null;reconcile();if(wanted(audio))play(audio);}
+   else if(!lazyLive&&phase==='foreground')position(audio,video.currentTime);
+  });
+  const fail=()=>{if(!disposed&&!stopped&&(!lazyLive||phase==='background')){callbacks.current.onError();api.stop();}};
   listen(audio,'error',fail);
   document.addEventListener('visibilitychange',visibility);
   reconcile();publish();if(verifyingRebuild)boundReturn('foreground-rebuild');if(document.visibilityState==='hidden')visibility();
-  let detach=()=>{};
-  if(url!==new URL(mode==='live'?'480p/index.m3u8':'audio/aac-hls-v1/index.m3u8',videoUrl).href)fail();else detach=attachAudioSource(audio,url,fail,mode==='live'?videoUrl:undefined);
-  return()=>{clearReturn();disposed=true;++generation;for(const [element,event,handler]of listeners)element.removeEventListener(event,handler);document.removeEventListener('visibilitychange',visibility);if(controls.current===api)controls.current=null;if(pauseRef?.current===api.pause)pauseRef.current=null;reconcile();detach();};
+  if(url!==new URL(lazyLive?'480p/index.m3u8':'audio/aac-hls-v1/index.m3u8',videoUrl).href){callbacks.current.onError();api.stop();}
+  else if(!lazyLive)detach=attachAudioSource(audio,url,fail);
+  return()=>{clearReturn();disposed=true;++generation;for(const [element,event,handler]of listeners)element.removeEventListener(event,handler);document.removeEventListener('visibilitychange',visibility);if(controls.current===api)controls.current=null;if(pauseRef?.current===api.pause)pauseRef.current=null;cancelPrimer();reconcile();releaseSource();};
  },[audioRef,videoRef,mediaRef,externalRef,pauseRef,url,videoUrl,mode,pausedIntent]);
  return {controls,...state};
 }

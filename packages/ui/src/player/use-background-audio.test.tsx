@@ -1,14 +1,16 @@
 import {act,renderHook} from '@testing-library/react';
 import {beforeEach,describe,expect,it,vi} from 'vitest';
 import {useBackgroundAudio} from './use-background-audio.js';
-vi.mock('./audio-source.js',()=>({attachAudioSource:()=>()=>{}}));
+const attachSource=vi.hoisted(()=>vi.fn(()=>vi.fn()));
+const primeAudio=vi.hoisted(()=>vi.fn<(element:HTMLAudioElement,done:(played:boolean)=>void)=>(()=>void)|undefined>());
+vi.mock('./audio-source.js',()=>({attachAudioSource:attachSource,primeNativeLiveAudio:primeAudio}));
 const url='https://media.example/videos/r/packages/p/sessions/s/master.m3u8';
 function media<K extends 'video'|'audio'>(tag:K,pauseEvents?:Array<()=>void>){
  const element=document.createElement(tag);let paused=true,seeking=false,ready=4;
  Object.defineProperties(element,{paused:{get:()=>paused},seeking:{get:()=>seeking},readyState:{get:()=>ready},duration:{get:()=>120}});
  const play=vi.spyOn(element,'play').mockImplementation(()=>{paused=false;element.dispatchEvent(new Event('play'));return Promise.resolve();});
  vi.spyOn(element,'pause').mockImplementation(()=>{if(!paused){paused=true;const dispatch=()=>element.dispatchEvent(new Event('pause'));if(pauseEvents)pauseEvents.push(dispatch);else dispatch();}});
- return {element,play,setPaused:(value:boolean)=>{paused=value;},slow:()=>{seeking=true;ready=1;},ready:()=>{seeking=false;ready=4;element.dispatchEvent(new Event('seeked'));}};
+ return {element,play,setPaused:(value:boolean)=>{paused=value;},cold:()=>{ready=0;},slow:()=>{seeking=true;ready=1;},ready:()=>{seeking=false;ready=4;element.dispatchEvent(new Event('seeked'));}};
 }
 describe.each(['vod','live'] as const)('%s ownership',mode=>{
 let hidden=false;
@@ -21,10 +23,47 @@ function setup(pauseEvents?:Array<()=>void>,pauseRef?:{current:(()=>void)|null})
  const play=()=>act(()=>hook.result.current.controls.current!.play());
  return {v,a,hook,mediaRef,pausedIntent,visibility,play,options};
 }
+it.skipIf(mode!=='live')('retries native audio activation on a later Play and leaves the pending gesture uninterrupted',async()=>{
+ primeAudio.mockReset();
+ const t=setup();
+ t.play(); // Initial programmatic resume has no active gesture.
+ const cancel=vi.fn();let finish!:(played:boolean)=>void;
+ primeAudio.mockImplementationOnce((element,done)=>{element.muted=false;void element.play();finish=done;return cancel;});
+ t.play();await act(async()=>{});
+ expect(t.a.element.paused).toBe(false);expect(t.a.element.muted).toBe(false);
+ act(()=>{t.a.setPaused(true);finish(true);});expect(t.a.element.muted).toBe(true);
+ t.play();expect(primeAudio).toHaveBeenCalledTimes(2);expect(cancel).not.toHaveBeenCalled();
+ t.hook.unmount();primeAudio.mockReset();
+});
+it.skipIf(mode!=='live')('loads the live companion only for background listening and releases it on return',()=>{
+ attachSource.mockClear();
+ const t=setup();t.play();expect(attachSource).not.toHaveBeenCalled();
+ t.v.element.currentTime=24;t.visibility(true);expect(attachSource).toHaveBeenCalledOnce();
+ const detach=attachSource.mock.results[0].value;
+ t.a.element.currentTime=28;t.visibility(false);expect(detach).toHaveBeenCalledOnce();
+ expect(t.v.element.currentTime).toBe(28);
+ act(()=>t.a.element.dispatchEvent(new Event('error')));expect(t.options.onError).not.toHaveBeenCalled();
+ t.visibility(true);expect(attachSource).toHaveBeenCalledTimes(2);
+ t.hook.unmount();
+});
+it.skipIf(mode!=='live')('preserves the video bookmark when the phone unlocks before audio metadata arrives',()=>{
+ const t=setup();t.a.cold();t.v.element.currentTime=24;t.play();t.visibility(true);expect(t.a.play).not.toHaveBeenCalled();
+ expect(t.hook.result.current.controls.current!.snapshot().time).toBe(24);
+ t.visibility(false);expect(t.v.element.currentTime).toBe(24);expect(t.v.element.paused).toBe(false);
+ act(()=>t.a.element.dispatchEvent(new Event('loadedmetadata')));expect(t.mediaRef.current).toBe(t.v.element);
+});
+it.skipIf(mode!=='live')('starts cold background audio at the saved position only after metadata arrives',()=>{
+ const t=setup();t.v.element.currentTime=48;t.play();t.a.cold();t.visibility(true);
+ expect(t.a.play).not.toHaveBeenCalled();
+ t.a.ready();act(()=>t.a.element.dispatchEvent(new Event('loadedmetadata')));
+ expect(t.a.element.currentTime).toBe(48);expect(t.a.play).toHaveBeenCalledOnce();expect(t.a.element.muted).toBe(false);
+ t.visibility(false);act(()=>t.a.element.dispatchEvent(new Event('loadedmetadata')));
+ expect(t.a.play).toHaveBeenCalledOnce();
+});
 it('keeps foreground video authoritative and only positions muted standby on seek completion',()=>{
  const t=setup();t.v.element.currentTime=30;t.play();expect(t.v.element.muted).toBe(false);expect(t.a.element.muted).toBe(true);
  t.a.element.currentTime=2;act(()=>t.a.element.dispatchEvent(new Event('timeupdate')));expect(t.v.element.currentTime).toBe(30);expect(t.v.element.playbackRate).toBe(1);
- t.v.element.currentTime=65;act(()=>t.v.element.dispatchEvent(new Event('seeked')));expect(t.a.element.currentTime).toBe(65);expect(t.mediaRef.current).toBe(t.v.element);
+ t.v.element.currentTime=65;act(()=>t.v.element.dispatchEvent(new Event('seeked')));expect(t.a.element.currentTime).toBe(mode==='live'?2:65);expect(t.mediaRef.current).toBe(t.v.element);
 });
 it.each([false,true])('freezes return target and preserves explicit paused=%s',paused=>{
  const t=setup();t.play();t.v.element.currentTime=20;t.visibility(true);expect(t.mediaRef.current).toBe(t.a.element);expect(t.v.element.paused).toBe(true);expect(t.v.element.muted).toBe(true);expect(t.a.element.muted).toBe(false);
@@ -67,7 +106,7 @@ it('lets user pause and seek replace pending return intent',()=>{
  expect(t.v.element.currentTime).toBe(70);expect(t.v.element.paused).toBe(true);expect(t.a.element.paused).toBe(true);expect(t.pausedIntent.current).toBe(true);
 });
 it('reconciles stale play completion against the newest pause and disposal',async()=>{
- const t=setup();let finish!:()=>void;t.a.play.mockImplementation(()=>new Promise<void>(resolve=>{finish=()=>{t.a.setPaused(false);resolve();};}));t.play();
+ const t=setup();let finish!:()=>void;t.a.play.mockImplementation(()=>new Promise<void>(resolve=>{finish=()=>{t.a.setPaused(false);resolve();};}));t.play();if(mode==='live')t.visibility(true);
  act(()=>t.hook.result.current.controls.current!.pause());await act(async()=>finish());expect(t.a.element.paused).toBe(true);expect(t.v.element.paused).toBe(true);
  t.play();t.hook.unmount();await act(async()=>finish());expect(t.a.element.paused).toBe(true);expect(t.a.element.muted).toBe(true);
 });
@@ -87,7 +126,7 @@ it('consumes each queued internal pause without replacing the latest play intent
  t.visibility(true);t.visibility(false);t.visibility(true);t.visibility(false);
  expect(queued).toHaveLength(4);expect(t.pausedIntent.current).toBe(false);
  act(()=>{while(queued.length)queued.shift()!();});
- expect(t.pausedIntent.current).toBe(false);expect(t.v.element.paused).toBe(false);expect(t.a.element.paused).toBe(false);expect(t.v.element.muted).toBe(false);expect(t.a.element.muted).toBe(true);
+ expect(t.pausedIntent.current).toBe(false);expect(t.v.element.paused).toBe(false);expect(t.a.element.paused).toBe(mode==='live');expect(t.v.element.muted).toBe(false);expect(t.a.element.muted).toBe(true);
  act(()=>{t.v.element.pause();while(queued.length)queued.shift()!();});
  expect(t.pausedIntent.current).toBe(true);expect(t.a.element.paused).toBe(true);
 });
@@ -117,7 +156,7 @@ it('an authority stop between native pause and hide fences late play completion'
  t.a.play.mockImplementation(()=>new Promise<void>(resolve=>{finish=()=>{t.a.setPaused(false);resolve();};}));t.play();
  act(()=>{t.v.setPaused(true);t.v.element.dispatchEvent(new Event('pause'));});
  expect(pauseRef.current).toBeTypeOf('function');act(()=>pauseRef.current!());t.visibility(true);
- await act(async()=>finish());expect(t.pausedIntent.current).toBe(true);expect(t.v.element.paused).toBe(true);expect(t.a.element.paused).toBe(true);
+ if(mode==='vod')await act(async()=>finish());else expect(t.a.play).not.toHaveBeenCalled();expect(t.pausedIntent.current).toBe(true);expect(t.v.element.paused).toBe(true);expect(t.a.element.paused).toBe(true);
  t.visibility(false);expect(t.v.element.paused).toBe(true);t.hook.unmount();expect(pauseRef.current).toBeNull();
 });
 
