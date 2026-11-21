@@ -179,7 +179,7 @@ createRoot(document.getElementById('root')!).render(<>{player}<BulletinDocumentR
     scripts: {build: 'next build'},
     dependencies: {
       ...packageDependencies,
-      next: '16.4.2',
+      next: '16.4.6',
       react: '19.2.7',
       'react-dom': '19.2.7'
     },
