@@ -4052,6 +4052,10 @@ export interface components {
         BroadcastHealth: {
             /** @enum {string} */
             state: "waiting" | "healthy" | "interrupted" | "recovering";
+            /** @description Last contiguous segment received for all renditions, zero-based. A value of -1 means none. Returned with lastPublishedSequence when observed. */
+            lastConfirmedSequence?: number;
+            /** @description Last segment published for viewers, from the same capture observation as lastConfirmedSequence. A value of -1 means none. */
+            lastPublishedSequence?: number;
             lastConfirmedAt: string | null;
             lastPublishedAt: string | null;
             verifiedEndSeconds: number | null;
