@@ -1507,6 +1507,16 @@ it.each([
  }
 });
 
+it('keeps Chromium on one foreground stream when it advertises both standard MSE and HLS',async()=>{
+ vi.spyOn(HTMLMediaElement.prototype,'canPlayType').mockReturnValue('maybe');
+ vi.spyOn(navigator,'vendor','get').mockReturnValue('Google Inc.');
+ vi.stubGlobal('MediaSource',{isTypeSupported:()=>true});engine.supported=true;
+ const p=props(),audioUrl=url.replace('master.m3u8','480p/index.m3u8');
+ render(<HlsPlayer {...p} playbackMode="live" backgroundAudioUrl={audioUrl}/>);
+ await waitFor(()=>expect(engine.instances).toHaveLength(1));
+ await playThenHideLive(p.videoRef.current!);await waitFor(()=>expect(engine.instances).toHaveLength(2));
+});
+
 it('resumes explicitly recovered live playback only after the bookmark can be positioned',async()=>{
  const p=props();
  render(<HlsPlayer {...p} playbackMode="live" live={{verifiedEnd:200,canFollow:true,label:'Live',backToLive:'Live'}}

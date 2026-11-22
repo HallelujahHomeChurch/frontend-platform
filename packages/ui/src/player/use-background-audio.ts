@@ -18,7 +18,11 @@ export function useBackgroundAudio(options:Options){
   let fallbackFrameTime:number|undefined,verifyingRebuild=Boolean(options.recoverForeground&&!pausedIntent.current);
   const isLive=mode==='live';
   // Native HLS can require user activation on the companion element before locking.
-  const lazyLive=isLive&&!audio.canPlayType('application/vnd.apple.mpegurl');
+  const nativeHls=audio.canPlayType('application/vnd.apple.mpegurl');
+  // Chromium may advertise native HLS even though the player selects standard MSE.
+  const standardMse=!('ManagedMediaSource' in window)&&navigator.vendor==='Google Inc.'&&
+   window.MediaSource?.isTypeSupported?.('video/mp4; codecs="avc1.42E01E,mp4a.40.2"');
+  const lazyLive=isLive&&(!nativeHls||standardMse);
   let backgroundPlayPending=false;
   let detach:(()=>void)|undefined;
   // Preserve the DVR clock while the newly attached background source gets metadata.
