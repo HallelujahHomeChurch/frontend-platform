@@ -1,5 +1,5 @@
 import {useEffect,useRef,useState,type RefObject} from 'react';
-import {attachAudioSource,primeNativeLiveAudio} from './audio-source.js';
+import {attachAudioSource} from './audio-source.js';
 
 export type ForegroundFailure='foreground-return'|'foreground-rebuild';
 export type BackgroundControls={play:()=>void;pause:()=>void;seek:(time:number)=>void;hold:(time:number)=>void;stop:()=>void;snapshot:()=>{time:number;paused:boolean;rate:number};settings:(value:{muted?:boolean;volume?:number;rate?:number})=>void};
@@ -16,14 +16,14 @@ export function useBackgroundAudio(options:Options){
   let returnGeneration=0,lastTarget:number|undefined;
   let returnTimer:ReturnType<typeof setTimeout>|undefined,frameCallback:number|undefined;
   let fallbackFrameTime:number|undefined,verifyingRebuild=Boolean(options.recoverForeground&&!pausedIntent.current);
-  const lazyLive=mode==='live';
+  const isLive=mode==='live';
+  // Native HLS can require user activation on the companion element before locking.
+  const lazyLive=isLive&&!audio.canPlayType('application/vnd.apple.mpegurl');
+  let backgroundPlayPending=false;
   let detach:(()=>void)|undefined;
   // Preserve the DVR clock while the newly attached background source gets metadata.
   let audioStart:number|null=null;
   let sourceGeneration=0;
-  let finishPrimer:(()=>void)|undefined;
-  let audioPrimed=false;
-  const cancelPrimer=()=>{const release=finishPrimer;finishPrimer=undefined;release?.();};
   const expectedPause=new WeakMap<HTMLMediaElement,number>();
   const releaseSource=()=>{
    ++sourceGeneration;
@@ -70,12 +70,15 @@ export function useBackgroundAudio(options:Options){
   const wanted=(element:HTMLMediaElement)=>!disposed&&!stopped&&armed&&!pausedIntent.current&&!interrupted&&phase!=='returning'&&(element===owner()||element===audio&&!lazyLive&&phase==='foreground');
   const reconcile=()=>{
    const videoMuted=disposed||stopped||phase!=='foreground'||userMuted,audioMuted=disposed||stopped||phase!=='background'||audioStart!==null||userMuted;
-   if(video.muted!==videoMuted)video.muted=videoMuted;if(!finishPrimer&&audio.muted!==audioMuted)audio.muted=audioMuted;
-   for(const element of [video,audio]){if(element===audio&&finishPrimer)continue;if(element.volume!==volume)element.volume=volume;if(element.playbackRate!==rate)element.playbackRate=rate;if(!wanted(element))pause(element);}
+   if(video.muted!==videoMuted)video.muted=videoMuted;if(audio.muted!==audioMuted)audio.muted=audioMuted;
+   for(const element of [video,audio]){if(element.volume!==volume)element.volume=volume;if(element.playbackRate!==rate)element.playbackRate=rate;if(!wanted(element))pause(element);}
   };
   const play=(element:HTMLMediaElement)=>{
    const token=generation;
-   void element.play().then(reconcile).catch(()=>{if(!disposed&&!stopped&&token===generation&&wanted(element)&&element===owner()){clearReturn();pausedIntent.current=true;reconcile();publish();callbacks.current.onBlocked();}});
+   const sourceToken=sourceGeneration;
+   const startingBackground=lazyLive&&element===audio&&phase==='background';
+   if(startingBackground)backgroundPlayPending=true;
+   void element.play().then(()=>{if(startingBackground&&sourceToken===sourceGeneration)backgroundPlayPending=false;reconcile();}).catch(()=>{if(!disposed&&!stopped&&token===generation&&wanted(element)&&element===owner()){clearReturn();pausedIntent.current=true;reconcile();publish();callbacks.current.onBlocked();}});
   };
   const loadBackground=()=>{
    if(!lazyLive||detach||phase!=='background'||!armed||pausedIntent.current)return;
@@ -107,19 +110,16 @@ export function useBackgroundAudio(options:Options){
     if(pending){pending.token=generation;if(pending.unlock)boundReturn();}
     if(phase==='foreground'){
      if(!lazyLive)position(audio,video.currentTime);
-     else if(!audioPrimed&&!finishPrimer)finishPrimer=primeNativeLiveAudio(audio,played=>{
-      finishPrimer=undefined;audioPrimed=played;reconcile();
-     });
     }
     run();publish();ready();
     if(verifyingRebuild){verifyingRebuild=false;checkProgress();}
    },
-   pause:()=>{cancelPrimer();clearReturn();++generation;if(pending)pending.token=generation;pausedIntent.current=true;interrupted=false;reconcile();publish();},
+   pause:()=>{clearReturn();++generation;if(pending)pending.token=generation;pausedIntent.current=true;interrupted=false;reconcile();publish();},
    seek:time=>{++generation;if(pending)pending={...pending,token:generation,target:time};if(audioStart!==null)audioStart=time;position(owner(),time);if(phase==='foreground'&&!lazyLive)position(audio,time);publish();ready();},
    hold:time=>{if(phase==='background')return;clearReturn();++generation;phase='returning';pending={token:generation,target:time,unlock:false};reconcile();publish();},
    settings:value=>{if(value.muted!==undefined)userMuted=value.muted;if(value.volume!==undefined)volume=value.volume;if(value.rate!==undefined)rate=value.rate;reconcile();publish();},
    snapshot:()=>({time:pending?.target??audioStart??owner().currentTime,paused:pausedIntent.current||interrupted,rate}),
-   stop:()=>{cancelPrimer();clearReturn();stopped=true;++generation;pending=null;reconcile();if(lazyLive)releaseSource();},
+   stop:()=>{clearReturn();stopped=true;++generation;pending=null;reconcile();if(lazyLive)releaseSource();},
   };
   controls.current=api;if(pauseRef)pauseRef.current=api.pause;
   const visibility=()=>{
@@ -130,7 +130,7 @@ export function useBackgroundAudio(options:Options){
     clearReturn();
     const target=pending?.target??video.currentTime;
     userMuted=phase==='foreground'?video.muted:userMuted;volume=video.volume;rate=video.playbackRate;
-    cancelPrimer();
+
     phase='background';pending=null;interrupted=false;
     if(lazyLive)audioStart=target;
     reconcile();loadBackground();
@@ -139,7 +139,8 @@ export function useBackgroundAudio(options:Options){
     reconcile();publish();if(armed&&wanted(audio)&&(!lazyLive||audioStart===null))play(audio);
    }else if(phase==='background'){
     // An OS interruption is not a new play command.
-    if(armed&&audio.paused&&audioStart===null)pausedIntent.current=true;
+    if(armed&&audio.paused&&audioStart===null&&!backgroundPlayPending)pausedIntent.current=true;
+    backgroundPlayPending=false;
     if(audioStart===null)userMuted=audio.muted;
     volume=audio.volume;rate=audio.playbackRate;
     phase='returning';pending={token:generation,target:audioStart??audio.currentTime,unlock:true};audioStart=null;if(armed&&!pausedIntent.current)boundReturn();reconcile();
@@ -169,9 +170,9 @@ export function useBackgroundAudio(options:Options){
   listen(audio,'error',fail);
   document.addEventListener('visibilitychange',visibility);
   reconcile();publish();if(verifyingRebuild)boundReturn('foreground-rebuild');if(document.visibilityState==='hidden')visibility();
-  if(url!==new URL(lazyLive?'480p/index.m3u8':'audio/aac-hls-v1/index.m3u8',videoUrl).href){callbacks.current.onError();api.stop();}
-  else if(!lazyLive)detach=attachAudioSource(audio,url,fail);
-  return()=>{clearReturn();disposed=true;++generation;for(const [element,event,handler]of listeners)element.removeEventListener(event,handler);document.removeEventListener('visibilitychange',visibility);if(controls.current===api)controls.current=null;if(pauseRef?.current===api.pause)pauseRef.current=null;cancelPrimer();reconcile();releaseSource();};
+  if(url!==new URL(isLive?'480p/index.m3u8':'audio/aac-hls-v1/index.m3u8',videoUrl).href){callbacks.current.onError();api.stop();}
+  else if(!lazyLive)detach=attachAudioSource(audio,url,fail,isLive?videoUrl:undefined);
+  return()=>{clearReturn();disposed=true;++generation;for(const [element,event,handler]of listeners)element.removeEventListener(event,handler);document.removeEventListener('visibilitychange',visibility);if(controls.current===api)controls.current=null;if(pauseRef?.current===api.pause)pauseRef.current=null;reconcile();releaseSource();};
  },[audioRef,videoRef,mediaRef,externalRef,pauseRef,url,videoUrl,mode,pausedIntent]);
  return {controls,...state};
 }

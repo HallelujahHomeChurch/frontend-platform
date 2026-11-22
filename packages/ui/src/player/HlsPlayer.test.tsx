@@ -1469,7 +1469,7 @@ it('restores live companion DVR across hide, explicit pause, quality, return and
  const video=p.videoRef.current!,audio=view.container.querySelector('audio')!;
  for(const element of [video,audio])Object.defineProperties(element,{duration:{value:Infinity},readyState:{configurable:true,value:4},seekable:{value:{length:1,start:()=>100,end:()=>700}}});
  fireEvent.loadedMetadata(video);expect(video.currentTime).toBe(150);expect(video.playbackRate).toBe(1.5);expect(video.play).not.toHaveBeenCalled();
- act(()=>{hidden=true;document.dispatchEvent(new Event('visibilitychange'));});expect(audio.getAttribute('src')).toBeNull();expect(bookmark.mock.lastCall?.[0].time).toBe(150);expect(audio.playbackRate).toBe(1.5);expect(audio.play).not.toHaveBeenCalled();
+ act(()=>{hidden=true;document.dispatchEvent(new Event('visibilitychange'));});expect(audio.src).toBe(input.backgroundAudioUrl);expect(bookmark.mock.lastCall?.[0].time).toBe(150);expect(audio.playbackRate).toBe(1.5);expect(audio.play).not.toHaveBeenCalled();
  chooseQuality('1080p');fireEvent.progress(audio);expect(bookmark.mock.lastCall?.[0].time).toBe(150);
  act(()=>{hidden=false;document.dispatchEvent(new Event('visibilitychange'));});fireEvent.canPlay(video);fireEvent.seeked(video);
  expect(video.currentTime).toBe(150);expect(video.play).not.toHaveBeenCalled();
@@ -1490,7 +1490,13 @@ it.each([
  const p=props(),audioUrl=url.replace('master.m3u8','480p/index.m3u8');
  const {container}=render(<HlsPlayer {...p} playbackMode="live" backgroundAudioUrl={audioUrl}/>);
  const audio=container.querySelector('audio')!;
- expect(audio.getAttribute('src')).toBeNull();
+ if(native){
+  if(backend==='native')await waitFor(()=>expect(audio.src).toBe(audioUrl));
+  else await waitFor(()=>expect(engine.instances).toHaveLength(2));
+ }else{
+  await waitFor(()=>expect(engine.instances).toHaveLength(1));
+  expect(audio.getAttribute('src')).toBeNull();
+ }
  await playThenHideLive(p.videoRef.current!);
  if(backend==='native'){
   await waitFor(()=>expect(p.videoRef.current!.src).toBe(url));await waitFor(()=>expect(audio.src).toBe(audioUrl));expect(engine.instances).toHaveLength(0);

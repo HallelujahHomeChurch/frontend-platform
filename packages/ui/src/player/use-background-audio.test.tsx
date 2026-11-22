@@ -2,8 +2,7 @@ import {act,renderHook} from '@testing-library/react';
 import {beforeEach,describe,expect,it,vi} from 'vitest';
 import {useBackgroundAudio} from './use-background-audio.js';
 const attachSource=vi.hoisted(()=>vi.fn(()=>vi.fn()));
-const primeAudio=vi.hoisted(()=>vi.fn<(element:HTMLAudioElement,done:(played:boolean)=>void)=>(()=>void)|undefined>());
-vi.mock('./audio-source.js',()=>({attachAudioSource:attachSource,primeNativeLiveAudio:primeAudio}));
+vi.mock('./audio-source.js',()=>({attachAudioSource:attachSource}));
 const url='https://media.example/videos/r/packages/p/sessions/s/master.m3u8';
 function media<K extends 'video'|'audio'>(tag:K,pauseEvents?:Array<()=>void>){
  const element=document.createElement(tag);let paused=true,seeking=false,ready=4;
@@ -23,17 +22,12 @@ function setup(pauseEvents?:Array<()=>void>,pauseRef?:{current:(()=>void)|null})
  const play=()=>act(()=>hook.result.current.controls.current!.play());
  return {v,a,hook,mediaRef,pausedIntent,visibility,play,options};
 }
-it.skipIf(mode!=='live')('retries native audio activation on a later Play and leaves the pending gesture uninterrupted',async()=>{
- primeAudio.mockReset();
- const t=setup();
- t.play(); // Initial programmatic resume has no active gesture.
- const cancel=vi.fn();let finish!:(played:boolean)=>void;
- primeAudio.mockImplementationOnce((element,done)=>{element.muted=false;void element.play();finish=done;return cancel;});
- t.play();await act(async()=>{});
- expect(t.a.element.paused).toBe(false);expect(t.a.element.muted).toBe(false);
- act(()=>{t.a.setPaused(true);finish(true);});expect(t.a.element.muted).toBe(true);
- t.play();expect(primeAudio).toHaveBeenCalledTimes(2);expect(cancel).not.toHaveBeenCalled();
- t.hook.unmount();primeAudio.mockReset();
+it.skipIf(mode!=='live')('preserves intent when unlocking before background play resolves',async()=>{
+ const t=setup();let finish!:()=>void;
+ t.a.play.mockImplementation(()=>new Promise<void>(resolve=>{finish=resolve;}));
+ t.play();t.visibility(true);t.visibility(false);
+ expect(t.pausedIntent.current).toBe(false);expect(t.v.element.paused).toBe(false);
+ await act(async()=>finish());t.hook.unmount();
 });
 it.skipIf(mode!=='live')('loads the live companion only for background listening and releases it on return',()=>{
  attachSource.mockClear();
