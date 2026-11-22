@@ -78,6 +78,36 @@ it('accepts a decodable nearby foreground frame without waiting for an exact key
  expect(t.v.element.paused).toBe(false);expect(t.a.element.muted).toBe(true);
  t.hook.unmount();
 });
+it.each([false,true])('waits for Play before timing a cold return after prior play=%s',played=>{
+ vi.useFakeTimers();
+ try {
+  const t=setup();
+  if(played){t.play();act(()=>t.hook.result.current.controls.current!.pause());}
+  t.visibility(true);t.v.cold();t.visibility(false);
+  act(()=>vi.advanceTimersByTime(11000));expect(t.options.onReturnFailure).not.toHaveBeenCalled();
+  t.play();act(()=>vi.advanceTimersByTime(11000));expect(t.options.onReturnFailure).toHaveBeenCalledOnce();
+  t.hook.unmount();
+ } finally {vi.useRealTimers();}
+});
+it.skipIf(mode!=='live')('honors an explicit pause while the next background source is loading',()=>{
+ const queued:Array<()=>void>=[],t=setup(queued);t.play();
+ t.visibility(true);t.visibility(false);t.a.cold();t.visibility(true);
+ act(()=>{while(queued.length)queued.shift()!();});
+ expect(t.pausedIntent.current).toBe(false);
+ act(()=>t.hook.result.current.controls.current!.pause());
+ t.a.ready();act(()=>t.a.element.dispatchEvent(new Event('loadedmetadata')));
+ expect(t.pausedIntent.current).toBe(true);expect(t.a.element.paused).toBe(true);
+ t.hook.unmount();
+});
+it.skipIf(mode!=='live')('keeps playing after an old audio pause arrives during the next background session',()=>{
+ const queued:Array<()=>void>=[],t=setup(queued);t.play();
+ t.visibility(true);t.visibility(false);t.visibility(true);
+ act(()=>{while(queued.length)queued.shift()!();});
+ expect(t.pausedIntent.current).toBe(false);expect(t.a.element.paused).toBe(false);expect(t.v.element.muted).toBe(true);
+ act(()=>{t.a.element.pause();while(queued.length)queued.shift()!();});
+ expect(t.pausedIntent.current).toBe(true);
+ t.hook.unmount();
+});
 it('reports a stuck foreground return once and fences it after another hide',()=>{
  vi.useFakeTimers();
  try {

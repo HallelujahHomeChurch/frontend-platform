@@ -38,7 +38,7 @@ export function useBackgroundAudio(options:Options){
   const boundReturn=(reason:ForegroundFailure='foreground-return')=>{
    clearReturn();
    returnTimer=setTimeout(()=>{
-    if(disposed||stopped||document.visibilityState==='hidden')return;
+    if(disposed||stopped||pausedIntent.current||!armed||document.visibilityState==='hidden')return;
     clearReturn();
     if(callbacks.current.onReturnFailure)callbacks.current.onReturnFailure(reason);else callbacks.current.onError();
    },10000);
@@ -103,8 +103,8 @@ export function useBackgroundAudio(options:Options){
    play:()=>{
     if(disposed||stopped)return;
     ++generation;
-    if(pending){pending.token=generation;if(pending.unlock)boundReturn();}
     pausedIntent.current=false;interrupted=false;armed=true;
+    if(pending){pending.token=generation;if(pending.unlock)boundReturn();}
     if(phase==='foreground'){
      if(!lazyLive)position(audio,video.currentTime);
      else if(!audioPrimed&&!finishPrimer)finishPrimer=primeNativeLiveAudio(audio,played=>{
@@ -112,7 +112,7 @@ export function useBackgroundAudio(options:Options){
      });
     }
     run();publish();ready();
-    if(verifyingRebuild){verifyingRebuild=false;checkProgress();}
+    if(verifyingRebuild){verifyingRebuild=false;boundReturn('foreground-rebuild');checkProgress();}
    },
    pause:()=>{cancelPrimer();clearReturn();++generation;if(pending)pending.token=generation;pausedIntent.current=true;interrupted=false;reconcile();publish();},
    seek:time=>{++generation;if(pending)pending={...pending,token:generation,target:time};if(audioStart!==null)audioStart=time;position(owner(),time);if(phase==='foreground'&&!lazyLive)position(audio,time);publish();ready();},
@@ -142,7 +142,7 @@ export function useBackgroundAudio(options:Options){
     if(armed&&audio.paused&&audioStart===null)pausedIntent.current=true;
     if(audioStart===null)userMuted=audio.muted;
     volume=audio.volume;rate=audio.playbackRate;
-    phase='returning';pending={token:generation,target:audioStart??audio.currentTime,unlock:true};audioStart=null;boundReturn();reconcile();
+    phase='returning';pending={token:generation,target:audioStart??audio.currentTime,unlock:true};audioStart=null;if(armed&&!pausedIntent.current)boundReturn();reconcile();
     if(lazyLive)releaseSource();
     const target=callbacks.current.returnTarget?callbacks.current.returnTarget(pending.target,video.seekable):pending.target;
     if(target!==null&&video.readyState){lastTarget=target;position(video,target);}
@@ -153,7 +153,7 @@ export function useBackgroundAudio(options:Options){
   const listen=(element:HTMLMediaElement,event:string,handler:()=>void)=>{element.addEventListener(event,handler);listeners.push([element,event,handler]);};
   // Only callers with an explicit stop command can distinguish authority stops from iPhone's pre-hide pause.
   for(const element of [video,audio]){
-   listen(element,'pause',()=>{const expected=expectedPause.get(element)??0;if(expected){expectedPause.set(element,expected-1);return;}if(disposed||stopped||element!==owner()||phase==='returning')return;if(phase==='foreground'&&pauseRef){clearReturn();++generation;interrupted=true;reconcile();publish();}else api.pause();});
+   listen(element,'pause',()=>{const expected=expectedPause.get(element)??0;if(expected){expectedPause.set(element,expected-1);return;}if(disposed||stopped||element!==owner()||phase==='returning'||!element.paused||element===audio&&lazyLive&&audioStart!==null)return;if(phase==='foreground'&&pauseRef){clearReturn();++generation;interrupted=true;reconcile();publish();}else api.pause();});
    listen(element,'ended',()=>{if(element===owner())api.pause();});
    listen(element,'volumechange',()=>{if(element!==owner()||phase==='returning'||disposed||element===audio&&audioStart!==null)return;userMuted=element.muted;volume=element.volume;reconcile();publish();});
    listen(element,'ratechange',()=>{if(element!==owner()||disposed)return;rate=element.playbackRate;reconcile();publish();});
@@ -168,7 +168,7 @@ export function useBackgroundAudio(options:Options){
   const fail=()=>{if(!disposed&&!stopped&&(!lazyLive||phase==='background')){callbacks.current.onError();api.stop();}};
   listen(audio,'error',fail);
   document.addEventListener('visibilitychange',visibility);
-  reconcile();publish();if(verifyingRebuild)boundReturn('foreground-rebuild');if(document.visibilityState==='hidden')visibility();
+  reconcile();publish();if(document.visibilityState==='hidden')visibility();
   if(url!==new URL(lazyLive?'480p/index.m3u8':'audio/aac-hls-v1/index.m3u8',videoUrl).href){callbacks.current.onError();api.stop();}
   else if(!lazyLive)detach=attachAudioSource(audio,url,fail);
   return()=>{clearReturn();disposed=true;++generation;for(const [element,event,handler]of listeners)element.removeEventListener(event,handler);document.removeEventListener('visibilitychange',visibility);if(controls.current===api)controls.current=null;if(pauseRef?.current===api.pause)pauseRef.current=null;cancelPrimer();reconcile();releaseSource();};
