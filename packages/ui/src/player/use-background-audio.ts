@@ -38,7 +38,7 @@ export function useBackgroundAudio(options:Options){
   const boundReturn=(reason:ForegroundFailure='foreground-return')=>{
    clearReturn();
    returnTimer=setTimeout(()=>{
-    if(disposed||stopped||pausedIntent.current||!armed||document.visibilityState==='hidden')return;
+    if(disposed||stopped||pausedIntent.current||document.visibilityState==='hidden')return;
     clearReturn();
     if(callbacks.current.onReturnFailure)callbacks.current.onReturnFailure(reason);else callbacks.current.onError();
    },10000);
@@ -112,7 +112,7 @@ export function useBackgroundAudio(options:Options){
      });
     }
     run();publish();ready();
-    if(verifyingRebuild){verifyingRebuild=false;boundReturn('foreground-rebuild');checkProgress();}
+    if(verifyingRebuild){verifyingRebuild=false;checkProgress();}
    },
    pause:()=>{cancelPrimer();clearReturn();++generation;if(pending)pending.token=generation;pausedIntent.current=true;interrupted=false;reconcile();publish();},
    seek:time=>{++generation;if(pending)pending={...pending,token:generation,target:time};if(audioStart!==null)audioStart=time;position(owner(),time);if(phase==='foreground'&&!lazyLive)position(audio,time);publish();ready();},
@@ -168,7 +168,7 @@ export function useBackgroundAudio(options:Options){
   const fail=()=>{if(!disposed&&!stopped&&(!lazyLive||phase==='background')){callbacks.current.onError();api.stop();}};
   listen(audio,'error',fail);
   document.addEventListener('visibilitychange',visibility);
-  reconcile();publish();if(document.visibilityState==='hidden')visibility();
+  reconcile();publish();if(verifyingRebuild)boundReturn('foreground-rebuild');if(document.visibilityState==='hidden')visibility();
   if(url!==new URL(lazyLive?'480p/index.m3u8':'audio/aac-hls-v1/index.m3u8',videoUrl).href){callbacks.current.onError();api.stop();}
   else if(!lazyLive)detach=attachAudioSource(audio,url,fail);
   return()=>{clearReturn();disposed=true;++generation;for(const [element,event,handler]of listeners)element.removeEventListener(event,handler);document.removeEventListener('visibilitychange',visibility);if(controls.current===api)controls.current=null;if(pauseRef?.current===api.pause)pauseRef.current=null;cancelPrimer();reconcile();releaseSource();};
