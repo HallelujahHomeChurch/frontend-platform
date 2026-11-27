@@ -39,7 +39,7 @@ export function bulletinMobileDetails(document: Pick<BulletinRenderableDocument,
 
 /** Reflow presentation is independent of the immutable source-paper layout artifact. */
 export function BulletinEbook({document, chapter, canonicalMetadata, showDetails = false, sentenceState, selectable = false}: {
-  document: BulletinRenderableDocument;
+  document: BulletinRenderableDocument & {topicBlockIds?: string[]; pdfPageStarts?: Record<string, number>};
   chapter: BulletinChapterId;
   canonicalMetadata?: BulletinCanonicalMetadata;
   showDetails?: boolean;
@@ -63,9 +63,16 @@ export function BulletinEbook({document, chapter, canonicalMetadata, showDetails
       return <span key={index} data-font-role={role} style={{...fontStyle(role), ...(span.fontSize == null ? {} : {fontSize: `${span.fontSize / fontSize}em`})}}>{span.text}</span>;
     })}
   </span>;
+  const topics = new Set(document.topicBlockIds);
+  const pageMarker = (sentenceId?: string) => {
+    const page = sentenceId && document.pdfPageStarts?.[sentenceId];
+    if (!page) return null;
+    const label = `PDF 第 ${page} ${document.contentLocale === 'zh-Hans' ? '页' : '頁'}`;
+    return <span className="hhc-ebook-page-break" role="separator" aria-label={label}>{label}</span>;
+  };
   const pictures = (componentId: string, afterBlockId?: string) => document.components.find(component => component.id === componentId)?.illustrations?.filter(picture => picture.afterBlockId === afterBlockId || !afterBlockId && !picture.afterBlockId).map(picture => <figure key={picture.id}>{bulletinIllustrationURL(picture) ? <img src={bulletinIllustrationURL(picture)} alt={picture.alt} style={{maxWidth: '100%', height: 'auto'}} /> : <span role="img" aria-label={picture.alt} data-illustration-unavailable>{picture.alt}</span>}</figure>);
-  const block = (value: BulletinBlock, componentId: string, Tag: 'p' | 'h2' | 'h3' | 'span' = 'p', prefix?: ReactNode, presentation?: 'verse' | 'plain') => <Fragment key={value.id}><Tag data-component-id={componentId} data-block-id={value.id} style={Tag === 'p' ? {textAlign: value.style.align, paddingInlineStart: `${Math.min(2, value.style.indent)}em`, textIndent: `${Math.min(2, value.style.firstLineIndent)}em`, marginBlockStart: `${Math.min(2, value.style.spaceBefore)}em`, marginBlockEnd: `${Math.min(2, Math.max(.6, value.style.spaceAfter))}em`} : undefined}>
-    {prefix}{value.sentences.map(entry => sentence(entry, value.style.fontSize, presentation))}
+  const block = (value: BulletinBlock, componentId: string, Tag: 'p' | 'h2' | 'h3' | 'span' = 'p', prefix?: ReactNode, presentation?: 'verse' | 'plain') => <Fragment key={value.id}>{pageMarker(value.sentences[0]?.id)}<Tag data-framed-topic={topics.has(value.id) || undefined} data-component-id={componentId} data-block-id={value.id} style={Tag === 'p' ? {textAlign: value.style.align, paddingInlineStart: `${Math.min(2, value.style.indent)}em`, textIndent: `${Math.min(2, value.style.firstLineIndent)}em`, marginBlockStart: `${Math.min(2, value.style.spaceBefore)}em`, marginBlockEnd: `${Math.min(2, Math.max(.6, value.style.spaceAfter))}em`} : undefined}>
+    {prefix}{value.sentences.map((entry, index) => <Fragment key={entry.id}>{index > 0 && pageMarker(entry.id)}{sentence(entry, value.style.fontSize, presentation)}</Fragment>)}
   </Tag>{pictures(componentId, value.id)}</Fragment>;
   type Fixed = Parameters<typeof bulletinFixedText>[0];
   const label = (element: Fixed) => bulletinFixedText(element, canonicalMetadata, 0).text;
@@ -91,7 +98,7 @@ export function BulletinEbook({document, chapter, canonicalMetadata, showDetails
               : <>{pictures(id, body.header.lectureDate.id)}{body.header.contributors.map(person => pictures(id, person.name.id))}</>)}
             <div className="hhc-ebook-body-heading">{block(body.title, id, 'h2')}{body.contributors?.map(person => block(person.name, id, 'span', `${label('speakerSeparator')} `))}</div>
             {body.subtitle && block(body.subtitle, id)}
-            {body.blocks.map(value => block(value, id))}
+            {body.blocks.map(value => block(value, id, topics.has(value.id) ? 'h3' : 'p'))}
           </section>;
         }
         case 'hymnLyrics': return <section key={id} data-component-id={id}>{pictures(id)}<h2>{label('hymnLabel')}</h2>{component.hymnLyrics.hymns.map(hymn => <section className="hhc-ebook-song" key={hymn.id}>

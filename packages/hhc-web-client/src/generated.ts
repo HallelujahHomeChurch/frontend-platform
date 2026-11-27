@@ -5238,6 +5238,11 @@ export interface components {
         };
         /** @description Closed published rendering projection with no extraction provenance. Layout proof binds the original worker measurement; it is not a hash of this redacted DTO. Verify the response byte digest separately. */
         ReaderContent: {
+            topicBlockIds?: components["schemas"]["OnlineBulletinID"][];
+            /** @description Physical source PDF page beginning at the keyed sentence. */
+            pdfPageStarts?: {
+                [key: string]: number;
+            };
             /** @description Source-verified first section for article-header speakers. Omitted when ambiguous; conveys no PDF coordinates. */
             headerSpeakerStartComponentId?: components["schemas"]["OnlineBulletinID"];
             /** @description Visible printed body issue-summary count, independent of HTML pagination. */
@@ -5639,6 +5644,8 @@ export interface components {
             spans: components["schemas"]["OnlineBulletinSpan"][];
             /** @description Server-owned PDF provenance; forbidden in component edit requests. */
             readonly source?: {
+                startsPdfPage?: boolean;
+                framedTopic?: boolean;
                 page: number;
                 box: components["schemas"]["OnlineBulletinBox"];
             };
