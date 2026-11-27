@@ -161,3 +161,12 @@ it.each([
   if (version === 'v9' || version === 'v10') expect(container.querySelector('[data-fixed-element="visionMission"]')).toHaveTextContent('福音同行');
   expect(document).toEqual(before);
 });
+
+it('renders a verified internal topic and a physical page break without changing selection targets', () => {
+  const document = {...fixture(), topicBlockIds: ['body'], pdfPageStarts: {'s-body': 3}};
+  const {container} = render(<UI.BulletinEbook document={document} chapter="body" selectable/>);
+  const heading = container.querySelector('h3[data-framed-topic]');
+  expect(heading).toHaveTextContent('body');
+  expect(heading?.previousElementSibling).toHaveAccessibleName('PDF 第 3 頁');
+  expect(heading?.querySelector('[data-sentence-id="s-body"]')).toHaveAttribute('data-fragment-end','4');
+});

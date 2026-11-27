@@ -449,6 +449,8 @@ export interface components {
             spans: components["schemas"]["OnlineBulletinSpan"][];
             /** @description Server-owned PDF provenance; forbidden in component edit requests. */
             readonly source?: {
+                startsPdfPage?: boolean;
+                framedTopic?: boolean;
                 page: number;
                 box: components["schemas"]["OnlineBulletinBox"];
             };

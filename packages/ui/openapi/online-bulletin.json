@@ -1845,6 +1845,12 @@
               "box"
             ],
             "properties": {
+              "startsPdfPage": {
+                "type": "boolean"
+              },
+              "framedTopic": {
+                "type": "boolean"
+              },
               "page": {
                 "type": "integer",
                 "minimum": 1,
