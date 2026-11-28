@@ -170,3 +170,37 @@ it('renders a verified internal topic and a physical page break without changing
   expect(heading?.previousElementSibling).toHaveAccessibleName('PDF 第 3 頁');
   expect(heading?.querySelector('[data-sentence-id="s-body"]')).toHaveAttribute('data-fragment-end','4');
 });
+
+it('orders canonical metadata and fills the cover mission section when paper slots are absent', () => {
+  const document = fixture();
+  document.layoutManifest.pages[0].fixedSlots = [];
+  const {container} = render(<UI.BulletinEbook document={document} chapter="cover" canonicalMetadata={{title: '主標', subtitle: '副標', date: '2026-11-28', issueNumber: 1750}}/>);
+  expect(Array.from(container.querySelectorAll('header [data-fixed-element]'), node => node.getAttribute('data-fixed-element'))).toEqual([
+    'title', 'subtitle', 'issueNumber', 'date', 'visionMission', 'visionFellowship', 'visionCommitment',
+  ]);
+  expect(container.querySelector('.hhc-ebook-issue-date')?.children).toHaveLength(2);
+  expect(container.querySelector('.hhc-ebook-divider > [data-fixed-element="verseLabel"]')).toBeTruthy();
+});
+
+it('shows PDF transitions only between interior pages, including within a paragraph', () => {
+  const document = {...fixture(), pdfPageStarts: {'s-title': 2, 'next-page': 3, 's-welcome': 1, 's-song-b': 4, 's-summary': 5}};
+  const body = document.components.find(component => component.type === 'bodySection')!;
+  body.bodySection.blocks[0].sentences.push({id: 'next-page', spans: [{text: '下一頁', fontRole: 'body'}]});
+  const metadata = {title: '主題', subtitle: '', date: '2026-11-28', issueNumber: 1750};
+  const {container, rerender} = render(<UI.BulletinEbook document={document} chapter="body"/>);
+  expect(container.querySelectorAll('[role="separator"]')).toHaveLength(1);
+  expect(container.querySelector('[data-sentence-id="next-page"]')?.previousElementSibling).toHaveAccessibleName('PDF 第 3 頁');
+  for (const chapter of ['cover', 'worship', 'back'] as const) {
+    rerender(<UI.BulletinEbook document={document} chapter={chapter} canonicalMetadata={metadata}/>);
+    expect(container.querySelector('[role="separator"]')).toBeNull();
+  }
+});
+
+it('keeps a coverless edition limited to its existing first-page header slots', () => {
+  const document = fixture();
+  document.components = document.components.filter(component => component.type === 'backSummary');
+  document.layoutManifest.pages[0].fixedSlots = [];
+  const {container} = render(<UI.BulletinEbook document={document} chapter="back" canonicalMetadata={{title: '主題', subtitle: '', date: '2026-11-28', issueNumber: 1750}}/>);
+  expect(container.querySelector('header')).toBeNull();
+  expect(container.querySelector('[data-sentence-id="s-summary"]')).toBeTruthy();
+});

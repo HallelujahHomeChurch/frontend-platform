@@ -1,10 +1,16 @@
 /* Uses the same licensed font roles as bulletin-paper.css; no second font loader. */
 .hhc-bulletin-v1.hhc-bulletin-ebook {color: var(--hhc-text, #111); background: var(--hhc-surface, #fff);}
-.hhc-bulletin-ebook .hhc-bulletin-mobile-header [data-fixed-element="issueNumber"] {border-bottom: 1px solid var(--hhc-control-border, #d7d2cb); padding-bottom: 1.1rem; margin-bottom: 1.1rem;}
+.hhc-bulletin-ebook .hhc-bulletin-mobile-header {border: 0; margin: 0; padding-block: 1em 0;}
+.hhc-bulletin-ebook .hhc-ebook-issue-date {display: flex; align-items: baseline; gap: .5em;}
+.hhc-bulletin-ebook .hhc-ebook-issue-date [data-fixed-element="date"] {margin-inline-start: auto; text-align: end;}
+.hhc-bulletin-ebook[data-chapter="back"] > section:last-child {padding-block-end: 1em;}
 .hhc-bulletin-ebook .hhc-ebook-body-heading {display: flex; flex-wrap: wrap; align-items: baseline; gap: .35em; margin-block: 1.5em .8em;}
 .hhc-bulletin-ebook [data-framed-topic],
 .hhc-bulletin-ebook .hhc-ebook-body-heading h2 {border: 1px solid currentColor; padding: .1em .25em; margin: 0; font-size: 1.2em; line-height: 1.5;}
-.hhc-bulletin-ebook .hhc-ebook-song + .hhc-ebook-song {border-top: 1px solid var(--hhc-control-border, #d7d2cb); padding-top: 1.5em; margin-top: 1.5em;}
+.hhc-bulletin-ebook .hhc-ebook-divider,
+.hhc-bulletin-ebook[data-chapter="cover"] > header + [data-component-id],
+.hhc-bulletin-ebook[data-chapter="back"] > section + section,
+.hhc-bulletin-ebook .hhc-ebook-song + .hhc-ebook-song {border-block-start: 1px solid var(--hhc-control-border, #d7d2cb); padding-block-start: 1.5em; margin-block-start: 1.5em;}
 .hhc-bulletin-ebook .hhc-ebook-song-heading {display: flex; align-items: baseline; flex-wrap: wrap; gap: .35em; margin-bottom: .8em;}
 .hhc-bulletin-ebook .hhc-ebook-song-heading h3 {margin: 0;}
 .hhc-bulletin-ebook .hhc-ebook-production {font-size: .9em; margin-block: 1em;}
@@ -12,4 +18,3 @@
 .hhc-bulletin-ebook [data-framed-topic] {width: fit-content; max-width: 100%; margin-block-start: 1.2em;}
 .hhc-bulletin-ebook .hhc-ebook-page-break {display: flex; align-items: center; flex-basis: 100%; gap: .7em; margin-block: 1.5em; color: inherit; font: .8rem/1.4 system-ui,sans-serif; text-indent: 0; user-select: none;}
 .hhc-bulletin-ebook .hhc-ebook-page-break::before {content: ""; flex: 1; border-top: 1px solid var(--hhc-control-border, #d7d2cb);}
-.hhc-bulletin-ebook .hhc-ebook-song + .hhc-ebook-song:has(> .hhc-ebook-song-heading > .hhc-ebook-page-break:first-child) {border-top: 0; padding-top: 0; margin-top: 0;}
