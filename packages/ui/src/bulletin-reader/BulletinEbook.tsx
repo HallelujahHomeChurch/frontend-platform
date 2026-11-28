@@ -66,7 +66,7 @@ export function BulletinEbook({document, chapter, canonicalMetadata, showDetails
   const topics = new Set(document.topicBlockIds);
   const pageMarker = (sentenceId?: string) => {
     const page = sentenceId && document.pdfPageStarts?.[sentenceId];
-    if (!page) return null;
+    if (chapter !== 'body' || !page || page <= 2) return null;
     const label = `PDF 第 ${page} ${document.contentLocale === 'zh-Hans' ? '页' : '頁'}`;
     return <span className="hhc-ebook-page-break" role="separator" aria-label={label}>{label}</span>;
   };
@@ -77,19 +77,31 @@ export function BulletinEbook({document, chapter, canonicalMetadata, showDetails
   type Fixed = Parameters<typeof bulletinFixedText>[0];
   const label = (element: Fixed) => bulletinFixedText(element, canonicalMetadata, 0).text;
   const items = (list: Extract<Component, {type: 'backSummary' | 'announcements' | 'victoriesAndPrayers'}>['items'], id: string, plain = false) => list.flatMap(item => [...(item.title ? [block(item.title, id, plain ? 'p' : 'h3', undefined, plain ? 'plain' : undefined)] : []), ...item.blocks.map(value => block(value, id, 'p', undefined, plain ? 'plain' : undefined))]);
-  const headerElements = ['title', 'subtitle', 'date', 'issueNumber', 'vision', 'visionMission', 'visionFellowship', 'visionCommitment', 'historicalVision', 'historicalGoals', 'historicalGospelGoals', 'historicalActions', 'historicalCommitment', 'pastor', 'masthead'];
-  const header = (document.layoutManifest.pages[0]?.fixedSlots ?? []).filter(slot => headerElements.includes(slot.element) && (showDetails || !details.fixedElements.has(slot.element)));
+  const coverSlots = document.layoutManifest.pages[0]?.fixedSlots ?? [];
+  const fixedRow = (element: Fixed) => {
+    const value = bulletinFixedText(element, canonicalMetadata, 0, document.sourcePageCount);
+    const slot = coverSlots.find(entry => entry.element === element);
+    return <p key={element} data-fixed-element={element}>{value.annotatable
+      ? sentence({id: `canonical-${element}`, spans: [{text: value.text, fontRole: value.fontRole}]}, slot?.style.fontSize ?? 16)
+      : <span data-font-role={value.fontRole} style={fontStyle(value.fontRole)}>{value.text}</span>}</p>;
+  };
+  const visionSlots = coverSlots.filter(({element}) => element === 'vision' || element.startsWith('historical'));
+  const visionElements: Fixed[] = visionSlots.length ? visionSlots.map(slot => slot.element) : ['visionMission', 'visionFellowship', 'visionCommitment'];
+  const metadataRow = (element: Fixed) => (canonicalMetadata || coverSlots.some(slot => slot.element === element)) && fixedRow(element);
   return <div className={`hhc-bulletin-v1 hhc-bulletin-ebook${document.templateVersion === 'v2' ? ' hhc-bulletin-v2' : ''}`} data-bulletin-renderer={document.layoutManifest.rendererVersion} data-bulletin-mode="mobile" data-chapter={chapter} lang={document.contentLocale}>
-    {chapter === bulletinChapters(document)[0]?.id && header.length > 0 ? <header className="hhc-bulletin-mobile-header">{header.map(slot => {
-      const value = bulletinFixedText(slot.element, canonicalMetadata, 0, document.sourcePageCount);
-      return <p key={slot.id} data-fixed-element={slot.element}>{value.annotatable ? sentence({id: `canonical-${slot.element}`, spans: [{text: value.text, fontRole: value.fontRole}]}, slot.style.fontSize) : <span data-font-role={value.fontRole} style={fontStyle(value.fontRole)}>{value.text}</span>}</p>;
-    })}</header> : null}
+    {chapter === bulletinChapters(document)[0]?.id && <header className="hhc-bulletin-mobile-header">
+      {metadataRow('title')}{metadataRow('subtitle')}
+      <div className="hhc-ebook-issue-date">{metadataRow('issueNumber')}{metadataRow('date')}</div>
+      <div className="hhc-ebook-divider">{visionElements.map(fixedRow)}
+        {showDetails && coverSlots.filter(slot => details.fixedElements.has(slot.element)).map(slot => fixedRow(slot.element))}
+      </div>
+    </header>}
     {document.components.filter(component => chapterForType[component.type] === chapter).map(component => {
       const id = component.id;
       switch (component.type) {
         case 'cover': return <div key={id} data-component-id={id}>{pictures(id)}{([
           ['welcomeLabel', component.cover.welcome.map(value => block(value, id))], ['worshipLabel', items(component.cover.worship, id)], ['workLabel', items(component.cover.work, id)], ['wordLabel', items(component.cover.wordQuestions, id)], ['verseLabel', component.cover.weeklyVerses.map(value => block(value, id, 'p', undefined, 'verse'))],
-        ] as [Fixed, ReactNode][]).map(([element, content]) => <section key={element}><h2 data-fixed-element={element}>{label(element).replace(/[：:]\s*$/, '')}</h2>{content}</section>)}</div>;
+        ] as [Fixed, ReactNode][]).map(([element, content]) => <section key={element} className={element === 'verseLabel' ? 'hhc-ebook-divider' : undefined}><h2 data-fixed-element={element}>{label(element).replace(/[：:]\s*$/, '')}</h2>{content}</section>)}</div>;
         case 'bodySection': {
           const body = component.bodySection;
           return <section key={id} data-component-id={id}>{pictures(id)}
