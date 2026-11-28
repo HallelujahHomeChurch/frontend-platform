@@ -87,15 +87,20 @@ export function BulletinEbook({document, chapter, canonicalMetadata, showDetails
   };
   const visionSlots = coverSlots.filter(({element}) => element === 'vision' || element.startsWith('historical'));
   const visionElements: Fixed[] = visionSlots.length ? visionSlots.map(slot => slot.element) : ['visionMission', 'visionFellowship', 'visionCommitment'];
+  const legacyHeader = chapter !== 'cover' && chapter === bulletinChapters(document)[0]?.id
+    ? coverSlots.filter(({element}) => ['title', 'subtitle', 'issueNumber', 'date', 'vision', 'visionMission', 'visionFellowship', 'visionCommitment'].includes(element)
+      || element.startsWith('historical') || (showDetails && details.fixedElements.has(element)))
+    : [];
   const metadataRow = (element: Fixed) => (canonicalMetadata || coverSlots.some(slot => slot.element === element)) && fixedRow(element);
   return <div className={`hhc-bulletin-v1 hhc-bulletin-ebook${document.templateVersion === 'v2' ? ' hhc-bulletin-v2' : ''}`} data-bulletin-renderer={document.layoutManifest.rendererVersion} data-bulletin-mode="mobile" data-chapter={chapter} lang={document.contentLocale}>
-    {chapter === bulletinChapters(document)[0]?.id && <header className="hhc-bulletin-mobile-header">
+    {chapter === 'cover' && <header className="hhc-bulletin-mobile-header">
       {metadataRow('title')}{metadataRow('subtitle')}
       <div className="hhc-ebook-issue-date">{metadataRow('issueNumber')}{metadataRow('date')}</div>
       <div className="hhc-ebook-divider">{visionElements.map(fixedRow)}
         {showDetails && coverSlots.filter(slot => details.fixedElements.has(slot.element)).map(slot => fixedRow(slot.element))}
       </div>
     </header>}
+    {legacyHeader.length > 0 && <header className="hhc-bulletin-mobile-header">{legacyHeader.map(slot => fixedRow(slot.element))}</header>}
     {document.components.filter(component => chapterForType[component.type] === chapter).map(component => {
       const id = component.id;
       switch (component.type) {

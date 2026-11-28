@@ -195,3 +195,12 @@ it('shows PDF transitions only between interior pages, including within a paragr
     expect(container.querySelector('[role="separator"]')).toBeNull();
   }
 });
+
+it('keeps a coverless edition limited to its existing first-page header slots', () => {
+  const document = fixture();
+  document.components = document.components.filter(component => component.type === 'backSummary');
+  document.layoutManifest.pages[0].fixedSlots = [];
+  const {container} = render(<UI.BulletinEbook document={document} chapter="back" canonicalMetadata={{title: '主題', subtitle: '', date: '2026-11-28', issueNumber: 1750}}/>);
+  expect(container.querySelector('header')).toBeNull();
+  expect(container.querySelector('[data-sentence-id="s-summary"]')).toBeTruthy();
+});
